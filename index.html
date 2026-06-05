@@ -33,8 +33,12 @@
       padding-inline: 32px;
     }
     .hero {
-      padding-block: clamp(60px, 10vw, 120px);
+      padding-block: clamp(24px, 4vw, 48px);
       text-align: center;
+    }
+    .hero .content {
+      width: fit-content;
+      margin-inline: auto;
     }
     .hero h1 {
       font-family: var(--font-display);
@@ -44,10 +48,9 @@
       margin: 0 0 16px;
     }
     .hero .lead {
-      font-size: 18px;
+      font-size: 15px;
       color: var(--muted);
-      max-width: 48ch;
-      margin: 0 auto 32px;
+      margin: 0 auto 24px;
     }
     .eyebrow {
       font-family: var(--font-mono);
@@ -57,11 +60,29 @@
       color: var(--accent);
       margin-bottom: 16px;
     }
+    .specs-link {
+      display: block;
+      width: fit-content;
+      padding: 10px 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .specs-link:hover {
+      background: var(--accent);
+      color: var(--surface);
+    }
     .screens {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 24px;
-      padding-block: 48px 96px;
+      padding-block: 32px 80px;
     }
     @media (max-width: 720px) {
       .screens { grid-template-columns: 1fr; }
@@ -118,13 +139,20 @@
 <body>
   <section class="hero">
     <div class="container">
-      <p class="eyebrow">Prototipo · 6 schermate</p>
-      <h1>Portale B2B Luis S.r.l.</h1>
-      <p class="lead">Catalogo vasi, articoli da giardinaggio e soluzioni green per rivenditori. Accesso riservato con prezzi personalizzati.</p>
+      <div class="content">
+        <p class="eyebrow">Prototipo · 6 schermate</p>
+        <h1>Portale B2B Luis S.r.l.</h1>
+        <p class="lead">Portale B2B riservato ai rivenditori di Luis S.r.l. — prodotti in ceramica, cotto portoghese, fiberstone, metallo, cesti intrecciati, Capi Europe e Pottery Pots. Il portale consente di consultare il catalogo con prezzi personalizzati, verificare la giacenza, comporre ordini e utilizzare la ricerca intelligente con AI.<br><br>⚠ <strong>Questo è un prototipo dimostrativo.</strong> Non è un'applicazione reale: i dati sono fittizi, le funzionalità AI sono simulate e la parte commerciale (pagamenti, spedizioni, integrazione con Integra) non è implementata.</p>
+      </div>
     </div>
   </section>
 
   <div class="container">
+    <div style="display:flex;gap:12px;justify-content:center;margin:12px auto 0;width:fit-content;">
+      <a href="specifiche.html" class="specs-link">Specifiche Tecniche →</a>
+      <a href="costi-architettura.html" class="specs-link">Costi e Architettura →</a>
+      <a href="roadmap-viewer.html" class="specs-link">Roadmap e Riepilogo Costi →</a>
+    </div>
     <div class="screens">
       <a href="01-landing.html" class="screen-card">
         <span class="num">01</span>
@@ -166,7 +194,9 @@
   </div>
 
   <footer>
-    <div class="container">Luis S.r.l. — Portale B2B · Prototipo ad alta fedeltà</div>
+    <div class="container">
+      Luis S.r.l. — Portale B2B · Prototipo ad alta fedeltà · Realizzato da <strong>Ugo Volpato</strong> AI Consultant
+    </div>
   </footer>
 </body>
 </html>
