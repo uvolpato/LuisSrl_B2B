@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Luis S.r.l. — Portale B2B Rivenditori</title>
+  <style>
+    :root {
+      --bg:      oklch(97% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(22% 0.02 60);
+      --muted:   oklch(52% 0.015 60);
+      --border:  oklch(88% 0.01 70);
+      --accent:  oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --fs-h1: clamp(44px, 6vw, 72px);
+      --fs-h2: clamp(32px, 4vw, 48px);
+      --fs-h3: 22px;
+      --fs-lead: 19px;
+      --fs-body: 16px;
+      --fs-meta: 13px;
+      --gap-xs: 8px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --gap-2xl: 96px;
+      --container: 1120px;
+      --gutter: 32px;
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2, h3, h4 { text-wrap: balance; }
+    .container {
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+    .section {
+      padding-block: clamp(48px, 8vw, var(--gap-2xl));
+    }
+    .section + .section { border-top: 1px solid var(--border); }
+    .stack { display: flex; flex-direction: column; }
+    .stack > * + * { margin-top: var(--gap-md); }
+    .row { display: flex; align-items: center; gap: var(--gap-md); }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); }
+    @media (max-width: 920px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      [data-od-id="ai-search"] .container > div { grid-template-columns: 1fr !important; }
+      .ai-visual { order: -1; }
+      .ai-visual > div { aspect-ratio: 16/9; }
+    }
+    .h1, h1 { font-family: var(--font-display); font-size: var(--fs-h1); line-height: 1.04; letter-spacing: -0.02em; margin: 0; }
+    .h2, h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.1; letter-spacing: -0.015em; margin: 0; }
+    .h3, h3 { font-size: var(--fs-h3); font-weight: 600; line-height: 1.3; letter-spacing: -0.005em; margin: 0; }
+    .lead   { font-size: var(--fs-lead); line-height: 1.55; color: var(--muted); max-width: 60ch; margin: 0; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 var(--gap-md);
+    }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; }
+    .topnav .logo img { height: 32px; width: auto; }
+    .topnav nav { display: flex; gap: var(--gap-lg); }
+    .topnav nav a { font-size: 14px; color: var(--muted); }
+    .topnav nav a:hover { color: var(--fg); }
+    .pagefoot { padding-block: var(--gap-xl); color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: var(--gap-md); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 20px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .btn-arrow::after { content: '→'; transition: transform 0.15s ease; }
+    .btn-arrow:hover::after { transform: translateX(2px); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+    .card-flat { background: transparent; border: 0; padding: 0; }
+    .feature .feature-mark {
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--accent);
+      margin-bottom: var(--gap-md);
+    }
+    .feature .feature-mark svg { width: 18px; height: 18px; }
+    .feature h3 { margin-bottom: 6px; }
+    .feature p  { margin: 0; color: var(--muted); font-size: 15px; }
+    .stat .stat-num {
+      font-family: var(--font-display);
+      font-size: clamp(56px, 8vw, 96px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .stat .stat-label { color: var(--muted); font-size: 14px; margin-top: 8px; max-width: 24ch; }
+    .stat .stat-unit  { font-size: 0.5em; opacity: 0.7; margin-left: 2px; }
+    .hero-cta      { display: inline-flex; gap: var(--gap-sm); flex-wrap: wrap; }
+    .ph-img {
+      background:
+        linear-gradient(135deg, var(--accent-soft), var(--fg-soft)),
+        var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      aspect-ratio: 16 / 10;
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+    .ph-img.wide      { aspect-ratio: 16 / 9; }
+    .rule  { border: 0; border-top: 1px solid var(--border); margin: 0; }
+    .login-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding-block: 10px;
+    }
+    .login-bar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .login-bar .meta { font-size: 12px; }
+    .hero-image-full {
+      position: relative;
+      width: 100%;
+      min-height: clamp(360px, 50vw, 520px);
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-image-full img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, oklch(0% 0 0 / 0.18) 0%, oklch(0% 0 0 / 0.45) 100%);
+      z-index: 1;
+    }
+    .hero-overlay-inner {
+      text-align: center;
+      color: #fff;
+      max-width: 580px;
+      padding: 0 var(--gutter);
+    }
+    .hero-overlay-inner .eyebrow { color: oklch(95% 0.04 60); margin-bottom: 12px; }
+    .hero-overlay-inner h1 { font-size: clamp(28px, 4vw, 44px); margin-bottom: 12px; color: #fff; }
+    .hero-overlay-inner .lead { color: oklch(92% 0.01 80); font-size: clamp(15px, 1.8vw, 18px); margin-bottom: 24px; max-width: 48ch; margin-inline: auto; }
+    .hero-overlay-inner .hero-cta .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .hero-overlay-inner .hero-cta .btn-secondary { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.35); backdrop-filter: blur(4px); }
+    .hero-overlay-inner .hero-cta .btn-secondary:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.6); }
+    .linea-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+    }
+    .linea-card:hover { border-color: var(--accent); }
+    .linea-card .linea-img {
+      aspect-ratio: 16/10;
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .linea-card .linea-body { padding: 20px; }
+    .linea-card h3 { font-size: 17px; margin: 0 0 4px; }
+    .linea-card p { margin: 0; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="container topnav-inner">
+      <a href="01-landing.html" class="logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <nav>
+        <a href="#info">Chi siamo</a>
+        <a href="#lines">Linee</a>
+        <a href="#search">Ricerca AI</a>
+        <a href="#stats">Numeri</a>
+      </nav>
+      <div class="row" style="gap: 12px;">
+        <a href="05-dashboard.html" class="btn btn-secondary" style="padding: 8px 18px; font-size: 13px;">Accedi</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="hero-image-full" data-od-id="hero">
+      <img src="images/hero-slider.webp" alt="Collezione vasi Luis" />
+      <div class="hero-overlay">
+        <div class="hero-overlay-inner">
+          <p class="eyebrow">Portale B2B riservato ai rivenditori</p>
+          <h1>Il catalogo Luis, sempre aggiornato</h1>
+          <p class="lead">Prezzi personalizzati, giacenza in tempo reale e ordini semplici. Tutto per il tuo negozio, in un unico portale riservato.</p>
+          <div class="hero-cta">
+            <a href="05-dashboard.html" class="btn btn-primary">Accedi al portale</a>
+            <a href="#info" class="btn btn-secondary">Scopri di più</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="info" class="section" data-od-id="features">
+      <div class="container stack" style="gap: 56px;">
+        <div style="max-width: 36ch;">
+          <p class="eyebrow">PERCHÉ LUIS B2B</p>
+          <h2>Tutto quello che serve al tuo negozio, senza complicazioni.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="feature card-flat">
+            <div class="feature-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M3 12h18"/></svg>
+            </div>
+            <h3>Prezzi su misura</h3>
+            <p>Ogni rivenditore vede i propri prezzi, con sconti personalizzati su cliente, linea e famiglia.</p>
+          </div>
+          <div class="feature card-flat">
+            <div class="feature-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+            </div>
+            <h3>Giacenza visibile</h3>
+            <p>Sai quanti pezzi sono disponibili a magazzino prima di ordinare. Niente sorprese.</p>
+          </div>
+          <div class="feature card-flat">
+            <div class="feature-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h10M4 17h16"/></svg>
+            </div>
+            <h3>Ordini rapidi</h3>
+            <p>Seleziona varianti, quantità e moltiplici in pochi click. L'ordine arriva direttamente a Luis.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="search" class="section" data-od-id="ai-search" style="background: var(--surface);">
+      <div class="container">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-xl); align-items: center;">
+          <div class="stack" style="gap: 24px;">
+            <p class="eyebrow">RICERCA INTELLIGENTE</p>
+            <h2>Trovi quello che cerchi, con una frase o una foto.</h2>
+            <p class="lead" style="max-width: 42ch;">Non sai il nome esatto del prodotto? Scrivi cosa ti serve in parole semplici, oppure carica un'immagine di riferimento: il sistema trova i articoli più simili dal catalogo.</p>
+            <div style="display: flex; gap: var(--gap-md); flex-wrap: wrap; margin-top: 8px;">
+              <div class="card" style="flex: 1; min-width: 200px; padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent); flex-shrink: 0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <span style="font-weight: 600; font-size: 14px;">Testo libero</span>
+                </div>
+                <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5;">«Vaso alto color terracotta per giardino» — e il catalogo ti mostra i risultati più pertinenti.</p>
+              </div>
+              <div class="card" style="flex: 1; min-width: 200px; padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent); flex-shrink: 0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                  </div>
+                  <span style="font-weight: 600; font-size: 14px;">Immagine di riferimento</span>
+                </div>
+                <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5;">Carica una foto di un prodotto simile — il sistema individua articoli con forma, colore o stile comparabile.</p>
+              </div>
+            </div>
+          </div>
+          <div class="ai-visual" style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 100%; aspect-ratio: 1; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--accent-soft), oklch(96% 0.008 240)); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px;">
+              <div style="width: 64px; height: 64px; border-radius: 16px; background: var(--accent); color: #fff; display: grid; place-items: center;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <p style="margin: 0; font-size: 15px; font-weight: 600; text-align: center; max-width: 24ch;">Cerca per testo o carica un'immagine</p>
+              <p style="margin: 0; font-size: 13px; color: var(--muted); text-align: center; max-width: 30ch;">Risultati pertinenti in pochi secondi, direttamente dal catalogo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stats" class="section" data-od-id="stats">
+      <div class="container">
+        <p class="eyebrow" style="margin-bottom: 40px;">IL CATALOGO · 2026</p>
+        <div class="grid-3">
+          <div class="stat">
+            <div class="stat-num num">500<span class="stat-unit">+</span></div>
+            <p class="stat-label">Articoli disponibili tra vasi, fioriere e accessori garden.</p>
+          </div>
+          <div class="stat">
+            <div class="stat-num num">40<span class="stat-unit">+</span></div>
+            <p class="stat-label">Linee di prodotto, dalla ceramica al cotto portoghese.</p>
+          </div>
+          <div class="stat">
+            <div class="stat-num num">24<span class="stat-unit">h</span></div>
+            <p class="stat-label">Tempo medio di elaborazione ordini per spedizione.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lines" class="section" data-od-id="linee">
+      <div class="container stack" style="gap: 40px;">
+        <div style="max-width: 36ch;">
+          <p class="eyebrow">LINEE DI PRODOTTO</p>
+          <h2>Scopri le nostre collezioni.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="linea-card">
+            <img src="images/catalogo-cotto-esterni.webp" alt="Cotto da Esterno" style="width: 100%; aspect-ratio: 16/10; object-fit: cover;" />
+            <div class="linea-body">
+              <h3>Cotto da Esterno</h3>
+              <p>Vasi e fioriere in cotto per spazi esterni, resistenti alle intemperie.</p>
+            </div>
+          </div>
+          <div class="linea-card">
+            <img src="images/catalogo-fiberstone.webp" alt="Fiberstone" style="width: 100%; aspect-ratio: 16/10; object-fit: cover;" />
+            <div class="linea-body">
+              <h3>Fiberstone</h3>
+              <p>Leggeri e resistenti, perfetti per giardini e terrazze moderne.</p>
+            </div>
+          </div>
+          <div class="linea-card">
+            <img src="images/catalogo-cotto-interni.webp" alt="Cotto da Interni" style="width: 100%; aspect-ratio: 16/10; object-fit: cover;" />
+            <div class="linea-body">
+              <h3>Cotto da Interni</h3>
+              <p>Artigianato tradizionale, finiture uniche e carattere per ambienti interni.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" data-od-id="cta-strip" style="text-align: center;">
+      <div class="container" style="max-width: 600px;">
+        <h2>Pronto a ordinare?</h2>
+        <p class="lead" style="margin: 16px auto 32px;">Sfoglia il catalogo con i tuoi prezzi e spedizione dedicata.</p>
+        <a href="05-dashboard.html" class="btn btn-primary">Vai al catalogo</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <a href="index.html" title="Tutte le schermate" style="color:var(--accent);text-decoration:none;font-size:16px;margin-inline-start:16px">↑</a>
+    </div>
+  </footer>
+</body>
+</html>

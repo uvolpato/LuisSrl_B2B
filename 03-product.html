@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vaso Torchio Terracotta Ø30 — Luis B2B</title>
+  <style>
+    :root {
+      --bg:      oklch(97% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(22% 0.02 60);
+      --muted:   oklch(52% 0.015 60);
+      --border:  oklch(88% 0.01 70);
+      --accent:  oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --fs-h2: clamp(28px, 3.5vw, 40px);
+      --fs-h3: 18px;
+      --fs-body: 15px;
+      --fs-meta: 13px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --container: 1280px;
+      --gutter: 32px;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .container {
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+    }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: 24px; }
+    .topnav .logo img { height: 32px; width: auto; }
+    .topnav nav { display: flex; gap: var(--gap-lg); }
+    .topnav nav a { font-size: 14px; color: var(--muted); }
+    .topnav nav a:hover, .topnav nav a.active { color: var(--fg); }
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 9px 14px 9px 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .search-box input:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.05s ease, background 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .breadcrumb {
+      padding-block: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb span { margin: 0 6px; }
+    .product-layout {
+      display: grid;
+      grid-template-columns: 80px 1fr 340px;
+      gap: 32px;
+      padding-block: 8px 64px;
+    }
+    @media (max-width: 920px) {
+      .product-layout { grid-template-columns: 1fr; }
+      .gallery-thumbs { display: flex; flex-direction: row; overflow-x: auto; gap: 8px; }
+      .gallery-thumbs .thumb { width: 64px; height: 64px; flex-shrink: 0; }
+    }
+    .gallery-thumbs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .thumb.active, .thumb:hover { border-color: var(--accent); }
+    .gallery-main {
+      aspect-ratio: 1;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border: 1px solid var(--border);
+    }
+    .product-info { display: flex; flex-direction: column; gap: 20px; }
+    .product-info h1 {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 32px);
+      margin: 0;
+      line-height: 1.15;
+    }
+    .price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .price-net {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--fg);
+    }
+    .price-list {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .price-discount {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .variant-section { display: flex; flex-direction: column; gap: 12px; }
+    .variant-section label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .variant-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .variant-select:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .qty-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .qty-control {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .qty-control button {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--surface);
+      font-size: 18px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .qty-control button:hover { background: var(--fg-soft); }
+    .qty-control input {
+      width: 60px;
+      height: 40px;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--fg);
+      background: var(--surface);
+    }
+    .qty-control input:focus { outline: none; }
+    .qty-info {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+    .stock-ok { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); }
+    .stock-low { background: oklch(92% 0.08 80); color: oklch(45% 0.12 80); }
+    .stock-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .add-to-cart {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .product-desc {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    .product-desc h3 { font-size: 15px; margin: 0 0 8px; }
+    .product-desc p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .product-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .product-features .feat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .product-features .feat strong { color: var(--fg); font-weight: 500; }
+    .related-section {
+      border-top: 1px solid var(--border);
+      padding-block: 48px 64px;
+    }
+    .related-section h2 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      margin: 0 0 24px;
+    }
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 920px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
+    .related-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s;
+    }
+    .related-card:hover { border-color: var(--accent); }
+    .related-card .rel-img {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+    .related-card .rel-body { padding: 12px; }
+    .related-card .rel-name { font-size: 13px; font-weight: 500; margin: 0 0 4px; }
+    .related-card .rel-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+    .pagefoot { padding-block: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: 12px; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="container topnav-inner">
+      <a href="01-landing.html" class="logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <nav>
+        <a href="01-landing.html">Home</a>
+        <a href="02-catalog.html" class="active">Catalogo</a>
+        <a href="#">Linee</a>
+        <a href="#">Novità</a>
+      </nav>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cerca articoli, linee, famiglie…" />
+      </div>
+      <a href="04-cart.html" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">Carrello (3)</a>
+    </div>
+  </header>
+
+  <main id="content">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="02-catalog.html">Catalogo</a><span>›</span>
+        <a href="02-catalog.html">Cotto da Esterno</a><span>›</span>
+        Vaso Torchio Terracotta Ø30
+      </div>
+
+      <div class="product-layout">
+        <div class="gallery-thumbs">
+          <img src="images/catalogo-cotto-esterni.webp" alt="Thumb 1" class="thumb active" style="object-fit: cover;" />
+          <img src="images/catalogo-cotto-interni.webp" alt="Thumb 2" class="thumb" style="object-fit: cover;" />
+          <img src="images/catalogo-fiberstone.webp" alt="Thumb 3" class="thumb" style="object-fit: cover;" />
+          <img src="images/catalogo-cesti.webp" alt="Thumb 4" class="thumb" style="object-fit: cover;" />
+          <img src="images/catalogo-metallo.webp" alt="Thumb 5" class="thumb" style="object-fit: cover;" />
+        </div>
+
+        <div class="gallery-main" style="overflow: hidden;">
+          <img src="images/catalogo-cotto-esterni.webp" alt="Vaso Torchio Terracotta Ø30 H35" style="width: 100%; height: 100%; object-fit: cover;" />
+        </div>
+
+        <div class="product-info">
+          <div>
+            <p class="eyebrow" style="margin-bottom: 8px;">Cotto da Esterno</p>
+            <h1>Vaso Torchio Terracotta Ø30 H35</h1>
+          </div>
+
+          <div class="price-block">
+            <span class="price-net">€ 12,40</span>
+            <span class="price-list">€ 15,50</span>
+            <span class="price-discount">−20%</span>
+          </div>
+
+          <div class="variant-section">
+            <label>Altezza</label>
+            <select class="variant-select" id="dim1">
+              <option value="">Seleziona altezza…</option>
+              <option value="25">H25 cm</option>
+              <option value="35" selected>H35 cm</option>
+              <option value="45">H45 cm</option>
+            </select>
+          </div>
+
+          <div class="variant-section">
+            <label>Colore</label>
+            <select class="variant-select" id="dim2">
+              <option value="">Seleziona colore…</option>
+              <option value="naturale" selected>Naturale</option>
+              <option value="grigio">Grigio</option>
+              <option value="marrone">Marrone</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 8px;">Quantità</label>
+            <div class="qty-row">
+              <div class="qty-control">
+                <button type="button" onclick="changeQty(-1)">−</button>
+                <input type="number" id="qty" value="12" min="1" step="6" />
+                <button type="button" onclick="changeQty(1)">+</button>
+              </div>
+              <span class="qty-info">Multiplo: 6 pz</span>
+            </div>
+          </div>
+
+          <div class="stock-badge stock-ok">
+            <span class="stock-dot"></span>
+            120 pz disponibili
+          </div>
+
+          <button class="btn btn-primary add-to-cart">Aggiungi al carrello</button>
+
+          <div class="product-desc">
+            <h3>Descrizione</h3>
+            <p>Vaso in cotto terracotta per esterno, resistente alle intemperie e al gelo. Superficie naturale con finitura a mano. Ideale per piante da esterno, fioriere e composizioni da terrazzo o giardino.</p>
+            <div class="product-features">
+              <div class="feat"><strong>Materiale:</strong> Cotto</div>
+              <div class="feat"><strong>Uso:</strong> Esterno</div>
+              <div class="feat"><strong>Diametro:</strong> Ø30 cm</div>
+              <div class="feat"><strong>Resistenza:</strong> Gelо</div>
+              <div class="feat"><strong>Multiplo:</strong> 6 pz</div>
+              <div class="feat"><strong>Peso:</strong> 4,2 kg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="related-section">
+      <div class="container">
+        <h2>Articoli correlati</h2>
+        <div class="related-grid">
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-cotto-interni.webp" alt="Vaso Amphora" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Amphora Cotto Ø45 H50</p>
+              <span class="rel-price">€ 28,60</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-fiberstone.webp" alt="Vaso Campana" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Campana Terracotta Ø25 H28</p>
+              <span class="rel-price">€ 8,90</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-cesti.webp" alt="Vaso Paniere" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Paniere Cotto Ø40 H38</p>
+              <span class="rel-price">€ 19,50</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-metallo.webp" alt="Fioriera Rect." style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Fioriera Rettangolare Cotto 60cm</p>
+              <span class="rel-price">€ 34,20</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <a href="index.html" title="Tutte le schermate" style="color:var(--accent);text-decoration:none;font-size:16px;margin-inline-start:16px">↑</a>
+    </div>
+  </footer>
+
+  <script>
+    function changeQty(delta) {
+      var input = document.getElementById('qty');
+      var val = parseInt(input.value) || 12;
+      var step = 6;
+      var newVal = Math.max(step, Math.round((val + delta * step) / step) * step);
+      input.value = newVal;
+    }
+  </script>
+</body>
+</html>

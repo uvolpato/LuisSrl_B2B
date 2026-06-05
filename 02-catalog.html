@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catalogo — Luis B2B</title>
+  <style>
+    :root {
+      --bg:      oklch(97% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(22% 0.02 60);
+      --muted:   oklch(52% 0.015 60);
+      --border:  oklch(88% 0.01 70);
+      --accent:  oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --fs-h2: clamp(28px, 3.5vw, 40px);
+      --fs-h3: 18px;
+      --fs-body: 15px;
+      --fs-meta: 13px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --container: 1280px;
+      --gutter: 32px;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .container {
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: 24px; }
+    .topnav .logo img { height: 32px; width: auto; }
+    .modal img { max-width: 100%; height: auto; }
+    .topnav nav { display: flex; gap: var(--gap-lg); }
+    .topnav nav a { font-size: 14px; color: var(--muted); }
+    .topnav nav a:hover, .topnav nav a.active { color: var(--fg); }
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 9px 42px 9px 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .search-box input:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .search-box .ai-trigger {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 0;
+      line-height: 0;
+      transition: color 0.12s ease, background 0.12s ease;
+    }
+    .search-box .ai-trigger:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .search-box .ai-trigger svg {
+      position: static;
+      transform: none;
+      width: 16px;
+      height: 16px;
+      color: inherit;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.05s ease, background 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .catalog-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 40px;
+      padding-block: 32px 64px;
+    }
+    @media (max-width: 920px) {
+      .catalog-layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+    .sidebar h3 {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    .sidebar .filter-group { margin-bottom: 28px; }
+    .sidebar label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 14px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .sidebar label:hover { color: var(--accent); }
+    .sidebar input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+    .sidebar .count {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .catalog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .catalog-header h2 {
+      font-family: var(--font-display);
+      font-size: var(--fs-h2);
+      margin: 0;
+    }
+    .catalog-header .meta { font-size: 13px; color: var(--muted); }
+    .sort-select {
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 1100px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .product-grid { grid-template-columns: 1fr; } }
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .product-card:hover { border-color: var(--accent); }
+    .product-card .product-img {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .product-card .product-body { padding: 16px; }
+    .product-card .product-line {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .product-card .product-name {
+      font-size: 15px;
+      font-weight: 500;
+      margin: 0 0 8px;
+      line-height: 1.3;
+    }
+    .product-card .product-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .product-card .product-price {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .product-card .product-stock {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .stock-ok { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); }
+    .stock-low { background: oklch(92% 0.08 80); color: oklch(45% 0.12 80); }
+    .stock-out { background: oklch(92% 0.02 250); color: oklch(50% 0.02 250); }
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 40px;
+    }
+    .pagination a, .pagination span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      border: 1px solid transparent;
+    }
+    .pagination a:hover { border-color: var(--border); color: var(--fg); }
+    .pagination .active { background: var(--accent); color: var(--surface); font-weight: 600; }
+    .pagefoot { padding-block: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: 12px; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ── AI Results Banner ── */
+    .ai-results-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--accent-soft);
+      border: 1px solid color-mix(in oklch, var(--accent) 25%, transparent);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      animation: bannerIn 0.2s ease-out;
+    }
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ai-results-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: var(--surface);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .ai-results-icon svg { width: 16px; height: 16px; }
+    .ai-results-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .ai-results-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .ai-results-count {
+      font-size: 14px;
+      color: var(--fg);
+      font-weight: 500;
+    }
+    .ai-results-clear {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+      background: var(--surface);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+      flex-shrink: 0;
+    }
+    .ai-results-clear svg { width: 14px; height: 14px; }
+    .ai-results-clear:hover {
+      background: var(--accent);
+      color: var(--surface);
+    }
+
+    /* ── AI Search ── */
+    .ai-search-desc {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 18px;
+    }
+    .ai-search-input {
+      position: relative;
+      margin-bottom: 14px;
+    }
+    .ai-search-input input {
+      width: 100%;
+      padding: 14px 48px 14px 44px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      font: inherit;
+      font-size: 15px;
+      color: var(--fg);
+      transition: border-color 0.15s ease;
+    }
+    .ai-search-input input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .ai-search-input input::placeholder { color: var(--muted); }
+    .ai-search-input .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+    }
+    .ai-search-input .mic-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .ai-search-input .mic-btn:hover { background: var(--accent-soft); color: var(--accent); }
+    .ai-search-input .mic-btn svg { width: 16px; height: 16px; }
+    .ai-upload-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ai-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px 18px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-upload-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .ai-upload-btn:hover {
+      background: var(--fg);
+      color: var(--surface);
+    }
+    .ai-upload-btn:hover small { color: oklch(100% 0 0 / 0.6); }
+    .ai-upload-btn.drag-over {
+      background: var(--accent);
+      color: var(--surface);
+      border-style: solid;
+      border-color: var(--accent);
+    }
+    .ai-upload-btn.drag-over small { color: oklch(100% 0 0 / 0.7); }
+    .ai-upload-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .ai-upload-btn span { flex: 1; }
+    .ai-upload-btn small {
+      display: block;
+      width: 100%;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      text-align: center;
+      transition: color 0.15s;
+    }
+    .ai-upload-btn .or {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 2px;
+    }
+    .ai-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.12s ease, color 0.12s ease;
+    }
+    .ai-tag:hover { border-color: var(--accent); color: var(--accent); }
+    .ai-search-hint {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .ai-search-hint svg { width: 14px; height: 14px; flex-shrink: 0; }
+    /* ── AI Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: color-mix(in oklch, var(--fg) 40%, transparent);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px color-mix(in oklch, var(--fg) 18%, transparent);
+      animation: modalIn 0.18s ease-out;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 0;
+    }
+    .modal-head h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-head h3 .ai-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .modal-close:hover { background: var(--fg-soft); color: var(--fg); }
+    .modal-close svg { width: 16px; height: 16px; }
+    .modal-body { padding: 20px 24px 24px; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 500; transition: all 0.15s ease; }
+    .btn-ghost:hover { background: var(--fg-soft); color: var(--fg); border-color: var(--muted); }
+    .modal-body .ai-search-desc { margin-bottom: 16px; }
+    .modal-body .ai-search-input { margin-bottom: 12px; }
+    .modal-body .ai-upload-row { margin-bottom: 12px; }
+    @media (max-width: 600px) {
+      .ai-upload-row { flex-direction: column; }
+      .ai-upload-btn { justify-content: center; }
+      .modal { max-width: 100%; margin: 12px; border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav" data-od-id="topnav">
+    <div class="container topnav-inner">
+      <a href="01-landing.html" class="logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <nav>
+        <a href="01-landing.html">Home</a>
+        <a href="02-catalog.html" class="active">Catalogo</a>
+        <a href="#">Linee</a>
+        <a href="#">Novità</a>
+      </nav>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cerca articoli, linee, famiglie…" />
+        <button class="ai-trigger" title="Ricerca intelligente AI" onclick="document.getElementById('aiModal').classList.add('open')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 7.5 7.5 12 2 12C7.5 12 12 16.5 12 22C12 16.5 16.5 12 22 12C16.5 12 12 7.5 12 2Z"/></svg>
+        </button>
+      </div>
+      <a href="04-cart.html" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">Carrello (3)</a>
+    </div>
+  </header>
+
+  <main id="content">
+    <div class="container">
+
+      <div class="catalog-layout">
+        <aside class="sidebar">
+          <div class="filter-group">
+            <h3>Linea</h3>
+            <label><input type="checkbox" checked /> Cotto da Esterno <span class="count">84</span></label>
+            <label><input type="checkbox" /> Ceramiche Moderne <span class="count">62</span></label>
+            <label><input type="checkbox" /> Cotto Portoghese <span class="count">45</span></label>
+            <label><input type="checkbox" /> Fiberstone <span class="count">38</span></label>
+            <label><input type="checkbox" /> Vasi Da Interno <span class="count">56</span></label>
+            <label><input type="checkbox" /> Fioriere <span class="count">31</span></label>
+          </div>
+          <div class="filter-group">
+            <h3>Famiglia</h3>
+            <label><input type="checkbox" /> Novità <span class="count">24</span></label>
+            <label><input type="checkbox" /> Best Seller <span class="count">18</span></label>
+            <label><input type="checkbox" /> Capi <span class="count">12</span></label>
+            <label><input type="checkbox" /> Natale 2026 <span class="count">9</span></label>
+            <label><input type="checkbox" /> Promo Primavera <span class="count">15</span></label>
+          </div>
+          <div class="filter-group">
+            <h3>Disponibilità</h3>
+            <label><input type="checkbox" checked /> Disponibile <span class="count">320</span></label>
+            <label><input type="checkbox" /> Scorte limitate <span class="count">48</span></label>
+            <label><input type="checkbox" /> Esaurito <span class="count">12</span></label>
+          </div>
+        </aside>
+
+        <div>
+          <div class="ai-results-banner" id="aiResultsBanner" style="display:none;">
+            <div class="ai-results-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+            </div>
+            <div class="ai-results-text">
+              <span class="ai-results-label">Ricerca AI</span>
+              <span class="ai-results-count" id="aiResultsCount"></span>
+            </div>
+            <button class="ai-results-clear" id="aiResultsClear" title="Mostra tutti i prodotti">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Mostra tutto
+            </button>
+          </div>
+          <div class="catalog-header">
+            <div>
+              <h2 id="catalogTitle">Cotto da Esterno</h2>
+              <p class="meta" id="catalogMeta">84 articoli · Prezzi IVA esclusa</p>
+            </div>
+            <select class="sort-select">
+              <option>Ordina: più venduti</option>
+              <option>Prezzo: basso → alto</option>
+              <option>Prezzo: alto → basso</option>
+              <option>Novità</option>
+            </select>
+          </div>
+
+          <div class="product-grid">
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-cotto-esterni.webp" alt="Vaso Torchio" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Torchio Terracotta Ø30 H35</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 12,40</span>
+                  <span class="product-stock stock-ok">120 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-cotto-interni.webp" alt="Vaso Amphora" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Amphora Cotto Ø45 H50</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 28,60</span>
+                  <span class="product-stock stock-ok">86 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-cesti.webp" alt="Fioriera Rect. 60" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Fioriera Rettangolare Cotto 60cm</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 34,20</span>
+                  <span class="product-stock stock-low">18 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-fiberstone.webp" alt="Vaso Campana" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Campana Terracotta Ø25 H28</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 8,90</span>
+                  <span class="product-stock stock-ok">200 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-metallo.webp" alt="Vaso Paniere" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Paniere Cotto Ø40 H38</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 19,50</span>
+                  <span class="product-stock stock-ok">64 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-capi-europe.webp" alt="Fioriera Quadra" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Fioriera Quadrata Cotto 40×40</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 22,80</span>
+                  <span class="product-stock stock-out">Esaurito</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/catalogo-pottery-pots.webp" alt="Vaso Colonna" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Colonna Cotto H60 Ø20</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 31,00</span>
+                  <span class="product-stock stock-ok">42 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/vasi-bianchi.webp" alt="Vaso Mezza Luna" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Vaso Mezza Luna Cotto 50cm</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 26,40</span>
+                  <span class="product-stock stock-low">8 pz</span>
+                </div>
+              </div>
+            </a>
+            <a href="03-product.html" class="product-card">
+              <img src="images/hero-slider.webp" alt="Tubo Cotto" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+              <div class="product-body">
+                <div class="product-line">Cotto da Esterno</div>
+                <p class="product-name">Tubo Cotto Ø15 H120 (multiplo 6)</p>
+                <div class="product-meta">
+                  <span class="product-price">€ 14,60</span>
+                  <span class="product-stock stock-ok">150 pz</span>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <div class="pagination">
+            <a href="#">←</a>
+            <span class="active">1</span>
+            <a href="#">2</a>
+            <a href="#">3</a>
+            <a href="#">4</a>
+            <a href="#">→</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <a href="index.html" title="Tutte le schermate" style="color:var(--accent);text-decoration:none;font-size:16px;margin-inline-start:16px">↑</a>
+    </div>
+  </footer>
+  <div class="modal-overlay" id="aiModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3><svg viewBox="0 0 24 24" fill="var(--accent)" style="width:20px;height:20px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg> Ricerca intelligente <span class="ai-badge">AI</span></h3>
+        <button class="modal-close" onclick="document.getElementById('aiModal').classList.remove('open')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="ai-search-desc">Descrivi quello che cerchi a parole oppure trascina o carica un'immagine o un file di testo — l'AI troverà i prodotti più simili nel catalogo.</p>
+
+        <div class="ai-search-input">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Es. vaso terracotta rotondo Ø30 per esterno…" id="ai-modal-text" />
+          <button class="mic-btn" title="Cerca per voce" onclick="alert('Ricerca vocale non disponibile in prototipo')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="1" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+          </button>
+        </div>
+
+        <div class="ai-upload-row">
+          <label class="ai-upload-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>Carica un'immagine</span>
+            <small>trascina o clicca</small>
+            <input type="file" accept="image/*" />
+          </label>
+          <label class="ai-upload-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Carica un file di testo</span>
+            <small>trascina o clicca</small>
+            <input type="file" accept=".txt,.csv,.pdf,.doc,.docx" />
+          </label>
+        </div>
+
+        <div class="ai-search-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Prova: <span class="ai-tag" onclick="document.getElementById('ai-modal-text').value='vaso alto per esterno resistente al gelo'">vaso alto per esterno</span>
+          <span class="ai-tag" onclick="document.getElementById('ai-modal-text').value='fioriera rettangolare cotto color avana'">fioriera rettangolare</span>
+          <span class="ai-tag" onclick="document.getElementById('ai-modal-text').value='cesto intrecciato per pianta da interno'">cesto da interno</span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="document.getElementById('aiModal').classList.remove('open')">Annulla</button>
+        <button class="btn btn-primary">Cerca</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.ai-upload-btn input[type="file"]').forEach(function(input) {
+      input.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var btn = e.target.closest('.ai-upload-btn');
+        var original = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg> ' + file.name;
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'var(--accent)';
+        btn.style.borderStyle = 'solid';
+        setTimeout(function() {
+          btn.innerHTML = original;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+          btn.style.borderStyle = '';
+          input.value = '';
+        }, 3000);
+      });
+    });
+    document.querySelectorAll('.ai-upload-btn').forEach(function(btn) {
+      ['dragenter','dragover'].forEach(function(evt) {
+        btn.addEventListener(evt, function(e) { e.preventDefault(); btn.classList.add('drag-over'); });
+      });
+      ['dragleave','drop'].forEach(function(evt) {
+        btn.addEventListener(evt, function(e) { e.preventDefault(); btn.classList.remove('drag-over'); });
+      });
+      btn.addEventListener('drop', function(e) {
+        var file = e.dataTransfer.files[0];
+        if (!file) return;
+        var input = btn.querySelector('input[type="file"]');
+        var original = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg> ' + file.name;
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'var(--accent)';
+        btn.style.borderStyle = 'solid';
+        setTimeout(function() {
+          btn.innerHTML = original;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+          btn.style.borderStyle = '';
+          input.value = '';
+        }, 3000);
+      });
+    });
+    function runAiSearch(query) {
+      document.getElementById('aiModal').classList.remove('open');
+      var count = Math.floor(Math.random() * 18) + 5;
+      document.getElementById('aiResultsCount').textContent = count + ' prodotti trovati per «' + query + '»';
+      document.getElementById('aiResultsBanner').style.display = 'flex';
+      document.getElementById('catalogTitle').textContent = 'Risultati AI';
+      document.getElementById('catalogMeta').textContent = count + ' articoli · Ricerca intelligente · Prezzi IVA esclusa';
+    }
+    document.getElementById('aiResultsClear').addEventListener('click', function() {
+      document.getElementById('aiResultsBanner').style.display = 'none';
+      document.getElementById('catalogTitle').textContent = 'Cotto da Esterno';
+      document.getElementById('catalogMeta').textContent = '84 articoli · Prezzi IVA esclusa';
+    });
+    document.querySelector('.modal-foot .btn-primary').addEventListener('click', function() {
+      var val = document.getElementById('ai-modal-text').value.trim();
+      if (val) runAiSearch(val);
+    });
+    document.getElementById('ai-modal-text').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var val = this.value.trim();
+        if (val) runAiSearch(val);
+      }
+    });
+    var aiModal = document.getElementById('aiModal');
+    aiModal.addEventListener('click', function(e) {
+      if (e.target === aiModal) aiModal.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') aiModal.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+.od-skills/
+*.artifact.json
+*.py
+*.pptx
+*.pdf
+.architettura.png
+mq0*.png
