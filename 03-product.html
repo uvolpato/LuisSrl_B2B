@@ -734,16 +734,16 @@
 
           <div class="divider"></div>
 
-          <div class="stock-badge stock-ok" style="font-size: 14px;">
+          <div class="stock-badge stock-low" style="font-size: 14px;">
             <span class="stock-dot"></span>
-            Disponibile
+            Scorte limitate
           </div>
 
           <div class="divider"></div>
 
           <div class="variant-section">
             <label>Altezza</label>
-            <select class="variant-select" id="dim1" onchange="cascadeDim2()">
+            <select class="variant-select" id="dim1" onchange="cascadeDim1()">
               <option value="">Seleziona altezza…</option>
               <option value="25">H25 cm</option>
               <option value="35" selected>H35 cm</option>
@@ -753,7 +753,7 @@
 
           <div class="variant-section">
             <label>Diametro</label>
-            <select class="variant-select" id="dim2">
+            <select class="variant-select" id="dim2" onchange="cascadeDim2()">
               <option value="">Seleziona diametro…</option>
               <option value="30" selected>Ø30 cm</option>
               <option value="40">Ø40 cm</option>
@@ -1035,6 +1035,74 @@
     ];
     var currentImg = 0;
 
+    // Variante lookup: chiave = "altezza_diametro"
+    var variantData = {
+      '25_20': { cod: 'COT-EST-001', prezzo: 9.80, listino: 12.20, sconto: 20, stock: 'ok' },
+      '25_30': { cod: 'COT-EST-002', prezzo: 11.20, listino: 14.00, sconto: 20, stock: 'ok' },
+      '35_30': { cod: 'COT-EST-003', prezzo: 12.40, listino: 15.50, sconto: 20, stock: 'low' },
+      '35_40': { cod: 'COT-EST-004', prezzo: 16.80, listino: 21.00, sconto: 20, stock: 'ok' },
+      '45_30': { cod: 'COT-EST-005', prezzo: 15.60, listino: 19.50, sconto: 20, stock: 'ok' },
+      '45_40': { cod: 'COT-EST-006', prezzo: 19.50, listino: 24.40, sconto: 20, stock: 'out' }
+    };
+
+    var dim2Map = {
+      '': ['20','30','40'],
+      '25': ['20','30'],
+      '35': ['30','40'],
+      '45': ['30','40']
+    };
+
+    var stockLabels = { ok: 'Disponibile', low: 'Scorte limitate', out: 'Esaurito' };
+    var stockCss = { ok: 'stock-ok', low: 'stock-low', out: 'stock-out' };
+
+    function formatPrice(n) {
+      return '€ ' + n.toFixed(2).replace('.', ',');
+    }
+
+    function updateBuyBox() {
+      var d1 = document.getElementById('dim1').value;
+      var d2 = document.getElementById('dim2').value;
+      var priceNet = document.querySelector('.buy-box .price-net');
+      var priceList = document.querySelector('.buy-box .price-list');
+      var priceDiscount = document.querySelector('.buy-box .price-discount');
+      var savingsLine = document.querySelector('.buy-box .savings-line');
+      var stockBadge = document.querySelector('.buy-box .stock-badge');
+
+      if (!d1 || !d2) {
+        // Nessuna variante selezionata → pulisci tutto
+        priceNet.textContent = '—';
+        priceList.textContent = '';
+        priceDiscount.textContent = '';
+        savingsLine.textContent = '';
+        stockBadge.className = 'stock-badge';
+        stockBadge.innerHTML = '<span class="stock-dot"></span> Seleziona una variante';
+        return;
+      }
+
+      var key = d1 + '_' + d2;
+      var v = variantData[key];
+
+      if (!v) {
+        // Combinazione non valida
+        priceNet.textContent = '—';
+        priceList.textContent = '';
+        priceDiscount.textContent = '';
+        savingsLine.textContent = '';
+        stockBadge.className = 'stock-badge';
+        stockBadge.innerHTML = '<span class="stock-dot"></span> Non disponibile';
+        return;
+      }
+
+      priceNet.textContent = formatPrice(v.prezzo);
+      priceList.textContent = formatPrice(v.listino);
+      priceDiscount.textContent = '−' + v.sconto + '%';
+      var risparmio = v.listino - v.prezzo;
+      savingsLine.textContent = 'Risparmi ' + formatPrice(risparmio) + ' (' + v.sconto + '%)';
+
+      stockBadge.className = 'stock-badge ' + stockCss[v.stock];
+      stockBadge.innerHTML = '<span class="stock-dot"></span> ' + stockLabels[v.stock];
+    }
+
     function updateGallery() {
       var mainImg = document.querySelector('.gallery-main img');
       if (mainImg) mainImg.src = galleryImages[currentImg];
@@ -1079,17 +1147,40 @@
         sel2.appendChild(opt);
       });
 
+      // Se la selezione precedente è ancora valida, mantienila
       if (prevD2 && allowed.indexOf(prevD2) !== -1) {
         sel2.value = prevD2;
+      } else {
+        sel2.value = '';
       }
+
+      // Aggiorna prezzo, sconto, risparmi, disponibilità
+      updateBuyBox();
     }
 
-    var dim2Map = {
-      '': ['20','30','40'],
-      '25': ['20','30'],
-      '35': ['30','40'],
-      '45': ['30','40']
-    };
+    function cascadeDim1() {
+      var d1 = document.getElementById('dim1').value;
+      var sel2 = document.getElementById('dim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      sel2.innerHTML = '<option value="">Seleziona diametro…</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      // Se il diametro precedente è compatibile, mantienilo
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      } else {
+        sel2.value = '';
+      }
+
+      updateBuyBox();
+    }
 
     function filterVariants() {
       var d1 = document.getElementById('filterDim1').value;
@@ -1097,7 +1188,6 @@
       var prevD2 = sel2.value;
       var allowed = dim2Map[d1] || dim2Map[''];
 
-      // rebuild dim2 options
       sel2.innerHTML = '<option value="">Tutti i diametri</option>';
       allowed.forEach(function(v) {
         var opt = document.createElement('option');
@@ -1106,7 +1196,6 @@
         sel2.appendChild(opt);
       });
 
-      // restore previous selection if still valid
       if (prevD2 && allowed.indexOf(prevD2) !== -1) {
         sel2.value = prevD2;
       } else {
@@ -1138,7 +1227,7 @@
         }
       });
       document.getElementById('gridRowCount').textContent = count;
-      document.getElementById('gridTotal').textContent = '€ ' + total.toFixed(2).replace('.',',');
+      document.getElementById('gridTotal').textContent = formatPrice(total);
     }
 
     function addAllToCart() {
