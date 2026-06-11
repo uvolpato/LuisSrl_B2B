@@ -1037,12 +1037,12 @@
 
     // Variante lookup: chiave = "altezza_diametro"
     var variantData = {
-      '25_20': { cod: 'COT-EST-001', prezzo: 9.80, listino: 12.20, sconto: 20, stock: 'ok' },
-      '25_30': { cod: 'COT-EST-002', prezzo: 11.20, listino: 14.00, sconto: 20, stock: 'ok' },
-      '35_30': { cod: 'COT-EST-003', prezzo: 12.40, listino: 15.50, sconto: 20, stock: 'low' },
-      '35_40': { cod: 'COT-EST-004', prezzo: 16.80, listino: 21.00, sconto: 20, stock: 'ok' },
-      '45_30': { cod: 'COT-EST-005', prezzo: 15.60, listino: 19.50, sconto: 20, stock: 'ok' },
-      '45_40': { cod: 'COT-EST-006', prezzo: 19.50, listino: 24.40, sconto: 20, stock: 'out' }
+      '25_20': { cod: 'COT-EST-001', prezzo: 9.80, listino: 12.20, sconto: 20, stock: 'ok', multiplo: 12 },
+      '25_30': { cod: 'COT-EST-002', prezzo: 11.20, listino: 14.00, sconto: 20, stock: 'ok', multiplo: 6 },
+      '35_30': { cod: 'COT-EST-003', prezzo: 12.40, listino: 15.50, sconto: 20, stock: 'low', multiplo: 6 },
+      '35_40': { cod: 'COT-EST-004', prezzo: 16.80, listino: 21.00, sconto: 20, stock: 'ok', multiplo: 4 },
+      '45_30': { cod: 'COT-EST-005', prezzo: 15.60, listino: 19.50, sconto: 20, stock: 'ok', multiplo: 2 },
+      '45_40': { cod: 'COT-EST-006', prezzo: 19.50, listino: 24.40, sconto: 20, stock: 'out', multiplo: 2 }
     };
 
     var dim2Map = {
@@ -1101,6 +1101,18 @@
 
       stockBadge.className = 'stock-badge ' + stockCss[v.stock];
       stockBadge.innerHTML = '<span class="stock-dot"></span> ' + stockLabels[v.stock];
+
+      // Aggiorna multiplo e resetta quantità
+      var qtyInput = document.getElementById('qty');
+      var multiploLabel = document.querySelector('.buy-box .qty-info');
+      var minusBtn = document.querySelector('.buy-box .qty-control button:first-child');
+      var plusBtn = document.querySelector('.buy-box .qty-control button:last-child');
+      qtyInput.min = v.multiplo;
+      qtyInput.step = v.multiplo;
+      qtyInput.value = v.multiplo;
+      multiploLabel.textContent = 'Multiplo: ' + v.multiplo + ' pz';
+      minusBtn.setAttribute('onclick', 'changeQty(-' + v.multiplo + ')');
+      plusBtn.setAttribute('onclick', 'changeQty(' + v.multiplo + ')');
     }
 
     function updateGallery() {
@@ -1116,9 +1128,9 @@
 
     function changeQty(delta) {
       var input = document.getElementById('qty');
-      var val = parseInt(input.value) || 12;
-      var step = 6;
-      var newVal = Math.max(step, Math.round((val + delta * step) / step) * step);
+      var val = parseInt(input.value) || parseInt(input.min) || 6;
+      var step = parseInt(input.step) || 6;
+      var newVal = Math.max(step, Math.round((val + delta) / step) * step);
       input.value = newVal;
     }
 
