@@ -18,6 +18,8 @@
       --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
       --red:     oklch(55% 0.18 25);
       --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+      --blue:    oklch(55% 0.15 250);
+      --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
       --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
       --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
@@ -71,12 +73,6 @@
       gap: 12px;
     }
     .sidebar-logo img { height: 36px; width: auto; }
-    .sidebar-logo span {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
     .sidebar-logo .badge {
       font-family: var(--font-mono);
       font-size: 10px;
@@ -202,10 +198,7 @@
     .admin-search .search-icon svg { width: 16px; height: 16px; }
 
     /* Filter pills */
-    .filter-pills {
-      display: flex;
-      gap: 6px;
-    }
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
     .filter-pill {
       padding: 6px 14px;
       border-radius: 999px;
@@ -242,10 +235,7 @@
     .btn svg { width: 16px; height: 16px; }
 
     /* ── Content ── */
-    .content {
-      flex: 1;
-      padding: 32px;
-    }
+    .content { flex: 1; padding: 32px; }
     .content-header {
       display: flex;
       align-items: center;
@@ -283,13 +273,10 @@
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
     }
-    .table-header {
-      display: none;
-    }
+    .table-header { display: none; }
     .table-header.visible {
-      display: grid;
-      grid-template-columns: 48px 1fr 100px 90px 160px;
-      gap: 12px;
+      display: flex;
+      gap: 24px;
       padding: 10px 20px;
       background: var(--fg-soft);
       border-radius: var(--radius) var(--radius) 0 0;
@@ -302,46 +289,104 @@
       color: var(--muted);
       align-items: center;
     }
+    .table-header.visible > span { flex-shrink: 0; }
+    .table-header.visible > span:nth-child(1) { width: 48px; }
+    .table-header.visible > span:nth-child(2) { flex: 1; min-width: 200px; }
+    .table-header.visible > span:nth-child(3) { min-width: 80px; text-align: center; }
+    .table-header.visible > span:nth-child(4) { min-width: 90px; }
+    .table-header.visible > span:nth-child(5) { min-width: 90px; }
+    .table-header.visible > span:nth-child(6) { min-width: 160px; text-align: right; }
     .article-grid.view-list {
       grid-template-columns: 1fr;
       gap: 0;
       border-radius: 0;
     }
     .article-grid.view-list .article-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 20px;
       border-radius: 0;
       border-left: none;
       border-right: none;
       border-top: none;
+      transition: background 0.1s ease;
     }
-    .article-grid.view-list .article-card:first-child {
-      border-top: 1px solid var(--border);
+    .article-grid.view-list .article-card:hover {
+      background: var(--fg-soft);
+      transform: none;
+      box-shadow: none;
     }
+    .article-grid.view-list .article-card:first-child { border-top: 1px solid var(--border); }
     .article-grid.view-list .article-card:last-child {
       border-radius: 0 0 var(--radius-lg) var(--radius-lg);
       border-bottom: 1px solid var(--border);
     }
-    .article-grid.view-list .article-card {
-      display: grid;
-      grid-template-columns: 48px 1fr 100px 90px 160px;
-      gap: 12px;
-      padding: 10px 20px;
-      align-items: center;
-    }
     .article-grid.view-list .article-card-img {
       width: 48px; height: 48px;
-      aspect-ratio: 1;
       border-radius: 6px;
+      flex-shrink: 0;
     }
     .article-grid.view-list .article-card-body {
-      display: contents;
+      display: flex;
+      align-items: center;
+      gap: 24px;
       padding: 0;
+      margin: 0;
+      border: none;
+      flex: 1;
+      min-width: 0;
     }
-    .article-grid.view-list .article-card-top { margin-bottom: 0; min-width: 0; }
-    .article-grid.view-list .article-card-top h3 { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-    .article-grid.view-list .article-card-id { font-size: 12px; }
-    .article-grid.view-list .article-card-linea { display: none; }
-    .article-grid.view-list .article-card-price { display: none; }
-    .article-grid.view-list .article-card-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 0; padding-top: 0; border-top: none; }
+    .article-grid.view-list .article-card-top {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 200px;
+    }
+    .article-grid.view-list .article-card-top .article-card-id { font-size: 11px; }
+    .article-grid.view-list .article-card-top h3 {
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+    .article-grid.view-list .article-card-top .article-card-color { font-size: 12px; }
+    .article-grid.view-list .article-card-body .status {
+      margin-top: 0;
+      font-size: 10px;
+      padding: 3px 10px;
+      min-width: 80px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .article-grid.view-list .article-card-variants {
+      font-size: 12px;
+      margin-top: 0;
+      white-space: nowrap;
+      min-width: 90px;
+      flex-shrink: 0;
+    }
+    .article-grid.view-list .article-card-famiglie {
+      font-size: 12px;
+      margin-top: 0;
+      white-space: nowrap;
+      min-width: 90px;
+      flex-shrink: 0;
+    }
+    .article-grid.view-list .article-card-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      flex-shrink: 0;
+    }
+
     .article-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -362,18 +407,26 @@
       background: var(--fg-soft);
       display: block;
     }
-    .article-card-body {
-      padding: 16px 20px;
-    }
+    .article-card-body { padding: 16px 20px; }
     .article-card-id {
       font-family: var(--font-mono);
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
     }
-    .article-card-linea {
+    .article-card-color {
       font-size: 13px;
       color: var(--muted);
       margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .color-swatch {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: inline-block;
+      flex-shrink: 0;
     }
     .article-card-top {
       display: flex;
@@ -381,12 +434,7 @@
       gap: 2px;
       margin-bottom: 8px;
     }
-    .article-card-top h3 {
-      font-size: 15px;
-      font-weight: 600;
-      margin: 0;
-      line-height: 1.3;
-    }
+    .article-card-top h3 { font-size: 15px; font-weight: 600; margin: 0; line-height: 1.3; }
     .article-card-body .status {
       font-family: var(--font-mono);
       font-size: 11px;
@@ -405,28 +453,54 @@
     }
     .status-active { background: var(--green-soft); color: var(--green); }
     .status-hidden { background: var(--red-soft); color: var(--red); }
-    .article-card-price {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-    .article-card-price .price {
-      font-family: var(--font-mono);
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--fg);
-    }
-    .article-card-price .list-price {
-      font-family: var(--font-mono);
-      font-size: 13px;
+    .status-config { background: var(--blue-soft); color: var(--blue); }
+    .info-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
       color: var(--muted);
-      text-decoration: line-through;
+      cursor: help;
+      vertical-align: middle;
+      position: relative;
     }
-    .article-card-price .discount {
+    .info-trigger:hover { color: var(--accent); }
+    .info-trigger .tip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--fg);
+      color: var(--surface);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.4;
+      padding: 8px 12px;
+      border-radius: 8px;
+      white-space: normal;
+      width: max-content;
+      max-width: 280px;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    .info-trigger .tip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--fg);
+    }
+    .info-trigger:hover .tip { display: block; }
+    .article-card-counts {
       font-family: var(--font-mono);
       font-size: 12px;
-      color: var(--accent);
-      font-weight: 500;
+      color: var(--muted);
+      margin-top: 6px;
     }
     .article-card-actions {
       display: flex;
@@ -471,15 +545,9 @@
       padding: 20px 28px;
       border-bottom: 1px solid var(--border);
     }
-    .modal-header h2 {
-      font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 600;
-      margin: 0;
-    }
+    .modal-header h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0; }
     .modal-close {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       border-radius: 8px;
       border: none;
       background: transparent;
@@ -498,17 +566,22 @@
       gap: 0;
       padding: 0 28px;
       border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .modal-tabs::-webkit-scrollbar { display: none; }
     .modal-tab {
-      padding: 14px 20px;
+      padding: 12px 14px;
       border: none;
       background: none;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--muted);
       cursor: pointer;
       position: relative;
       transition: color 0.12s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .modal-tab:hover { color: var(--fg); }
     .modal-tab.active { color: var(--accent); }
@@ -516,22 +589,25 @@
       content: '';
       position: absolute;
       bottom: -1px;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       height: 2px;
       background: var(--accent);
       border-radius: 2px 2px 0 0;
     }
-    .modal-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px;
-    }
+    .modal-body { flex: 1; overflow-y: auto; padding: 28px; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
     /* Form fields */
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+    .color-picker-row { display: flex; align-items: center; gap: 8px; }
+    .color-input {
+      width: 40px; height: 36px; border: 1px solid var(--border); border-radius: 8px;
+      padding: 2px; cursor: pointer; background: var(--surface); flex-shrink: 0;
+    }
+    .color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+    .color-input::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .color-input::-moz-color-swatch { border: none; border-radius: 5px; }
     .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .input, .textarea {
@@ -568,8 +644,7 @@
     .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
     .gallery-item .cover-badge {
       position: absolute;
-      top: 6px;
-      left: 6px;
+      top: 6px; left: 6px;
       font-family: var(--font-mono);
       font-size: 10px;
       letter-spacing: 0.04em;
@@ -596,6 +671,107 @@
     .gallery-upload:hover { border-color: var(--accent); color: var(--accent); }
     .gallery-upload svg { width: 24px; height: 24px; }
 
+    /* Sub-tabs (inside Immagini) */
+    .img-sub-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .img-sub-tab {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.12s ease;
+    }
+    .img-sub-tab:hover { color: var(--fg); }
+    .img-sub-tab.active { color: var(--accent); }
+    .img-sub-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+    }
+    .img-sub-panel { display: none; }
+    .img-sub-panel.active { display: block; }
+
+    /* Compact gallery */
+    .gallery-compact {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    .gallery-compact .gallery-item { aspect-ratio: 1; }
+    .gallery-compact .gallery-upload {
+      aspect-ratio: 1;
+      font-size: 11px;
+      min-height: 80px;
+    }
+    .gallery-compact .gallery-upload svg { width: 18px; height: 18px; }
+
+    /* Zoom overlay */
+    .gallery-zoom {
+      position: absolute;
+      inset: 0;
+      background: color-mix(in oklch, var(--fg) 50%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      cursor: pointer;
+    }
+    .gallery-item:hover .gallery-zoom { opacity: 1; }
+    .gallery-zoom svg { width: 20px; height: 20px; color: #fff; }
+
+    /* Lightbox */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: color-mix(in oklch, var(--fg) 85%, transparent);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      cursor: zoom-out;
+    }
+    .lightbox-overlay.open { opacity: 1; visibility: visible; }
+    .lightbox-overlay img {
+      max-width: 85vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-close svg { width: 20px; height: 20px; }
+
     /* AI section */
     .ai-section {
       background: var(--fg-soft);
@@ -610,13 +786,13 @@
       margin-bottom: 16px;
     }
     .ai-section-header .ai-icon {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       border-radius: 8px;
       background: var(--accent);
       color: #fff;
       display: grid;
       place-items: center;
+      flex-shrink: 0;
     }
     .ai-section-header .ai-icon svg { width: 18px; height: 18px; }
     .ai-section-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
@@ -632,6 +808,16 @@
       white-space: pre-wrap;
     }
     .ai-output.empty { color: var(--muted); font-style: italic; }
+    .ai-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin: 2px 4px 2px 0;
+    }
 
     /* Variants table */
     .variants-table {
@@ -655,6 +841,60 @@
     .variants-table tbody tr:hover { background: var(--fg-soft); }
     .variants-table .num-col { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
 
+    /* Tags */
+    .family-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .family-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--fg-soft);
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .family-tag.readonly {
+      background: var(--blue-soft);
+      color: var(--blue);
+      cursor: default;
+    }
+    .family-tag .remove {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .family-tag .remove:hover { color: var(--red); }
+
+    /* Read-only field */
+    .readonly-field {
+      background: var(--fg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .readonly-field .label {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .readonly-field .value {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--fg);
+    }
+    .readonly-field .value.muted { color: var(--muted); font-style: italic; }
+
     /* Modal footer */
     .modal-footer {
       display: flex;
@@ -667,10 +907,7 @@
 
     /* Nuovo Articolo modal */
     .new-art-modal { max-width: 640px; }
-    .new-art-search {
-      position: relative;
-      margin-bottom: 20px;
-    }
+    .new-art-search { position: relative; margin-bottom: 20px; }
     .new-art-search input {
       width: 100%;
       padding: 12px 14px 12px 40px;
@@ -711,21 +948,9 @@
       transition: background 0.1s ease;
     }
     .new-art-result:hover { background: var(--fg-soft); }
-
     .new-art-result .info { flex: 1; min-width: 0; }
-    .new-art-result .info h4 {
-      font-size: 14px;
-      font-weight: 600;
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .new-art-result .info p {
-      font-size: 12px;
-      color: var(--muted);
-      margin: 2px 0 0;
-    }
+    .new-art-result .info h4 { font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .new-art-result .info p { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
     .new-art-result .add-btn {
       padding: 6px 14px;
       border-radius: var(--radius);
@@ -763,6 +988,33 @@
     }
     .new-art-empty svg { width: 32px; height: 32px; margin: 0 auto 12px; opacity: 0.4; }
 
+    /* Section divider */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* Raccolta card */
+    .raccolta-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+    }
+    .raccolta-card .raccolta-img {
+      width: 48px; height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--fg-soft);
+    }
+    .raccolta-card .raccolta-info { flex: 1; }
+    .raccolta-card .raccolta-info h4 { font-size: 14px; font-weight: 600; margin: 0; }
+    .raccolta-card .raccolta-info p { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
     /* Mobile */
     @media (max-width: 900px) {
       .sidebar { display: none; }
@@ -775,6 +1027,64 @@
       .field-row { grid-template-columns: 1fr; }
       .modal { width: 95vw; max-height: 95vh; }
       .modal-body { padding: 20px; }
+    }
+    .info-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      cursor: help;
+      margin-left: 4px;
+      vertical-align: middle;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .info-trigger:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    .info-trigger::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: oklch(18% 0.02 250);
+      color: oklch(96% 0.005 250);
+      font-family: var(--font-body);
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 8px 12px;
+      border-radius: 8px;
+      white-space: normal;
+      width: max-content;
+      max-width: 280px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+      box-shadow: 0 4px 12px oklch(0% 0 0 / 0.25);
+    }
+    .info-trigger::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: oklch(18% 0.02 250);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+    }
+    .info-trigger:hover::after,
+    .info-trigger:hover::before {
+      opacity: 1;
     }
   </style>
 </head>
@@ -790,17 +1100,17 @@
     <a href="index.html" style="display: block; padding: 8px 16px; font-size: 13px; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border);">← Ritorna al Menu del Prototipo</a>
     <nav class="sidebar-nav">
       <span class="sidebar-section">Gestione</span>
-      <button class="sidebar-link active">
+      <button class="sidebar-link active" onclick="switchSection('articoli')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Articoli
       </button>
-      <button class="sidebar-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-        Linee
-      </button>
-      <button class="sidebar-link">
+      <button class="sidebar-link" onclick="switchSection('famiglie')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         Famiglie
+      </button>
+      <button class="sidebar-link" onclick="switchSection('raccolte')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Raccolte
       </button>
       <span class="sidebar-section">Vendite</span>
       <button class="sidebar-link">
@@ -818,7 +1128,7 @@
       </button>
       <button class="sidebar-link">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-        AI
+        AI / Ricerca
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -831,17 +1141,18 @@
   <!-- Main -->
   <div class="main">
     <header class="main-top">
-      <h1>Gestione Articoli</h1>
+      <h1 id="sectionTitle">Gestione Articoli</h1>
       <div class="top-actions">
         <div class="admin-search">
           <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
-          <input type="text" placeholder="Cerca articolo, codice, linea…" />
+          <input type="text" id="globalSearch" placeholder="Cerca articolo, colore, famiglia…" oninput="handleSearch()" />
         </div>
-        <div class="filter-pills">
-          <button class="filter-pill active">Tutti</button>
-          <button class="filter-pill">Attivi</button>
-          <button class="filter-pill">Nascosti</button>
-          <button class="filter-pill">Da Configurare</button>
+        <div class="filter-pills" id="filterPills">
+          <button class="filter-pill active" data-filter="tutti">Tutti</button>
+          <button class="filter-pill" data-filter="attivi">Attivi</button>
+          <button class="filter-pill" data-filter="nascosti">Nascosti</button>
+          <button class="filter-pill" data-filter="da-configurare">Da Configurare</button>
+          <button class="filter-pill" data-filter="senza-raccolta">Senza Raccolta</button>
         </div>
         <button class="btn btn-secondary btn-sm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -855,30 +1166,58 @@
     </header>
 
     <div class="content">
-      <div class="content-header">
-        <div>
-          <h2>Tutti gli articoli</h2>
-          <span class="meta">82 articoli · 74 attivi · 8 nascosti</span>
+      <!-- ═══ SECTION: Articoli ═══ -->
+      <div id="section-articoli">
+        <div class="content-header">
+          <div>
+            <h2>Tutti gli articoli</h2>
+            <span class="meta" id="articlesMeta"></span>
+          </div>
+          <div class="view-toggle">
+            <button class="active" id="btn-list" onclick="setView('list')" title="Vista riga">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button id="btn-grid" onclick="setView('grid')" title="Vista griglia">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="view-toggle">
-          <button class="active" id="btn-list" onclick="setView('list')" title="Vista riga">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-          <button id="btn-grid" onclick="setView('grid')" title="Vista griglia">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          </button>
+
+        <div class="table-header visible" id="tableHeader">
+          <span></span>
+          <span>Articolo</span>
+          <span>Stato</span>
+          <span>Varianti</span>
+          <span>Raccolte</span>
+          <span style="text-align:right">Azioni</span>
         </div>
+        <div class="article-grid view-list" id="articleGrid"></div>
       </div>
 
-      <div class="table-header visible" id="tableHeader">
-        <span>Foto</span>
-        <span>Articolo</span>
-        <span>Codice</span>
-        <span>Stato</span>
-        <span style="text-align:right">Azioni</span>
+      <!-- ═══ SECTION: Famiglie (read-only) ═══ -->
+      <div id="section-famiglie" style="display:none;">
+        <div class="content-header">
+          <div>
+            <h2>Famiglie (da Integra)</h2>
+            <span class="meta">Raggruppamenti gerarchici importati dal gestionale. Non modificabili dal portale.</span>
+          </div>
+        </div>
+        <div id="famiglieList"></div>
       </div>
-      <div class="article-grid view-list" id="articleGrid">
-        <!-- Cards generated by JS -->
+
+      <!-- ═══ SECTION: Raccolte (editable) ═══ -->
+      <div id="section-raccolte" style="display:none;">
+        <div class="content-header">
+          <div>
+            <h2>Raccolte di portale</h2>
+            <span class="meta">Collezioni/etichette gestite e modificate dal portale. Ogni Articolo può appartenere a più Raccolte.</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openNewRaccoltaModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuova Raccolta
+          </button>
+        </div>
+        <div id="raccolteList"></div>
       </div>
     </div>
   </div>
@@ -887,7 +1226,7 @@
   <div class="modal-overlay" id="newArtOverlay">
     <div class="modal new-art-modal">
       <div class="modal-header">
-        <h2>Aggiungi Articolo da Integra</h2>
+        <h2>Importa Articolo da Integra</h2>
         <button class="modal-close" onclick="closeNewArtModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -895,18 +1234,49 @@
       <div class="modal-body">
         <div class="new-art-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          Cerca tra gli articoli importati da Integra che non sono ancora stati configurati nel portale. Una volta aggiunti, saranno associati automaticamente alla famiglia di appartenenza.
+          Cerca tra gli Articoli importati da Integra che non sono ancora stati configurati. Una volta aggiunti, ereditano automaticamente la Famiglia principale di appartenenza.
         </div>
         <div class="new-art-search">
           <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
-          <input type="text" id="newArtSearchInput" placeholder="Cerca per codice, nome, linea…" oninput="filterNewArtResults()" />
+          <input type="text" id="newArtSearchInput" placeholder="Cerca per codice, nome, famiglia…" oninput="filterNewArtResults()" />
         </div>
-        <div class="new-art-results" id="newArtResults">
-          <!-- Generated by JS -->
-        </div>
+        <div class="new-art-results" id="newArtResults"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeNewArtModal()">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nuova Raccolta -->
+  <div class="modal-overlay" id="newRaccoltaOverlay">
+    <div class="modal new-art-modal">
+      <div class="modal-header">
+        <h2>Crea Nuova Raccolta</h2>
+        <button class="modal-close" onclick="closeNewRaccoltaModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>Nome Raccolta</label>
+          <input class="input" type="text" id="newRaccoltaName" placeholder="Es. Novità 2026, Promozione Estiva…" />
+        </div>
+        <div class="field">
+          <label>Immagine rappresentativa</label>
+          <div class="gallery-upload" style="aspect-ratio: auto; padding: 12px; height: 42px; flex-direction: row; gap: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Carica immagine</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Sconto Raccolta (%)</label>
+          <input class="input" type="number" id="newRaccoltaSconto" placeholder="0" min="0" max="100" style="width: 120px;" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeNewRaccoltaModal()">Annulla</button>
+        <button class="btn btn-primary" onclick="createRaccolta()">Crea Raccolta</button>
       </div>
     </div>
   </div>
@@ -924,7 +1294,10 @@
         <button class="modal-tab active" data-tab="generale">Generale</button>
         <button class="modal-tab" data-tab="immagini">Immagini</button>
         <button class="modal-tab" data-tab="varianti">Varianti</button>
-        <button class="modal-tab" data-tab="ai">AI</button>
+        <button class="modal-tab" data-tab="descrizione-ai">Descrizione AI</button>
+        <button class="modal-tab" data-tab="famiglia">Famiglia</button>
+        <button class="modal-tab" data-tab="raccolte">Raccolte</button>
+        <button class="modal-tab" data-tab="ai">Genera AI</button>
       </div>
       <div class="modal-body">
 
@@ -936,15 +1309,14 @@
               <input class="input" type="text" id="f-codice" readonly />
             </div>
             <div class="field">
-              <label>Linea</label>
-              <input class="input" type="text" id="f-linea" readonly />
+              <label>Colore</label>
+              <div class="color-picker-row">
+                <input class="input" type="text" id="f-colore" readonly style="flex:1;" />
+                <input type="color" id="f-colore-hex" class="color-input" />
+              </div>
             </div>
           </div>
           <div class="field-row">
-            <div class="field">
-              <label>Famiglie</label>
-              <input class="input" type="text" id="f-famiglie" readonly />
-            </div>
             <div class="field">
               <label>Stato Pubblicazione</label>
               <select class="input" id="f-stato">
@@ -952,54 +1324,143 @@
                 <option value="nascosto">Nascosto</option>
               </select>
             </div>
+            <div class="field">
+              <label>Ultimo aggiornamento</label>
+              <input class="input" type="text" id="f-ultimo-agg" readonly />
+            </div>
           </div>
           <div class="field">
-            <label>Descrizione (da Integra — sola lettura)</label>
-            <textarea class="textarea" id="f-descrizione" readonly></textarea>
-          </div>
-          <div class="field">
-            <label>Prezzo Listino</label>
-            <input class="input" type="text" id="f-prezzo" readonly />
+            <label>Numero varianti</label>
+            <input class="input" type="text" id="f-num-varianti" readonly />
           </div>
         </div>
 
-        <!-- Tab Immagini -->
+        <!-- Tab Immagini (con sotto-tab) -->
         <div class="tab-panel" id="tab-immagini">
-          <h3 style="font-size:16px; margin: 0 0 16px;">Foto su Sfondo Bianco</h3>
-          <div class="gallery-grid" id="galleryWhite">
-            <!-- Generated by JS -->
+          <div class="img-sub-tabs">
+            <button class="img-sub-tab active" data-subtab="white">Sfondo Bianco</button>
+            <button class="img-sub-tab" data-subtab="ai">Immagini AI</button>
           </div>
-          <div class="gallery-upload" style="margin-top: 12px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Carica foto</span>
+          <div class="img-sub-panel active" id="subtab-white">
+            <p style="margin: 0 0 12px; color: var(--muted); font-size: 14px;">Foto del prodotto su sfondo bianco. Carica, ordina e seleziona l'immagine di copertina. Clicca sulla lente per ingrandire.</p>
+            <div class="gallery-compact" id="galleryWhite"></div>
+            <div class="gallery-upload" style="margin-top: 12px; aspect-ratio: auto; min-height: 48px; flex-direction: row; gap: 8px; padding: 12px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Carica foto</span>
+            </div>
           </div>
-
-          <h3 style="font-size:16px; margin: 32px 0 16px;">Immagini Ambientate (AI)</h3>
-          <div class="gallery-grid" id="galleryAmbientate">
-            <!-- Generated by JS -->
-          </div>
-          <div class="gallery-upload" style="margin-top: 12px;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-            <span>Genera con AI</span>
+          <div class="img-sub-panel" id="subtab-ai">
+            <p style="margin: 0 0 12px; color: var(--muted); font-size: 14px;">Immagini ambientate generate da AI. Clicca sulla lente per ingrandire.</p>
+            <div class="gallery-compact" id="galleryAmbientate"></div>
+            <div class="gallery-upload" style="margin-top: 12px; aspect-ratio: auto; min-height: 48px; flex-direction: row; gap: 8px; padding: 12px;">
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+              <span>Genera con AI</span>
+            </div>
           </div>
         </div>
+
+        <!-- Tab Immagini AI (removed — merged into Immagini) -->
 
         <!-- Tab Varianti -->
         <div class="tab-panel" id="tab-varianti">
-          <p style="margin: 0 0 16px; color: var(--muted); font-size: 14px;">Dati da Integra — sola lettura. Le dimensioni e la giacenza sono importate dal gestionale.</p>
-          <table class="variants-table">
-            <thead>
-              <tr>
-                <th>Dimensione</th>
-                <th>Valore</th>
-                <th class="num-col">Giacenza</th>
-                <th class="num-col">Multiplo</th>
-              </tr>
-            </thead>
-            <tbody id="variantsBody">
-              <!-- Generated by JS -->
-            </tbody>
-          </table>
+          <p style="margin: 0 0 16px; color: var(--muted); font-size: 14px;">Dati da Integra — sola lettura. Le dimensioni, i multipli, le giacenze e i prezzi sono importati dal gestionale. Le singole varianti possono essere attivate o disattivate.</p>
+          <div style="overflow-x: auto;">
+            <table class="variants-table">
+              <thead>
+                <tr>
+                  <th>Codice Integra</th>
+                  <th>Dim 1</th>
+                  <th>Dim 2</th>
+                  <th>Multiplo</th>
+                  <th class="num-col">Giacenza</th>
+                  <th class="num-col">Prezzo Base</th>
+                  <th>Stato</th>
+                </tr>
+              </thead>
+              <tbody id="variantsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab Descrizione AI -->
+        <div class="tab-panel" id="tab-descrizione-ai">
+          <div class="ai-section">
+            <div class="ai-section-header">
+              <div class="ai-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+              </div>
+              <div>
+                <h3>Creatore di Descrizione</h3>
+                <p>Descrivi il prodotto in linguaggio naturale (+ trascrizione vocale opzionale). L'AI genererà testo discorsivo, punti chiave e tag per la ricerca semantica.</p>
+              </div>
+            </div>
+            <div class="field">
+              <label>Descrizione libera del prodotto</label>
+              <textarea class="textarea" id="ai-desc-input" placeholder="Es. Vaso alto in cotto terracotta, forma cilindrica leggermente incurvata, perfetto per piante da esterno. Finish rustico e caldo, ideale per terrazzi e giardini…"></textarea>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
+              <button class="btn btn-primary" onclick="generateDescription()">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                Genera Descrizione
+              </button>
+              <button class="btn btn-secondary btn-sm" title="Trascrizione vocale">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                Trascrivi
+              </button>
+            </div>
+            <div class="ai-output empty" id="ai-desc-output" style="margin-top: 16px;">
+              La descrizione generata apparirà qui…
+            </div>
+            <div id="ai-desc-tags" style="margin-top: 12px; display: none;">
+              <label style="font-size:13px; font-weight:500; color:var(--muted); display:block; margin-bottom:6px;">Tag ricerca semantica</label>
+              <div id="ai-desc-tags-list"></div>
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="regenerateDescription()">Rigenera</button>
+              <button class="btn btn-primary btn-sm" onclick="approveDescription()">Approva e Pubblica</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Famiglia (read-only) -->
+        <div class="tab-panel" id="tab-famiglia">
+          <h3 style="font-size:16px; margin: 0 0 16px;">Famiglia Principale</h3>
+          <p style="margin: 0 0 16px; color: var(--muted); font-size: 14px;">La Famiglia principale è il raggruppamento gerarchico assegnato dal gestionale Integra. È in sola lettura e non è modificabile dal portale.</p>
+          <div class="readonly-field">
+            <div class="label">Famiglia principale</div>
+            <div class="value" id="f-famiglia-principale">—</div>
+          </div>
+          <div class="readonly-field">
+            <div class="label">Immagine Famiglia</div>
+            <div id="f-famiglia-img" style="margin-top:8px;">
+              <div style="width:120px;height:80px;border-radius:var(--radius);background:var(--fg-soft);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">Nessuna immagine</div>
+            </div>
+          </div>
+          <div class="readonly-field">
+            <div class="label">Sconto Famiglia (%)</div>
+            <div class="value" id="f-famiglia-sconto">—</div>
+          </div>
+          <div class="readonly-field">
+            <div class="label">Numero Articoli nella Famiglia</div>
+            <div class="value" id="f-famiglia-count">—</div>
+          </div>
+        </div>
+
+        <!-- Tab Raccolte (editable) -->
+        <div class="tab-panel" id="tab-raccolte">
+          <h3 style="font-size:16px; margin: 0 0 16px;">Raccolte associate</h3>
+          <p style="margin: 0 0 12px; color: var(--muted); font-size: 14px;">Le Raccolte sono collezioni/etichette gestite sul portale. Un Articolo può appartenere a più Raccolte. Lo sconto famiglia prende il massimo tra Famiglia principale e Raccolte.</p>
+          <div class="family-tags" id="raccolte-assoc-tags"></div>
+
+          <hr class="section-divider" />
+
+          <h3 style="font-size:16px; margin: 0 0 16px;">Aggiungi a Raccolta</h3>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select class="input" id="addRaccoltaSelect" style="flex:1;">
+              <option value="">Seleziona una raccolta…</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="addArticleToRaccolta()">Aggiungi</button>
+          </div>
         </div>
 
         <!-- Tab AI -->
@@ -1010,31 +1471,8 @@
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
               </div>
               <div>
-                <h3>Creatore di Descrizione</h3>
-                <p>Descrivi il prodotto in linguaggio naturale. L'AI genererà testo discorsivo, elenco punti e metadati.</p>
-              </div>
-            </div>
-            <div class="field">
-              <label>Descrizione libera del prodotto</label>
-              <textarea class="textarea" id="ai-desc-input" placeholder="Es. Vaso alto in cotto terracotta, forma cilindrica leggermente incurvata, perfetto per piante da esterno. Ha un finish rustico e caldo, ideale per terrazzi e giardini…"></textarea>
-            </div>
-            <button class="btn btn-primary" onclick="generateDescription()">
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-              Genera Descrizione
-            </button>
-            <div class="ai-output empty" id="ai-desc-output" style="margin-top: 16px;">
-              La descrizione generata apparirà qui…
-            </div>
-          </div>
-
-          <div class="ai-section">
-            <div class="ai-section-header">
-              <div class="ai-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-              </div>
-              <div>
                 <h3>Generatore Immagini Ambientate</h3>
-                <p>Scrivi un prompt per generare un'immagine del prodotto in contesto d'uso.</p>
+                <p>Scrivi un prompt per generare un'immagine del prodotto in contesto d'uso. Il prompt può essere derivato dalla descrizione AI.</p>
               </div>
             </div>
             <div class="field">
@@ -1061,21 +1499,176 @@
     </div>
   </div>
 
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <img id="lightboxImg" src="" alt="Anteprima" />
+  </div>
+
   <script>
+    // ── Modello dati v1.7: Articolo → Varianti, Famiglia principale (read-only), Raccolte (editable) ──
     const articles = [
-      { id: 'ART-001', name: 'Vaso Cilindrico Ø30', linea: 'Cotto Esterni', famiglie: 'Novità, Cotto da Esterno', prezzo: '€ 12,50', listino: '€ 15,00', sconto: '-17%', stato: 'attivo', img: 'images/vasi-bianchi.webp', desc: 'Vaso in cotto portoghese, forma cilindrica, adatto per esterni. Diametro 30cm, altezza 35cm.', varianti: [{ dim: 'Altezza', val: '35 cm', giac: 120, mult: 6 }, { dim: 'Colore', val: 'Terracotta', giac: 120, mult: 6 }, { dim: 'Finitura', val: 'Naturale', giac: 120, mult: 6 }] },
-      { id: 'ART-002', name: 'Cesto Intrecciato Grande', linea: 'Cesti Intrecciati', famiglie: 'Cesti, Natale 2026', prezzo: '€ 18,90', listino: '€ 22,00', sconto: '-14%', stato: 'attivo', img: 'images/catalogo-cesti.webp', desc: 'Cesto in fibra naturale intrecciata a mano. Grande, idoneo per composizioni floreali e arredamento.', varianti: [{ dim: 'Taglia', val: 'Grande', giac: 45, mult: 2 }, { dim: 'Colore', val: 'Naturale', giac: 45, mult: 2 }] },
-      { id: 'ART-003', name: 'Vaso Fiberstone Medio', linea: 'Fiberstone', famiglie: 'Fiberstone, Design', prezzo: '€ 24,00', listino: '€ 28,00', sconto: '-14%', stato: 'attivo', img: 'images/catalogo-fiberstone.webp', desc: 'Vaso in fiberstone leggero e resistente. Finitura pietra, medio formato. Ideale per giardini e terrazze.', varianti: [{ dim: 'Altezza', val: '40 cm', giac: 30, mult: 1 }, { dim: 'Colore', val: 'Grigio Pietra', giac: 30, mult: 1 }] },
-      { id: 'ART-004', name: 'Vaso Metallo Anticorrosione', linea: 'Metallo', famiglie: 'Metallo, Industriale', prezzo: '€ 31,50', listino: '€ 37,00', sconto: '-15%', stato: 'attivo', img: 'images/catalogo-metallo.webp', desc: 'Vaso in metallo trattato anticorrosione. Stile industriale, perfetto per spazi moderni e contract.', varianti: [{ dim: 'Altezza', val: '50 cm', giac: 18, mult: 1 }, { dim: 'Colore', val: 'Nero', giac: 18, mult: 1 }] },
-      { id: 'ART-005', name: 'Capi Europe Classic Round', linea: 'Capi Europe', famiglie: 'Capi Europe, Premium', prezzo: '€ 42,00', listino: '€ 52,00', sconto: '-19%', stato: 'attivo', img: 'images/catalogo-capi-europe.webp', desc: 'Vaso ceramico Capi Europe, forma rotonda classica. Finitura smaltata, gamma premium per rivenditori.', varianti: [{ dim: 'Diametro', val: '45 cm', giac: 12, mult: 1 }, { dim: 'Colore', val: 'Bianco', giac: 12, mult: 1 }, { dim: 'Finitura', val: 'Smaltata', giac: 12, mult: 1 }] },
-      { id: 'ART-006', name: 'Vaso Cotto Interno Ø20', linea: 'Cotto Interni', famiglie: 'Cotto da Interno, Novità', prezzo: '€ 8,90', listino: '€ 11,00', sconto: '-19%', stato: 'attivo', img: 'images/catalogo-cotto-interni.webp', desc: 'Vaso in cotto per interni, diametro 20cm. Finitura liscia, ideale per fiori e piante da appartamento.', varianti: [{ dim: 'Altezza', val: '22 cm', giac: 200, mult: 12 }, { dim: 'Colore', val: 'Terracotta', giac: 200, mult: 12 }] },
-      { id: 'ART-007', name: 'Vaso Pottery Pots Rondo', linea: 'Pottery Pots', famiglie: 'Pottery Pots, Design', prezzo: '€ 55,00', listino: '€ 68,00', sconto: '-19%', stato: 'attivo', img: 'images/catalogo-pottery-pots.webp', desc: 'Vaso ceramico Pottery Pots, forma rotonda. Design contemporaneo, gamma esclusiva per il canale B2B.', varianti: [{ dim: 'Taglia', val: 'L', giac: 8, mult: 1 }, { dim: 'Colore', val: 'Verde Salvia', giac: 8, mult: 1 }] },
-      { id: 'ART-008', name: 'Vaso Cotto Esterno Grande', linea: 'Cotto Esterni', famiglie: 'Cotto da Esterno, Best Seller', prezzo: '€ 19,50', listino: '€ 24,00', sconto: '-19%', stato: 'attivo', img: 'images/catalogo-cotto-esterni.webp', desc: 'Vaso grande in cotto portoghese per esterni. Robusto, resistente al gelo, adatto per giardini.', varianti: [{ dim: 'Altezza', val: '60 cm', giac: 25, mult: 2 }, { dim: 'Colore', val: 'Terracotta', giac: 25, mult: 2 }] },
-      { id: 'ART-009', name: 'Composizione Vasi Bianchi', linea: 'Fiberstone', famiglie: 'Fiberstone, Promo', prezzo: '€ 34,00', listino: '€ 42,00', sconto: '-19%', stato: 'nascosto', img: 'images/vasi-bianchi.webp', desc: 'Set di 3 vasi bianchi in fiberstone. Taglie graduate, ideale per arredamento minimal e moderno.', varianti: [{ dim: 'Set', val: '3 pezzi', giac: 15, mult: 1 }, { dim: 'Colore', val: 'Bianco', giac: 15, mult: 1 }] },
+      {
+        id: 'ART-001', name: 'Vaso Cilindrico Ø30', colore: 'Terracotta', coloreHex: '#C46A42',
+        famigliaPrincipale: 'Cotto da Esterno',
+        raccolte: ['Novità 2026', 'Best Seller'],
+        stato: 'attivo',
+        img: 'images/vasi-bianchi.webp', ultimoAgg: '05/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'COT-EST-001', descIntegra: 'Vaso cilindrico cotto esterno Ø30 H35 terracotta', dim1: { nome: 'Altezza', val: '35 cm' }, dim2: { nome: 'Diametro', val: '30 cm' }, multiplo: 6, giacenza: 120, prezzo: 12.50, stato: 'attivo' },
+           { codice: 'COT-EST-002', descIntegra: 'Vaso cilindrico cotto esterno Ø30 H45 terracotta', dim1: { nome: 'Altezza', val: '45 cm' }, dim2: { nome: 'Diametro', val: '30 cm' }, multiplo: 6, giacenza: 80, prezzo: 14.00, stato: 'attivo' },
+           { codice: 'COT-EST-003', descIntegra: 'Vaso cilindrico cotto esterno Ø40 H60 terracotta', dim1: { nome: 'Altezza', val: '60 cm' }, dim2: { nome: 'Diametro', val: '40 cm' }, multiplo: 2, giacenza: 25, prezzo: 19.50, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-002', name: 'Cesto Intrecciato Grande', colore: 'Naturale', coloreHex: '#B89B6A',
+        famigliaPrincipale: 'Cesti',
+        raccolte: ['Natale 2026'],
+        stato: 'attivo',
+        img: 'images/catalogo-cesti.webp', ultimoAgg: '05/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'CES-001', descIntegra: 'Cesto intrecciato griglia Grande', dim1: { nome: 'Taglia', val: 'Grande' }, dim2: null, multiplo: 2, giacenza: 45, prezzo: 18.90, stato: 'attivo' },
+           { codice: 'CES-002', descIntegra: 'Cesto intrecciato griglia Media', dim1: { nome: 'Taglia', val: 'Media' }, dim2: null, multiplo: 4, giacenza: 60, prezzo: 14.50, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-003', name: 'Vaso Fiberstone Medio', colore: 'Grigio Pietra', coloreHex: '#8A8580',
+        famigliaPrincipale: 'Fiberstone',
+        raccolte: ['Design'],
+        stato: 'attivo',
+        img: 'images/catalogo-fiberstone.webp', ultimoAgg: '04/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'FIB-001', descIntegra: 'Vaso fiberstone H40 natural', dim1: { nome: 'Altezza', val: '40 cm' }, dim2: null, multiplo: 1, giacenza: 30, prezzo: 24.00, stato: 'attivo' },
+           { codice: 'FIB-002', descIntegra: 'Vaso fiberstone H60 natural', dim1: { nome: 'Altezza', val: '60 cm' }, dim2: null, multiplo: 1, giacenza: 15, prezzo: 38.00, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-004', name: 'Vaso Metallo Anticorrosione', colore: 'Nero', coloreHex: '#2C2C2C',
+        famigliaPrincipale: 'Metallo',
+        raccolte: ['Industriale'],
+        stato: 'attivo',
+        img: 'images/catalogo-metallo.webp', ultimoAgg: '03/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'MET-001', descIntegra: 'Vaso metallo H50 grigio', dim1: { nome: 'Altezza', val: '50 cm' }, dim2: null, multiplo: 1, giacenza: 18, prezzo: 31.50, stato: 'attivo' },
+           { codice: 'MET-002', descIntegra: 'Vaso metallo H80 grigio', dim1: { nome: 'Altezza', val: '80 cm' }, dim2: null, multiplo: 1, giacenza: 8, prezzo: 49.00, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-005', name: 'Capi Europe Classic Round', colore: 'Bianco', coloreHex: '#F5F0EB',
+        famigliaPrincipale: 'Capi Europe',
+        raccolte: ['Premium'],
+        stato: 'attivo',
+        img: 'images/catalogo-capi-europe.webp', ultimoAgg: '05/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'CAP-001', descIntegra: 'Capi Europe Ø30 grigio cemento', dim1: { nome: 'Diametro', val: '30 cm' }, dim2: null, multiplo: 1, giacenza: 20, prezzo: 32.00, stato: 'attivo' },
+           { codice: 'CAP-002', descIntegra: 'Capi Europe Ø45 grigio cemento', dim1: { nome: 'Diametro', val: '45 cm' }, dim2: null, multiplo: 1, giacenza: 12, prezzo: 42.00, stato: 'attivo' },
+           { codice: 'CAP-003', descIntegra: 'Capi Europe Ø60 grigio cemento', dim1: { nome: 'Diametro', val: '60 cm' }, dim2: null, multiplo: 1, giacenza: 6, prezzo: 65.00, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-006', name: 'Vaso Cotto Interno Ø20', colore: 'Terracotta', coloreHex: '#C46A42',
+        famigliaPrincipale: 'Cotto da Interno',
+        raccolte: ['Novità'],
+        stato: 'attivo',
+        img: 'images/catalogo-cotto-interni.webp', ultimoAgg: '05/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'COT-INT-001', descIntegra: 'Vaso cotto interno H22 terracotta', dim1: { nome: 'Altezza', val: '22 cm' }, dim2: null, multiplo: 12, giacenza: 200, prezzo: 8.90, stato: 'attivo' },
+           { codice: 'COT-INT-002', descIntegra: 'Vaso cotto interno H30 terracotta', dim1: { nome: 'Altezza', val: '30 cm' }, dim2: null, multiplo: 6, giacenza: 120, prezzo: 11.50, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-007', name: 'Vaso Pottery Pots Rondo', colore: 'Verde Salvia', coloreHex: '#7A8C6E',
+        famigliaPrincipale: 'Pottery Pots',
+        raccolte: ['Design'],
+        stato: 'attivo',
+        img: 'images/catalogo-pottery-pots.webp', ultimoAgg: '02/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'PP-001', descIntegra: 'Vaso Pottery Pots M cemento', dim1: { nome: 'Taglia', val: 'M' }, dim2: null, multiplo: 1, giacenza: 14, prezzo: 42.00, stato: 'attivo' },
+           { codice: 'PP-002', descIntegra: 'Vaso Pottery Pots L cemento', dim1: { nome: 'Taglia', val: 'L' }, dim2: null, multiplo: 1, giacenza: 8, prezzo: 55.00, stato: 'attivo' },
+           { codice: 'PP-003', descIntegra: 'Vaso Pottery Pots XL cemento', dim1: { nome: 'Taglia', val: 'XL' }, dim2: null, multiplo: 1, giacenza: 4, prezzo: 78.00, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-008', name: 'Vaso Cotto Esterno Grande', colore: 'Terracotta', coloreHex: '#C46A42',
+        famigliaPrincipale: 'Cotto da Esterno',
+        raccolte: ['Best Seller'],
+        stato: 'attivo',
+        img: 'images/catalogo-cotto-esterni.webp', ultimoAgg: '05/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'COT-EST-010', descIntegra: 'Vaso cotto esterno Ø50 H60 terracotta', dim1: { nome: 'Altezza', val: '60 cm' }, dim2: { nome: 'Diametro', val: '50 cm' }, multiplo: 2, giacenza: 25, prezzo: 19.50, stato: 'attivo' },
+           { codice: 'COT-EST-011', descIntegra: 'Vaso cotto esterno Ø60 H80 terracotta', dim1: { nome: 'Altezza', val: '80 cm' }, dim2: { nome: 'Diametro', val: '60 cm' }, multiplo: 1, giacenza: 10, prezzo: 32.00, stato: 'attivo' },
+        ]
+      },
+      {
+        id: 'ART-009', name: 'Composizione Vasi Bianchi', colore: 'Bianco', coloreHex: '#F5F0EB',
+        famigliaPrincipale: 'Fiberstone',
+        raccolte: ['Promo'],
+        stato: 'nascosto',
+        img: 'images/vasi-bianchi.webp', ultimoAgg: '01/06/2026',
+        desc: '',
+        varianti: [
+           { codice: 'FIB-010', descIntegra: 'Set 3 vasi fiberstone natural', dim1: { nome: 'Set', val: '3 pezzi' }, dim2: null, multiplo: 1, giacenza: 15, prezzo: 34.00, stato: 'nascosto' },
+        ]
+      },
     ];
 
-    // View toggle
+    // Raccolte di portale
+    let raccolte = [
+      { id: 'RAC-001', nome: 'Novità 2026', sconto: 5, img: 'images/catalogo-cotto-esterni.webp' },
+      { id: 'RAC-002', nome: 'Best Seller', sconto: 0, img: 'images/catalogo-capi-europe.webp' },
+      { id: 'RAC-003', nome: 'Natale 2026', sconto: 10, img: 'images/catalogo-cesti.webp' },
+      { id: 'RAC-004', nome: 'Design', sconto: 0, img: 'images/catalogo-fiberstone.webp' },
+      { id: 'RAC-005', nome: 'Premium', sconto: 0, img: 'images/catalogo-pottery-pots.webp' },
+      { id: 'RAC-006', nome: 'Industriale', sconto: 0, img: 'images/catalogo-metallo.webp' },
+      { id: 'RAC-007', nome: 'Novità', sconto: 0, img: 'images/catalogo-cotto-interni.webp' },
+      { id: 'RAC-008', nome: 'Promo', sconto: 15, img: 'images/vasi-bianchi.webp' },
+    ];
+
+    // ── State ──
+    let currentView = 'list';
+    let currentFilter = 'tutti';
+    let currentSection = 'articoli';
+    let currentArticleIdx = -1;
+
+    // ── Section switching ──
+    function switchSection(section) {
+      currentSection = section;
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      document.getElementById('section-articoli').style.display = section === 'articoli' ? '' : 'none';
+      document.getElementById('section-famiglie').style.display = section === 'famiglie' ? '' : 'none';
+      document.getElementById('section-raccolte').style.display = section === 'raccolte' ? '' : 'none';
+
+      const titles = { articoli: 'Gestione Articoli', famiglie: 'Famiglie (da Integra)', raccolte: 'Raccolte di portale' };
+      document.getElementById('sectionTitle').textContent = titles[section];
+
+      // Show/hide filters and actions based on section
+      const filterPills = document.getElementById('filterPills');
+      const topActions = document.querySelector('.top-actions');
+      if (section === 'articoli') {
+        filterPills.style.display = '';
+        topActions.querySelector('.btn-primary').style.display = '';
+      } else {
+        filterPills.style.display = 'none';
+        topActions.querySelector('.btn-primary').style.display = section === 'raccolte' ? '' : 'none';
+      }
+
+      if (section === 'famiglie') renderFamiglie();
+      if (section === 'raccolte') renderRaccolte();
+    }
+
+    // ── Vista ──
     function setView(mode) {
+      currentView = mode;
       const grid = document.getElementById('articleGrid');
       const header = document.getElementById('tableHeader');
       const btnList = document.getElementById('btn-list');
@@ -1091,47 +1684,203 @@
         btnGrid.classList.add('active');
         btnList.classList.remove('active');
       }
+      renderArticles();
     }
 
-    // Render cards
-    const grid = document.getElementById('articleGrid');
-    articles.forEach((a, i) => {
-      const card = document.createElement('div');
-      card.className = 'article-card';
-      card.onclick = () => openModal(i);
-      card.innerHTML = `
-        <img class="article-card-img" src="${a.img}" alt="${a.name}" onerror="this.style.background='var(--fg-soft)'; this.alt='Immagine non disponibile';" />
-        <div class="article-card-body">
-          <div class="article-card-top">
-            <h3>${a.name}</h3>
-            <span class="article-card-linea">${a.linea}</span>
+    function getFilteredArticles() {
+      const q = document.getElementById('globalSearch').value.toLowerCase().trim();
+      return articles.filter(a => {
+        // Section filter
+        if (currentFilter === 'attivi' && a.stato !== 'attivo') return false;
+        if (currentFilter === 'nascosti' && a.stato !== 'nascosto') return false;
+        if (currentFilter === 'da-configurare' && a.img) return false;
+        if (currentFilter === 'senza-raccolta' && a.raccolte.length > 0) return false;
+        // Search filter
+        if (q) {
+          const haystack = [a.id, a.name, a.colore, a.famigliaPrincipale, ...a.raccolte].join(' ').toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function handleSearch() { renderArticles(); }
+
+    function renderArticles() {
+      const grid = document.getElementById('articleGrid');
+      const list = getFilteredArticles();
+      grid.innerHTML = '';
+      list.forEach(a => {
+        const realIdx = articles.indexOf(a);
+        const card = document.createElement('div');
+        card.className = 'article-card';
+        card.onclick = () => openModal(realIdx);
+        card.innerHTML = `
+          <img class="article-card-img" src="${a.img}" alt="${a.name}" onerror="this.style.background='var(--fg-soft)'; this.alt='Immagine non disponibile';" />
+          <div class="article-card-body">
+            <div class="article-card-top">
+              <span class="article-card-id">${a.id}</span>
+              <h3>${a.name}</h3>
+              <span class="article-card-color"><span class="color-swatch" style="background:${a.coloreHex || '#888'}"></span>${a.colore}</span>
+            </div>
+            <span class="status ${a.stato === 'attivo' ? 'status-active' : 'status-hidden'}">${a.stato}</span>
+            <div class="article-card-counts article-card-variants">${a.varianti.length} varianti</div>
+            <div class="article-card-counts article-card-famiglie">${a.raccolte.length} raccolte</div>
+            <div class="article-card-actions">
+              <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openModal(${realIdx})">Modifica</button>
+              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleStatus(${realIdx})">${a.stato === 'attivo' ? 'Disattiva' : 'Attiva'}</button>
+            </div>
           </div>
-          <span class="article-card-id">${a.id}</span>
-          <span class="status ${a.stato === 'attivo' ? 'status-active' : 'status-hidden'}">${a.stato}</span>
-          <div class="article-card-price">
-            <span class="price">${a.prezzo}</span>
-            <span class="list-price">${a.listino}</span>
-            <span class="discount">${a.sconto}</span>
-          </div>
-          <div class="article-card-actions">
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openModal(${i})">Modifica</button>
-            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); toggleStatus(${i})">${a.stato === 'attivo' ? 'Disattiva' : 'Attiva'}</button>
-          </div>
-        </div>
-      `;
-      grid.appendChild(card);
+        `;
+        grid.appendChild(card);
+      });
+      updateMeta();
+    }
+
+    function updateMeta() {
+      const total = articles.length;
+      const attivi = articles.filter(a => a.stato === 'attivo').length;
+      const nascosti = total - attivi;
+      const varianti = articles.reduce((s, a) => s + a.varianti.length, 0);
+      document.getElementById('articlesMeta').textContent = `${total} articoli · ${attivi} attivi · ${nascosti} nascosti · ${varianti} varianti`;
+    }
+
+    // ── Filtri ──
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        currentFilter = pill.dataset.filter;
+        renderArticles();
+      });
     });
 
-    // Modal
+    function toggleStatus(i) {
+      articles[i].stato = articles[i].stato === 'attivo' ? 'nascosto' : 'attivo';
+      renderArticles();
+    }
+
+    // ── Famiglie section (read-only) ──
+    function renderFamiglie() {
+      const container = document.getElementById('famiglieList');
+      const famiglieMap = {};
+      articles.forEach(a => {
+        const fam = a.famigliaPrincipale;
+        if (!famiglieMap[fam]) famiglieMap[fam] = [];
+        famiglieMap[fam].push(a);
+      });
+
+      let html = '';
+      Object.entries(famiglieMap).sort((a, b) => a[0].localeCompare(b[0])).forEach(([nome, arts]) => {
+        html += `
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div>
+                <h3 style="font-size:16px; font-weight:600; margin:0;">${nome}</h3>
+                <span style="font-family:var(--font-mono); font-size:12px; color:var(--muted);">${arts.length} articoli · Sola lettura (Integra)</span>
+              </div>
+              <span style="background:var(--blue-soft); color:var(--blue); font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.04em;">Read-only</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
+              ${arts.map(a => `
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--fg-soft); border-radius:var(--radius); font-size:13px;">
+                  <img src="${a.img}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'" />
+                  <span>${a.name}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html || '<p style="color:var(--muted);">Nessuna famiglia trovata.</p>';
+    }
+
+    // ── Raccolte section ──
+    function renderRaccolte() {
+      const container = document.getElementById('raccolteList');
+      let html = '';
+      raccolte.forEach(r => {
+        const artsInRaccolta = articles.filter(a => a.raccolte.includes(r.nome));
+        html += `
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+              <img src="${r.img}" style="width:56px;height:56px;border-radius:var(--radius);object-fit:cover;" onerror="this.style.background='var(--fg-soft)'" />
+              <div style="flex:1;">
+                <h3 style="font-size:16px; font-weight:600; margin:0;">${r.nome}</h3>
+                <span style="font-family:var(--font-mono); font-size:12px; color:var(--muted);">${r.id} · ${artsInRaccolta.length} articoli${r.sconto ? ' · Sconto: ' + r.sconto + '%' : ''}</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="deleteRaccolta('${r.id}')">Elimina</button>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
+              ${artsInRaccolta.map(a => `
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--fg-soft); border-radius:var(--radius); font-size:13px;">
+                  <img src="${a.img}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'" />
+                  <span>${a.name}</span>
+                </div>
+              `).join('')}
+              ${artsInRaccolta.length === 0 ? '<span style="color:var(--muted);font-size:13px;padding:8px;">Nessun articolo associato</span>' : ''}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html || '<p style="color:var(--muted);">Nessuna raccolta creata.</p>';
+    }
+
+    function openNewRaccoltaModal() {
+      document.getElementById('newRaccoltaName').value = '';
+      document.getElementById('newRaccoltaSconto').value = '';
+      document.getElementById('newRaccoltaOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeNewRaccoltaModal() {
+      document.getElementById('newRaccoltaOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('newRaccoltaOverlay').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeNewRaccoltaModal();
+    });
+
+    function createRaccolta() {
+      const nome = document.getElementById('newRaccoltaName').value.trim();
+      if (!nome) return;
+      const sconto = parseInt(document.getElementById('newRaccoltaSconto').value) || 0;
+      raccolte.push({
+        id: 'RAC-' + String(raccolte.length + 1).padStart(3, '0'),
+        nome, sconto, img: ''
+      });
+      closeNewRaccoltaModal();
+      renderRaccolte();
+    }
+
+    function deleteRaccolta(id) {
+      raccolte = raccolte.filter(r => r.id !== id);
+      renderRaccolte();
+    }
+
+    // ── Modal Dettaglio ──
     function openModal(i) {
+      currentArticleIdx = i;
       const a = articles[i];
       document.getElementById('modalTitle').textContent = a.name;
       document.getElementById('f-codice').value = a.id;
-      document.getElementById('f-linea').value = a.linea;
-      document.getElementById('f-famiglie').value = a.famiglie;
+      document.getElementById('f-colore').value = a.colore;
+      document.getElementById('f-colore-hex').value = a.coloreHex || '#888888';
+      document.getElementById('f-colore-hex').onchange = function() {
+        articles[currentArticleIdx].coloreHex = this.value;
+        renderGrid();
+      };
       document.getElementById('f-stato').value = a.stato;
-      document.getElementById('f-descrizione').value = a.desc;
-      document.getElementById('f-prezzo').value = a.prezzo + ' (listino: ' + a.listino + ')';
+      document.getElementById('f-ultimo-agg').value = a.ultimoAgg;
+      document.getElementById('f-num-varianti').value = a.varianti.length + ' varianti';
+
+      // Famiglia principale (read-only)
+      document.getElementById('f-famiglia-principale').textContent = a.famigliaPrincipale || '—';
+      const famArts = articles.filter(x => x.famigliaPrincipale === a.famigliaPrincipale);
+      document.getElementById('f-famiglia-count').textContent = famArts.length + ' articoli';
+      document.getElementById('f-famiglia-sconto').textContent = '— (definito su Integra)';
+
+      // Raccolte tags
+      renderRaccolteTags(a);
 
       // Gallery white
       const gWhite = document.getElementById('galleryWhite');
@@ -1139,7 +1888,7 @@
       for (let j = 0; j < 4; j++) {
         const item = document.createElement('div');
         item.className = 'gallery-item' + (j === 0 ? ' cover' : '');
-        item.innerHTML = `<img src="${a.img}" alt="Foto ${j+1}" onerror="this.parentElement.style.background='var(--fg-soft)'"/>` + (j === 0 ? '<span class="cover-badge">Copertina</span>' : '');
+        item.innerHTML = `<img src="${a.img}" alt="Foto ${j+1}" onerror="this.parentElement.style.background='var(--fg-soft)'"/>` + (j === 0 ? '<span class="cover-badge">Copertina</span>' : '') + `<div class="gallery-zoom" onclick="event.stopPropagation(); openLightbox('${a.img}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>`;
         gWhite.appendChild(item);
       }
 
@@ -1149,32 +1898,95 @@
       for (let j = 0; j < 2; j++) {
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.innerHTML = `<div style="width:100%;height:100%;background:var(--fg-soft);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">AI ${j+1}</div>`;
+        item.innerHTML = `<div style="width:100%;height:100%;background:var(--fg-soft);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">AI ${j+1}</div><div class="gallery-zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>`;
         gAmb.appendChild(item);
       }
 
-      // Variants
+      // Varianti
       const vBody = document.getElementById('variantsBody');
       vBody.innerHTML = '';
       a.varianti.forEach(v => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${v.dim}</td><td>${v.val}</td><td class="num-col">${v.giac} pz</td><td class="num-col">${v.mult}</td>`;
+        tr.innerHTML = `
+          <td style="font-family:var(--font-mono);font-size:13px;white-space:nowrap;">${v.codice}<span class="info-trigger" data-tip="${v.descIntegra || ''}"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="11.5" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">i</text></svg></span></td>
+          <td>${v.dim1.nome}: ${v.dim1.val}</td>
+          <td>${v.dim2 ? v.dim2.nome + ': ' + v.dim2.val : '—'}</td>
+          <td class="num-col">${v.multiplo}</td>
+          <td class="num-col">${v.giacenza} pz</td>
+          <td class="num-col">€ ${v.prezzo.toFixed(2)}</td>
+          <td><span class="status ${v.stato === 'attivo' ? 'status-active' : 'status-hidden'}" style="font-size:10px;padding:2px 10px;min-width:auto;">${v.stato}</span></td>
+        `;
         vBody.appendChild(tr);
+      });
+
+      // Raccolte select in tab
+      const sel = document.getElementById('addRaccoltaSelect');
+      sel.innerHTML = '<option value="">Seleziona una raccolta…</option>';
+      raccolte.filter(r => !a.raccolte.includes(r.nome)).forEach(r => {
+        sel.innerHTML += `<option value="${r.nome}">${r.nome}${r.sconto ? ' (sconto ' + r.sconto + '%)' : ''}</option>`;
       });
 
       // Reset AI
       document.getElementById('ai-desc-input').value = '';
       document.getElementById('ai-desc-output').textContent = 'La descrizione generata apparirà qui…';
       document.getElementById('ai-desc-output').className = 'ai-output empty';
+      document.getElementById('ai-desc-tags').style.display = 'none';
       document.getElementById('ai-img-input').value = '';
+
+      // Reset sub-tabs
+      document.querySelectorAll('.img-sub-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.img-sub-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.img-sub-tab[data-subtab="white"]').classList.add('active');
+      document.getElementById('subtab-white').classList.add('active');
+
+      // Reset modal tabs
+      document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.modal-tab[data-tab="generale"]').classList.add('active');
+      document.getElementById('tab-generale').classList.add('active');
 
       document.getElementById('modalOverlay').classList.add('open');
       document.body.style.overflow = 'hidden';
     }
 
+    function renderRaccolteTags(a) {
+      const container = document.getElementById('raccolte-assoc-tags');
+      container.innerHTML = a.raccolte.map(nome => {
+        const r = raccolte.find(x => x.nome === nome);
+        const scontoText = r && r.sconto ? ` (${r.sconto}%)` : '';
+        return `<span class="family-tag">${nome}${scontoText} <button class="remove" onclick="removeRaccoltaFromArticle(${articles.indexOf(a)}, '${nome}')">&times;</button></span>`;
+      }).join('');
+      if (a.raccolte.length === 0) {
+        container.innerHTML = '<span style="color:var(--muted);font-size:13px;">Nessuna raccolta associata</span>';
+      }
+    }
+
+    function removeRaccoltaFromArticle(articleIdx, raccoltaNome) {
+      articles[articleIdx].raccolte = articles[articleIdx].raccolte.filter(r => r !== raccoltaNome);
+      renderRaccolteTags(articles[articleIdx]);
+      renderArticles();
+    }
+
+    function addArticleToRaccolta() {
+      const sel = document.getElementById('addRaccoltaSelect');
+      const nome = sel.value;
+      if (!nome || currentArticleIdx < 0) return;
+      if (!articles[currentArticleIdx].raccolte.includes(nome)) {
+        articles[currentArticleIdx].raccolte.push(nome);
+      }
+      renderRaccolteTags(articles[currentArticleIdx]);
+      renderArticles();
+      // Refresh select
+      sel.innerHTML = '<option value="">Seleziona una raccolta…</option>';
+      raccolte.filter(r => !articles[currentArticleIdx].raccolte.includes(r.nome)).forEach(r => {
+        sel.innerHTML += `<option value="${r.nome}">${r.nome}${r.sconto ? ' (sconto ' + r.sconto + '%)' : ''}</option>`;
+      });
+    }
+
     function closeModal() {
       document.getElementById('modalOverlay').classList.remove('open');
       document.body.style.overflow = '';
+      currentArticleIdx = -1;
     }
 
     document.getElementById('modalOverlay').addEventListener('click', e => {
@@ -1183,6 +1995,7 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         if (document.getElementById('newArtOverlay').classList.contains('open')) closeNewArtModal();
+        else if (document.getElementById('newRaccoltaOverlay').classList.contains('open')) closeNewRaccoltaModal();
         else closeModal();
       }
     });
@@ -1197,39 +2010,20 @@
       });
     });
 
-    // Filter pills
-    document.querySelectorAll('.filter-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        const filter = pill.textContent.toLowerCase();
-        document.querySelectorAll('.article-card').forEach((card, i) => {
-          if (filter === 'tutti') { card.style.display = ''; return; }
-          const show = (filter === 'attivi' && articles[i].stato === 'attivo') || (filter === 'nascosti' && articles[i].stato === 'nascosto');
-          card.style.display = show ? '' : 'none';
-        });
-      });
-    });
-
-    function toggleStatus(i) {
-      articles[i].stato = articles[i].stato === 'attivo' ? 'nascosto' : 'attivo';
-      location.reload();
-    }
-
-    // Articoli non ancora configurati (da Integra)
+    // ── Modal Nuovo Articolo ──
     const unconfiguredArticles = [
-      { id: 'INT-201', name: 'Vaso Ovale Ø45', linea: 'Cotto Esterni', famiglia: 'Cotto da Esterno' },
-      { id: 'INT-202', name: 'Vaso Romano Alto', linea: 'Cotto Esterni', famiglia: 'Cotto da Esterno' },
-      { id: 'INT-203', name: 'Cesto Tronco Ø30', linea: 'Cesti Intrecciati', famiglia: 'Cesti' },
-      { id: 'INT-204', name: 'Cesto Portafiori', linea: 'Cesti Intrecciati', famiglia: 'Cesti' },
-      { id: 'INT-205', name: 'Vaso Stone Effect L', linea: 'Fiberstone', famiglia: 'Design' },
-      { id: 'INT-206', name: 'Vaso Geometrico Nero', linea: 'Metallo', famiglia: 'Industriale' },
-      { id: 'INT-207', name: 'Vaso Capi Terra XL', linea: 'Capi Europe', famiglia: 'Premium' },
-      { id: 'INT-208', name: 'Vaso Mini Cotto', linea: 'Cotto Interni', famiglia: 'Cotto da Interno' },
-      { id: 'INT-209', name: 'Set 3 Vasi PP Muted', linea: 'Pottery Pots', famiglia: 'Design' },
-      { id: 'INT-210', name: 'Vaso Cilindrico Ø20', linea: 'Cotto Esterni', famiglia: 'Cotto da Esterno' },
-      { id: 'INT-211', name: 'Cesto Ovale Grande', linea: 'Cesti Intrecciati', famiglia: 'Cesti' },
-      { id: 'INT-212', name: 'Vaso Metallo Rame', linea: 'Metallo', famiglia: 'Industriale' },
+      { id: 'INT-201', name: 'Vaso Ovale Ø45', famiglia: 'Cotto da Esterno' },
+      { id: 'INT-202', name: 'Vaso Romano Alto', famiglia: 'Cotto da Esterno' },
+      { id: 'INT-203', name: 'Cesto Tronco Ø30', famiglia: 'Cesti' },
+      { id: 'INT-204', name: 'Cesto Portafiori', famiglia: 'Cesti' },
+      { id: 'INT-205', name: 'Vaso Stone Effect L', famiglia: 'Fiberstone' },
+      { id: 'INT-206', name: 'Vaso Geometrico Nero', famiglia: 'Metallo' },
+      { id: 'INT-207', name: 'Vaso Capi Terra XL', famiglia: 'Capi Europe' },
+      { id: 'INT-208', name: 'Vaso Mini Cotto', famiglia: 'Cotto da Interno' },
+      { id: 'INT-209', name: 'Set 3 Vasi PP Muted', famiglia: 'Pottery Pots' },
+      { id: 'INT-210', name: 'Vaso Cilindrico Ø20', famiglia: 'Cotto da Esterno' },
+      { id: 'INT-211', name: 'Cesto Ovale Grande', famiglia: 'Cesti' },
+      { id: 'INT-212', name: 'Vaso Metallo Rame', famiglia: 'Metallo' },
     ];
 
     function renderNewArtResults(list) {
@@ -1242,7 +2036,7 @@
         <div class="new-art-result" data-id="${a.id}">
           <div class="info">
             <h4>${a.name}</h4>
-            <p>${a.id} · ${a.linea} → ${a.famiglia}</p>
+            <p>${a.id} · Famiglia: ${a.famiglia}</p>
           </div>
           <button class="add-btn" onclick="addArticle('${a.id}', this)">Aggiungi</button>
         </div>
@@ -1255,7 +2049,6 @@
       const filtered = unconfiguredArticles.filter(a =>
         a.id.toLowerCase().includes(q) ||
         a.name.toLowerCase().includes(q) ||
-        a.linea.toLowerCase().includes(q) ||
         a.famiglia.toLowerCase().includes(q)
       );
       renderNewArtResults(filtered);
@@ -1267,10 +2060,15 @@
       const a = unconfiguredArticles.find(x => x.id === id);
       if (a) {
         articles.unshift({
-          id: a.id, name: a.name, linea: a.linea, famiglie: a.famiglia,
-          prezzo: '—', listino: '—', sconto: '', stato: 'attivo',
-          img: '', desc: '', varianti: []
+          id: 'ART-' + String(articles.length + 1).padStart(3, '0'),
+          name: a.name, colore: '',
+          famigliaPrincipale: a.famiglia,
+          raccolte: [],
+          stato: 'attivo',
+          img: '', ultimoAgg: new Date().toLocaleDateString('it-IT'), desc: '',
+           varianti: [{ codice: a.id, descIntegra: 'Articolo non ancora configurato', dim1: { nome: 'Taglia', val: '—' }, dim2: null, multiplo: 1, giacenza: 0, prezzo: 0, stato: 'attivo' }]
         });
+        renderArticles();
       }
     }
 
@@ -1290,7 +2088,7 @@
       if (e.target === e.currentTarget) closeNewArtModal();
     });
 
-    // AI Description
+    // ── AI Description ──
     function generateDescription() {
       const input = document.getElementById('ai-desc-input').value.trim();
       const output = document.getElementById('ai-desc-output');
@@ -1298,24 +2096,70 @@
       output.className = 'ai-output';
       output.innerHTML = '<em style="color:var(--muted)">Generazione in corso…</em>';
       setTimeout(() => {
-        output.innerHTML = `<strong>Descrizione discorsiva</strong>\n${input.charAt(0).toUpperCase() + input.slice(1).replace(/\.$/, '')}. Questo articolo rappresenta l'eccellenza della lavorazione artigianale Luis, combinando estetica e funzionalità per rispondere alle esigenze dei rivenditori più esigenti.\n\n<strong>Caratteristiche principali</strong>\n• Materiale di alta qualità, selezionato per la durabilità\n• Design versatile, adatto a molteplici contesti d'uso\n• Gamma di dimensioni e finiture per coprire ogni esigenza\n• Disponibilità a magazzino con aggiornamento periodico\n\n<strong>Metadati per ricerca</strong>\nTag: ${articles[i].linea.toLowerCase()}, ${articles[i].famiglie.split(',')[0].trim().toLowerCase()}, articolo_b2b, luis_srl`;
+        const a = articles[currentArticleIdx];
+        output.innerHTML = `<strong>Descrizione discorsiva</strong>\n${input.charAt(0).toUpperCase() + input.slice(1).replace(/\.$/, '')}. Questo articolo rappresenta l'eccellenza della lavorazione artigianale Luis, combinando estetica e funzionalità per rispondere alle esigenze dei rivenditori più esigenti.\n\n<strong>Caratteristiche principali</strong>\n• Materiale di alta qualità, selezionato per la durabilità\n• Design versatile, adatto a molteplici contesti d'uso\n• Gamma di dimensioni per coprire ogni esigenza\n• Disponibilità a magazzino con aggiornamento periodico`;
+        const tags = [a.colore.toLowerCase(), a.famigliaPrincipale?.toLowerCase() || '', 'articolo_b2b', 'luis_srl'];
+        document.getElementById('ai-desc-tags').style.display = 'block';
+        document.getElementById('ai-desc-tags-list').innerHTML = tags.map(t => `<span class="ai-tag">${t}</span>`).join('');
       }, 1200);
     }
 
-    // AI Image
+    function regenerateDescription() {
+      if (document.getElementById('ai-desc-input').value.trim()) generateDescription();
+    }
+
+    function approveDescription() {
+      if (currentArticleIdx >= 0) {
+        articles[currentArticleIdx].desc = document.getElementById('ai-desc-output').textContent;
+        alert('Descrizione approvata e pubblicata!');
+      }
+    }
+
+    // ── AI Image ──
     function generateImage() {
       const input = document.getElementById('ai-img-input').value.trim();
       if (!input) return;
       const output = document.getElementById('ai-img-output');
       output.innerHTML = '<div style="width:160px;height:120px;border-radius:var(--radius);background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:13px;">Generazione…</div>';
       setTimeout(() => {
+        const a = articles[currentArticleIdx] || articles[0];
         output.innerHTML = `
-          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid var(--accent);cursor:pointer;"><img src="${articles[0].img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--accent);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">✓ Seleziona</span></div>
-          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid transparent;cursor:pointer;"><img src="${articles[2].img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--surface);color:var(--fg);font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);">Seleziona</span></div>
-          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid transparent;cursor:pointer;"><img src="${articles[4].img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--surface);color:var(--fg);font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);">Seleziona</span></div>
+          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid var(--accent);cursor:pointer;"><img src="${a.img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--accent);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">✓ Seleziona</span></div>
+          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid transparent;cursor:pointer;"><img src="${a.img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--surface);color:var(--fg);font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);">Seleziona</span></div>
+          <div style="width:160px;height:120px;border-radius:var(--radius);overflow:hidden;position:relative;border:2px solid transparent;cursor:pointer;"><img src="${a.img}" style="width:100%;height:100%;object-fit:cover;" /><span style="position:absolute;bottom:4px;right:4px;background:var(--surface);color:var(--fg);font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);">Seleziona</span></div>
         `;
       }, 1800);
     }
+
+    // ── Sub-tabs (Immagini) ──
+    document.querySelectorAll('.img-sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.img-sub-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.img-sub-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('subtab-' + tab.dataset.subtab).classList.add('active');
+      });
+    });
+
+    // ── Lightbox ──
+    function openLightbox(src) {
+      const lb = document.getElementById('lightboxOverlay');
+      document.getElementById('lightboxImg').src = src;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+      document.getElementById('lightboxOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('lightboxOverlay').classList.contains('open')) {
+        closeLightbox();
+      }
+    });
+
+    // ── Init ──
+    renderArticles();
   </script>
 </body>
 </html>

@@ -24,7 +24,6 @@
       --gap-sm: 12px;
       --gap-md: 20px;
       --gap-lg: 32px;
-      --gap-xl: 56px;
       --container: 1280px;
       --gutter: 32px;
       --radius: 10px;
@@ -55,7 +54,6 @@
     }
     .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: 24px; }
     .topnav .logo img { height: 32px; width: auto; }
-    .modal img { max-width: 100%; height: auto; }
     .topnav nav { display: flex; gap: var(--gap-lg); }
     .topnav nav a { font-size: 14px; color: var(--muted); }
     .topnav nav a:hover, .topnav nav a.active { color: var(--fg); }
@@ -171,6 +169,11 @@
       font-size: 12px;
       color: var(--muted);
     }
+    .sidebar .filter-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 0 20px;
+    }
     .catalog-header {
       display: flex;
       align-items: center;
@@ -215,18 +218,31 @@
       aspect-ratio: 4/3;
       background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
       display: grid; place-items: center;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 11px;
+      overflow: hidden;
+    }
+    .product-card .product-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     .product-card .product-body { padding: 16px; }
-    .product-card .product-line {
+    .product-card .product-famiglia {
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--accent);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .product-card .product-famiglia .color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
     }
     .product-card .product-name {
       font-size: 15px;
@@ -234,17 +250,29 @@
       margin: 0 0 8px;
       line-height: 1.3;
     }
+    .product-card .product-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .product-card .product-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--fg-soft);
+      color: var(--muted);
+    }
     .product-card .product-meta {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
     }
-    .product-card .product-price {
-      font-family: var(--font-mono);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--fg);
+    .product-card .product-variants {
+      font-size: 13px;
+      color: var(--muted);
     }
     .product-card .product-stock {
       font-family: var(--font-mono);
@@ -277,7 +305,7 @@
     .pagination a:hover { border-color: var(--border); color: var(--fg); }
     .pagination .active { background: var(--accent); color: var(--surface); font-weight: 600; }
     .pagefoot { padding-block: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
-    .pagefoot .row-between { flex-wrap: wrap; gap: 12px; }
+    .pagefoot .row-between { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
     .eyebrow {
       font-family: var(--font-mono);
       font-size: 12px;
@@ -353,138 +381,6 @@
       color: var(--surface);
     }
 
-    /* ── AI Search ── */
-    .ai-search-desc {
-      font-size: 14px;
-      color: var(--muted);
-      margin: 0 0 18px;
-    }
-    .ai-search-input {
-      position: relative;
-      margin-bottom: 14px;
-    }
-    .ai-search-input input {
-      width: 100%;
-      padding: 14px 48px 14px 44px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg);
-      font: inherit;
-      font-size: 15px;
-      color: var(--fg);
-      transition: border-color 0.15s ease;
-    }
-    .ai-search-input input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .ai-search-input input::placeholder { color: var(--muted); }
-    .ai-search-input .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      color: var(--muted);
-    }
-    .ai-search-input .mic-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      transition: background 0.12s ease, color 0.12s ease;
-    }
-    .ai-search-input .mic-btn:hover { background: var(--accent-soft); color: var(--accent); }
-    .ai-search-input .mic-btn svg { width: 16px; height: 16px; }
-    .ai-upload-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .ai-upload-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 10px 18px;
-      border: 1.5px dashed var(--border);
-      border-radius: var(--radius);
-      background: transparent;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    .ai-upload-btn input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-    }
-    .ai-upload-btn:hover {
-      background: var(--fg);
-      color: var(--surface);
-    }
-    .ai-upload-btn:hover small { color: oklch(100% 0 0 / 0.6); }
-    .ai-upload-btn.drag-over {
-      background: var(--accent);
-      color: var(--surface);
-      border-style: solid;
-      border-color: var(--accent);
-    }
-    .ai-upload-btn.drag-over small { color: oklch(100% 0 0 / 0.7); }
-    .ai-upload-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .ai-upload-btn span { flex: 1; }
-    .ai-upload-btn small {
-      display: block;
-      width: 100%;
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 2px;
-      text-align: center;
-      transition: color 0.15s;
-    }
-    .ai-upload-btn .or {
-      font-size: 12px;
-      color: var(--muted);
-      padding: 0 2px;
-    }
-    .ai-tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--muted);
-      cursor: pointer;
-      transition: border-color 0.12s ease, color 0.12s ease;
-    }
-    .ai-tag:hover { border-color: var(--accent); color: var(--accent); }
-    .ai-search-hint {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .ai-search-hint svg { width: 14px; height: 14px; flex-shrink: 0; }
     /* ── AI Modal ── */
     .modal-overlay {
       display: none;
@@ -553,15 +449,147 @@
     .modal-close svg { width: 16px; height: 16px; }
     .modal-body { padding: 20px 24px 24px; }
     .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
-    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 500; transition: all 0.15s ease; }
-    .btn-ghost:hover { background: var(--fg-soft); color: var(--fg); border-color: var(--muted); }
-    .modal-body .ai-search-desc { margin-bottom: 16px; }
-    .modal-body .ai-search-input { margin-bottom: 12px; }
-    .modal-body .ai-upload-row { margin-bottom: 12px; }
+    .modal-body .ai-search-desc {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 18px;
+    }
+    .ai-search-input {
+      position: relative;
+      margin-bottom: 14px;
+    }
+    .ai-search-input input {
+      width: 100%;
+      padding: 14px 48px 14px 44px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      font: inherit;
+      font-size: 15px;
+      color: var(--fg);
+      transition: border-color 0.15s ease;
+    }
+    .ai-search-input input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .ai-search-input input::placeholder { color: var(--muted); }
+    .ai-search-input .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+    }
+    .ai-upload-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ai-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px 18px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-upload-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .ai-upload-btn:hover {
+      background: var(--fg);
+      color: var(--surface);
+    }
+    .ai-upload-btn:hover small { color: oklch(100% 0 0 / 0.6); }
+    .ai-upload-btn.drag-over {
+      background: var(--accent);
+      color: var(--surface);
+      border-style: solid;
+      border-color: var(--accent);
+    }
+    .ai-upload-btn.drag-over small { color: oklch(100% 0 0 / 0.7); }
+    .ai-upload-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .ai-upload-btn span { flex: 1; }
+    .ai-upload-btn small {
+      display: block;
+      width: 100%;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      text-align: center;
+      transition: color 0.15s;
+    }
+    .ai-search-hint {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .ai-search-hint svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .ai-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.12s ease, color 0.12s ease;
+    }
+    .ai-tag:hover { border-color: var(--accent); color: var(--accent); }
     @media (max-width: 600px) {
       .ai-upload-row { flex-direction: column; }
       .ai-upload-btn { justify-content: center; }
       .modal { max-width: 100%; margin: 12px; border-radius: 12px; }
+    }
+
+    /* ── Raccolte tabs ── */
+    .raccolte-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 24px;
+      padding-bottom: 4px;
+    }
+    .raccolte-bar::-webkit-scrollbar { display: none; }
+    .raccolte-tab {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .raccolte-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .raccolte-tab.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
     }
   </style>
 </head>
@@ -575,9 +603,9 @@
       </nav>
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" placeholder="Cerca articoli, linee, famiglie…" />
+        <input type="text" placeholder="Cerca articoli, famiglie, raccolte…" />
         <button class="ai-trigger" title="Ricerca intelligente AI" onclick="document.getElementById('aiModal').classList.add('open')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 7.5 7.5 12 2 12C7.5 12 12 16.5 12 22C12 16.5 16.5 12 22 12C16.5 12 12 7.5 12 2Z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
         </button>
       </div>
       <a href="04-cart.html" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">Carrello (3)</a>
@@ -586,38 +614,38 @@
 
   <main id="content">
     <div class="container">
-
       <div class="catalog-layout">
         <aside class="sidebar">
           <div class="filter-group">
-            <h3>Linea</h3>
-            <label><input type="checkbox" checked /> Cotto da Esterno <span class="count">84</span></label>
-            <label><input type="checkbox" /> Ceramiche Moderne <span class="count">62</span></label>
-            <label><input type="checkbox" /> Cotto Portoghese <span class="count">45</span></label>
-            <label><input type="checkbox" /> Fiberstone <span class="count">38</span></label>
-            <label><input type="checkbox" /> Vasi Da Interno <span class="count">56</span></label>
-            <label><input type="checkbox" /> Fioriere <span class="count">31</span></label>
-          </div>
-          <div class="filter-group">
             <h3>Famiglia</h3>
-            <label><input type="checkbox" /> Novità <span class="count">24</span></label>
-            <label><input type="checkbox" /> Best Seller <span class="count">18</span></label>
-            <label><input type="checkbox" /> Capi <span class="count">12</span></label>
-            <label><input type="checkbox" /> Natale 2026 <span class="count">9</span></label>
-            <label><input type="checkbox" /> Promo Primavera <span class="count">15</span></label>
+            <label><input type="checkbox" checked /> Cotto da Esterno <span class="count">24</span></label>
+            <label><input type="checkbox" /> Cotto da Interno <span class="count">18</span></label>
+            <label><input type="checkbox" /> Fiberstone <span class="count">14</span></label>
+            <label><input type="checkbox" /> Metallo <span class="count">11</span></label>
+            <label><input type="checkbox" /> Cesti Intrecciati <span class="count">9</span></label>
+            <label><input type="checkbox" /> Vasi da Interno <span class="count">16</span></label>
           </div>
+          <hr class="filter-divider" />
+          <div class="filter-group">
+            <h3>Raccolte</h3>
+            <label><input type="checkbox" /> Novità 2026 <span class="count">12</span></label>
+            <label><input type="checkbox" /> Best Seller <span class="count">8</span></label>
+            <label><input type="checkbox" /> Promo Primavera <span class="count">15</span></label>
+            <label><input type="checkbox" /> Natale 2026 <span class="count">6</span></label>
+          </div>
+          <hr class="filter-divider" />
           <div class="filter-group">
             <h3>Disponibilità</h3>
-            <label><input type="checkbox" checked /> Disponibile <span class="count">320</span></label>
-            <label><input type="checkbox" /> Scorte limitate <span class="count">48</span></label>
-            <label><input type="checkbox" /> Esaurito <span class="count">12</span></label>
+            <label><input type="checkbox" checked /> Disponibile <span class="count">68</span></label>
+            <label><input type="checkbox" /> Scorte limitate <span class="count">12</span></label>
+            <label><input type="checkbox" /> Esaurito <span class="count">4</span></label>
           </div>
         </aside>
 
         <div>
           <div class="ai-results-banner" id="aiResultsBanner" style="display:none;">
             <div class="ai-results-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
             </div>
             <div class="ai-results-text">
               <span class="ai-results-label">Ricerca AI</span>
@@ -628,9 +656,10 @@
               Mostra tutto
             </button>
           </div>
+
           <div class="catalog-header">
             <div>
-              <h2 id="catalogTitle">Cotto da Esterno</h2>
+              <h2 id="catalogTitle">Catalogo</h2>
               <p class="meta" id="catalogMeta">84 articoli · Prezzi IVA esclusa</p>
             </div>
             <select class="sort-select">
@@ -641,106 +670,16 @@
             </select>
           </div>
 
-          <div class="product-grid">
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-cotto-esterni.webp" alt="Vaso Torchio" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Torchio Terracotta Ø30 H35</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 12,40</span>
-                  <span class="product-stock stock-ok">120 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-cotto-interni.webp" alt="Vaso Amphora" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Amphora Cotto Ø45 H50</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 28,60</span>
-                  <span class="product-stock stock-ok">86 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-cesti.webp" alt="Fioriera Rect. 60" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Fioriera Rettangolare Cotto 60cm</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 34,20</span>
-                  <span class="product-stock stock-low">18 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-fiberstone.webp" alt="Vaso Campana" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Campana Terracotta Ø25 H28</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 8,90</span>
-                  <span class="product-stock stock-ok">200 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-metallo.webp" alt="Vaso Paniere" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Paniere Cotto Ø40 H38</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 19,50</span>
-                  <span class="product-stock stock-ok">64 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-capi-europe.webp" alt="Fioriera Quadra" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Fioriera Quadrata Cotto 40×40</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 22,80</span>
-                  <span class="product-stock stock-out">Esaurito</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/catalogo-pottery-pots.webp" alt="Vaso Colonna" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Colonna Cotto H60 Ø20</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 31,00</span>
-                  <span class="product-stock stock-ok">42 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/vasi-bianchi.webp" alt="Vaso Mezza Luna" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Vaso Mezza Luna Cotto 50cm</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 26,40</span>
-                  <span class="product-stock stock-low">8 pz</span>
-                </div>
-              </div>
-            </a>
-            <a href="03-product.html" class="product-card">
-              <img src="images/hero-slider.webp" alt="Tubo Cotto" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-              <div class="product-body">
-                <div class="product-line">Cotto da Esterno</div>
-                <p class="product-name">Tubo Cotto Ø15 H120 (multiplo 6)</p>
-                <div class="product-meta">
-                  <span class="product-price">€ 14,60</span>
-                  <span class="product-stock stock-ok">150 pz</span>
-                </div>
-              </div>
-            </a>
+          <div class="raccolte-bar">
+            <button class="raccolte-tab active" onclick="filterRaccolta(this, 'tutti')">Tutti</button>
+            <button class="raccolte-tab" onclick="filterRaccolta(this, 'novita')">Novità 2026</button>
+            <button class="raccolte-tab" onclick="filterRaccolta(this, 'bestseller')">Best Seller</button>
+            <button class="raccolte-tab" onclick="filterRaccolta(this, 'promo')">Promo Primavera</button>
+            <button class="raccolte-tab" onclick="filterRaccolta(this, 'natale')">Natale 2026</button>
+          </div>
+
+          <div class="product-grid" id="productGrid">
+            <!-- Articoli renderizzati via JS -->
           </div>
 
           <div class="pagination">
@@ -748,7 +687,6 @@
             <span class="active">1</span>
             <a href="#">2</a>
             <a href="#">3</a>
-            <a href="#">4</a>
             <a href="#">→</a>
           </div>
         </div>
@@ -763,6 +701,7 @@
       <span class="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
     </div>
   </footer>
+
   <div class="modal-overlay" id="aiModal">
     <div class="modal">
       <div class="modal-head">
@@ -773,15 +712,10 @@
       </div>
       <div class="modal-body">
         <p class="ai-search-desc">Descrivi quello che cerchi a parole oppure trascina o carica un'immagine o un file di testo — l'AI troverà i prodotti più simili nel catalogo.</p>
-
         <div class="ai-search-input">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" placeholder="Es. vaso terracotta rotondo Ø30 per esterno…" id="ai-modal-text" />
-          <button class="mic-btn" title="Cerca per voce" onclick="alert('Ricerca vocale non disponibile in prototipo')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="1" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
-          </button>
         </div>
-
         <div class="ai-upload-row">
           <label class="ai-upload-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -796,7 +730,6 @@
             <input type="file" accept=".txt,.csv,.pdf,.doc,.docx" />
           </label>
         </div>
-
         <div class="ai-search-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
           Prova: <span class="ai-tag" onclick="document.getElementById('ai-modal-text').value='vaso alto per esterno resistente al gelo'">vaso alto per esterno</span>
@@ -805,13 +738,127 @@
         </div>
       </div>
       <div class="modal-foot">
-        <button class="btn btn-ghost" onclick="document.getElementById('aiModal').classList.remove('open')">Annulla</button>
-        <button class="btn btn-primary">Cerca</button>
+        <button class="btn-ghost" onclick="document.getElementById('aiModal').classList.remove('open')">Annulla</button>
+        <button class="btn-primary" onclick="runAiSearch(document.getElementById('ai-modal-text').value.trim())">Cerca</button>
       </div>
     </div>
   </div>
 
   <script>
+    var articles = [
+      {
+        id: 'ART-001', name: 'Vaso Torchio', colore: 'Terracotta', coloreHex: '#C46A42',
+        famiglia: 'Cotto da Esterno', raccolte: ['novita', 'bestseller'],
+        img: 'images/catalogo-cotto-esterni.webp', varianti: 6, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      },
+      {
+        id: 'ART-002', name: 'Vaso Amphora', colore: 'Naturale', coloreHex: '#B89B6A',
+        famiglia: 'Cotto da Esterno', raccolte: ['bestseller'],
+        img: 'images/catalogo-cotto-interni.webp', varianti: 4, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      },
+      {
+        id: 'ART-003', name: 'Fioriera Rettangolare', colore: 'Terracotta', coloreHex: '#C46A42',
+        famiglia: 'Cotto da Esterno', raccolte: ['promo'],
+        img: 'images/catalogo-cesti.webp', varianti: 3, stockClass: 'stock-low', stockLabel: 'Scorte limitate'
+      },
+      {
+        id: 'ART-004', name: 'Vaso Campana', colore: 'Terracotta', coloreHex: '#C46A42',
+        famiglia: 'Cotto da Esterno', raccolte: [],
+        img: 'images/catalogo-fiberstone.webp', varianti: 5, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      },
+      {
+        id: 'ART-005', name: 'Vaso Paniere', colore: 'Grigio Pietra', coloreHex: '#8A8580',
+        famiglia: 'Cotto da Esterno', raccolte: ['novita'],
+        img: 'images/catalogo-metallo.webp', varianti: 3, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      },
+      {
+        id: 'ART-006', name: 'Fioriera Quadrata', colore: 'Terracotta', coloreHex: '#C46A42',
+        famiglia: 'Cotto da Esterno', raccolte: [],
+        img: 'images/catalogo-capi-europe.webp', varianti: 2, stockClass: 'stock-out', stockLabel: 'Esaurito'
+      },
+      {
+        id: 'ART-007', name: 'Vaso Colonna', colore: 'Naturale', coloreHex: '#B89B6A',
+        famiglia: 'Cotto da Esterno', raccolte: ['bestseller'],
+        img: 'images/catalogo-pottery-pots.webp', varianti: 4, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      },
+      {
+        id: 'ART-008', name: 'Vaso Mezza Luna', colore: 'Terracotta', coloreHex: '#C46A42',
+        famiglia: 'Cotto da Esterno', raccolte: ['promo'],
+        img: 'images/vasi-bianchi.webp', varianti: 3, stockClass: 'stock-low', stockLabel: 'Scorte limitate'
+      },
+      {
+        id: 'ART-009', name: 'Tubo Cotto', colore: 'Naturale', coloreHex: '#B89B6A',
+        famiglia: 'Cotto da Esterno', raccolte: [],
+        img: 'images/hero-slider.webp', varianti: 2, stockClass: 'stock-ok', stockLabel: 'Disponibile'
+      }
+    ];
+
+    function renderProducts(list) {
+      var grid = document.getElementById('productGrid');
+      grid.innerHTML = list.map(function(a) {
+        var tags = a.raccolte.map(function(r) {
+          var labels = { novita: 'Novità', bestseller: 'Best Seller', promo: 'Promo', natale: 'Natale' };
+          return '<span class="product-tag">' + (labels[r] || r) + '</span>';
+        }).join('');
+        return '<a href="03-product.html" class="product-card">' +
+          '<div class="product-img"><img src="' + a.img + '" alt="' + a.name + '" /></div>' +
+          '<div class="product-body">' +
+            '<div class="product-famiglia"><span class="color-dot" style="background:' + a.coloreHex + '"></span>' + a.famiglia + '</div>' +
+            '<p class="product-name">' + a.name + ' ' + a.colore + '</p>' +
+            (tags ? '<div class="product-tags">' + tags + '</div>' : '') +
+            '<div class="product-meta">' +
+              '<span class="product-variants">' + a.varianti + ' varianti</span>' +
+              '<span class="product-stock ' + a.stockClass + '">' + a.stockLabel + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</a>';
+      }).join('');
+    }
+
+    function filterRaccolta(btn, raccolta) {
+      document.querySelectorAll('.raccolte-tab').forEach(function(t) { t.classList.remove('active'); });
+      btn.classList.add('active');
+      if (raccolta === 'tutti') {
+        renderProducts(articles);
+        document.getElementById('catalogTitle').textContent = 'Catalogo';
+        document.getElementById('catalogMeta').textContent = '84 articoli · Prezzi IVA esclusa';
+      } else {
+        var filtered = articles.filter(function(a) { return a.raccolte.indexOf(raccolta) !== -1; });
+        renderProducts(filtered);
+        var label = btn.textContent;
+        document.getElementById('catalogTitle').textContent = label;
+        document.getElementById('catalogMeta').textContent = filtered.length + ' articoli · Raccolta · Prezzi IVA esclusa';
+      }
+    }
+
+    renderProducts(articles);
+
+    /* ── AI Modal ── */
+    function runAiSearch(query) {
+      if (!query) return;
+      document.getElementById('aiModal').classList.remove('open');
+      var count = Math.floor(Math.random() * 18) + 5;
+      document.getElementById('aiResultsCount').textContent = count + ' articoli trovati per «' + query + '»';
+      document.getElementById('aiResultsBanner').style.display = 'flex';
+      document.getElementById('catalogTitle').textContent = 'Risultati AI';
+      document.getElementById('catalogMeta').textContent = count + ' articoli · Ricerca intelligente · Prezzi IVA esclusa';
+    }
+    document.getElementById('aiResultsClear').addEventListener('click', function() {
+      document.getElementById('aiResultsBanner').style.display = 'none';
+      document.getElementById('catalogTitle').textContent = 'Catalogo';
+      document.getElementById('catalogMeta').textContent = '84 articoli · Prezzi IVA esclusa';
+      renderProducts(articles);
+      document.querySelectorAll('.raccolte-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelector('.raccolte-tab').classList.add('active');
+    });
+    document.getElementById('ai-modal-text').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); runAiSearch(this.value.trim()); }
+    });
+    var aiModal = document.getElementById('aiModal');
+    aiModal.addEventListener('click', function(e) { if (e.target === aiModal) aiModal.classList.remove('open'); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') aiModal.classList.remove('open'); });
+
+    /* ── Upload drag/drop ── */
     document.querySelectorAll('.ai-upload-btn input[type="file"]').forEach(function(input) {
       input.addEventListener('change', function(e) {
         var file = e.target.files[0];
@@ -841,7 +888,6 @@
       btn.addEventListener('drop', function(e) {
         var file = e.dataTransfer.files[0];
         if (!file) return;
-        var input = btn.querySelector('input[type="file"]');
         var original = btn.innerHTML;
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg> ' + file.name;
         btn.style.borderColor = 'var(--accent)';
@@ -852,40 +898,8 @@
           btn.style.borderColor = '';
           btn.style.color = '';
           btn.style.borderStyle = '';
-          input.value = '';
         }, 3000);
       });
-    });
-    function runAiSearch(query) {
-      document.getElementById('aiModal').classList.remove('open');
-      var count = Math.floor(Math.random() * 18) + 5;
-      document.getElementById('aiResultsCount').textContent = count + ' prodotti trovati per «' + query + '»';
-      document.getElementById('aiResultsBanner').style.display = 'flex';
-      document.getElementById('catalogTitle').textContent = 'Risultati AI';
-      document.getElementById('catalogMeta').textContent = count + ' articoli · Ricerca intelligente · Prezzi IVA esclusa';
-    }
-    document.getElementById('aiResultsClear').addEventListener('click', function() {
-      document.getElementById('aiResultsBanner').style.display = 'none';
-      document.getElementById('catalogTitle').textContent = 'Cotto da Esterno';
-      document.getElementById('catalogMeta').textContent = '84 articoli · Prezzi IVA esclusa';
-    });
-    document.querySelector('.modal-foot .btn-primary').addEventListener('click', function() {
-      var val = document.getElementById('ai-modal-text').value.trim();
-      if (val) runAiSearch(val);
-    });
-    document.getElementById('ai-modal-text').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        var val = this.value.trim();
-        if (val) runAiSearch(val);
-      }
-    });
-    var aiModal = document.getElementById('aiModal');
-    aiModal.addEventListener('click', function(e) {
-      if (e.target === aiModal) aiModal.classList.remove('open');
-    });
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') aiModal.classList.remove('open');
     });
   </script>
 </body>
