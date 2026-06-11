@@ -743,7 +743,7 @@
 
           <div class="variant-section">
             <label>Altezza</label>
-            <select class="variant-select" id="dim1">
+            <select class="variant-select" id="dim1" onchange="cascadeDim2()">
               <option value="">Seleziona altezza…</option>
               <option value="25">H25 cm</option>
               <option value="35" selected>H35 cm</option>
@@ -755,7 +755,6 @@
             <label>Diametro</label>
             <select class="variant-select" id="dim2">
               <option value="">Seleziona diametro…</option>
-              <option value="20">Ø20 cm</option>
               <option value="30" selected>Ø30 cm</option>
               <option value="40">Ø40 cm</option>
             </select>
@@ -1066,9 +1065,55 @@
       updateGridTotal();
     }
 
+    function cascadeDim2() {
+      var d1 = document.getElementById('dim1').value;
+      var sel2 = document.getElementById('dim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      sel2.innerHTML = '<option value="">Seleziona diametro…</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      }
+    }
+
+    var dim2Map = {
+      '': ['20','30','40'],
+      '25': ['20','30'],
+      '35': ['30','40'],
+      '45': ['30','40']
+    };
+
     function filterVariants() {
       var d1 = document.getElementById('filterDim1').value;
-      var d2 = document.getElementById('filterDim2').value;
+      var sel2 = document.getElementById('filterDim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      // rebuild dim2 options
+      sel2.innerHTML = '<option value="">Tutti i diametri</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      // restore previous selection if still valid
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      } else {
+        sel2.value = '';
+      }
+
+      var d2 = sel2.value;
       var rows = document.querySelectorAll('#variantBody tr');
       rows.forEach(function(row) {
         var match1 = !d1 || row.dataset.dim1 === d1;
