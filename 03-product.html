@@ -123,7 +123,7 @@
     /* ── Amazon 3-column layout ── */
     .product-layout {
       display: grid;
-      grid-template-columns: minmax(380px, 1.6fr) minmax(260px, 0.9fr) 320px;
+      grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr) 320px;
       gap: 32px;
       margin-bottom: 48px;
       align-items: start;
@@ -144,46 +144,53 @@
       .cascade-filters { flex-direction: column; }
       .cascade-filters select { min-width: 100%; }
     }
-    .product-left { display: flex; flex-direction: column; gap: 16px; }
-    .gallery-main {
+    .product-left { display: flex; flex-direction: column; gap: 10px; }
+    .gallery-wrapper {
       width: 100%;
-      aspect-ratio: 1;
-      border-radius: var(--radius-lg);
       background: var(--surface);
-      display: grid; place-items: center;
+      border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       overflow: hidden;
       position: relative;
+    }
+    .gallery-main {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid; place-items: center;
       cursor: zoom-in;
+      position: relative;
+      overflow: hidden;
     }
     .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
-    .gallery-nav {
+    .gallery-share {
       position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: oklch(0% 0 0 / 0.55);
-      backdrop-filter: blur(6px);
-      color: white;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-family: var(--font-mono);
-    }
-    .gallery-nav button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 16px;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: grid; place-items: center;
       cursor: pointer;
-      padding: 0 4px;
+      z-index: 2;
+      transition: background 0.15s;
     }
+    .gallery-share:hover { background: var(--fg-soft); }
+    .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
+    .gallery-hint {
+      text-align: center;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--accent);
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+    }
+    .gallery-hint:hover { text-decoration: underline; }
     .gallery-thumbs {
       display: flex;
       gap: 8px;
+      padding: 12px;
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -202,9 +209,22 @@
       transition: border-color 0.15s;
       flex-shrink: 0;
       overflow: hidden;
+      position: relative;
     }
     .thumb img { width: 100%; height: 100%; object-fit: cover; }
     .thumb.active, .thumb:hover { border-color: var(--accent); }
+    .thumb-more {
+      position: absolute;
+      inset: 0;
+      background: oklch(0% 0 0 / 0.55);
+      display: grid; place-items: center;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      border-radius: 6px;
+      cursor: pointer;
+    }
     .product-center { display: flex; flex-direction: column; gap: 20px; }
     .product-center h1 {
       font-family: var(--font-display);
@@ -643,6 +663,50 @@
       color: white; font-family: var(--font-mono); font-size: 14px;
       background: oklch(0% 0 0 / 0.5); padding: 6px 16px; border-radius: 999px;
     }
+    .gallery-modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 10001;
+      background: oklch(0% 0 0 / 0.92);
+      backdrop-filter: blur(10px);
+      flex-direction: column;
+      align-items: center;
+      padding: 32px;
+      overflow-y: auto;
+    }
+    .gallery-modal-overlay.open { display: flex; }
+    .gallery-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; max-width: 900px; margin-bottom: 24px;
+    }
+    .gallery-modal-header h3 {
+      color: white; font-family: var(--font-display); font-size: 20px; margin: 0;
+    }
+    .gallery-modal-close {
+      background: oklch(100% 0 0 / 0.12); border: none; color: white;
+      font-size: 24px; width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; display: grid; place-items: center;
+    }
+    .gallery-modal-close:hover { background: oklch(100% 0 0 / 0.25); }
+    .gallery-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%; max-width: 900px;
+    }
+    .gallery-modal-grid img {
+      width: 100%; aspect-ratio: 1; object-fit: cover;
+      border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+    .gallery-modal-grid img:hover {
+      border-color: var(--accent);
+      transform: scale(1.02);
+    }
+    @media (max-width: 640px) {
+      .gallery-modal-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .gallery-modal-overlay { padding: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -671,22 +735,27 @@
     </div>
 
       <div class="product-layout">
-        <!-- COLONNA SINISTRA: Immagine + Thumbnails -->
+        <!-- COLONNA SINISTRA: Galleria stile Amazon -->
         <div class="product-left">
-          <div class="gallery-main" id="galleryMain">
-            <img src="images/vasi-bianchi.webp" alt="Vaso Torchio Terracotta Ø30 H35" />
-            <div class="gallery-nav">
-              <button onclick="prevImg()">‹</button>
-              <span id="galleryCounter">1 / 5</span>
-              <button onclick="nextImg()">›</button>
+          <div class="gallery-wrapper">
+            <div class="gallery-share" title="Condividi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             </div>
-          </div>
-          <div class="gallery-thumbs">
-            <img src="images/vasi-bianchi.webp" alt="Thumb 1" class="thumb active" />
-            <img src="images/catalogo-cotto-esterni.webp" alt="Thumb 2" class="thumb" />
-            <img src="images/catalogo-cotto-interni.webp" alt="Thumb 3" class="thumb" />
-            <img src="images/catalogo-fiberstone.webp" alt="Thumb 4" class="thumb" />
-            <img src="images/catalogo-metallo.webp" alt="Thumb 5" class="thumb" />
+            <div class="gallery-main" id="galleryMain" onclick="openLightbox()">
+              <img src="images/vasi-bianchi.webp" alt="Vaso Torchio Terracotta Ø30 H35" id="mainImage" />
+            </div>
+            <div class="gallery-hint" onclick="openLightbox()">Fai clic per visualizzare la vista completa</div>
+            <div class="gallery-thumbs" id="galleryThumbs">
+              <img src="images/vasi-bianchi.webp" alt="Thumb 1" class="thumb active" data-idx="0" />
+              <img src="images/catalogo-cotto-esterni.webp" alt="Thumb 2" class="thumb" data-idx="1" />
+              <img src="images/catalogo-cotto-interni.webp" alt="Thumb 3" class="thumb" data-idx="2" />
+              <img src="images/catalogo-fiberstone.webp" alt="Thumb 4" class="thumb" data-idx="3" />
+              <img src="images/catalogo-metallo.webp" alt="Thumb 5" class="thumb" data-idx="4" />
+              <div class="thumb" data-idx="5" style="position:relative;">
+                <img src="images/catalogo-pottery-pots.webp" alt="Thumb 6" />
+                <div class="thumb-more" onclick="event.stopPropagation();openGalleryModal()">3+</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1117,16 +1186,80 @@
       plusBtn.setAttribute('onclick', 'changeQty(' + v.multiplo + ')');
     }
 
-    function updateGallery() {
-      var mainImg = document.querySelector('.gallery-main img');
-      if (mainImg) mainImg.src = galleryImages[currentImg];
-      document.getElementById('galleryCounter').textContent = (currentImg + 1) + ' / ' + galleryImages.length;
-      document.querySelectorAll('.gallery-thumbs .thumb').forEach(function(t, i) {
-        t.classList.toggle('active', i === currentImg);
+    function selectThumb(idx) {
+      if (idx >= galleryImages.length) idx = 0;
+      currentImg = idx;
+      var mainImg = document.getElementById('mainImage');
+      if (mainImg) mainImg.src = galleryImages[idx];
+      document.querySelectorAll('#galleryThumbs .thumb').forEach(function(t, i) {
+        t.classList.toggle('active', i === idx);
       });
     }
-    function nextImg() { currentImg = (currentImg + 1) % galleryImages.length; updateGallery(); }
-    function prevImg() { currentImg = (currentImg - 1 + galleryImages.length) % galleryImages.length; updateGallery(); }
+    function openLightbox() {
+      var lb = document.getElementById('lightbox');
+      lb.classList.add('open');
+      updateLightbox();
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function lbNav(delta) {
+      currentImg = (currentImg + delta + galleryImages.length) % galleryImages.length;
+      updateLightbox();
+      selectThumb(currentImg);
+    }
+    function updateLightbox() {
+      var img = document.getElementById('lbImage');
+      if (img) img.src = galleryImages[currentImg];
+      var counter = document.getElementById('lbCounter');
+      if (counter) counter.textContent = (currentImg + 1) + ' / ' + galleryImages.length;
+    }
+
+    var allGalleryImages = [
+      'images/vasi-bianchi.webp',
+      'images/catalogo-cotto-esterni.webp',
+      'images/catalogo-cotto-interni.webp',
+      'images/catalogo-fiberstone.webp',
+      'images/catalogo-metallo.webp',
+      'images/catalogo-pottery-pots.webp',
+      'images/catalogo-capi-europe.webp',
+      'images/catalogo-cotto-esterni.webp',
+      'images/catalogo-metallo.webp',
+      'images/catalogo-cotto-interni.webp'
+    ];
+
+    function openGalleryModal() {
+      var grid = document.getElementById('galleryModalGrid');
+      grid.innerHTML = '';
+      allGalleryImages.forEach(function(src, i) {
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Immagine ' + (i + 1);
+        img.onclick = function() {
+          closeGalleryModal();
+          currentImg = i;
+          if (i < galleryImages.length) {
+            openLightbox();
+          } else {
+            var lb = document.getElementById('lightbox');
+            document.getElementById('lbImage').src = src;
+            document.getElementById('lbCounter').textContent = (i + 1) + ' / ' + allGalleryImages.length;
+            lb.classList.add('open');
+            document.body.style.overflow = 'hidden';
+          }
+        };
+        grid.appendChild(img);
+      });
+      document.getElementById('galleryModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeGalleryModal() {
+      document.getElementById('galleryModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
 
     function changeQty(delta) {
       var input = document.getElementById('qty');
@@ -1265,35 +1398,33 @@
       }
     }
 
-    document.querySelectorAll('.gallery-thumbs .thumb').forEach(function(thumb, i) {
+    document.querySelectorAll('#galleryThumbs .thumb').forEach(function(thumb) {
       thumb.addEventListener('click', function() {
-        currentImg = i;
-        updateGallery();
+        var idx = parseInt(thumb.dataset.idx) || 0;
+        selectThumb(idx);
       });
     });
 
-    document.querySelector('.gallery-main').addEventListener('click', function() {
-      var lb = document.getElementById('lightbox');
-      lb.querySelector('img').src = galleryImages[currentImg];
-      lb.querySelector('.lightbox-counter').textContent = (currentImg + 1) + ' / ' + galleryImages.length;
-      lb.classList.add('open');
-    });
-    function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
-    function lbNav(dir) {
-      currentImg = (currentImg + dir + galleryImages.length) % galleryImages.length;
-      var lb = document.getElementById('lightbox');
-      lb.querySelector('img').src = galleryImages[currentImg];
-      lb.querySelector('.lightbox-counter').textContent = (currentImg + 1) + ' / ' + galleryImages.length;
-      updateGallery();
-    }
     document.addEventListener('keydown', function(e) {
+      var gm = document.getElementById('galleryModal');
+      if (gm && gm.classList.contains('open')) {
+        if (e.key === 'Escape') closeGalleryModal();
+        return;
+      }
       var lb = document.getElementById('lightbox');
-      if (!lb.classList.contains('open')) return;
+      if (!lb || !lb.classList.contains('open')) return;
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowRight') lbNav(1);
       if (e.key === 'ArrowLeft') lbNav(-1);
     });
   </script>
+  <div class="gallery-modal-overlay" id="galleryModal" onclick="if(event.target===this)closeGalleryModal()">
+    <div class="gallery-modal-header">
+      <h3>Tutte le immagini</h3>
+      <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
+    </div>
+    <div class="gallery-modal-grid" id="galleryModalGrid"></div>
+  </div>
   <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()">×</button>
     <button class="lightbox-nav prev" onclick="event.stopPropagation();lbNav(-1)">‹</button>
