@@ -113,7 +113,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | Attività | Dettaglio |
 |----------|-----------|
 | Lettura giacenza da viste Postgres | Quantità per Variante (codice articolo) |
-| Badge disponibilità | "Disponibile", "Esaurito", "< 10 pezzi" in griglia e scheda |
+| Badge disponibilità | Solo "Disponibile" / "Non disponibile" in griglia e scheda (la quantità non è esposta al cliente) |
 | Filtro disponibilità | Mostra solo articoli disponibili |
 | Data ultimo aggiornamento | Trasparenza sul dato mostrato |
 
