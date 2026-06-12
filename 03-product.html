@@ -1,1482 +1,1482 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vaso Torchio Terracotta Ø30 — Luis B2B</title>
-  <style>
-    :root {
-      --bg:      oklch(97% 0.005 80);
-      --surface: oklch(100% 0 0);
-      --fg:      oklch(22% 0.02 60);
-      --muted:   oklch(52% 0.015 60);
-      --border:  oklch(88% 0.01 70);
-      --accent:  oklch(55% 0.14 45);
-      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
-      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
-      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
-      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
-      --fs-h2: clamp(28px, 3.5vw, 40px);
-      --fs-h3: 18px;
-      --fs-body: 15px;
-      --fs-meta: 13px;
-      --gap-sm: 12px;
-      --gap-md: 20px;
-      --gap-lg: 32px;
-      --gap-xl: 56px;
-      --container: 1280px;
-      --gutter: 32px;
-      --radius: 10px;
-      --radius-lg: 14px;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: var(--font-body);
-      font-size: var(--fs-body);
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-    }
-    a { color: inherit; text-decoration: none; }
-    button { font: inherit; cursor: pointer; }
-    .container {
-      max-width: var(--container);
-      margin-inline: auto;
-      padding-inline: var(--gutter);
-    }
-    .topnav {
-      position: sticky; top: 0; z-index: 10;
-      background: color-mix(in oklch, var(--bg) 92%, transparent);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border);
-    }
-    .topnav .container { max-width: 100%; }
-    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: 24px; }
-    .topnav .logo img { height: 32px; width: auto; }
-    .topnav nav { display: flex; gap: var(--gap-lg); }
-    .topnav nav a { font-size: 14px; color: var(--muted); }
-    .topnav nav a:hover, .topnav nav a.active { color: var(--fg); }
-    .search-box {
-      flex: 1;
-      max-width: 400px;
-      position: relative;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 9px 14px 9px 36px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      font: inherit;
-      font-size: 14px;
-      color: var(--fg);
-    }
-    .search-box input:focus {
-      outline: 2px solid var(--accent-soft);
-      border-color: var(--accent);
-    }
-    .search-box svg {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
-      color: var(--muted);
-    }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 9px 16px;
-      border-radius: var(--radius);
-      border: 1px solid transparent;
-      font-size: 14px;
-      font-weight: 500;
-      transition: transform 0.05s ease, background 0.15s ease;
-    }
-    .btn:active { transform: translateY(1px); }
-    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
-    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
-    .btn-secondary:hover { border-color: var(--fg); }
-    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
-    .btn-ghost:hover { color: var(--accent); }
-    .eyebrow {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
-    .num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-    .breadcrumb {
-      padding-block: 16px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .breadcrumb a { color: var(--muted); }
-    .breadcrumb a:hover { color: var(--accent); }
-    .breadcrumb span { margin: 0 6px; }
-    /* ══ Amazon 3-column layout ══ */
-    .product-layout {
-      display: grid;
-      grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr) 320px;
-      gap: 32px;
-      margin-bottom: 48px;
-      align-items: start;
-      padding-inline: 32px;
-    }
-    @media (max-width: 1100px) {
-      .product-layout { grid-template-columns: 1fr 1fr; }
-      .buy-box { grid-column: 1 / -1; grid-row: 2; }
-    }
-    @media (max-width: 768px) {
-      .product-layout { grid-template-columns: 1fr; }
-      .product-left { display: flex; flex-direction: column; }
-      .gallery-main img { max-height: 400px; }
-      .gallery-thumbs { flex-direction: row; overflow-x: auto; gap: 8px; }
-      .gallery-thumbs .thumb { width: 64px; height: 64px; flex-shrink: 0; }
-      .variant-table { font-size: 12px; display: block; overflow-x: auto; }
-      .variant-table th, .variant-table td { padding: 8px 10px; white-space: nowrap; }
-      .cascade-filters { flex-direction: column; }
-      .cascade-filters select { min-width: 100%; }
-    }
-    .product-left { display: flex; flex-direction: column; gap: 10px; }
-    .gallery-wrapper {
-      width: 100%;
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      position: relative;
-    }
-    .gallery-main {
-      width: 100%;
-      aspect-ratio: 1;
-      display: grid; place-items: center;
-      cursor: zoom-in;
-      position: relative;
-      overflow: hidden;
-    }
-    .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
-    .gallery-share {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 36px;
-      height: 36px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      display: grid; place-items: center;
-      cursor: pointer;
-      z-index: 2;
-      transition: background 0.15s;
-    }
-    .gallery-share:hover { background: var(--fg-soft); }
-    .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
-    .gallery-hint {
-      text-align: center;
-      padding: 10px 12px;
-      font-size: 13px;
-      color: var(--accent);
-      cursor: pointer;
-      border-top: 1px solid var(--border);
-    }
-    .gallery-hint:hover { text-decoration: underline; }
-    .gallery-thumbs {
-      display: flex;
-      gap: 8px;
-      padding: 12px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .gallery-thumbs::-webkit-scrollbar { display: none; }
-    .thumb {
-      width: 72px;
-      height: 72px;
-      border-radius: 8px;
-      border: 2px solid transparent;
-      background: var(--surface);
-      display: grid; place-items: center;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 9px;
-      cursor: pointer;
-      transition: border-color 0.15s;
-      flex-shrink: 0;
-      overflow: hidden;
-      position: relative;
-    }
-    .thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .thumb.active, .thumb:hover { border-color: var(--accent); }
-    .thumb-more {
-      position: absolute;
-      inset: 0;
-      background: oklch(0% 0 0 / 0.55);
-      display: grid; place-items: center;
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-      font-family: var(--font-body);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .product-center { display: flex; flex-direction: column; gap: 20px; }
-    .product-center h1 {
-      font-family: var(--font-display);
-      font-size: clamp(24px, 3vw, 32px);
-      margin: 0;
-      line-height: 1.15;
-    }
-    .product-desc-block h3 {
-      font-size: 16px;
-      margin: 0 0 8px;
-      color: var(--fg);
-    }
-    .product-desc-block p {
-      margin: 0 0 12px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .product-features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 24px;
-    }
-    .product-features .feat {
-      font-size: 13px;
-      color: var(--muted);
-      padding: 6px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .product-features .feat strong { color: var(--fg); font-weight: 500; }
-    /* ══ Buy Box (right) ══ */
-    .buy-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      align-self: flex-start;
-      position: sticky;
-      top: 80px;
-    }
-    .buy-box .price-block {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .buy-box .price-net {
-      font-family: var(--font-mono);
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--fg);
-    }
-    .buy-box .price-list {
-      font-family: var(--font-mono);
-      font-size: 16px;
-      color: var(--muted);
-      text-decoration: line-through;
-    }
-    .buy-box .price-discount {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 3px 8px;
-      border-radius: 999px;
-    }
-    .buy-box .savings-line {
-      font-size: 13px;
-      color: var(--accent);
-      font-weight: 500;
-    }
-    .buy-box .divider {
-      height: 1px;
-      background: var(--border);
-    }
-    .variant-section { display: flex; flex-direction: column; gap: 8px; }
-    .variant-section label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-    }
-    .variant-select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      font: inherit;
-      font-size: 14px;
-      color: var(--fg);
-    }
-    .variant-select:focus {
-      outline: 2px solid var(--accent-soft);
-      border-color: var(--accent);
-    }
-    .qty-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .qty-control {
-      display: flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .qty-control button {
-      width: 40px;
-      height: 40px;
-      border: none;
-      background: var(--surface);
-      font-size: 18px;
-      color: var(--fg);
-      cursor: pointer;
-    }
-    .qty-control button:hover { background: var(--fg-soft); }
-    .qty-control input {
-      width: 60px;
-      height: 40px;
-      border: none;
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      text-align: center;
-      font-family: var(--font-mono);
-      font-size: 15px;
-      color: var(--fg);
-      background: var(--surface);
-    }
-    .qty-control input:focus { outline: none; }
-    .qty-info {
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .stock-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      padding: 6px 12px;
-      border-radius: 999px;
-    }
-    .stock-ok { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); }
-    .stock-low { background: oklch(92% 0.08 80); color: oklch(45% 0.12 80); }
-    .stock-out { background: oklch(92% 0.03 250); color: oklch(45% 0.03 250); }
-    .stock-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .add-to-cart {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .product-desc {
-      border-top: 1px solid var(--border);
-      padding-top: 20px;
-    }
-    .product-desc h3 { font-size: 15px; margin: 0 0 8px; }
-    .product-desc p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .product-features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .product-features .feat {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .product-features .feat strong { color: var(--fg); font-weight: 500; }
-    .related-section {
-      border-top: 1px solid var(--border);
-      padding-block: 48px 64px;
-    }
-    .related-section h2 {
-      font-family: var(--font-display);
-      font-size: 24px;
-      margin: 0 0 24px;
-    }
-    .related-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    @media (max-width: 920px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
-    .related-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.15s;
-    }
-    .related-card:hover { border-color: var(--accent); }
-    .related-card .rel-img {
-      aspect-ratio: 4/3;
-      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
-      display: grid; place-items: center;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
-    }
-    .related-card .rel-body { padding: 12px; }
-    .related-card .rel-name { font-size: 13px; font-weight: 500; margin: 0 0 4px; }
-    .related-card .rel-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
-    /* ══ Varianti d'ordine ══ */
-    .variant-grid-section {
-      border-top: 1px solid var(--border);
-      padding-block: 32px;
-    }
-    .variant-grid-section h2 {
-      font-family: var(--font-display);
-      font-size: 22px;
-      margin: 0 0 20px;
-    }
-    .cascade-filters {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .cascade-filters select {
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      font: inherit;
-      font-size: 13px;
-      color: var(--fg);
-      min-width: 140px;
-    }
-    .cascade-filters select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-    .variant-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      font-size: 14px;
-    }
-    .variant-table th {
-      background: var(--fg-soft);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 10px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-    .variant-table th:nth-child(n+3) { text-align: center; }
-    .variant-table td {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    .variant-table td:nth-child(n+3) { text-align: center; }
-    .variant-table tr:last-child td { border-bottom: none; }
-    .variant-table tr.disabled-row { opacity: 0.45; pointer-events: none; }
-    .variant-table .code-cell {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .variant-table .info-trigger {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: var(--fg-soft);
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 700;
-      cursor: help;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .variant-table .info-trigger:hover { background: var(--accent-soft); color: var(--accent); }
-    .variant-table .tooltip {
-      display: none;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--fg);
-      color: var(--surface);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-family: var(--font-body);
-      font-weight: 400;
-      text-transform: none;
-      letter-spacing: 0;
-      white-space: normal;
-      width: max-content;
-      max-width: 280px;
-      z-index: 20;
-      line-height: 1.4;
-    }
-    .variant-table .tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: var(--fg);
-    }
-    .variant-table .info-trigger:hover .tooltip { display: block; }
-    .variant-table .price-cell {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-    .variant-table .price-net { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--fg); }
-    .variant-table .price-list { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: line-through; }
-    .variant-table .price-disc { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 999px; }
-    .variant-table .stock-badge-sm {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 999px;
-    }
-    .variant-table .qty-ctrl {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .variant-table .qty-ctrl button {
-      width: 32px; height: 32px;
-      border: none;
-      background: var(--surface);
-      font-size: 16px;
-      color: var(--fg);
-      cursor: pointer;
-    }
-    .variant-table .qty-ctrl button:hover { background: var(--fg-soft); }
-    .variant-table .qty-ctrl input {
-      width: 48px; height: 32px;
-      border: none;
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      text-align: center;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--fg);
-      background: var(--surface);
-    }
-    .variant-table .qty-ctrl input:focus { outline: none; }
-    .variant-table .qty-ctrl input:disabled { background: var(--fg-soft); color: var(--muted); }
-    .variant-table .multiplo-info {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    .variant-grid-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 16px;
-      padding: 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .variant-grid-footer .total-info {
-      font-size: 14px;
-      color: var(--muted);
-    }
-    .variant-grid-footer .total-info strong {
-      color: var(--fg);
-      font-family: var(--font-mono);
-      font-weight: 600;
-    }
-    .variant-grid-footer .btn { min-width: 180px; justify-content: center; }
-    .pagefoot { padding-block: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
-    .pagefoot .row-between { flex-wrap: wrap; gap: 12px; }
-    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-    @media (max-width: 1100px) {
-      .product-layout { grid-template-columns: 1fr 320px; }
-    }
-    @media (max-width: 920px) {
-      .buy-box { position: static; }
-    }
-    /* ══ Lightbox ══ */
-    .lightbox-overlay {
-      display: none;
-      position: fixed; inset: 0; z-index: 10000;
-      background: oklch(0% 0 0 / 0.88);
-      backdrop-filter: blur(8px);
-      justify-content: center; align-items: center;
-      cursor: zoom-out;
-    }
-    .lightbox-overlay.open { display: flex; }
-    .lightbox-overlay img {
-      max-width: 90vw; max-height: 90vh;
-      border-radius: var(--radius-lg);
-      object-fit: contain;
-    }
-    .lightbox-close {
-      position: absolute; top: 20px; right: 24px;
-      background: none; border: none; color: white;
-      font-size: 28px; cursor: pointer;
-    }
-    .lightbox-nav {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      background: oklch(100% 0 0 / 0.15); border: none; color: white;
-      font-size: 32px; padding: 12px 16px; border-radius: 999px; cursor: pointer;
-    }
-    .lightbox-nav:hover { background: oklch(100% 0 0 / 0.25); }
-    .lightbox-nav.prev { left: 20px; }
-    .lightbox-nav.next { right: 20px; }
-    .lightbox-counter {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      color: white; font-family: var(--font-mono); font-size: 14px;
-      background: oklch(0% 0 0 / 0.5); padding: 6px 16px; border-radius: 999px;
-    }
-    .gallery-modal-overlay {
-      position: fixed; inset: 0; background: oklch(0% 0 0 / 0.85);
-      z-index: 9999; display: none; align-items: center; justify-content: center;
-      padding: 32px;
-    }
-    .gallery-modal-overlay.open { display: flex; }
-    .gallery-modal-close {
-      position: absolute; top: 16px; right: 20px; z-index: 10;
-      background: oklch(100% 0 0 / 0.1); border: none; color: white;
-      width: 40px; height: 40px; border-radius: 50%; font-size: 22px;
-      cursor: pointer; display: grid; place-items: center; transition: background 0.15s;
-    }
-    .gallery-modal-close:hover { background: oklch(100% 0 0 / 0.25); }
-    .gallery-modal-content {
-      display: grid; grid-template-columns: 1fr 240px;
-      gap: 0; max-width: 1100px; width: 100%;
-      max-height: 85vh; background: oklch(18% 0.01 250);
-      border-radius: 14px; overflow: hidden;
-    }
-    .gallery-modal-main {
-      display: flex; flex-direction: column;
-      overflow: hidden; border-right: 1px solid oklch(100% 0 0 / 0.08);
-    }
-    .gallery-modal-img-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 24px;
-    }
-    .gallery-modal-img-wrap img {
-      max-width: 100%; max-height: 100%; object-fit: contain;
-      border-radius: 6px; cursor: zoom-in;
-    }
-    .gallery-modal-nav {
-      display: flex; align-items: center; justify-content: center;
-      gap: 14px; padding: 14px; color: oklch(80% 0 0);
-      border-top: 1px solid oklch(100% 0 0 / 0.06);
-    }
-    .gallery-modal-nav button {
-      background: oklch(100% 0 0 / 0.1); border: none; color: white;
-      width: 32px; height: 32px; border-radius: 8px; font-size: 16px;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .gallery-modal-nav button:hover { background: oklch(100% 0 0 / 0.2); }
-    .gallery-modal-nav span { font-size: 13px; font-family: var(--font-mono); }
-    .gallery-modal-sidebar {
-      display: flex; flex-direction: column; padding: 20px; gap: 16px;
-      overflow: hidden;
-    }
-    .gallery-modal-header h3 {
-      font-family: var(--font-display); font-size: 18px; margin: 0;
-      color: oklch(98% 0.005 240); line-height: 1.3;
-    }
-    .gallery-modal-thumbs {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-      overflow-y: auto; scrollbar-width: none; flex: 1;
-    }
-    .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
-    .gallery-modal-thumbs img {
-      width: 100%; aspect-ratio: 1; object-fit: cover;
-      border-radius: 6px; cursor: pointer;
-      border: 2px solid transparent; transition: border-color 0.15s, opacity 0.15s;
-      opacity: 0.5;
-    }
-    .gallery-modal-thumbs img:hover { opacity: 0.85; }
-    .gallery-modal-thumbs img.active {
-      border-color: var(--accent); opacity: 1;
-    }
-    @media (max-width: 768px) {
-      .gallery-modal-content { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-      .gallery-modal-main { border-right: none; border-bottom: 1px solid oklch(100% 0 0 / 0.08); }
-      .gallery-modal-thumbs { grid-template-columns: repeat(5, 1fr); overflow-x: auto; overflow-y: hidden; }
-      .gallery-modal-thumbs img { width: 100%; height: auto; }
-      .gallery-modal-overlay { padding: 12px; }
-    }
-  </style>
-</head>
-<body>
-  <div style="position:fixed; bottom:0; left:0; right:0; z-index:9999; background:oklch(30% 0.02 60); color:oklch(92% 0.01 80); text-align:center; padding:6px 16px; font-size:12px; font-family:var(--font-body); letter-spacing:0.02em;">⚠ Prototipo dimostrativo — non è un'applicazione reale. Tutti i dati sono fittizi e qualcosa potrebbe non funzionare correttamente.</div>
-  <header class="topnav" data-od-id="topnav">
-    <div class="container topnav-inner">
-      <a href="01-landing.html" class="logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
-      <nav>
-        <a href="index.html" style="font-size: 13px;">← Ritorna al Menu del Prototipo</a>
-      </nav>
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" placeholder="Cerca articoli, linee, famiglie" />
-      </div>
-      <a href="04-cart.html" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">Carrello (3)</a>
-    </div>
-  </header>
-
-  <main id="content">
-      <div class="breadcrumb" style="padding-inline:32px;max-width:100%;margin:0 auto;">
-        <a href="02-catalog.html">Catalogo</a><span>›</span>
-        <a href="02-catalog.html">Cotto da Esterno</a><span>›</span>
-        Vaso Torchio Terracotta Ø30
-      </div>
-
-      <div class="product-layout">
-        <!-- COLONNA SINISTRA: Galleria stile Amazon -->
-        <div class="product-left">
-          <div class="gallery-wrapper">
-            <div class="gallery-share" title="Condividi">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            </div>
-            <div class="gallery-main" id="galleryMain" onclick="openLightbox()">
-              <img src="images/vasi-bianchi.webp" alt="Vaso Torchio Terracotta Ø30 H35" id="mainImage" />
-            </div>
-            <div class="gallery-hint" onclick="openLightbox()">Fai clic per visualizzare la vista completa</div>
-            <div class="gallery-thumbs" id="galleryThumbs">
-              <img src="images/vasi-bianchi.webp" alt="Thumb 1" class="thumb active" data-idx="0" />
-              <img src="images/catalogo-cotto-esterni.webp" alt="Thumb 2" class="thumb" data-idx="1" />
-              <img src="images/catalogo-cotto-interni.webp" alt="Thumb 3" class="thumb" data-idx="2" />
-              <img src="images/catalogo-fiberstone.webp" alt="Thumb 4" class="thumb" data-idx="3" />
-              <img src="images/catalogo-metallo.webp" alt="Thumb 5" class="thumb" data-idx="4" />
-              <div class="thumb" data-idx="5" style="position:relative;">
-                <img src="images/catalogo-pottery-pots.webp" alt="Thumb 6" />
-                <div class="thumb-more" onclick="event.stopPropagation();openGalleryModal()">3+</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- COLONNA CENTRALE: Dettagli prodotto -->
-        <div class="product-center">
-          <div>
-            <p class="eyebrow" style="margin-bottom: 8px;">Cotto da Esterno</p>
-            <h1>Vaso Torchio Terracotta Ø30 H35</h1>
-            <p style="font-size: 14px; color: var(--muted); margin-top: 8px;">Colore: <span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#C46A42;border:1px solid var(--border);vertical-align:middle;"></span> Terracotta</span></p>
-          </div>
-
-          <div class="product-desc-block">
-            <h3>Descrizione</h3>
-            <p>Vaso in cotto terracotta per esterno, resistente alle intemperie e al gelo. Superficie naturale con finitura a mano. Ideale per piante da esterno, fioriere e composizioni da terrazzo o giardino.</p>
-          </div>
-
-          <div class="product-desc-block">
-            <h3>Caratteristiche</h3>
-            <div class="product-features">
-              <div class="feat"><strong>Materiale:</strong> Cotto</div>
-              <div class="feat"><strong>Uso:</strong> Esterno</div>
-              <div class="feat"><strong>Diametro:</strong> Ø30 cm</div>
-              <div class="feat"><strong>Resistenza:</strong> Gelo</div>
-              <div class="feat"><strong>Peso:</strong> 4,2 kg</div>
-              <div class="feat"><strong>Famiglia:</strong> Cotto da Esterno</div>
-            </div>
-          </div>
-
-          <div class="product-desc-block">
-            <h3>Punti chiave</h3>
-            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); line-height: 1.7;">
-              <li>Resistente al gelo e alle intemperie</li>
-              <li>Finitura a mano con texture naturale</li>
-              <li>Ideale per terrazze, giardini e balconi</li>
-              <li>Disponibile in diverse dimensioni</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- COLONNA DESTRA: Buy Box -->
-        <div class="buy-box">
-          <div class="price-block">
-            <span class="price-net">€ 12,40</span>
-            <span class="price-list">€ 15,50</span>
-            <span class="price-discount">−20%</span>
-          </div>
-          <p class="savings-line">Risparmi € 3,10 (20%)</p>
-
-          <div class="divider"></div>
-
-          <div class="stock-badge stock-low" style="font-size: 14px;">
-            <span class="stock-dot"></span>
-            Scorte limitate
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="variant-section">
-            <label>Altezza</label>
-            <select class="variant-select" id="dim1" onchange="cascadeDim1()">
-              <option value="">Seleziona altezza</option>
-              <option value="25">H25 cm</option>
-              <option value="35" selected>H35 cm</option>
-              <option value="45">H45 cm</option>
-            </select>
-          </div>
-
-          <div class="variant-section">
-            <label>Diametro</label>
-            <select class="variant-select" id="dim2" onchange="cascadeDim2()">
-              <option value="">Seleziona diametro</option>
-              <option value="30" selected>Ø30 cm</option>
-              <option value="40">Ø40 cm</option>
-            </select>
-          </div>
-
-          <div>
-            <label style="font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 8px;">Quantità</label>
-            <div class="qty-row">
-              <div class="qty-control">
-                <button type="button" onclick="changeQty(-6)">−</button>
-                <input type="number" id="qty" value="12" min="6" step="6" />
-                <button type="button" onclick="changeQty(6)">+</button>
-              </div>
-              <span class="qty-info">Multiplo: 6 pz</span>
-            </div>
-          </div>
-
-          <button class="btn btn-primary add-to-cart" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;">Aggiungi al carrello</button>
-          <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;">Acquista ora</button>
-
-          <div class="divider"></div>
-
-          <div style="font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              <span>Spedizione entro 48h · Tracciamento completo</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
-              <span>Venduto da Luis S.r.l. · Garanzia 24 mesi</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <span>Resi gratuiti entro 30 giorni</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    <section class="variant-grid-section" data-od-id="variant-grid">
-      <div class="container">
-        <h2>Griglia d'ordine varianti</h2>
-
-        <div class="cascade-filters">
-          <select id="filterDim1" onchange="filterVariants()">
-            <option value="">Tutte le altezze</option>
-            <option value="25">H25 cm</option>
-            <option value="35">H35 cm</option>
-            <option value="45">H45 cm</option>
-          </select>
-          <select id="filterDim2" onchange="filterVariants()">
-            <option value="">Tutti i diametri</option>
-            <option value="20">Ø20 cm</option>
-            <option value="30">Ø30 cm</option>
-            <option value="40">Ø40 cm</option>
-          </select>
-        </div>
-
-        <table class="variant-table">
-          <thead>
-            <tr>
-              <th>Dimensioni</th>
-              <th>Cod. Integra</th>
-              <th>Prezzo</th>
-              <th>Disponibilità</th>
-              <th>Quantità</th>
-            </tr>
-          </thead>
-          <tbody id="variantBody">
-            <tr data-dim1="25" data-dim2="20">
-              <td>Ø20 H25</td>
-              <td>
-                <span class="code-cell">COT-EST-001
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø20 H25 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 9,80</span>
-                  <span class="price-list">€ 12,20</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" onclick="gridQty(this,-6)">−</button>
-                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
-                  <button type="button" onclick="gridQty(this,6)">+</button>
-                </div>
-                <div class="multiplo-info">Multiplo: 6 pz</div>
-              </td>
-            </tr>
-            <tr data-dim1="25" data-dim2="30">
-              <td>Ø30 H25</td>
-              <td>
-                <span class="code-cell">COT-EST-002
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H25 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 11,20</span>
-                  <span class="price-list">€ 14,00</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" onclick="gridQty(this,-6)">−</button>
-                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
-                  <button type="button" onclick="gridQty(this,6)">+</button>
-                </div>
-                <div class="multiplo-info">Multiplo: 6 pz</div>
-              </td>
-            </tr>
-            <tr data-dim1="35" data-dim2="30">
-              <td>Ø30 H35</td>
-              <td>
-                <span class="code-cell">COT-EST-003
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H35 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 12,40</span>
-                  <span class="price-list">€ 15,50</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-low"><span class="stock-dot"></span> Scorte limitate</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" onclick="gridQty(this,-6)">−</button>
-                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
-                  <button type="button" onclick="gridQty(this,6)">+</button>
-                </div>
-                <div class="multiplo-info">Multiplo: 6 pz</div>
-              </td>
-            </tr>
-            <tr data-dim1="35" data-dim2="40">
-              <td>Ø40 H35</td>
-              <td>
-                <span class="code-cell">COT-EST-004
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø40 H35 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 16,80</span>
-                  <span class="price-list">€ 21,00</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" onclick="gridQty(this,-6)">−</button>
-                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
-                  <button type="button" onclick="gridQty(this,6)">+</button>
-                </div>
-                <div class="multiplo-info">Multiplo: 6 pz</div>
-              </td>
-            </tr>
-            <tr data-dim1="45" data-dim2="30">
-              <td>Ø30 H45</td>
-              <td>
-                <span class="code-cell">COT-EST-005
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H45 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 15,60</span>
-                  <span class="price-list">€ 19,50</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" onclick="gridQty(this,-6)">−</button>
-                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
-                  <button type="button" onclick="gridQty(this,6)">+</button>
-                </div>
-                <div class="multiplo-info">Multiplo: 6 pz</div>
-              </td>
-            </tr>
-            <tr data-dim1="45" data-dim2="40" class="disabled-row">
-              <td>Ø40 H45</td>
-              <td>
-                <span class="code-cell">COT-EST-006
-                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø40 H45 terracotta</span></span>
-                </span>
-              </td>
-              <td>
-                <div class="price-cell">
-                  <span class="price-net">€ 19,50</span>
-                  <span class="price-list">€ 24,40</span>
-                  <span class="price-disc">−20%</span>
-                </div>
-              </td>
-              <td><span class="stock-badge-sm stock-out"><span class="stock-dot"></span> Esaurito</span></td>
-              <td>
-                <div class="qty-ctrl">
-                  <button type="button" disabled>−</button>
-                  <input type="number" value="0" min="0" step="6" disabled />
-                  <button type="button" disabled>+</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="variant-grid-footer">
-          <div class="total-info">
-            Righe selezionate: <strong id="gridRowCount">0</strong> · Totale: <strong id="gridTotal">€ 0,00</strong>
-          </div>
-          <button class="btn btn-primary" onclick="addAllToCart()">Aggiungi al carrello</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="related-section">
-      <div class="container">
-        <h2>Articoli correlati</h2>
-        <div class="related-grid">
-          <a href="03-product.html" class="related-card">
-            <img src="images/catalogo-cotto-interni.webp" alt="Vaso Amphora" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-            <div class="rel-body">
-              <p class="rel-name">Vaso Amphora Cotto Ø45 H50</p>
-              <span class="rel-price">€ 28,60</span>
-            </div>
-          </a>
-          <a href="03-product.html" class="related-card">
-            <img src="images/catalogo-fiberstone.webp" alt="Vaso Campana" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-            <div class="rel-body">
-              <p class="rel-name">Vaso Campana Terracotta Ø25 H28</p>
-              <span class="rel-price">€ 8,90</span>
-            </div>
-          </a>
-          <a href="03-product.html" class="related-card">
-            <img src="images/catalogo-cesti.webp" alt="Vaso Paniere" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-            <div class="rel-body">
-              <p class="rel-name">Vaso Paniere Cotto Ø40 H38</p>
-              <span class="rel-price">€ 19,50</span>
-            </div>
-          </a>
-          <a href="03-product.html" class="related-card">
-            <img src="images/catalogo-metallo.webp" alt="Fioriera Rect." style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
-            <div class="rel-body">
-              <p class="rel-name">Fioriera Rettangolare Cotto 60cm</p>
-              <span class="rel-price">€ 34,20</span>
-            </div>
-          </a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="pagefoot" data-od-id="footer">
-    <div class="container row-between">
-      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
-      <span class="meta">info@luisbg.it · +39 035 0521957</span>
-      <span class="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
-    </div>
-  </footer>
-
-  <script>
-    var galleryImages = [
-      'images/vasi-bianchi.webp',
-      'images/catalogo-cotto-esterni.webp',
-      'images/catalogo-cotto-interni.webp',
-      'images/catalogo-fiberstone.webp',
-      'images/catalogo-metallo.webp'
-    ];
-    var currentImg = 0;
-
-    // Variante lookup: chiave = "altezza_diametro"
-    var variantData = {
-      '25_20': { cod: 'COT-EST-001', prezzo: 9.80, listino: 12.20, sconto: 20, stock: 'ok', multiplo: 12 },
-      '25_30': { cod: 'COT-EST-002', prezzo: 11.20, listino: 14.00, sconto: 20, stock: 'ok', multiplo: 6 },
-      '35_30': { cod: 'COT-EST-003', prezzo: 12.40, listino: 15.50, sconto: 20, stock: 'low', multiplo: 6 },
-      '35_40': { cod: 'COT-EST-004', prezzo: 16.80, listino: 21.00, sconto: 20, stock: 'ok', multiplo: 4 },
-      '45_30': { cod: 'COT-EST-005', prezzo: 15.60, listino: 19.50, sconto: 20, stock: 'ok', multiplo: 2 },
-      '45_40': { cod: 'COT-EST-006', prezzo: 19.50, listino: 24.40, sconto: 20, stock: 'out', multiplo: 2 }
-    };
-
-    var dim2Map = {
-      '': ['20','30','40'],
-      '25': ['20','30'],
-      '35': ['30','40'],
-      '45': ['30','40']
-    };
-
-    var stockLabels = { ok: 'Disponibile', low: 'Scorte limitate', out: 'Esaurito' };
-    var stockCss = { ok: 'stock-ok', low: 'stock-low', out: 'stock-out' };
-
-    function formatPrice(n) {
-      return '€ ' + n.toFixed(2).replace('.', ',');
-    }
-
-    function updateBuyBox() {
-      var d1 = document.getElementById('dim1').value;
-      var d2 = document.getElementById('dim2').value;
-      var priceNet = document.querySelector('.buy-box .price-net');
-      var priceList = document.querySelector('.buy-box .price-list');
-      var priceDiscount = document.querySelector('.buy-box .price-discount');
-      var savingsLine = document.querySelector('.buy-box .savings-line');
-      var stockBadge = document.querySelector('.buy-box .stock-badge');
-
-      if (!d1 || !d2) {
-        // Nessuna variante selezionata ÔåÆ pulisci tutto
-        priceNet.textContent = '—';
-        priceList.textContent = '';
-        priceDiscount.textContent = '';
-        savingsLine.textContent = '';
-        stockBadge.className = 'stock-badge';
-        stockBadge.innerHTML = '<span class="stock-dot"></span> Seleziona una variante';
-        return;
-      }
-
-      var key = d1 + '_' + d2;
-      var v = variantData[key];
-
-      if (!v) {
-        // Combinazione non valida
-        priceNet.textContent = '—';
-        priceList.textContent = '';
-        priceDiscount.textContent = '';
-        savingsLine.textContent = '';
-        stockBadge.className = 'stock-badge';
-        stockBadge.innerHTML = '<span class="stock-dot"></span> Non disponibile';
-        return;
-      }
-
-      priceNet.textContent = formatPrice(v.prezzo);
-      priceList.textContent = formatPrice(v.listino);
-      priceDiscount.textContent = '−' + v.sconto + '%';
-      var risparmio = v.listino - v.prezzo;
-      savingsLine.textContent = 'Risparmi ' + formatPrice(risparmio) + ' (' + v.sconto + '%)';
-
-      stockBadge.className = 'stock-badge ' + stockCss[v.stock];
-      stockBadge.innerHTML = '<span class="stock-dot"></span> ' + stockLabels[v.stock];
-
-      // Aggiorna multiplo e resetta quantità
-      var qtyInput = document.getElementById('qty');
-      var multiploLabel = document.querySelector('.buy-box .qty-info');
-      var minusBtn = document.querySelector('.buy-box .qty-control button:first-child');
-      var plusBtn = document.querySelector('.buy-box .qty-control button:last-child');
-      qtyInput.min = v.multiplo;
-      qtyInput.step = v.multiplo;
-      qtyInput.value = v.multiplo;
-      multiploLabel.textContent = 'Multiplo: ' + v.multiplo + ' pz';
-      minusBtn.setAttribute('onclick', 'changeQty(-' + v.multiplo + ')');
-      plusBtn.setAttribute('onclick', 'changeQty(' + v.multiplo + ')');
-    }
-
-    function selectThumb(idx) {
-      if (idx >= galleryImages.length) idx = 0;
-      currentImg = idx;
-      var mainImg = document.getElementById('mainImage');
-      if (mainImg) mainImg.src = galleryImages[idx];
-      document.querySelectorAll('#galleryThumbs .thumb').forEach(function(t, i) {
-        t.classList.toggle('active', i === idx);
-      });
-    }
-    function openLightbox() {
-      var lb = document.getElementById('lightbox');
-      lb.classList.add('open');
-      updateLightbox();
-      document.body.style.overflow = 'hidden';
-    }
-    function closeLightbox() {
-      document.getElementById('lightbox').classList.remove('open');
-      document.body.style.overflow = '';
-    }
-    function lbNav(delta) {
-      currentImg = (currentImg + delta + galleryImages.length) % galleryImages.length;
-      updateLightbox();
-      selectThumb(currentImg);
-    }
-    function updateLightbox() {
-      var img = document.getElementById('lbImage');
-      if (img) img.src = galleryImages[currentImg];
-      var counter = document.getElementById('lbCounter');
-      if (counter) counter.textContent = (currentImg + 1) + ' / ' + galleryImages.length;
-    }
-
-    var allGalleryImages = [
-      'images/vasi-bianchi.webp',
-      'images/catalogo-cotto-esterni.webp',
-      'images/catalogo-cotto-interni.webp',
-      'images/catalogo-fiberstone.webp',
-      'images/catalogo-metallo.webp',
-      'images/catalogo-pottery-pots.webp',
-      'images/catalogo-capi-europe.webp',
-      'images/catalogo-cotto-esterni.webp',
-      'images/catalogo-metallo.webp',
-      'images/catalogo-cotto-interni.webp'
-    ];
-
-    let galleryModalIndex = 0;
-    const allImages = ['images/vasi-bianchi.webp','images/catalogo-cotto-esterni.webp','images/catalogo-fiberstone.webp','images/catalogo-metallo.webp','images/catalogo-cesti.webp','images/catalogo-cotto-interni.webp','images/catalogo-capi-europe.webp','images/catalogo-pottery-pots.webp','images/hero-slider.webp','images/catalogo-cotto-esterni.webp'];
-
-    function openGalleryModal(startIdx) {
-      galleryModalIndex = startIdx || 0;
-      renderGalleryModal();
-      document.getElementById('galleryModal').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeGalleryModal() {
-      document.getElementById('galleryModal').classList.remove('open');
-      document.body.style.overflow = '';
-    }
-    function renderGalleryModal() {
-      var thumbs = document.getElementById('galleryModalThumbs');
-      thumbs.innerHTML = allImages.map(function(src, i) {
-        return '<img src="' + src + '" class="' + (i === galleryModalIndex ? 'active' : '') + '" onclick="galleryModalSelect(' + i + ')" alt="Thumb ' + (i+1) + '">';
-      }).join('');
-      document.getElementById('galleryModalImg').src = allImages[galleryModalIndex];
-      document.getElementById('galleryModalCounter').textContent = (galleryModalIndex + 1) + ' / ' + allImages.length;
-    }
-    function galleryModalSelect(idx) {
-      galleryModalIndex = idx;
-      renderGalleryModal();
-    }
-    function galleryModalNav(dir) {
-      galleryModalIndex = (galleryModalIndex + dir + allImages.length) % allImages.length;
-      renderGalleryModal();
-    }
-    document.addEventListener('keydown', function(e) {
-      if (!document.getElementById('galleryModal').classList.contains('open')) return;
-      if (e.key === 'Escape') closeGalleryModal();
-      if (e.key === 'ArrowLeft') galleryModalNav(-1);
-      if (e.key === 'ArrowRight') galleryModalNav(1);
-    });
-
-    function changeQty(delta) {
-      var input = document.getElementById('qty');
-      var val = parseInt(input.value) || parseInt(input.min) || 6;
-      var step = parseInt(input.step) || 6;
-      var newVal = Math.max(step, Math.round((val + delta) / step) * step);
-      input.value = newVal;
-    }
-
-    function gridQty(btn, delta) {
-      var ctrl = btn.closest('.qty-ctrl');
-      var input = ctrl.querySelector('input');
-      var step = parseInt(input.dataset.multiplo) || 6;
-      var val = parseInt(input.value) || 0;
-      var newVal = Math.max(0, val + delta);
-      newVal = Math.round(newVal / step) * step;
-      input.value = newVal;
-      updateGridTotal();
-    }
-
-    function cascadeDim2() {
-      var d1 = document.getElementById('dim1').value;
-      var sel2 = document.getElementById('dim2');
-      var prevD2 = sel2.value;
-      var allowed = dim2Map[d1] || dim2Map[''];
-
-      sel2.innerHTML = '<option value="">Seleziona diametro</option>';
-      allowed.forEach(function(v) {
-        var opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = 'Ø' + v + ' cm';
-        sel2.appendChild(opt);
-      });
-
-      // Se la selezione precedente è ancora valida, mantienila
-      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
-        sel2.value = prevD2;
-      } else {
-        sel2.value = '';
-      }
-
-      // Aggiorna prezzo, sconto, risparmi, disponibilità
-      updateBuyBox();
-    }
-
-    function cascadeDim1() {
-      var d1 = document.getElementById('dim1').value;
-      var sel2 = document.getElementById('dim2');
-      var prevD2 = sel2.value;
-      var allowed = dim2Map[d1] || dim2Map[''];
-
-      sel2.innerHTML = '<option value="">Seleziona diametro</option>';
-      allowed.forEach(function(v) {
-        var opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = 'Ø' + v + ' cm';
-        sel2.appendChild(opt);
-      });
-
-      // Se il diametro precedente è compatibile, mantienilo
-      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
-        sel2.value = prevD2;
-      } else {
-        sel2.value = '';
-      }
-
-      updateBuyBox();
-    }
-
-    function filterVariants() {
-      var d1 = document.getElementById('filterDim1').value;
-      var sel2 = document.getElementById('filterDim2');
-      var prevD2 = sel2.value;
-      var allowed = dim2Map[d1] || dim2Map[''];
-
-      sel2.innerHTML = '<option value="">Tutti i diametri</option>';
-      allowed.forEach(function(v) {
-        var opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = 'Ø' + v + ' cm';
-        sel2.appendChild(opt);
-      });
-
-      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
-        sel2.value = prevD2;
-      } else {
-        sel2.value = '';
-      }
-
-      var d2 = sel2.value;
-      var rows = document.querySelectorAll('#variantBody tr');
-      rows.forEach(function(row) {
-        var match1 = !d1 || row.dataset.dim1 === d1;
-        var match2 = !d2 || row.dataset.dim2 === d2;
-        row.style.display = (match1 && match2) ? '' : 'none';
-      });
-      updateGridTotal();
-    }
-
-    function updateGridTotal() {
-      var rows = document.querySelectorAll('#variantBody tr');
-      var count = 0, total = 0;
-      rows.forEach(function(row) {
-        if (row.style.display === 'none') return;
-        var input = row.querySelector('.qty-ctrl input');
-        var qty = parseInt(input.value) || 0;
-        if (qty > 0) {
-          count++;
-          var priceText = row.querySelector('.price-net').textContent;
-          var price = parseFloat(priceText.replace('€','').replace(',','.').trim());
-          total += price * qty;
-        }
-      });
-      document.getElementById('gridRowCount').textContent = count;
-      document.getElementById('gridTotal').textContent = formatPrice(total);
-    }
-
-    function addAllToCart() {
-      var rows = document.querySelectorAll('#variantBody tr');
-      var added = 0;
-      rows.forEach(function(row) {
-        if (row.style.display === 'none') return;
-        var input = row.querySelector('.qty-ctrl input');
-        var qty = parseInt(input.value) || 0;
-        if (qty > 0) {
-          added++;
-          input.value = 0;
-        }
-      });
-      updateGridTotal();
-      if (added > 0) {
-        var btn = document.querySelector('.variant-grid-footer .btn-primary');
-        btn.textContent = added + ' articoli aggiunti ✓';
-        btn.style.background = 'oklch(45% 0.12 145)';
-        setTimeout(function() { btn.textContent = 'Aggiungi al carrello'; btn.style.background = ''; }, 2000);
-      }
-    }
-
-    document.querySelectorAll('#galleryThumbs .thumb').forEach(function(thumb) {
-      thumb.addEventListener('click', function() {
-        var idx = parseInt(thumb.dataset.idx) || 0;
-        selectThumb(idx);
-      });
-    });
-
-    document.addEventListener('keydown', function(e) {
-      var gm = document.getElementById('galleryModal');
-      if (gm && gm.classList.contains('open')) {
-        if (e.key === 'Escape') closeGalleryModal();
-        return;
-      }
-      var lb = document.getElementById('lightbox');
-      if (!lb || !lb.classList.contains('open')) return;
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') lbNav(1);
-      if (e.key === 'ArrowLeft') lbNav(-1);
-    });
-  </script>
-  <div class="gallery-modal-overlay" id="galleryModal" onclick="if(event.target===this)closeGalleryModal()">
-    <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
-    <div class="gallery-modal-content">
-      <div class="gallery-modal-main">
-        <div class="gallery-modal-img-wrap">
-          <img id="galleryModalImg" src="images/vasi-bianchi.webp" alt="" onclick="closeGalleryModal();openLightbox()">
-        </div>
-        <div class="gallery-modal-nav">
-          <button onclick="galleryModalNav(-1)">‹</button>
-          <span id="galleryModalCounter">1 / 10</span>
-          <button onclick="galleryModalNav(1)">›</button>
-        </div>
-      </div>
-      <div class="gallery-modal-sidebar">
-        <div class="gallery-modal-header">
-          <h3>Vaso Torchio Terracotta</h3>
-        </div>
-        <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
-      </div>
-    </div>
-  </div>
-  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
-    <button class="lightbox-close" onclick="closeLightbox()">×</button>
-    <button class="lightbox-nav prev" onclick="event.stopPropagation();lbNav(-1)">‹</button>
-    <img src="" alt="Zoom" onclick="event.stopPropagation()" />
-    <button class="lightbox-nav next" onclick="event.stopPropagation();lbNav(1)">›</button>
-    <div class="lightbox-counter">1 / 5</div>
-  </div>
-</body>
-</html>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vaso Torchio Terracotta Ø30 — Luis B2B</title>
+  <style>
+    :root {
+      --bg:      oklch(97% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(22% 0.02 60);
+      --muted:   oklch(52% 0.015 60);
+      --border:  oklch(88% 0.01 70);
+      --accent:  oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --fs-h2: clamp(28px, 3.5vw, 40px);
+      --fs-h3: 18px;
+      --fs-body: 15px;
+      --fs-meta: 13px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --container: 1280px;
+      --gutter: 32px;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .container {
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+    }
+    .topnav .container { max-width: 100%; }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: 24px; }
+    .topnav .logo img { height: 32px; width: auto; }
+    .topnav nav { display: flex; gap: var(--gap-lg); }
+    .topnav nav a { font-size: 14px; color: var(--muted); }
+    .topnav nav a:hover, .topnav nav a.active { color: var(--fg); }
+    .search-box {
+      flex: 1;
+      max-width: 400px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 9px 14px 9px 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .search-box input:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.05s ease, background 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .breadcrumb {
+      padding-block: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb span { margin: 0 6px; }
+    /* ══ Amazon 3-column layout ══ */
+    .product-layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr) 320px;
+      gap: 32px;
+      margin-bottom: 48px;
+      align-items: start;
+      padding-inline: 32px;
+    }
+    @media (max-width: 1100px) {
+      .product-layout { grid-template-columns: 1fr 1fr; }
+      .buy-box { grid-column: 1 / -1; grid-row: 2; }
+    }
+    @media (max-width: 768px) {
+      .product-layout { grid-template-columns: 1fr; }
+      .product-left { display: flex; flex-direction: column; }
+      .gallery-main img { max-height: 400px; }
+      .gallery-thumbs { flex-direction: row; overflow-x: auto; gap: 8px; }
+      .gallery-thumbs .thumb { width: 64px; height: 64px; flex-shrink: 0; }
+      .variant-table { font-size: 12px; display: block; overflow-x: auto; }
+      .variant-table th, .variant-table td { padding: 8px 10px; white-space: nowrap; }
+      .cascade-filters { flex-direction: column; }
+      .cascade-filters select { min-width: 100%; }
+    }
+    .product-left { display: flex; flex-direction: column; gap: 10px; }
+    .gallery-wrapper {
+      width: 100%;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+    .gallery-main {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid; place-items: center;
+      cursor: zoom-in;
+      position: relative;
+      overflow: hidden;
+    }
+    .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-share {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      cursor: pointer;
+      z-index: 2;
+      transition: background 0.15s;
+    }
+    .gallery-share:hover { background: var(--fg-soft); }
+    .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
+    .gallery-hint {
+      text-align: center;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--accent);
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+    }
+    .gallery-hint:hover { text-decoration: underline; }
+    .gallery-thumbs {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .gallery-thumbs::-webkit-scrollbar { display: none; }
+    .thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: var(--surface);
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb.active, .thumb:hover { border-color: var(--accent); }
+    .thumb-more {
+      position: absolute;
+      inset: 0;
+      background: oklch(0% 0 0 / 0.55);
+      display: grid; place-items: center;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .product-center { display: flex; flex-direction: column; gap: 20px; }
+    .product-center h1 {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 32px);
+      margin: 0;
+      line-height: 1.15;
+    }
+    .product-desc-block h3 {
+      font-size: 16px;
+      margin: 0 0 8px;
+      color: var(--fg);
+    }
+    .product-desc-block p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .product-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 24px;
+    }
+    .product-features .feat {
+      font-size: 13px;
+      color: var(--muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .product-features .feat strong { color: var(--fg); font-weight: 500; }
+    /* ══ Buy Box (right) ══ */
+    .buy-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-self: flex-start;
+      position: sticky;
+      top: 80px;
+    }
+    .buy-box .price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .buy-box .price-net {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--fg);
+    }
+    .buy-box .price-list {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .buy-box .price-discount {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .buy-box .savings-line {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .buy-box .divider {
+      height: 1px;
+      background: var(--border);
+    }
+    .variant-section { display: flex; flex-direction: column; gap: 8px; }
+    .variant-section label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .variant-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .variant-select:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .qty-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .qty-control {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .qty-control button {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--surface);
+      font-size: 18px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .qty-control button:hover { background: var(--fg-soft); }
+    .qty-control input {
+      width: 60px;
+      height: 40px;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--fg);
+      background: var(--surface);
+    }
+    .qty-control input:focus { outline: none; }
+    .qty-info {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+    .stock-ok { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); }
+    .stock-low { background: oklch(92% 0.08 80); color: oklch(45% 0.12 80); }
+    .stock-out { background: oklch(92% 0.03 250); color: oklch(45% 0.03 250); }
+    .stock-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .add-to-cart {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .product-desc {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    .product-desc h3 { font-size: 15px; margin: 0 0 8px; }
+    .product-desc p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .product-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .product-features .feat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .product-features .feat strong { color: var(--fg); font-weight: 500; }
+    .related-section {
+      border-top: 1px solid var(--border);
+      padding-block: 48px 64px;
+    }
+    .related-section h2 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      margin: 0 0 24px;
+    }
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 920px) { .related-grid { grid-template-columns: repeat(2, 1fr); } }
+    .related-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s;
+    }
+    .related-card:hover { border-color: var(--accent); }
+    .related-card .rel-img {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--accent-soft), var(--fg-soft));
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+    .related-card .rel-body { padding: 12px; }
+    .related-card .rel-name { font-size: 13px; font-weight: 500; margin: 0 0 4px; }
+    .related-card .rel-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+    /* ══ Varianti d'ordine ══ */
+    .variant-grid-section {
+      border-top: 1px solid var(--border);
+      padding-block: 32px;
+    }
+    .variant-grid-section h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      margin: 0 0 20px;
+    }
+    .cascade-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .cascade-filters select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit;
+      font-size: 13px;
+      color: var(--fg);
+      min-width: 140px;
+    }
+    .cascade-filters select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .variant-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      font-size: 14px;
+    }
+    .variant-table th {
+      background: var(--fg-soft);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .variant-table th:nth-child(n+3) { text-align: center; }
+    .variant-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .variant-table td:nth-child(n+3) { text-align: center; }
+    .variant-table tr:last-child td { border-bottom: none; }
+    .variant-table tr.disabled-row { opacity: 0.45; pointer-events: none; }
+    .variant-table .code-cell {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .variant-table .info-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--fg-soft);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: help;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .variant-table .info-trigger:hover { background: var(--accent-soft); color: var(--accent); }
+    .variant-table .tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--fg);
+      color: var(--surface);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: var(--font-body);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: normal;
+      width: max-content;
+      max-width: 280px;
+      z-index: 20;
+      line-height: 1.4;
+    }
+    .variant-table .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--fg);
+    }
+    .variant-table .info-trigger:hover .tooltip { display: block; }
+    .variant-table .price-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .variant-table .price-net { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--fg); }
+    .variant-table .price-list { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: line-through; }
+    .variant-table .price-disc { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 999px; }
+    .variant-table .stock-badge-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .variant-table .qty-ctrl {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .variant-table .qty-ctrl button {
+      width: 32px; height: 32px;
+      border: none;
+      background: var(--surface);
+      font-size: 16px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .variant-table .qty-ctrl button:hover { background: var(--fg-soft); }
+    .variant-table .qty-ctrl input {
+      width: 48px; height: 32px;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--fg);
+      background: var(--surface);
+    }
+    .variant-table .qty-ctrl input:focus { outline: none; }
+    .variant-table .qty-ctrl input:disabled { background: var(--fg-soft); color: var(--muted); }
+    .variant-table .multiplo-info {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .variant-grid-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .variant-grid-footer .total-info {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .variant-grid-footer .total-info strong {
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+    .variant-grid-footer .btn { min-width: 180px; justify-content: center; }
+    .pagefoot { padding-block: 32px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: 12px; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    @media (max-width: 1100px) {
+      .product-layout { grid-template-columns: 1fr 320px; }
+    }
+    @media (max-width: 920px) {
+      .buy-box { position: static; }
+    }
+    /* ══ Lightbox ══ */
+    .lightbox-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 10000;
+      background: oklch(0% 0 0 / 0.88);
+      backdrop-filter: blur(8px);
+      justify-content: center; align-items: center;
+      cursor: zoom-out;
+    }
+    .lightbox-overlay.open { display: flex; }
+    .lightbox-overlay img {
+      max-width: 90vw; max-height: 90vh;
+      border-radius: var(--radius-lg);
+      object-fit: contain;
+    }
+    .lightbox-close {
+      position: absolute; top: 20px; right: 24px;
+      background: none; border: none; color: white;
+      font-size: 28px; cursor: pointer;
+    }
+    .lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: oklch(100% 0 0 / 0.15); border: none; color: white;
+      font-size: 32px; padding: 12px 16px; border-radius: 999px; cursor: pointer;
+    }
+    .lightbox-nav:hover { background: oklch(100% 0 0 / 0.25); }
+    .lightbox-nav.prev { left: 20px; }
+    .lightbox-nav.next { right: 20px; }
+    .lightbox-counter {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      color: white; font-family: var(--font-mono); font-size: 14px;
+      background: oklch(0% 0 0 / 0.5); padding: 6px 16px; border-radius: 999px;
+    }
+    .gallery-modal-overlay {
+      position: fixed; inset: 0; background: oklch(0% 0 0 / 0.85);
+      z-index: 9999; display: none; align-items: center; justify-content: center;
+      padding: 32px;
+    }
+    .gallery-modal-overlay.open { display: flex; }
+    .gallery-modal-close {
+      position: absolute; top: 16px; right: 20px; z-index: 10;
+      background: oklch(100% 0 0 / 0.1); border: none; color: white;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 22px;
+      cursor: pointer; display: grid; place-items: center; transition: background 0.15s;
+    }
+    .gallery-modal-close:hover { background: oklch(100% 0 0 / 0.25); }
+    .gallery-modal-content {
+      display: grid; grid-template-columns: 1fr 240px;
+      gap: 0; max-width: 1100px; width: 100%;
+      max-height: 85vh; background: oklch(18% 0.01 250);
+      border-radius: 14px; overflow: hidden;
+    }
+    .gallery-modal-main {
+      display: flex; flex-direction: column;
+      overflow: hidden; border-right: 1px solid oklch(100% 0 0 / 0.08);
+    }
+    .gallery-modal-img-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 24px;
+    }
+    .gallery-modal-img-wrap img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      border-radius: 6px; cursor: zoom-in;
+    }
+    .gallery-modal-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; padding: 14px; color: oklch(80% 0 0);
+      border-top: 1px solid oklch(100% 0 0 / 0.06);
+    }
+    .gallery-modal-nav button {
+      background: oklch(100% 0 0 / 0.1); border: none; color: white;
+      width: 32px; height: 32px; border-radius: 8px; font-size: 16px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .gallery-modal-nav button:hover { background: oklch(100% 0 0 / 0.2); }
+    .gallery-modal-nav span { font-size: 13px; font-family: var(--font-mono); }
+    .gallery-modal-sidebar {
+      display: flex; flex-direction: column; padding: 20px; gap: 16px;
+      overflow: hidden;
+    }
+    .gallery-modal-header h3 {
+      font-family: var(--font-display); font-size: 18px; margin: 0;
+      color: oklch(98% 0.005 240); line-height: 1.3;
+    }
+    .gallery-modal-thumbs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      overflow-y: auto; scrollbar-width: none; flex: 1;
+    }
+    .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
+    .gallery-modal-thumbs img {
+      width: 100%; aspect-ratio: 1; object-fit: cover;
+      border-radius: 6px; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.15s, opacity 0.15s;
+      opacity: 0.5;
+    }
+    .gallery-modal-thumbs img:hover { opacity: 0.85; }
+    .gallery-modal-thumbs img.active {
+      border-color: var(--accent); opacity: 1;
+    }
+    @media (max-width: 768px) {
+      .gallery-modal-content { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      .gallery-modal-main { border-right: none; border-bottom: 1px solid oklch(100% 0 0 / 0.08); }
+      .gallery-modal-thumbs { grid-template-columns: repeat(5, 1fr); overflow-x: auto; overflow-y: hidden; }
+      .gallery-modal-thumbs img { width: 100%; height: auto; }
+      .gallery-modal-overlay { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div style="position:fixed; bottom:0; left:0; right:0; z-index:9999; background:oklch(30% 0.02 60); color:oklch(92% 0.01 80); text-align:center; padding:6px 16px; font-size:12px; font-family:var(--font-body); letter-spacing:0.02em;">⚠ Prototipo dimostrativo — non è un'applicazione reale. Tutti i dati sono fittizi e qualcosa potrebbe non funzionare correttamente.</div>
+  <header class="topnav" data-od-id="topnav">
+    <div class="container topnav-inner">
+      <a href="01-landing.html" class="logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <nav>
+        <a href="index.html" style="font-size: 13px;">← Ritorna al Menu del Prototipo</a>
+      </nav>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cerca articoli, linee, famiglie" />
+      </div>
+      <a href="04-cart.html" class="btn btn-primary" style="padding: 8px 14px; font-size: 13px;">Carrello (3)</a>
+    </div>
+  </header>
+
+  <main id="content">
+      <div class="breadcrumb" style="padding-inline:32px;max-width:100%;margin:0 auto;">
+        <a href="02-catalog.html">Catalogo</a><span>›</span>
+        <a href="02-catalog.html">Cotto da Esterno</a><span>›</span>
+        Vaso Torchio Terracotta Ø30
+      </div>
+
+      <div class="product-layout">
+        <!-- COLONNA SINISTRA: Galleria stile Amazon -->
+        <div class="product-left">
+          <div class="gallery-wrapper">
+            <div class="gallery-share" title="Condividi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </div>
+            <div class="gallery-main" id="galleryMain" onclick="openLightbox()">
+              <img src="images/vasi-bianchi.webp" alt="Vaso Torchio Terracotta Ø30 H35" id="mainImage" />
+            </div>
+            <div class="gallery-hint" onclick="openLightbox()">Fai clic per visualizzare la vista completa</div>
+            <div class="gallery-thumbs" id="galleryThumbs">
+              <img src="images/vasi-bianchi.webp" alt="Thumb 1" class="thumb active" data-idx="0" />
+              <img src="images/catalogo-cotto-esterni.webp" alt="Thumb 2" class="thumb" data-idx="1" />
+              <img src="images/catalogo-cotto-interni.webp" alt="Thumb 3" class="thumb" data-idx="2" />
+              <img src="images/catalogo-fiberstone.webp" alt="Thumb 4" class="thumb" data-idx="3" />
+              <img src="images/catalogo-metallo.webp" alt="Thumb 5" class="thumb" data-idx="4" />
+              <div class="thumb" data-idx="5" style="position:relative;">
+                <img src="images/catalogo-pottery-pots.webp" alt="Thumb 6" />
+                <div class="thumb-more" onclick="event.stopPropagation();openGalleryModal()">3+</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLONNA CENTRALE: Dettagli prodotto -->
+        <div class="product-center">
+          <div>
+            <p class="eyebrow" style="margin-bottom: 8px;">Cotto da Esterno</p>
+            <h1>Vaso Torchio Terracotta Ø30 H35</h1>
+            <p style="font-size: 14px; color: var(--muted); margin-top: 8px;">Colore: <span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#C46A42;border:1px solid var(--border);vertical-align:middle;"></span> Terracotta</span></p>
+          </div>
+
+          <div class="product-desc-block">
+            <h3>Descrizione</h3>
+            <p>Vaso in cotto terracotta per esterno, resistente alle intemperie e al gelo. Superficie naturale con finitura a mano. Ideale per piante da esterno, fioriere e composizioni da terrazzo o giardino.</p>
+          </div>
+
+          <div class="product-desc-block">
+            <h3>Caratteristiche</h3>
+            <div class="product-features">
+              <div class="feat"><strong>Materiale:</strong> Cotto</div>
+              <div class="feat"><strong>Uso:</strong> Esterno</div>
+              <div class="feat"><strong>Diametro:</strong> Ø30 cm</div>
+              <div class="feat"><strong>Resistenza:</strong> Gelo</div>
+              <div class="feat"><strong>Peso:</strong> 4,2 kg</div>
+              <div class="feat"><strong>Famiglia:</strong> Cotto da Esterno</div>
+            </div>
+          </div>
+
+          <div class="product-desc-block">
+            <h3>Punti chiave</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); line-height: 1.7;">
+              <li>Resistente al gelo e alle intemperie</li>
+              <li>Finitura a mano con texture naturale</li>
+              <li>Ideale per terrazze, giardini e balconi</li>
+              <li>Disponibile in diverse dimensioni</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- COLONNA DESTRA: Buy Box -->
+        <div class="buy-box">
+          <div class="price-block">
+            <span class="price-net">€ 12,40</span>
+            <span class="price-list">€ 15,50</span>
+            <span class="price-discount">−20%</span>
+          </div>
+          <p class="savings-line">Risparmi € 3,10 (20%)</p>
+
+          <div class="divider"></div>
+
+          <div class="stock-badge stock-low" style="font-size: 14px;">
+            <span class="stock-dot"></span>
+            Scorte limitate
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="variant-section">
+            <label>Altezza</label>
+            <select class="variant-select" id="dim1" onchange="cascadeDim1()">
+              <option value="">Seleziona altezza</option>
+              <option value="25">H25 cm</option>
+              <option value="35" selected>H35 cm</option>
+              <option value="45">H45 cm</option>
+            </select>
+          </div>
+
+          <div class="variant-section">
+            <label>Diametro</label>
+            <select class="variant-select" id="dim2" onchange="cascadeDim2()">
+              <option value="">Seleziona diametro</option>
+              <option value="30" selected>Ø30 cm</option>
+              <option value="40">Ø40 cm</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 8px;">Quantità</label>
+            <div class="qty-row">
+              <div class="qty-control">
+                <button type="button" onclick="changeQty(-6)">−</button>
+                <input type="number" id="qty" value="12" min="6" step="6" />
+                <button type="button" onclick="changeQty(6)">+</button>
+              </div>
+              <span class="qty-info">Multiplo: 6 pz</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary add-to-cart" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;">Aggiungi al carrello</button>
+          <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px;">Acquista ora</button>
+
+          <div class="divider"></div>
+
+          <div style="font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <span>Spedizione entro 48h · Tracciamento completo</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
+              <span>Venduto da Luis S.r.l. · Garanzia 24 mesi</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted);"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span>Resi gratuiti entro 30 giorni</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <section class="variant-grid-section" data-od-id="variant-grid">
+      <div class="container">
+        <h2>Griglia d'ordine varianti</h2>
+
+        <div class="cascade-filters">
+          <select id="filterDim1" onchange="filterVariants()">
+            <option value="">Tutte le altezze</option>
+            <option value="25">H25 cm</option>
+            <option value="35">H35 cm</option>
+            <option value="45">H45 cm</option>
+          </select>
+          <select id="filterDim2" onchange="filterVariants()">
+            <option value="">Tutti i diametri</option>
+            <option value="20">Ø20 cm</option>
+            <option value="30">Ø30 cm</option>
+            <option value="40">Ø40 cm</option>
+          </select>
+        </div>
+
+        <table class="variant-table">
+          <thead>
+            <tr>
+              <th>Dimensioni</th>
+              <th>Cod. Integra</th>
+              <th>Prezzo</th>
+              <th>Disponibilità</th>
+              <th>Quantità</th>
+            </tr>
+          </thead>
+          <tbody id="variantBody">
+            <tr data-dim1="25" data-dim2="20">
+              <td>Ø20 H25</td>
+              <td>
+                <span class="code-cell">COT-EST-001
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø20 H25 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 9,80</span>
+                  <span class="price-list">€ 12,20</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" onclick="gridQty(this,-6)">−</button>
+                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
+                  <button type="button" onclick="gridQty(this,6)">+</button>
+                </div>
+                <div class="multiplo-info">Multiplo: 6 pz</div>
+              </td>
+            </tr>
+            <tr data-dim1="25" data-dim2="30">
+              <td>Ø30 H25</td>
+              <td>
+                <span class="code-cell">COT-EST-002
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H25 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 11,20</span>
+                  <span class="price-list">€ 14,00</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" onclick="gridQty(this,-6)">−</button>
+                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
+                  <button type="button" onclick="gridQty(this,6)">+</button>
+                </div>
+                <div class="multiplo-info">Multiplo: 6 pz</div>
+              </td>
+            </tr>
+            <tr data-dim1="35" data-dim2="30">
+              <td>Ø30 H35</td>
+              <td>
+                <span class="code-cell">COT-EST-003
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H35 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 12,40</span>
+                  <span class="price-list">€ 15,50</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-low"><span class="stock-dot"></span> Scorte limitate</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" onclick="gridQty(this,-6)">−</button>
+                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
+                  <button type="button" onclick="gridQty(this,6)">+</button>
+                </div>
+                <div class="multiplo-info">Multiplo: 6 pz</div>
+              </td>
+            </tr>
+            <tr data-dim1="35" data-dim2="40">
+              <td>Ø40 H35</td>
+              <td>
+                <span class="code-cell">COT-EST-004
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø40 H35 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 16,80</span>
+                  <span class="price-list">€ 21,00</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" onclick="gridQty(this,-6)">−</button>
+                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
+                  <button type="button" onclick="gridQty(this,6)">+</button>
+                </div>
+                <div class="multiplo-info">Multiplo: 6 pz</div>
+              </td>
+            </tr>
+            <tr data-dim1="45" data-dim2="30">
+              <td>Ø30 H45</td>
+              <td>
+                <span class="code-cell">COT-EST-005
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø30 H45 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 15,60</span>
+                  <span class="price-list">€ 19,50</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-ok"><span class="stock-dot"></span> Disponibile</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" onclick="gridQty(this,-6)">−</button>
+                  <input type="number" value="0" min="0" step="6" data-multiplo="6" />
+                  <button type="button" onclick="gridQty(this,6)">+</button>
+                </div>
+                <div class="multiplo-info">Multiplo: 6 pz</div>
+              </td>
+            </tr>
+            <tr data-dim1="45" data-dim2="40" class="disabled-row">
+              <td>Ø40 H45</td>
+              <td>
+                <span class="code-cell">COT-EST-006
+                  <span class="info-trigger">i<span class="tooltip">Vaso cilindrico cotto esterno Ø40 H45 terracotta</span></span>
+                </span>
+              </td>
+              <td>
+                <div class="price-cell">
+                  <span class="price-net">€ 19,50</span>
+                  <span class="price-list">€ 24,40</span>
+                  <span class="price-disc">−20%</span>
+                </div>
+              </td>
+              <td><span class="stock-badge-sm stock-out"><span class="stock-dot"></span> Esaurito</span></td>
+              <td>
+                <div class="qty-ctrl">
+                  <button type="button" disabled>−</button>
+                  <input type="number" value="0" min="0" step="6" disabled />
+                  <button type="button" disabled>+</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="variant-grid-footer">
+          <div class="total-info">
+            Righe selezionate: <strong id="gridRowCount">0</strong> · Totale: <strong id="gridTotal">€ 0,00</strong>
+          </div>
+          <button class="btn btn-primary" onclick="addAllToCart()">Aggiungi al carrello</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="related-section">
+      <div class="container">
+        <h2>Articoli correlati</h2>
+        <div class="related-grid">
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-cotto-interni.webp" alt="Vaso Amphora" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Amphora Cotto Ø45 H50</p>
+              <span class="rel-price">€ 28,60</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-fiberstone.webp" alt="Vaso Campana" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Campana Terracotta Ø25 H28</p>
+              <span class="rel-price">€ 8,90</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-cesti.webp" alt="Vaso Paniere" style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Vaso Paniere Cotto Ø40 H38</p>
+              <span class="rel-price">€ 19,50</span>
+            </div>
+          </a>
+          <a href="03-product.html" class="related-card">
+            <img src="images/catalogo-metallo.webp" alt="Fioriera Rect." style="width: 100%; aspect-ratio: 4/3; object-fit: cover;" />
+            <div class="rel-body">
+              <p class="rel-name">Fioriera Rettangolare Cotto 60cm</p>
+              <span class="rel-price">€ 34,20</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <span class="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
+    </div>
+  </footer>
+
+  <script>
+    var galleryImages = [
+      'images/vasi-bianchi.webp',
+      'images/catalogo-cotto-esterni.webp',
+      'images/catalogo-cotto-interni.webp',
+      'images/catalogo-fiberstone.webp',
+      'images/catalogo-metallo.webp'
+    ];
+    var currentImg = 0;
+
+    // Variante lookup: chiave = "altezza_diametro"
+    var variantData = {
+      '25_20': { cod: 'COT-EST-001', prezzo: 9.80, listino: 12.20, sconto: 20, stock: 'ok', multiplo: 12 },
+      '25_30': { cod: 'COT-EST-002', prezzo: 11.20, listino: 14.00, sconto: 20, stock: 'ok', multiplo: 6 },
+      '35_30': { cod: 'COT-EST-003', prezzo: 12.40, listino: 15.50, sconto: 20, stock: 'low', multiplo: 6 },
+      '35_40': { cod: 'COT-EST-004', prezzo: 16.80, listino: 21.00, sconto: 20, stock: 'ok', multiplo: 4 },
+      '45_30': { cod: 'COT-EST-005', prezzo: 15.60, listino: 19.50, sconto: 20, stock: 'ok', multiplo: 2 },
+      '45_40': { cod: 'COT-EST-006', prezzo: 19.50, listino: 24.40, sconto: 20, stock: 'out', multiplo: 2 }
+    };
+
+    var dim2Map = {
+      '': ['20','30','40'],
+      '25': ['20','30'],
+      '35': ['30','40'],
+      '45': ['30','40']
+    };
+
+    var stockLabels = { ok: 'Disponibile', low: 'Scorte limitate', out: 'Esaurito' };
+    var stockCss = { ok: 'stock-ok', low: 'stock-low', out: 'stock-out' };
+
+    function formatPrice(n) {
+      return '€ ' + n.toFixed(2).replace('.', ',');
+    }
+
+    function updateBuyBox() {
+      var d1 = document.getElementById('dim1').value;
+      var d2 = document.getElementById('dim2').value;
+      var priceNet = document.querySelector('.buy-box .price-net');
+      var priceList = document.querySelector('.buy-box .price-list');
+      var priceDiscount = document.querySelector('.buy-box .price-discount');
+      var savingsLine = document.querySelector('.buy-box .savings-line');
+      var stockBadge = document.querySelector('.buy-box .stock-badge');
+
+      if (!d1 || !d2) {
+        // Nessuna variante selezionata → pulisci tutto
+        priceNet.textContent = '—';
+        priceList.textContent = '';
+        priceDiscount.textContent = '';
+        savingsLine.textContent = '';
+        stockBadge.className = 'stock-badge';
+        stockBadge.innerHTML = '<span class="stock-dot"></span> Seleziona una variante';
+        return;
+      }
+
+      var key = d1 + '_' + d2;
+      var v = variantData[key];
+
+      if (!v) {
+        // Combinazione non valida
+        priceNet.textContent = '—';
+        priceList.textContent = '';
+        priceDiscount.textContent = '';
+        savingsLine.textContent = '';
+        stockBadge.className = 'stock-badge';
+        stockBadge.innerHTML = '<span class="stock-dot"></span> Non disponibile';
+        return;
+      }
+
+      priceNet.textContent = formatPrice(v.prezzo);
+      priceList.textContent = formatPrice(v.listino);
+      priceDiscount.textContent = '−' + v.sconto + '%';
+      var risparmio = v.listino - v.prezzo;
+      savingsLine.textContent = 'Risparmi ' + formatPrice(risparmio) + ' (' + v.sconto + '%)';
+
+      stockBadge.className = 'stock-badge ' + stockCss[v.stock];
+      stockBadge.innerHTML = '<span class="stock-dot"></span> ' + stockLabels[v.stock];
+
+      // Aggiorna multiplo e resetta quantità
+      var qtyInput = document.getElementById('qty');
+      var multiploLabel = document.querySelector('.buy-box .qty-info');
+      var minusBtn = document.querySelector('.buy-box .qty-control button:first-child');
+      var plusBtn = document.querySelector('.buy-box .qty-control button:last-child');
+      qtyInput.min = v.multiplo;
+      qtyInput.step = v.multiplo;
+      qtyInput.value = v.multiplo;
+      multiploLabel.textContent = 'Multiplo: ' + v.multiplo + ' pz';
+      minusBtn.setAttribute('onclick', 'changeQty(-' + v.multiplo + ')');
+      plusBtn.setAttribute('onclick', 'changeQty(' + v.multiplo + ')');
+    }
+
+    function selectThumb(idx) {
+      if (idx >= galleryImages.length) idx = 0;
+      currentImg = idx;
+      var mainImg = document.getElementById('mainImage');
+      if (mainImg) mainImg.src = galleryImages[idx];
+      document.querySelectorAll('#galleryThumbs .thumb').forEach(function(t, i) {
+        t.classList.toggle('active', i === idx);
+      });
+    }
+    function openLightbox() {
+      var lb = document.getElementById('lightbox');
+      lb.classList.add('open');
+      updateLightbox();
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function lbNav(delta) {
+      currentImg = (currentImg + delta + galleryImages.length) % galleryImages.length;
+      updateLightbox();
+      selectThumb(currentImg);
+    }
+    function updateLightbox() {
+      var img = document.getElementById('lbImage');
+      if (img) img.src = galleryImages[currentImg];
+      var counter = document.getElementById('lbCounter');
+      if (counter) counter.textContent = (currentImg + 1) + ' / ' + galleryImages.length;
+    }
+
+    var allGalleryImages = [
+      'images/vasi-bianchi.webp',
+      'images/catalogo-cotto-esterni.webp',
+      'images/catalogo-cotto-interni.webp',
+      'images/catalogo-fiberstone.webp',
+      'images/catalogo-metallo.webp',
+      'images/catalogo-pottery-pots.webp',
+      'images/catalogo-capi-europe.webp',
+      'images/catalogo-cotto-esterni.webp',
+      'images/catalogo-metallo.webp',
+      'images/catalogo-cotto-interni.webp'
+    ];
+
+    let galleryModalIndex = 0;
+    const allImages = ['images/vasi-bianchi.webp','images/catalogo-cotto-esterni.webp','images/catalogo-fiberstone.webp','images/catalogo-metallo.webp','images/catalogo-cesti.webp','images/catalogo-cotto-interni.webp','images/catalogo-capi-europe.webp','images/catalogo-pottery-pots.webp','images/hero-slider.webp','images/catalogo-cotto-esterni.webp'];
+
+    function openGalleryModal(startIdx) {
+      galleryModalIndex = startIdx || 0;
+      renderGalleryModal();
+      document.getElementById('galleryModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeGalleryModal() {
+      document.getElementById('galleryModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function renderGalleryModal() {
+      var thumbs = document.getElementById('galleryModalThumbs');
+      thumbs.innerHTML = allImages.map(function(src, i) {
+        return '<img src="' + src + '" class="' + (i === galleryModalIndex ? 'active' : '') + '" onclick="galleryModalSelect(' + i + ')" alt="Thumb ' + (i+1) + '">';
+      }).join('');
+      document.getElementById('galleryModalImg').src = allImages[galleryModalIndex];
+      document.getElementById('galleryModalCounter').textContent = (galleryModalIndex + 1) + ' / ' + allImages.length;
+    }
+    function galleryModalSelect(idx) {
+      galleryModalIndex = idx;
+      renderGalleryModal();
+    }
+    function galleryModalNav(dir) {
+      galleryModalIndex = (galleryModalIndex + dir + allImages.length) % allImages.length;
+      renderGalleryModal();
+    }
+    document.addEventListener('keydown', function(e) {
+      if (!document.getElementById('galleryModal').classList.contains('open')) return;
+      if (e.key === 'Escape') closeGalleryModal();
+      if (e.key === 'ArrowLeft') galleryModalNav(-1);
+      if (e.key === 'ArrowRight') galleryModalNav(1);
+    });
+
+    function changeQty(delta) {
+      var input = document.getElementById('qty');
+      var val = parseInt(input.value) || parseInt(input.min) || 6;
+      var step = parseInt(input.step) || 6;
+      var newVal = Math.max(step, Math.round((val + delta) / step) * step);
+      input.value = newVal;
+    }
+
+    function gridQty(btn, delta) {
+      var ctrl = btn.closest('.qty-ctrl');
+      var input = ctrl.querySelector('input');
+      var step = parseInt(input.dataset.multiplo) || 6;
+      var val = parseInt(input.value) || 0;
+      var newVal = Math.max(0, val + delta);
+      newVal = Math.round(newVal / step) * step;
+      input.value = newVal;
+      updateGridTotal();
+    }
+
+    function cascadeDim2() {
+      var d1 = document.getElementById('dim1').value;
+      var sel2 = document.getElementById('dim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      sel2.innerHTML = '<option value="">Seleziona diametro</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      // Se la selezione precedente è ancora valida, mantienila
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      } else {
+        sel2.value = '';
+      }
+
+      // Aggiorna prezzo, sconto, risparmi, disponibilità
+      updateBuyBox();
+    }
+
+    function cascadeDim1() {
+      var d1 = document.getElementById('dim1').value;
+      var sel2 = document.getElementById('dim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      sel2.innerHTML = '<option value="">Seleziona diametro</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      // Se il diametro precedente è compatibile, mantienilo
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      } else {
+        sel2.value = '';
+      }
+
+      updateBuyBox();
+    }
+
+    function filterVariants() {
+      var d1 = document.getElementById('filterDim1').value;
+      var sel2 = document.getElementById('filterDim2');
+      var prevD2 = sel2.value;
+      var allowed = dim2Map[d1] || dim2Map[''];
+
+      sel2.innerHTML = '<option value="">Tutti i diametri</option>';
+      allowed.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = 'Ø' + v + ' cm';
+        sel2.appendChild(opt);
+      });
+
+      if (prevD2 && allowed.indexOf(prevD2) !== -1) {
+        sel2.value = prevD2;
+      } else {
+        sel2.value = '';
+      }
+
+      var d2 = sel2.value;
+      var rows = document.querySelectorAll('#variantBody tr');
+      rows.forEach(function(row) {
+        var match1 = !d1 || row.dataset.dim1 === d1;
+        var match2 = !d2 || row.dataset.dim2 === d2;
+        row.style.display = (match1 && match2) ? '' : 'none';
+      });
+      updateGridTotal();
+    }
+
+    function updateGridTotal() {
+      var rows = document.querySelectorAll('#variantBody tr');
+      var count = 0, total = 0;
+      rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var input = row.querySelector('.qty-ctrl input');
+        var qty = parseInt(input.value) || 0;
+        if (qty > 0) {
+          count++;
+          var priceText = row.querySelector('.price-net').textContent;
+          var price = parseFloat(priceText.replace('€','').replace(',','.').trim());
+          total += price * qty;
+        }
+      });
+      document.getElementById('gridRowCount').textContent = count;
+      document.getElementById('gridTotal').textContent = formatPrice(total);
+    }
+
+    function addAllToCart() {
+      var rows = document.querySelectorAll('#variantBody tr');
+      var added = 0;
+      rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var input = row.querySelector('.qty-ctrl input');
+        var qty = parseInt(input.value) || 0;
+        if (qty > 0) {
+          added++;
+          input.value = 0;
+        }
+      });
+      updateGridTotal();
+      if (added > 0) {
+        var btn = document.querySelector('.variant-grid-footer .btn-primary');
+        btn.textContent = added + ' articoli aggiunti ✓';
+        btn.style.background = 'oklch(45% 0.12 145)';
+        setTimeout(function() { btn.textContent = 'Aggiungi al carrello'; btn.style.background = ''; }, 2000);
+      }
+    }
+
+    document.querySelectorAll('#galleryThumbs .thumb').forEach(function(thumb) {
+      thumb.addEventListener('click', function() {
+        var idx = parseInt(thumb.dataset.idx) || 0;
+        selectThumb(idx);
+      });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      var gm = document.getElementById('galleryModal');
+      if (gm && gm.classList.contains('open')) {
+        if (e.key === 'Escape') closeGalleryModal();
+        return;
+      }
+      var lb = document.getElementById('lightbox');
+      if (!lb || !lb.classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') lbNav(1);
+      if (e.key === 'ArrowLeft') lbNav(-1);
+    });
+  </script>
+  <div class="gallery-modal-overlay" id="galleryModal" onclick="if(event.target===this)closeGalleryModal()">
+    <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
+    <div class="gallery-modal-content">
+      <div class="gallery-modal-main">
+        <div class="gallery-modal-img-wrap">
+          <img id="galleryModalImg" src="images/vasi-bianchi.webp" alt="" onclick="closeGalleryModal();openLightbox()">
+        </div>
+        <div class="gallery-modal-nav">
+          <button onclick="galleryModalNav(-1)">‹</button>
+          <span id="galleryModalCounter">1 / 10</span>
+          <button onclick="galleryModalNav(1)">›</button>
+        </div>
+      </div>
+      <div class="gallery-modal-sidebar">
+        <div class="gallery-modal-header">
+          <h3>Vaso Torchio Terracotta</h3>
+        </div>
+        <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
+      </div>
+    </div>
+  </div>
+  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">×</button>
+    <button class="lightbox-nav prev" onclick="event.stopPropagation();lbNav(-1)">‹</button>
+    <img src="" alt="Zoom" onclick="event.stopPropagation()" />
+    <button class="lightbox-nav next" onclick="event.stopPropagation();lbNav(1)">›</button>
+    <div class="lightbox-counter">1 / 5</div>
+  </div>
+</body>
+</html>
