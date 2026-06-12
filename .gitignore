@@ -1,7 +1,25 @@
+# Skills & artifacts
 .od-skills/
 *.artifact.json
+
+# Python installation & scripts
+Python/
 *.py
+
+# Temp images (screenshots, diagrams)
+mq*.png
+mq*.jpg
+architettura.png
+
+# Generated files
 *.pptx
 *.pdf
-.architettura.png
-mq0*.png
+
+# Legacy portal versions
+luis-b2b-portal.html
+luis-b2b-portal-2.html
+luis-b2b-portal-3.html
+
+# Old reference files
+03-product-alt.html
+email-presentazione.md
