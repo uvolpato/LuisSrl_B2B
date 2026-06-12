@@ -1333,7 +1333,7 @@
     .gallery-modal-overlay {
       position: fixed; inset: 0; background: oklch(0% 0 0 / 0.85);
       z-index: 9999; display: none; align-items: center; justify-content: center;
-      padding: 4vh 4vw;
+      padding: 3.5vh 3.5vw;
     }
     .gallery-modal-overlay.open { display: flex; }
 
@@ -1347,8 +1347,7 @@
 
     .gallery-modal-content {
       display: flex; flex-direction: row;
-      width: 92vw; max-width: 1200px;
-      max-height: 88vh; background: oklch(18% 0.01 250);
+      width: 100%; max-height: 100%; background: oklch(18% 0.01 250);
       border-radius: 14px; overflow: hidden;
     }
 
@@ -1415,7 +1414,7 @@
 
     @media (max-width: 768px) {
       .gallery-modal-overlay { padding: 2vh 2vw; }
-      .gallery-modal-content { width: 96vw; max-height: 92vh; flex-direction: column; }
+      .gallery-modal-content { width: 100%; max-height: 100%; flex-direction: column; }
       .gallery-modal-right { width: 100%; flex-direction: row; border-left: none; border-top: 1px solid oklch(100% 0 0 / 0.08); }
       .gallery-modal-topbar { flex: 1; border-bottom: none; border-right: 1px solid oklch(100% 0 0 / 0.08); padding: 10px 14px; display: flex; align-items: center; }
       .gallery-modal-topbar h3 { font-size: 13px; }
