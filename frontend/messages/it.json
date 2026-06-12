@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "Luis S.r.l. — Portale B2B",
+    "loading": "Caricamento…",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "logout": "Esci",
+    "search": "Cerca…",
+    "actions": "Azioni",
+    "language": "Lingua"
+  },
+  "login": {
+    "title": "Accesso riservato",
+    "subtitle": "Portale rivenditori Luis S.r.l.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Accedi",
+    "submitting": "Accesso in corso…"
+  },
+  "admin": {
+    "title": "Gestione clienti",
+    "newClient": "Nuovo cliente",
+    "filterAll": "Tutti",
+    "filterActive": "Attivi",
+    "filterBlocked": "Bloccati",
+    "colEmail": "Email",
+    "colName": "Referente",
+    "colCompany": "Ragione sociale",
+    "colPiva": "P.IVA",
+    "colStatus": "Stato",
+    "statusActive": "Attivo",
+    "statusBlocked": "Bloccato",
+    "block": "Blocca",
+    "unblock": "Sblocca",
+    "resetPassword": "Reset password",
+    "edit": "Modifica",
+    "noResults": "Nessun cliente trovato.",
+    "total": "{count, plural, =0 {Nessun cliente} one {1 cliente} other {# clienti}}",
+    "provisionalTitle": "Password provvisoria",
+    "provisionalNote": "Comunicala al cliente: viene mostrata solo ora. Al primo accesso dovrà cambiarla.",
+    "createTitle": "Nuovo cliente",
+    "editTitle": "Modifica cliente",
+    "fieldEmail": "Email",
+    "fieldName": "Nome referente",
+    "fieldCompany": "Ragione sociale",
+    "fieldPiva": "Partita IVA",
+    "fieldPhone": "Telefono",
+    "fieldLanguage": "Lingua preferita",
+    "confirmBlock": "Bloccare l'accesso di questo cliente? Lo storico resta conservato.",
+    "confirmReset": "Generare una nuova password provvisoria per questo cliente?"
+  },
+  "area": {
+    "title": "La tua area riservata",
+    "welcome": "Benvenuto, {name}",
+    "catalogSoon": "Il catalogo con i tuoi prezzi personalizzati sarà disponibile nei prossimi rilasci.",
+    "changePassword": "Cambia password",
+    "mustChange": "Per sicurezza devi cambiare la password provvisoria prima di continuare.",
+    "oldPassword": "Password attuale",
+    "newPassword": "Nuova password",
+    "passwordChanged": "Password aggiornata correttamente."
+  },
+  "server": {
+    "auth": {
+      "invalid_credentials": "Email o password non corretti.",
+      "user_blocked": "Account bloccato. Contatta Luis S.r.l.",
+      "not_authenticated": "Sessione scaduta, accedi di nuovo.",
+      "forbidden": "Operazione non consentita.",
+      "wrong_password": "La password attuale non è corretta."
+    },
+    "users": {
+      "email_exists": "Esiste già un account con questa email.",
+      "piva_exists": "Esiste già un account per questa partita IVA.",
+      "not_found": "Cliente non trovato.",
+      "cannot_block_admin": "Non si può bloccare un amministratore."
+    },
+    "security": {
+      "csrf": "Sessione non valida, ricarica la pagina."
+    },
+    "validation": {
+      "email": "Inserisci un'email valida.",
+      "required": "Campo obbligatorio.",
+      "password_min": "La password deve avere almeno 8 caratteri.",
+      "password_letter": "La password deve contenere almeno una lettera.",
+      "password_digit": "La password deve contenere almeno un numero.",
+      "piva": "Partita IVA non valida."
+    },
+    "errors": {
+      "generic": "Si è verificato un errore. Riprova.",
+      "too_many_requests": "Troppi tentativi. Attendi un minuto e riprova."
+    }
+  }
+}

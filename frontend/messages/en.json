@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "Luis S.r.l. — B2B Portal",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "logout": "Sign out",
+    "search": "Search…",
+    "actions": "Actions",
+    "language": "Language"
+  },
+  "login": {
+    "title": "Restricted access",
+    "subtitle": "Luis S.r.l. reseller portal",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…"
+  },
+  "admin": {
+    "title": "Customer management",
+    "newClient": "New customer",
+    "filterAll": "All",
+    "filterActive": "Active",
+    "filterBlocked": "Blocked",
+    "colEmail": "Email",
+    "colName": "Contact",
+    "colCompany": "Company",
+    "colPiva": "VAT no.",
+    "colStatus": "Status",
+    "statusActive": "Active",
+    "statusBlocked": "Blocked",
+    "block": "Block",
+    "unblock": "Unblock",
+    "resetPassword": "Reset password",
+    "edit": "Edit",
+    "noResults": "No customers found.",
+    "total": "{count, plural, =0 {No customers} one {1 customer} other {# customers}}",
+    "provisionalTitle": "Provisional password",
+    "provisionalNote": "Share it with the customer: it is shown only now. They must change it at first sign-in.",
+    "createTitle": "New customer",
+    "editTitle": "Edit customer",
+    "fieldEmail": "Email",
+    "fieldName": "Contact name",
+    "fieldCompany": "Company name",
+    "fieldPiva": "VAT number",
+    "fieldPhone": "Phone",
+    "fieldLanguage": "Preferred language",
+    "confirmBlock": "Block this customer's access? Their history is preserved.",
+    "confirmReset": "Generate a new provisional password for this customer?"
+  },
+  "area": {
+    "title": "Your reserved area",
+    "welcome": "Welcome, {name}",
+    "catalogSoon": "The catalog with your personalized prices will be available in upcoming releases.",
+    "changePassword": "Change password",
+    "mustChange": "For security, you must change your provisional password before continuing.",
+    "oldPassword": "Current password",
+    "newPassword": "New password",
+    "passwordChanged": "Password updated successfully."
+  },
+  "server": {
+    "auth": {
+      "invalid_credentials": "Incorrect email or password.",
+      "user_blocked": "Account blocked. Contact Luis S.r.l.",
+      "not_authenticated": "Session expired, please sign in again.",
+      "forbidden": "Operation not allowed.",
+      "wrong_password": "The current password is incorrect."
+    },
+    "users": {
+      "email_exists": "An account with this email already exists.",
+      "piva_exists": "An account for this VAT number already exists.",
+      "not_found": "Customer not found.",
+      "cannot_block_admin": "Administrators cannot be blocked."
+    },
+    "security": {
+      "csrf": "Invalid session, reload the page."
+    },
+    "validation": {
+      "email": "Enter a valid email.",
+      "required": "Required field.",
+      "password_min": "Password must be at least 8 characters.",
+      "password_letter": "Password must contain at least one letter.",
+      "password_digit": "Password must contain at least one number.",
+      "piva": "Invalid VAT number."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "too_many_requests": "Too many attempts. Wait a minute and try again."
+    }
+  }
+}
