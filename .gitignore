@@ -23,3 +23,15 @@ luis-b2b-portal-3.html
 # Old reference files
 03-product-alt.html
 email-presentazione.md
+
+# Node / app
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+npm-debug.log*
+
+# Segreti: mai versionare i .env reali (tenere i .env.example)
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,44 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: LuisSrlDb
+    ports:
+      - "5433:5432"   # 5433 per non collidere col Postgres locale su 5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d LuisSrlDb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/LuisSrlDb?schema=public
+      PORT: 3001
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      SESSION_SECRET: ${SESSION_SECRET:?definire in .env}
+      CSRF_SECRET: ${CSRF_SECRET:?definire in .env}
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Le chiamate API del browser passano dal rewrite di Next verso il backend
+      BACKEND_INTERNAL_URL: http://backend:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:

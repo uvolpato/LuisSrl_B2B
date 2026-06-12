@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENTE
+}
+
+enum UserStatus {
+  ATTIVO
+  BLOCCATO
+}
+
+model User {
+  id                 Int        @id @default(autoincrement())
+  email              String     @unique
+  passwordHash       String     @map("password_hash")
+  nome               String
+  ragioneSociale     String?    @map("ragione_sociale")
+  // Vincolo "un solo account per azienda": P.IVA univoca (NULL ammesso per gli admin)
+  partitaIva         String?    @unique @map("partita_iva")
+  telefono           String?
+  ruolo              UserRole   @default(CLIENTE)
+  stato              UserStatus @default(ATTIVO)
+  preferredLanguage  String     @default("it") @map("preferred_language")
+  mustChangePassword Boolean    @default(true) @map("must_change_password")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   Int?     @map("actor_id")
+  actor     User?    @relation(fields: [actorId], references: [id])
+  azione    String
+  entita    String?
+  entitaId  String?  @map("entita_id")
+  dettagli  Json?
+  esito     String   @default("OK")
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([azione, createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_log")
+}
+
+// Tabella sessioni per connect-pg-simple (gestita dalla libreria, non dalle SP)
+model Session {
+  sid    String   @id
+  sess   Json
+  expire DateTime
+
+  @@index([expire])
+  @@map("session")
+}
