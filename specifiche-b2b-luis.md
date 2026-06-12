@@ -3,12 +3,12 @@
 **Cliente:** Luis S.r.l. – Via F. Bellafino 28/30 (Centro Galassia), 24126 Bergamo
 **Settore:** commercio all'ingrosso di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, materiale per allestimenti)
 **Tipo progetto:** portale e‑commerce B2B riservato ai clienti rivenditori
-**Versione documento:** bozza 1.9
+**Versione documento:** bozza 1.12
 **Data:** 5 giugno 2026
 
-> Aggiornamento v1.9: definita la **scheda prodotto a griglia d'ordine** (§4.4): testata = Articolo (foto, colore, descrizione AI), corpo = tutte le Varianti in tabella con prezzo, disponibilità binaria e quantità a multiplo, con **"Aggiungi al carrello" in blocco**; la cascata (§4.2) fa da filtro quando le varianti sono molte. Incluso esempio.
-> Aggiornamento v1.8: gestione **giacenza** — al cliente solo "disponibile/non disponibile"; controllo quantità sufficiente all'inserimento nel carrello.
-> Aggiornamento v1.7: gerarchia da Integra **Famiglia principale → Articolo → Variante** (read‑only) + **Raccolte** di portale.
+> Aggiornamento v1.12: terminologia — il codice identificativo della Variante è indicato come **"codice articolo"** (anziché "codice Integra"). I riferimenti plurali generici ai codici di Integra restano invariati.
+> Aggiornamento v1.11: canali di integrazione — **lettura via viste Postgres**; **ritorno via Excel (automazioni AGOMIR S.p.A.)**.
+> Aggiornamento v1.10: integrazione Integra — entità da richiedere (§11.6) e strategia di sincronizzazione (§11.7).
 
 > Nota: i prezzi sul portale si intendono **IVA esclusa**, coerentemente con la natura B2B (rivendita).
 
@@ -29,15 +29,16 @@ Non rientrano in questa fase (salvo diversa indicazione): vendita al pubblico, p
 | Entità | Descrizione |
 |--------|-------------|
 | **Articolo** | **Entità "prodotto" del catalogo.** Porta **immagini (galleria), colore e descrizione AI**. È l'elemento navigato dal cliente e indicizzato dalla ricerca semantica. Ha **1..N Varianti**. Appartiene a **una Famiglia principale** (da Integra) e a **zero o più Raccolte** (di portale). |
-| **Variante (codice Integra)** | **Unità ordinabile.** Ogni **codice Integra corrisponde a una variante**. Appartiene a **un solo Articolo**. Ha dimensioni/attributi, eventuale confezione/multiplo d'ordine, una **giacenza**, prende il prezzo dal listino del cliente e porta tutti i dati provenienti dal gestionale. |
+| **Variante (codice articolo)** | **Unità ordinabile.** Ogni **codice articolo corrisponde a una variante**. Appartiene a **un solo Articolo**. Ha dimensioni/attributi, eventuale confezione/multiplo d'ordine, una **giacenza**, prende il prezzo dal listino del cliente e porta tutti i dati provenienti dal gestionale. |
 | **Famiglia (principale)** | Raggruppamento **gerarchico** che arriva da **Integra**: ogni Articolo ha **una sola** Famiglia principale. È **non modificabile** lato portale B2B (read‑only). Ha **una sola immagine**. |
 | **Raccolta (collezione di portale)** | Raggruppamento **secondario** di tipo raccolta/etichetta (es. "Novità", "Natale 2026"), **gestito e modificabile sul portale**. Un Articolo può stare in **più Raccolte** (o in nessuna). Ha **una sola immagine**. *(Il cliente/utente può chiamarle anch'esse "famiglie".)* |
 | **Dimensione (attributo)** | Caratteristica della Variante (es. altezza, diametro) usata per selezionare la variante dentro l'Articolo. Filtri a cascata. (Il **colore** è invece una proprietà dell'Articolo.) |
-| **Giacenza** | Quantità disponibile a magazzino **per variante (codice Integra)**, mostrata al cliente. Aggiornata via import da Integra. |
-| **Listino** | Insieme di prezzi **per variante (codice Integra)**. Ogni cliente è associato a un listino di riferimento. |
+| **Giacenza** | Quantità disponibile a magazzino **per variante (codice articolo)**, mostrata al cliente. Aggiornata via import da Integra. |
+| **Listino** | Insieme di prezzi **per variante (codice articolo)**. Ogni cliente è associato a un listino di riferimento. |
 | **Cliente** | Rivenditore invitato. Ha un listino assegnato e sconti (cliente / articolo / famiglia). Può essere **bloccato ma mai cancellato**. |
 | **Ordine** | Documento d'acquisto del cliente, con un proprio stato di avanzamento. |
-| **Integra** | Gestionale aziendale, **fonte primaria dei dati**. Scambio con il portale tramite file **Excel**. Fornisce la gerarchia di aggregazione **Famiglia → Linea → Codice**, che sul portale diventa **Famiglia principale → Articolo → Variante**. |
+| **Integra** | Gestionale aziendale, **fonte primaria dei dati**. **Lettura** via **viste Postgres**; **ritorno** (ordini, articoli con immagini…) via **automazioni Excel sviluppate da AGOMIR S.p.A.** Fornisce la gerarchia **Famiglia → Linea → Codice articolo**, che sul portale diventa **Famiglia principale → Articolo → Variante**. |
+| **AGOMIR S.p.A.** | Software house che **sviluppa e distribuisce Integra**. Controparte tecnica per le viste in lettura e per le automazioni Excel di import dei dati di ritorno in Integra. |
 
 ---
 
@@ -48,13 +49,13 @@ Il catalogo riflette la gerarchia di aggregazione di Integra, più le raccolte g
 
 - **Famiglia principale = raggruppamento gerarchico (da Integra).** Ogni Articolo ha **una sola** Famiglia principale. È **non modificabile** lato portale.
 - **Articolo = entità "prodotto".** Porta **immagini, colore e descrizione AI**. È ciò che il cliente vede a catalogo e ciò che la ricerca semantica indicizza. Ha **1..N Varianti**.
-- **Variante (codice Integra) = unità ordinabile.** Ogni codice Integra è una variante con proprie dimensioni, prezzo (da listino), multiplo, giacenza e tutti i dati provenienti dal gestionale.
+- **Variante (codice articolo) = unità ordinabile.** Ogni codice articolo è una variante con proprie dimensioni, prezzo (da listino), multiplo, giacenza e tutti i dati provenienti dal gestionale.
 - **Raccolta = raggruppamento secondario (di portale).** Collezioni/etichette (es. `Novità`, `Natale 2026`) **gestite e modificabili sul portale**: un Articolo può appartenere a **più Raccolte** (o a nessuna).
 
 Relazioni:
 
 ```
-Famiglia principale (1) ──< Articolo (1) ──< Variante (codice Integra)   [da Integra, gerarchico]
+Famiglia principale (1) ──< Articolo (1) ──< Variante (codice articolo)   [da Integra, gerarchico]
         (una Famiglia ha N Articoli; un Articolo ha 1..N Varianti)
 
 Raccolta (N) >──────────< Articolo                                        [di portale, modificabile]
@@ -81,10 +82,10 @@ I menu a tendina dipendenti servono soprattutto come **filtro** quando le varian
 1. Il cliente seleziona la **1ª dimensione**.
 2. Le opzioni della **2ª dimensione** vengono **filtrate** in base alla 1ª selezione (mostra solo i valori effettivamente disponibili per quella scelta).
 3. Le opzioni della **3ª dimensione** vengono filtrate in base **alla 1ª e alla 2ª** selezione.
-4. La combinazione selezionata risolve in una **variante specifica (codice Integra)**. Solo le combinazioni esistenti (con una variante reale) sono selezionabili: le altre **non vengono mostrate** (o sono disabilitate).
+4. La combinazione selezionata risolve in una **variante specifica (codice articolo)**. Solo le combinazioni esistenti (con una variante reale) sono selezionabili: le altre **non vengono mostrate** (o sono disabilitate).
 
 ### 4.3 Requisiti tecnici
-- Il sistema deve conoscere, per ogni combinazione valida di dimensioni **all'interno di un Articolo**, la **variante (codice Integra)** corrispondente con prezzo, confezione/multiplo e disponibilità.
+- Il sistema deve conoscere, per ogni combinazione valida di dimensioni **all'interno di un Articolo**, la **variante (codice articolo)** corrispondente con prezzo, confezione/multiplo e disponibilità.
 - Il numero di livelli di dimensione deve essere **configurabile** (almeno 1, tipicamente fino a 3). Prevedere flessibilità per Articoli con meno di 3 dimensioni o con una sola variante.
 
 ### 4.4 Scheda prodotto: griglia d'ordine delle varianti
@@ -92,7 +93,7 @@ Soluzione adottata per la presentazione delle varianti sulla scheda prodotto, pe
 
 - **Testata = Articolo.** In alto: galleria immagini, **colore** e **descrizione AI**. Poiché il colore è una proprietà dell'Articolo, una scheda mostra **un solo colore**; gli articoli di colore diverso sono Articoli distinti → prevedere uno **switcher di colore** che porta all'Articolo corrispondente. **[DA CONFERMARE]**
 - **Corpo = griglia d'ordine.** Tutte le Varianti dell'Articolo sono elencate **in tabella**, una per riga, con:
-  - **dimensioni** + codice Integra;
+  - **dimensioni** + codice articolo;
   - **prezzo**: listino barrato − sconto % = **netto** (IVA esclusa), secondo §7;
   - **disponibilità binaria** "disponibile / non disponibile" (§10); righe non disponibili con campo quantità disabilitato;
   - **campo quantità** con incrementi pari al **multiplo d'ordine** (§5).
@@ -131,7 +132,7 @@ Soluzione adottata per la presentazione delle varianti sulla scheda prodotto, pe
 | **Articolo** | molte (galleria) | l'Articolo porta l'intera **galleria immagini** + **colore** + **descrizione AI**; definire immagine di copertina e ordinamento |
 | **Famiglia principale** | 1 | immagine rappresentativa (dato gerarchico da Integra) |
 | **Raccolta** | 1 | immagine rappresentativa della collezione (gestita sul portale) |
-| **Variante (codice Integra)** | nessuna propria | le immagini sono ereditate dall'Articolo; eventuale immagine specifica per variante **[DA CONFERMARE]** |
+| **Variante (codice articolo)** | nessuna propria | le immagini sono ereditate dall'Articolo; eventuale immagine specifica per variante **[DA CONFERMARE]** |
 
 Requisiti:
 - Caricamento multiplo sull'**Articolo**, con possibilità di **ordinare** le immagini e impostare una **immagine di copertina**.
@@ -144,7 +145,7 @@ Requisiti:
 
 ### 7.1 Prezzo base
 - Ogni cliente è associato a **un listino di riferimento**.
-- Il prezzo di partenza è quello definito nel **listino del cliente** per la **variante (codice Integra)**.
+- Il prezzo di partenza è quello definito nel **listino del cliente** per la **variante (codice articolo)**.
 
 ### 7.2 Tipologie di sconto
 1. **Sconto cliente** – impostato sull'anagrafica del cliente (vale su tutto il catalogo).
@@ -155,7 +156,7 @@ Requisiti:
 ### 7.3 Regola di calcolo
 Per ogni **variante** nel carrello:
 
-1. `prezzo_base` = prezzo dal listino del cliente per la variante (codice Integra).
+1. `prezzo_base` = prezzo dal listino del cliente per la variante (codice articolo).
 2. `sconto_famiglia` = **massimo** tra gli sconti della **Famiglia principale** e delle **Raccolte** cui appartiene l'**Articolo** della variante.
 3. `sconto_articolo` = sconto dell'**Articolo** della variante (se presente).
 4. `sconto_cliente` = sconto dell'anagrafica cliente (se presente).
@@ -192,7 +193,7 @@ Il cliente deve poter consultare i propri ordini suddivisi per stato:
 
 - Gli stati sono gestiti lato Luis S.r.l. (back office); il cliente li vede in sola lettura.
 - **[DA DEFINIRE]** se serve uno stato intermedio "annullato" e/o "in attesa di conferma".
-- Ogni ordine mostra: numero, data, righe (**variante / codice Integra**, dimensioni, quantità, multiplo, prezzo netto), totale IVA esclusa, stato corrente.
+- Ogni ordine mostra: numero, data, righe (**variante / codice articolo**, dimensioni, quantità, multiplo, prezzo netto), totale IVA esclusa, stato corrente.
 
 ### 8.2 Storico
 - Lo **storico ordini** deve essere sempre disponibile al cliente e collegato in modo permanente all'anagrafica cliente (vedi §9 sul divieto di cancellazione).
@@ -223,7 +224,7 @@ Contiene almeno: dati anagrafici/fiscali, listino assegnato, sconto cliente, sta
 Indicare ai clienti se una variante è **disponibile o meno** a magazzino e impedire ordini non evadibili, **senza esporre le quantità esatte** di magazzino.
 
 ### 10.2 Dato di giacenza
-- La giacenza è gestita a livello di **variante (codice Integra)**.
+- La giacenza è gestita a livello di **variante (codice articolo)**.
 - Il valore (quantità) proviene da **Integra** ed è aggiornato tramite import Excel (§11); il portale **non ricalcola** la giacenza, la riceve.
 - La quantità è **memorizzata ma non mostrata** al cliente: serve internamente per l'indicatore di disponibilità (§10.3) e per il controllo a carrello (§10.4).
 - Per ogni variante si memorizza almeno: quantità disponibile e data/ora dell'ultimo aggiornamento.
@@ -241,54 +242,88 @@ Indicare ai clienti se una variante è **disponibile o meno** a magazzino e impe
 
 ---
 
-## 11. Integrazione dati con Integra (import/export Excel)
+## 11. Integrazione dati con Integra
 
 ### 11.1 Principio generale
 - **Integra è la fonte primaria** dei dati. Il portale è un canale di vendita allineato periodicamente.
-- Lo scambio avviene tramite **file Excel**, non via API in tempo reale.
-- **Verso il portale (import):** dati anagrafici e di catalogo.
-- **Dal portale (export):** dati generati dall'uso, in primo luogo gli ordini.
+- Lo scambio avviene su **due direzioni con canali distinti**:
+  - **Lettura (Integra → portale): tutte le entità in lettura sono esposte come viste in sola lettura sul database Postgres** di Integra.
+  - **Ritorno (portale → Integra): tramite automazioni di import Excel** che caricano i dati direttamente in Integra. Tali automazioni sono **sviluppate da AGOMIR S.p.A.**, software house che sviluppa e distribuisce Integra.
+- Non è prevista integrazione API in tempo reale.
+- I dati di ritorno comprendono almeno gli **ordini** e l'**anagrafica articoli arricchita con l'immagine associata** (vedi §11.3).
+- Per i dettagli operativi (elenco completo entità/campi e viste) si rimanda al documento separato **"Richiesta dati a Integra"**, da condividere con **AGOMIR S.p.A.**.
 
-### 11.2 Import (Integra → portale, Excel)
+### 11.2 Lettura (Integra → portale, viste Postgres)
 
-**Mappatura chiave (Integra → portale).** Integra fornisce una gerarchia di aggregazione su tre livelli — **Famiglia → Linea → Codice** — che sul portale diventa:
+**Mappatura chiave (Integra → portale).** Integra fornisce una gerarchia di aggregazione su tre livelli — **Famiglia → Linea → Codice articolo** — che sul portale diventa:
 
 | Concetto Integra | Entità portale | Note |
 |------------------|----------------|------|
 | Campo **"famiglia"** | **Famiglia principale** | gerarchica, 1 per Articolo, **non modificabile** sul portale |
 | Campo **"linea"** | **Articolo** | chiave di aggregazione delle varianti |
-| **Codice Integra** | **Variante** | unità ordinabile |
+| **Codice articolo** | **Variante** | unità ordinabile |
 | Più codici con la stessa "linea" | varianti **aggregate nello stesso Articolo** | |
 | Più "linee" con la stessa "famiglia" | Articoli **nella stessa Famiglia principale** | |
 
 > Sul portale **non esiste l'entità Linea**: "linea" è solo la **chiave per aggregare le varianti in Articoli**. La **Famiglia principale** arriva da Integra ed è read‑only; le **Raccolte** (Novità, Natale 2026…) sono invece **create e gestite sul portale**, non da Integra. Un codice con "linea" assente/unica genera un Articolo con una sola Variante.
 
-Dati tipicamente importati:
+Dati tipicamente letti (tutti via vista):
 - **Anagrafiche clienti** (con listino assegnato, sconti, stato attivo/bloccato).
-- **Listini** (prezzi **per variante / codice Integra**).
-- **Catalogo**: per ogni codice Integra (Variante) i campi **"linea"** (→ Articolo) e **"famiglia"** (→ Famiglia principale), con dimensioni e multipli d'ordine.
-- **Giacenze** per variante / codice Integra (§9).
+- **Listini** (prezzi **per variante / codice articolo**).
+- **Catalogo**: per ogni codice articolo (Variante) i campi **"linea"** (→ Articolo) e **"famiglia"** (→ Famiglia principale), con dimensioni e multipli d'ordine.
+- **Giacenze** per variante / codice articolo (§9).
+- **Stato ordini / spedizioni** (giro di ritorno informativo, §8).
 
-Requisiti dell'import:
-- Tracciato Excel **definito e stabile** (un foglio/tracciato per tipologia di dato), con colonne e formati concordati. **[DA DEFINIRE]** i tracciati esatti, **inclusi i nomi/formati dei campi "linea" e "famiglia"** usati per costruire Articoli e Famiglia principale.
-- **Chiavi**: il **codice Integra** identifica la Variante; il campo **"linea"** identifica l'**Articolo**; il campo **"famiglia"** identifica la **Famiglia principale**; servono inoltre chiavi per cliente e listino, per fare match in *upsert* senza duplicare.
-- Gestione **errori e validazione**: righe non valide segnalate in un report, senza bloccare l'intero file.
-- **Immagini, colore e descrizione AI**: il colore e (eventualmente) la descrizione possono arrivare da Integra, mentre **le immagini non passano dall'Excel**; sono associati all'**Articolo** e agganciati tramite "linea"/codice Articolo. **[DA CONFERMARE]** quali campi arrivano da Integra e quali si gestiscono sul portale (§6, §12).
-- Le **Raccolte** non arrivano da Integra: l'associazione Articolo↔Raccolta è gestita sul portale e **non viene sovrascritta** dall'import. **[DA CONFERMARE]**
-- **[DA DEFINIRE]** frequenza e modalità: caricamento manuale di un file vs. cartella monitorata/pianificazione automatica.
+Requisiti della lettura:
+- **Viste stabili** con struttura concordata; **[DA DEFINIRE]** i nomi/formati dei campi "linea" e "famiglia" usati per costruire Articoli e Famiglia principale.
+- **Chiavi**: il **codice articolo** identifica la Variante; il campo **"linea"** identifica l'**Articolo**; il campo **"famiglia"** identifica la **Famiglia principale**; servono inoltre chiavi per cliente e listino, per fare match in *upsert* senza duplicare.
+- Ogni vista espone **`updated_at`** e un **flag stato/attivo** (vedi §11.5).
+- **Immagini e descrizione AI** non arrivano da Integra: sono **gestite sul portale**. Il **colore** e la descrizione possono invece arrivare da Integra. **[DA CONFERMARE]** quali campi sono affidabili in Integra (§6, §12).
+- Le **Raccolte** non esistono in Integra: l'associazione Articolo↔Raccolta è gestita sul portale e indipendente dalla lettura.
 
-### 11.3 Export (portale → Integra/Luis, Excel)
-Dati tipicamente esportati:
-- **Ordini** ricevuti dal portale (testata + righe: cliente, **variante / codice Integra**, dimensioni, quantità, multiplo, prezzo netto applicato, sconti, totale IVA esclusa).
-- Eventualmente: elenco clienti/anagrafiche aggiornate dal portale, se previsto.
+### 11.3 Ritorno (portale → Integra, automazioni Excel di AGOMIR)
+Il portale produce file Excel che vengono importati in Integra tramite **automazioni sviluppate da AGOMIR S.p.A.** Dati di ritorno:
+- **Ordini** ricevuti dal portale (testata + righe: cliente, **variante / codice articolo**, dimensioni, quantità, multiplo, prezzo netto applicato, sconti, totale IVA esclusa).
+- **Anagrafica articoli arricchita**: associazione **articolo ↔ immagine** (e, se utile, descrizione AI) generata sul portale e riportata in Integra.
+- Altri dati di ritorno **proposti** (da confermare): associazioni Articolo↔Raccolta/collezioni, eventuali note/attributi aggiunti sul portale. **[DA CONFERMARE]**
 
-Requisiti dell'export:
-- Tracciato Excel **compatibile con l'import in Integra**. **[DA DEFINIRE]** il tracciato esatto.
-- Export **su richiesta** dal back office e/o **pianificato**; evitare doppie esportazioni dello stesso ordine (marcatura "esportato").
+Requisiti del ritorno:
+- Tracciati Excel **concordati con AGOMIR** e compatibili con le automazioni di import in Integra. **[DA DEFINIRE]** i tracciati esatti.
+- Generazione **su richiesta** dal back office e/o **pianificata**; **marcatura "esportato"** per evitare doppioni (in particolare per gli ordini).
+- Le **immagini** (file binari) non viaggiano nell'Excel: il tracciato porta il **riferimento/URL o nome file**; modalità di trasferimento dei file da concordare con AGOMIR. **[DA DEFINIRE]**
 
 ### 11.4 Coerenza dei dati
 - Definire chiaramente la **direzione "master"** di ogni dato per evitare conflitti (es. lo stato ordine può essere aggiornato in Integra e re‑importato? §8). **[DA DEFINIRE]**
 - Mantenere i **codici di Integra** come identificativi anche sul portale, per garantire allineamento bidirezionale.
+
+### 11.5 Canali di integrazione
+- **Lettura → viste Postgres (sola lettura).** Tutte le entità che il portale legge da Integra sono esposte come viste: catalogo, listini/prezzi, clienti, **giacenze**, stato ordini/spedizioni. Consentono pull incrementali (filtrando su `updated_at`) e join.
+- **Ritorno → automazioni Excel di AGOMIR.** I dati prodotti dal portale (ordini, anagrafica articoli con immagine, ecc.) sono importati in Integra tramite automazioni Excel sviluppate da **AGOMIR S.p.A.**
+- **Una sola fonte "master" per entità**: per ogni dato un solo canale autorevole, per evitare due verità sullo stesso campo.
+- Requisito trasversale: **ogni vista** espone una **chiave univoca stabile** (codici Integra), una colonna **`updated_at`** e un **flag stato/attivo (o "eliminato")**. Sono la base delle sincronizzazioni incrementali e del rilevamento delle dismissioni.
+
+### 11.6 Entità da richiedere a Integra / AGOMIR (sintesi)
+Elenco di alto livello (campi di dettaglio nel documento "Richiesta dati a Integra"). Le entità in **lettura** sono richieste come **viste Postgres**. ★ = indispensabile, ○ = richiesto in via cautelativa.
+
+- **Catalogo**: ★ Famiglie · ★ Linee (→ Articolo) · ★ Prodotti/Varianti (codice articolo, colore, dimensioni strutturate, multiplo/confezione, UM, stato, IVA) · ○ attributi generici, EAN, peso/volume, materiale, fornitore, conversioni UM, riferimenti media.
+- **Prezzi e condizioni**: ★ Listini · ★ Righe listino (prezzo per variante, IVA esclusa, validità) · ★ Sconti (cliente / articolo / famiglia, con regola di combinazione) · ○ prezzi a scaglioni, promozioni a tempo, aliquote IVA.
+- **Clienti**: ★ Anagrafiche (listino assegnato, stato attivo/bloccato) · ★ Indirizzi (spedizioni multiple) · ○ dati e‑fattura, pagamenti, fido, agente, min. ordine.
+- **Magazzino**: ★ Giacenze per variante (quantità, UM, `updated_at`) · ○ magazzini multipli, impegnato/in arrivo con data prevista, lead time.
+- **Ordini (ritorno Integra → portale)**: ★ Stato ordine (mappatura n° portale ↔ Integra, stato, date) · ★ Spedizioni/DDT (quantità, n° DDT, tracking) · ○ fatture e stato pagamento.
+- **Lookup/decodifiche**: ★ Colori, UM, stati/causali, IVA · ○ paesi, valute, lingue, classi merceologiche, corrieri.
+
+### 11.7 Strategia di allineamento (sincronizzazione)
+1. **Sorgente di verità per campo.** Integra è master per i dati gestionali; il **portale è master** per ciò che è solo suo (Raccolte, immagini, descrizioni AI, prompt banner, credenziali). L'import **non sovrascrive** i dati di portale. Lo stato ordine è master in Integra e rientra nel portale.
+2. **Chiavi + upsert idempotente.** Match sempre sui codici Integra (mai sulle descrizioni); ogni import fa insert/update per chiave, ripetibile senza duplicare.
+3. **Niente cancellazioni fisiche.** Ciò che sparisce da Integra si **disattiva/nasconde** (gli ordini storici referenziano articoli e clienti). Le dismissioni si rilevano via flag stato o per assenza nello snapshot completo.
+4. **Full snapshot vs delta.** Snapshot completo per i dati medio‑piccoli (catalogo, listini); **delta incrementale** (`updated_at` > ultimo allineamento) per i dati frequenti/voluminosi (giacenze); **riconciliazione completa periodica** (es. notturna) per correggere derive.
+5. **Watermark per entità.** Memorizzare per ogni vista l'ultimo `updated_at` elaborato e richiedere al giro successivo solo le righe cambiate.
+6. **Cadenze differenziate.** Giacenze: frequente (es. ogni 15–60 min); prezzi/clienti/catalogo: giornaliero o on‑change; stato ordini: frequente. **[DA DEFINIRE]** i valori esatti.
+7. **Ordine di caricamento per dipendenze.** Lookup → Famiglie → Linee/Articoli → Varianti → Listini → Prezzi → Clienti → Giacenze → Stato ordini. Le righe "orfane" vanno in **quarantena** e si ritentano, senza bloccare il resto.
+8. **Staging + validazione.** Caricamento in area di staging, validazione (chiavi, tipi, integrità referenziale, prezzo ≥ 0), **report errori**, promozione delle sole righe valide. Un articolo incompleto (es. senza prezzo) si marca **non ordinabile** finché non è completo.
+9. **Freschezza visibile.** Usare `updated_at` (in particolare delle giacenze) per tracciare/mostrare "dato aggiornato al…" (§10).
+10. **Gestione file di ritorno (Excel AGOMIR).** Cartella "processati", checksum anti‑rielaborazione, log conteggi (letti/aggiornati/scartati/errori), **alert** sui fallimenti; tracciati concordati con AGOMIR.
+11. **Round‑trip ordini.** Portale crea l'ordine → file Excel verso Integra (automazione AGOMIR) con marcatura "esportato" (anti‑doppione) → Integra lavora → stato/spedizione rientrano via **vista**.
 
 ---
 
@@ -333,7 +368,7 @@ Due funzionalità basate su intelligenza artificiale: una **ricerca semantica** 
 
 | # | Requisito | Sezione |
 |---|-----------|---------|
-| 1 | Modello catalogo da Integra: **Famiglia principale → Articolo → Variante** (codice Integra); **Raccolte** secondarie gestite sul portale | §3 |
+| 1 | Modello catalogo da Integra: **Famiglia principale → Articolo → Variante** (codice articolo); **Raccolte** secondarie gestite sul portale | §3 |
 | 2 | Scheda prodotto a **griglia d'ordine** (varianti in riga, quantità multipla, add in blocco); cascata come filtro se molte varianti | §4 |
 | 3 | Confezioni / quantità multipla obbligatoria (per variante) | §5 |
 | 4 | Galleria foto + **colore** + **descrizione AI sull'Articolo**; 1 immagine su Famiglia principale e su Raccolta | §6 |
@@ -341,7 +376,7 @@ Due funzionalità basate su intelligenza artificiale: una **ricerca semantica** 
 | 6 | Stati ordine: fatto, in lavorazione, spedito, storico | §8 |
 | 7 | Clienti invitati; blocco senza cancellazione per mantenere lo storico | §9 |
 | 8 | Giacenza da Integra; al cliente solo "disponibile/non disponibile" + controllo quantità a carrello | §10 |
-| 9 | Import dati da Integra via Excel (riga = codice Integra); export ordini in Excel | §11 |
+| 9 | Integrazione Integra: **lettura via viste Postgres**, **ritorno via Excel (automazioni AGOMIR)**; strategia di sincronizzazione | §11 |
 | 10 | Ricerca semantica AI su **Articolo + tutte le varianti** (anche dimensioni) + banner con prompt admin | §12 |
 
 ---
