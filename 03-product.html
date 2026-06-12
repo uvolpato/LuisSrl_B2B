@@ -1348,7 +1348,7 @@
     .gallery-modal-content {
       display: flex; flex-direction: column;
       width: 92vw; max-width: 1200px;
-      height: auto; max-height: 88vh; background: oklch(18% 0.01 250);
+      max-height: 88vh; background: oklch(18% 0.01 250);
       border-radius: 14px; overflow: hidden;
     }
 
@@ -1362,14 +1362,14 @@
     .gallery-modal-topbar h3 {
       font-family: var(--font-display); font-size: 16px; margin: 0;
       color: oklch(98% 0.005 240); line-height: 1.3;
-      white-space: nowrap;
+      white-space: nowrap; flex-shrink: 0;
     }
 
     .gallery-modal-thumbs {
-      display: flex; gap: 6px;
-      overflow-x: auto; scrollbar-width: none;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      overflow-y: auto; max-height: 70px;
+      flex: 1; justify-content: flex-end;
     }
-    .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
 
     .gallery-modal-thumbs img {
       width: 56px; height: 56px; object-fit: cover; flex-shrink: 0;
@@ -1388,7 +1388,8 @@
 
     .gallery-modal-img-wrap {
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 24px;
+      overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 12px 24px;
+      max-height: calc(88vh - 140px);
     }
 
     .gallery-modal-img-wrap img {
@@ -1398,7 +1399,7 @@
 
     .gallery-modal-nav {
       display: flex; align-items: center; justify-content: center;
-      gap: 14px; padding: 14px; color: oklch(80% 0 0);
+      gap: 14px; padding: 10px; color: oklch(80% 0 0);
       border-top: 1px solid oklch(100% 0 0 / 0.06); flex-shrink: 0;
     }
 
@@ -1412,8 +1413,10 @@
 
     @media (max-width: 768px) {
       .gallery-modal-overlay { padding: 2vh 2vw; }
-      .gallery-modal-content { width: 96vw; height: auto; max-height: 92vh; }
+      .gallery-modal-content { width: 96vw; max-height: 92vh; }
       .gallery-modal-thumbs img { width: 44px; height: 44px; }
+      .gallery-modal-topbar { flex-wrap: wrap; }
+      .gallery-modal-img-wrap { max-height: calc(92vh - 140px); padding: 8px 12px; }
     }
   </style>
 </head>
@@ -2846,8 +2849,8 @@
     <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
     <div class="gallery-modal-content">
       <div class="gallery-modal-topbar">
-        <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
         <h3>Vaso Torchio Terracotta</h3>
+        <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
       </div>
       <div class="gallery-modal-body">
         <div class="gallery-modal-img-wrap">
