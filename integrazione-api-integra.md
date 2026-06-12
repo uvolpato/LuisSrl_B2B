@@ -1,5 +1,7 @@
 # Analisi scambio dati con Integra — verso le API
 
+> ⚠️ **SUPERATO**: l'integrazione non avviene via API ma via **viste Postgres in lettura** (catalogo, listini, clienti, giacenze, stato ordini) + **automazioni Excel di AGOMIR S.p.A. in ritorno** (ordini, anagrafica articoli con immagine associata) — vedi `richiesta-dati-integra.md`. Questo documento è conservato solo come riferimento storico.
+
 Versione: bozza 1.0 — 5 giugno 2026
 Obiettivo: specificare le API che il gestionale Integra deve esporre per sincronizzare i dati con il portale B2B, sostituendo l'attuale scambio via file Excel.
 

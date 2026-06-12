@@ -1,6 +1,6 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: bozza 4.0 — 5 giugno 2026
+Versione: bozza 4.1 — 12 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
@@ -21,17 +21,18 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 ---
 
-## Blocco 2 — Import Integra (articoli, linee, famiglie) (3-4 giorni)
+## Blocco 2 — Integrazione Integra: viste Postgres + ritorno Excel AGOMIR (3-4 giorni)
 
 | Attività | Dettaglio |
 |----------|-----------|
-| Parser Excel Integra | Lettura tracciato Excel articoli, linee, famiglie |
-| Import articoli | Codice, nome, dimensioni, multipli, colore, materiale |
-| Import linee | Raggruppamento articoli per linea prodotto |
-| Import famiglie | Suddivisione secondaria all'interno della linea |
+| Lettura viste Postgres | Viste in sola lettura: catalogo, listini, clienti, giacenze, stato ordini |
+| Import Varianti | Ogni codice articolo Integra = 1 Variante: dimensioni, multiplo/confezione, giacenza, prezzo da listino |
+| Aggregazione in Articoli | Il campo "linea" di Integra è usato solo come chiave per raggruppare le Varianti in Articoli (i codici senza linea diventano Articoli con 1 sola Variante) |
+| Famiglia principale | Da Integra, read-only: classificazione sopra l'Articolo |
+| Ritorno verso Integra | Automazioni di import Excel sviluppate da AGOMIR S.p.A.: ordini, anagrafica articoli con immagine associata |
 | Log import | Storico operazioni con esito e data |
 
-**Cosa si vede:** admin carica il file Excel, il sistema popola il catalogo con articoli, linee e famiglie.
+**Cosa si vede:** il sistema legge le viste Postgres e popola il catalogo con Articoli e Varianti, raggruppati per Famiglia principale.
 
 **Valore: €1.400 (4 giorni × €350)**
 
@@ -41,13 +42,13 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 | Attività | Dettaglio |
 |----------|-----------|
-| Import listini da Integra (Excel) | Caricamento listini con prezzi per articolo (sola lettura) |
+| Lettura listini da viste Postgres | Listini con prezzi per Variante (codice articolo), sola lettura |
 | Associazione cliente-listino | Admin assegna un listino a ogni cliente |
-| Import sconti personalizzati da Integra | Sconti aggiuntivi clienti specifici (opzionale) |
+| Lettura sconti personalizzati da viste Postgres | Sconti aggiuntivi clienti specifici (opzionale) |
 | Calcolo prezzo finale | Prezzo = listino del cliente − eventuali sconti |
 | Esposizione prezzo in scheda articolo | Visibile solo a cliente loggato |
 
-**Cosa si vede:** admin carica listini da Excel, cliente vede il prezzo corretto.
+**Cosa si vede:** i listini arrivano dalle viste Postgres, il cliente vede il prezzo corretto.
 
 **Valore: €700 (2 giorni × €350)**
 
@@ -79,7 +80,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | Attività | Dettaglio |
 |----------|-----------|
 | Griglia articoli | Card con immagine, nome, codice, prezzo, badge disponibilità |
-| Filtri e ricerca | Per linea, famiglia, testo libero |
+| Filtri e ricerca | Per Famiglia principale, Raccolta, testo libero |
 | Scheda articolo cliente | Galleria immagini, zoom, varianti/confezioni, prezzo |
 | Prezzi personalizzati | Listino cliente applicato in base a profilo |
 | Design responsive | Mobile-first (i rivenditori usano tablet in negozio) |
@@ -111,7 +112,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 | Attività | Dettaglio |
 |----------|-----------|
-| Import giacenza da Integra (Excel) | Caricamento quantità per articolo/variante |
+| Lettura giacenza da viste Postgres | Quantità per Variante (codice articolo) |
 | Badge disponibilità | "Disponibile", "Esaurito", "< 10 pezzi" in griglia e scheda |
 | Filtro disponibilità | Mostra solo articoli disponibili |
 | Data ultimo aggiornamento | Trasparenza sul dato mostrato |
@@ -145,12 +146,12 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 | Attività | Dettaglio |
 |----------|-----------|
-| Tracciato export ordini | Colonne attese da Integra |
-| Generazione Excel ordini | Download file con ordini da evadere |
+| Tracciato export ordini | Tracciato Excel concordato con AGOMIR S.p.A. |
+| Generazione Excel ordini | File ordini per l'automazione di import AGOMIR verso Integra |
 | Storico export | Log operazioni con esito |
 | Marcatura "esportato" | Evita doppie esportazioni |
 
-**Cosa si vede:** admin scarica Excel ordini da caricare in Integra.
+**Cosa si vede:** il portale genera l'Excel ordini che l'automazione AGOMIR importa in Integra.
 
 **Valore: €700 (2 giorni × €350)**
 
@@ -178,7 +179,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 |----------|-----------|
 | Test completo flussi | Catalogo → ordine → export Integra |
 | Test AI | Descrizioni, embedding, ricerca semantica e per immagini |
-| Caricamento dati reali | Import catalogo, clienti, listini da Integra |
+| Caricamento dati reali | Lettura catalogo, clienti, listini dalle viste Postgres di Integra |
 | Formazione admin | 1-2 sessioni su gestione articoli, ordini, AI |
 | Guida rapida clienti | PDF / video breve su come ordinare |
 | Giro pilota | 3-5 clienti provano, feedback |
@@ -195,7 +196,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | # | Blocco | Giorni | €/giorno | **Valore** |
 |---|--------|--------|----------|-----------|
 | 1 | Infrastruttura e accessi | 3 | €350 | **€1.050** |
-| 2 | Import Integra (articoli, linee, famiglie) | 4 | €350 | **€1.400** |
+| 2 | Integrazione Integra (viste Postgres + Excel AGOMIR) | 4 | €350 | **€1.400** |
 | 3 | Listini e prezzi | 2 | €350 | **€700** |
 | 4 | Gestione articoli + AI | 4 | €350 | **€1.400** |
 | 5 | Catalogo lato cliente | 2 | €350 | **€700** |
