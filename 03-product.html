@@ -121,14 +121,27 @@
     .breadcrumb a:hover { color: var(--accent); }
     .breadcrumb span { margin: 0 6px; }
     /* ══ Amazon 3-column layout ══ */
-    .product-layout {
-      display: grid;
-      grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr) 320px;
-      gap: 32px;
-      margin-bottom: 48px;
-      align-items: start;
-      padding-inline: 32px;
-    }
+    .product-layout {
+
+      display: grid;
+
+      grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr) 320px;
+
+      gap: 32px;
+
+      margin-bottom: 48px;
+
+      align-items: start;
+
+      padding-inline: 32px;
+
+      min-width: 1200px;
+
+      max-width: 1500px;
+
+      margin-inline: auto;
+
+    }
     @media (max-width: 1100px) {
       .product-layout { grid-template-columns: 1fr 1fr; }
       .buy-box { grid-column: 1 / -1; grid-row: 2; }
@@ -755,7 +768,7 @@
   </header>
 
   <main id="content">
-      <div class="breadcrumb" style="padding-inline:32px;max-width:100%;margin:0 auto;">
+      <div class="breadcrumb" style="min-width:1200px;max-width:1500px;padding-inline:32px;margin:0 auto;">
         <a href="02-catalog.html">Catalogo</a><span>›</span>
         <a href="02-catalog.html">Cotto da Esterno</a><span>›</span>
         Vaso Torchio Terracotta Ø30
