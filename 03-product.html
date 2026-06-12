@@ -1348,7 +1348,7 @@
     .gallery-modal-content {
       display: flex; flex-direction: column;
       width: 92vw; max-width: 1200px;
-      height: 88vh; background: oklch(18% 0.01 250);
+      height: auto; max-height: 88vh; background: oklch(18% 0.01 250);
       border-radius: 14px; overflow: hidden;
     }
 
@@ -1367,7 +1367,7 @@
 
     .gallery-modal-thumbs {
       display: flex; gap: 6px;
-      overflow-x: auto; scrollbar-width: none; flex: 1;
+      overflow-x: auto; scrollbar-width: none;
     }
     .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
 
@@ -1383,11 +1383,11 @@
     }
 
     .gallery-modal-body {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      display: flex; flex-direction: column; overflow: hidden;
     }
 
     .gallery-modal-img-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 24px;
     }
 
@@ -1412,7 +1412,7 @@
 
     @media (max-width: 768px) {
       .gallery-modal-overlay { padding: 2vh 2vw; }
-      .gallery-modal-content { width: 96vw; height: 92vh; }
+      .gallery-modal-content { width: 96vw; height: auto; max-height: 92vh; }
       .gallery-modal-thumbs img { width: 44px; height: 44px; }
     }
   </style>
