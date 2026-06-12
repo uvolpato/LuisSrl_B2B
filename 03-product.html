@@ -669,55 +669,35 @@
       padding: 32px;
     }
     .gallery-modal-overlay.open { display: flex; }
-    .gallery-modal-content {
-      display: grid; grid-template-columns: 100px 1fr;
-      gap: 20px; max-width: 1100px; width: 100%;
-      max-height: 85vh; background: oklch(18% 0.01 250);
-      border-radius: 14px; padding: 20px; overflow: hidden;
-    }
-    .gallery-modal-thumbs {
-      display: flex; flex-direction: column; gap: 8px;
-      overflow-y: auto; scrollbar-width: none;
-    }
-    .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
-    .gallery-modal-thumbs img {
-      width: 100%; aspect-ratio: 1; object-fit: cover;
-      border-radius: 6px; cursor: pointer;
-      border: 2px solid transparent; transition: border-color 0.15s;
-      opacity: 0.55;
-    }
-    .gallery-modal-thumbs img:hover { opacity: 0.85; }
-    .gallery-modal-thumbs img.active {
-      border-color: var(--accent); opacity: 1;
-    }
-    .gallery-modal-main {
-      display: flex; flex-direction: column; gap: 12px;
-      overflow: hidden;
-    }
-    .gallery-modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .gallery-modal-header h3 {
-      font-family: var(--font-display); font-size: 20px; margin: 0;
-      color: oklch(98% 0.005 240);
-    }
     .gallery-modal-close {
+      position: absolute; top: 16px; right: 20px; z-index: 10;
       background: oklch(100% 0 0 / 0.1); border: none; color: white;
-      width: 36px; height: 36px; border-radius: 8px; font-size: 20px;
-      cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 22px;
+      cursor: pointer; display: grid; place-items: center; transition: background 0.15s;
     }
     .gallery-modal-close:hover { background: oklch(100% 0 0 / 0.25); }
+    .gallery-modal-content {
+      display: grid; grid-template-columns: 1fr 240px;
+      gap: 0; max-width: 1100px; width: 100%;
+      max-height: 85vh; background: oklch(18% 0.01 250);
+      border-radius: 14px; overflow: hidden;
+    }
+    .gallery-modal-main {
+      display: flex; flex-direction: column;
+      overflow: hidden; border-right: 1px solid oklch(100% 0 0 / 0.08);
+    }
     .gallery-modal-img-wrap {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; border-radius: 10px; background: oklch(0% 0 0 / 0.2);
+      overflow: hidden; background: oklch(0% 0 0 / 0.15); padding: 24px;
     }
     .gallery-modal-img-wrap img {
       max-width: 100%; max-height: 100%; object-fit: contain;
-      border-radius: 8px; cursor: zoom-in;
+      border-radius: 6px; cursor: zoom-in;
     }
     .gallery-modal-nav {
       display: flex; align-items: center; justify-content: center;
-      gap: 12px; color: oklch(80% 0 0);
+      gap: 14px; padding: 14px; color: oklch(80% 0 0);
+      border-top: 1px solid oklch(100% 0 0 / 0.06);
     }
     .gallery-modal-nav button {
       background: oklch(100% 0 0 / 0.1); border: none; color: white;
@@ -726,45 +706,35 @@
     }
     .gallery-modal-nav button:hover { background: oklch(100% 0 0 / 0.2); }
     .gallery-modal-nav span { font-size: 13px; font-family: var(--font-mono); }
-    @media (max-width: 768px) {
-      .gallery-modal-content { grid-template-columns: 1fr; gap: 12px; }
-      .gallery-modal-thumbs { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
-      .gallery-modal-thumbs img { width: 56px; height: 56px; aspect-ratio: 1; }
-      .gallery-modal-overlay { padding: 12px; }
-    }
-    .gallery-modal-overlay.open { display: flex; }
-    .gallery-modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      width: 100%; max-width: 900px; margin-bottom: 24px;
+    .gallery-modal-sidebar {
+      display: flex; flex-direction: column; padding: 20px; gap: 16px;
+      overflow: hidden;
     }
     .gallery-modal-header h3 {
-      color: white; font-family: var(--font-display); font-size: 20px; margin: 0;
+      font-family: var(--font-display); font-size: 18px; margin: 0;
+      color: oklch(98% 0.005 240); line-height: 1.3;
     }
-    .gallery-modal-close {
-      background: oklch(100% 0 0 / 0.12); border: none; color: white;
-      font-size: 24px; width: 40px; height: 40px; border-radius: 50%;
-      cursor: pointer; display: grid; place-items: center;
+    .gallery-modal-thumbs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      overflow-y: auto; scrollbar-width: none; flex: 1;
     }
-    .gallery-modal-close:hover { background: oklch(100% 0 0 / 0.25); }
-    .gallery-modal-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      width: 100%; max-width: 900px;
-    }
-    .gallery-modal-grid img {
+    .gallery-modal-thumbs::-webkit-scrollbar { display: none; }
+    .gallery-modal-thumbs img {
       width: 100%; aspect-ratio: 1; object-fit: cover;
-      border-radius: 8px; cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color 0.15s ease, transform 0.1s ease;
+      border-radius: 6px; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.15s, opacity 0.15s;
+      opacity: 0.5;
     }
-    .gallery-modal-grid img:hover {
-      border-color: var(--accent);
-      transform: scale(1.02);
+    .gallery-modal-thumbs img:hover { opacity: 0.85; }
+    .gallery-modal-thumbs img.active {
+      border-color: var(--accent); opacity: 1;
     }
-    @media (max-width: 640px) {
-      .gallery-modal-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .gallery-modal-overlay { padding: 16px; }
+    @media (max-width: 768px) {
+      .gallery-modal-content { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      .gallery-modal-main { border-right: none; border-bottom: 1px solid oklch(100% 0 0 / 0.08); }
+      .gallery-modal-thumbs { grid-template-columns: repeat(5, 1fr); overflow-x: auto; overflow-y: hidden; }
+      .gallery-modal-thumbs img { width: 100%; height: auto; }
+      .gallery-modal-overlay { padding: 12px; }
     }
   </style>
 </head>
@@ -1322,17 +1292,6 @@
       if (e.key === 'ArrowLeft') galleryModalNav(-1);
       if (e.key === 'ArrowRight') galleryModalNav(1);
     });
-        };
-        grid.appendChild(img);
-      });
-      document.getElementById('galleryModal').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeGalleryModal() {
-      document.getElementById('galleryModal').classList.remove('open');
-      document.body.style.overflow = '';
-    }
 
     function changeQty(delta) {
       var input = document.getElementById('qty');
@@ -1492,15 +1451,11 @@
     });
   </script>
   <div class="gallery-modal-overlay" id="galleryModal" onclick="if(event.target===this)closeGalleryModal()">
+    <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
     <div class="gallery-modal-content">
-      <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
       <div class="gallery-modal-main">
-        <div class="gallery-modal-header">
-          <h3>Vaso Torchio Terracotta</h3>
-          <button class="gallery-modal-close" onclick="closeGalleryModal()">×</button>
-        </div>
         <div class="gallery-modal-img-wrap">
-          <img id="galleryModalImg" src="images/vasi-bianchi.webp" alt="">
+          <img id="galleryModalImg" src="images/vasi-bianchi.webp" alt="" onclick="closeGalleryModal();openLightbox()">
         </div>
         <div class="gallery-modal-nav">
           <button onclick="galleryModalNav(-1)">‹</button>
@@ -1508,9 +1463,13 @@
           <button onclick="galleryModalNav(1)">›</button>
         </div>
       </div>
+      <div class="gallery-modal-sidebar">
+        <div class="gallery-modal-header">
+          <h3>Vaso Torchio Terracotta</h3>
+        </div>
+        <div class="gallery-modal-thumbs" id="galleryModalThumbs"></div>
+      </div>
     </div>
-  </div>
-    <div class="gallery-modal-grid" id="galleryModalGrid"></div>
   </div>
   <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()">×</button>
