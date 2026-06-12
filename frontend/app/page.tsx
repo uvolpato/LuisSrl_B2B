@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { api, MeResponse, setCsrfToken } from "../lib/api";
+import { api, setCsrfToken } from "../lib/api";
+import type { MeResponse } from "../lib/types";
+import LoadingScreen from "../components/common/LoadingScreen";
 
 /** Smista alla home giusta in base alla sessione. */
 export default function Home() {
   const router = useRouter();
-  const t = useTranslations("common");
 
   useEffect(() => {
     api
@@ -20,9 +20,5 @@ export default function Home() {
       .catch(() => router.replace("/login"));
   }, [router]);
 
-  return (
-    <div className="center-page">
-      <p style={{ color: "var(--muted)" }}>{t("loading")}</p>
-    </div>
-  );
+  return <LoadingScreen />;
 }

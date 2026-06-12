@@ -1,31 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import * as argon2 from 'argon2';
-import { randomInt } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { mapSpError } from '../common/sp-error';
+import { UsersRepository } from './users.repository';
+import {
+  generateProvisionalPassword,
+  hashPassword,
+} from '../common/password';
 import {
   rowToProfile,
   userToProfile,
   UserProfile,
-  UserRow,
 } from '../common/user-row';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-/** Password provvisoria leggibile: niente caratteri ambigui (0/O, 1/l/I). */
-function generateProvisionalPassword(length = 12): string {
-  const charset = 'abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let out = '';
-  for (let i = 0; i < length; i++) {
-    out += charset[randomInt(charset.length)];
-  }
-  return out;
-}
-
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly repo: UsersRepository,
+  ) {}
 
   async list(params: {
     q?: string;
@@ -72,21 +66,19 @@ export class UsersService {
     ip: string | undefined,
   ): Promise<{ user: UserProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const hash = await argon2.hash(provisionalPassword, {
-      type: argon2.argon2id,
+    const row = await this.repo.spCreate({
+      actorId,
+      email: dto.email,
+      passwordHash: await hashPassword(provisionalPassword),
+      nome: dto.nome,
+      ragioneSociale: dto.ragioneSociale,
+      partitaIva: dto.partitaIva,
+      telefono: dto.telefono,
+      ruolo: 'CLIENTE',
+      preferredLanguage: dto.preferredLanguage,
+      ip,
     });
-    try {
-      const [row] = await this.prisma.$queryRaw<UserRow[]>`
-        SELECT * FROM fn_user_create(
-          ${actorId}::int, ${dto.email}, ${hash}, ${dto.nome},
-          ${dto.ragioneSociale ?? null}, ${dto.partitaIva ?? null},
-          ${dto.telefono ?? null}, 'CLIENTE'::"UserRole",
-          ${dto.preferredLanguage ?? 'it'}, ${ip ?? null}
-        )`;
-      return { user: rowToProfile(row), provisionalPassword };
-    } catch (e) {
-      mapSpError(e);
-    }
+    return { user: rowToProfile(row), provisionalPassword };
   }
 
   async update(
@@ -95,18 +87,8 @@ export class UsersService {
     dto: UpdateUserDto,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    try {
-      const [row] = await this.prisma.$queryRaw<UserRow[]>`
-        SELECT * FROM fn_user_update(
-          ${actorId}::int, ${userId}::int,
-          ${dto.nome ?? null}, ${dto.ragioneSociale ?? null},
-          ${dto.partitaIva ?? null}, ${dto.telefono ?? null},
-          ${dto.preferredLanguage ?? null}, ${ip ?? null}
-        )`;
-      return rowToProfile(row);
-    } catch (e) {
-      mapSpError(e);
-    }
+    const row = await this.repo.spUpdate({ actorId, userId, ...dto, ip });
+    return rowToProfile(row);
   }
 
   async setBlocked(
@@ -115,15 +97,8 @@ export class UsersService {
     blocked: boolean,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    try {
-      const [row] = await this.prisma.$queryRaw<UserRow[]>`
-        SELECT * FROM fn_user_set_blocked(
-          ${actorId}::int, ${userId}::int, ${blocked}, ${ip ?? null}
-        )`;
-      return rowToProfile(row);
-    } catch (e) {
-      mapSpError(e);
-    }
+    const row = await this.repo.spSetBlocked({ actorId, userId, blocked, ip });
+    return rowToProfile(row);
   }
 
   /** Reset password: nuova provvisoria, cambio obbligato al prossimo accesso. */
@@ -133,17 +108,13 @@ export class UsersService {
     ip: string | undefined,
   ): Promise<{ user: UserProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const hash = await argon2.hash(provisionalPassword, {
-      type: argon2.argon2id,
+    const row = await this.repo.spSetPassword({
+      actorId,
+      userId,
+      passwordHash: await hashPassword(provisionalPassword),
+      mustChange: true,
+      ip,
     });
-    try {
-      const [row] = await this.prisma.$queryRaw<UserRow[]>`
-        SELECT * FROM fn_user_set_password(
-          ${actorId}::int, ${userId}::int, ${hash}, true, ${ip ?? null}
-        )`;
-      return { user: rowToProfile(row), provisionalPassword };
-    } catch (e) {
-      mapSpError(e);
-    }
+    return { user: rowToProfile(row), provisionalPassword };
   }
 }

@@ -53,22 +53,3 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
 };
-
-export interface UserProfile {
-  id: number;
-  email: string;
-  nome: string;
-  ragioneSociale: string | null;
-  partitaIva: string | null;
-  telefono: string | null;
-  ruolo: "ADMIN" | "CLIENTE";
-  stato: "ATTIVO" | "BLOCCATO";
-  preferredLanguage: string;
-  mustChangePassword: boolean;
-  createdAt: string;
-}
-
-export interface MeResponse {
-  user: UserProfile;
-  csrfToken: string;
-}

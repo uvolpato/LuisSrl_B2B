@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { api, UserProfile, setCsrfToken } from "../lib/api";
+import { api, setCsrfToken } from "../../lib/api";
+import type { UserProfile } from "../../lib/types";
 
 export default function Header({ user }: { user: UserProfile }) {
   const t = useTranslations("common");

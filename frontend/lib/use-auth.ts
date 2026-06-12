@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, setCsrfToken, MeResponse, UserProfile } from "./api";
+import { api, setCsrfToken } from "./api";
+import type { MeResponse, UserProfile } from "./types";
 
 /**
  * Ripristina la sessione (utente + token CSRF) e applica il controllo ruolo.

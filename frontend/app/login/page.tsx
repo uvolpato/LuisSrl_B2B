@@ -3,7 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { api, ApiError, MeResponse, setCsrfToken } from "../../lib/api";
+import { api, ApiError, setCsrfToken } from "../../lib/api";
+import type { MeResponse } from "../../lib/types";
 
 export default function LoginPage() {
   const t = useTranslations("login");
