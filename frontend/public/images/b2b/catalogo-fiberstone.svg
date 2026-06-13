@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250">
+  <defs>
+    <linearGradient id="fib-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="oklch(90% 0.01 200)"/>
+      <stop offset="100%" stop-color="oklch(82% 0.02 210)"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="250" fill="url(#fib-bg)"/>
+  <!-- vaso fiberstone moderno -->
+  <g transform="translate(200, 125)">
+    <ellipse cx="0" cy="55" rx="42" ry="6" fill="oklch(75% 0.01 200 / 0.5)"/>
+    <path d="M-38,55 Q-42,20 -30,-10 Q-15,-35 0,-40 Q15,-35 30,-10 Q42,20 38,55Z" fill="oklch(78% 0.02 200)"/>
+    <ellipse cx="0" cy="-35" rx="22" ry="5" fill="oklch(72% 0.02 190)"/>
+    <path d="M-12,-33 Q0,-45 12,-33" fill="oklch(68% 0.02 180)"/>
+  </g>
+  <!-- linee decorative minimali -->
+  <line x1="170" y1="140" x2="230" y2="140" stroke="oklch(75% 0.02 200)" stroke-width="0.5"/>
+  <line x1="178" y1="150" x2="222" y2="150" stroke="oklch(75% 0.02 200)" stroke-width="0.5"/>
+</svg>

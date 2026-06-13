@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="oklch(82% 0.03 60)"/>
+      <stop offset="100%" stop-color="oklch(72% 0.04 55)"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="oklch(60% 0.06 50)"/>
+      <stop offset="100%" stop-color="oklch(45% 0.08 45)"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="80%" cy="25%" r="20%">
+      <stop offset="0%" stop-color="oklch(92% 0.05 70 / 0.4)"/>
+      <stop offset="100%" stop-color="oklch(92% 0.05 70 / 0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="800" fill="url(#sky)"/>
+  <ellipse cx="1280" cy="200" rx="320" ry="160" fill="url(#sun)"/>
+  <rect y="530" width="1600" height="270" fill="url(#ground)"/>
+  <!-- vasi silhouette -->
+  <g opacity="0.15" fill="oklch(35% 0.05 40)">
+    <ellipse cx="300" cy="530" rx="60" ry="12"/>
+    <path d="M260 530 Q240 380 300 350 Q360 380 340 530Z"/>
+    <ellipse cx="700" cy="530" rx="45" ry="10"/>
+    <path d="M670 530 Q655 420 700 395 Q745 420 730 530Z"/>
+    <ellipse cx="1100" cy="530" rx="70" ry="14"/>
+    <path d="M1055 530 Q1030 360 1100 320 Q1170 360 1145 530Z"/>
+    <ellipse cx="1400" cy="530" rx="40" ry="8"/>
+    <path d="M1375 530 Q1365 450 1400 430 Q1435 450 1425 530Z"/>
+  </g>
+</svg>

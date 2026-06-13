@@ -57,25 +57,31 @@ In caso di conflitto, vince `specifiche-b2b-luis.md`.
   import **adattabile e isolato**, senza assumere che tutti i campi siano già disponibili.
 
 ## Stack e setup
-- **Database: PostgreSQL** (già attivo in locale). Credenziali standard lette ESCLUSIVAMENTE
+- **Database: PostgreSQL** (sul server locale). Credenziali standard lette ESCLUSIVAMENTE
   da `.env` (non versionato; mantenere `.env.example`).
   - Setup: se non esiste, creare il DB `"LuisSrlDb"` (`CREATE DATABASE "LuisSrlDb";` con
     virgolette per mantenere le maiuscole). Abilitare `pgvector` per la ricerca semantica.
 - **Backend: NestJS** (Node + TypeScript), API REST.
 - **Front-end: Next.js** (React, SPA) che consuma le API di NestJS.
-- **Esecuzione: Docker** (`docker-compose` con app + Postgres) per girare in locale e poi su
-  server pubblico dietro reverse proxy con HTTPS.
+- **Esecuzione: Docker** (`docker-compose` con app + Postgres) sul server locale.
+- **Mini PC (LAN)** con 128 GB RAM condivisa per LM Studio (GPU AI locale).
 - ORM e librerie di dettaglio (es. Prisma/TypeORM, auth, validazione): proporle nel piano
   del blocco per approvazione, non sceglierle d'autorità.
 
+## Architettura di deployment
+- **Server locale** — ospita il portale (Next.js + NestJS + PostgreSQL + Redis).
+- **Mini PC** sulla stessa LAN — ospita LM Studio con Qwen 27B per inferenza AI.
+- **Accesso remoto** — tramite Tailscale/Cloudflare Tunnel, niente esposizione pubblica diretta.
+- n8n opzionale sul server locale per automazioni.
+
 ## Sicurezza (priorità assoluta)
-Il sito gira in locale ora ma sarà **esposto su server pubblico**: progettare security-first.
+Il portale resta in **rete locale** con accesso remoto via tunnel crittografato.
 - Segreti solo da variabili d'ambiente.
 - Accesso **solo su invito** (niente auto-registrazione); ruoli admin/cliente; **un solo
   account per azienda**; clienti **bloccabili ma mai cancellabili**.
 - Sessione via cookie **HttpOnly + Secure + SameSite** (non token in localStorage);
   protezione **CSRF** sulle richieste che modificano stato.
-- Security headers (Helmet), CORS ristretto all'origine del front-end, HSTS in produzione.
+- Security headers (Helmet), CORS ristretto all'origine del front-end.
 - Validazione input con DTO (class-validator); query parametrizzate via ORM.
 - Rate limiting sul login; hashing password forte (argon2/bcrypt).
 - Upload immagini validati per tipo/peso; log delle azioni admin e degli import.

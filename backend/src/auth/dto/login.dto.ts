@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class LoginDto {
   @IsEmail({}, { message: 'validation.email' })
@@ -8,4 +8,8 @@ export class LoginDto {
   @MinLength(1, { message: 'validation.required' })
   @MaxLength(200)
   password!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  remember?: boolean;
 }

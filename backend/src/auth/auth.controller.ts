@@ -26,7 +26,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = await this.auth.validateLogin(dto.email, dto.password, req.ip);
 
     // rigenera l'id di sessione: previene session fixation
@@ -35,6 +35,7 @@ export class AuthController {
     );
     req.session.userId = user.id;
     req.session.csrfToken = randomBytes(32).toString('hex');
+    req.session.cookie.maxAge = dto.remember ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
     return { user: userToProfile(user), csrfToken: req.session.csrfToken };
   }
