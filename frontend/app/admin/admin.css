@@ -179,7 +179,9 @@
   text-align: left;
   transition: background 0.12s ease, color 0.12s ease;
 }
-.sidebar-user-pop-item:hover { background: var(--fg-soft); }
+/* Hover voce nel colore del menu (come la selezione attiva della sidebar). */
+.sidebar-user-pop-item:hover { background: var(--accent-soft); color: var(--accent); }
+/* L'azione distruttiva (Esci) resta rossa. */
 .sidebar-user-pop-item.danger:hover { background: var(--red-soft); color: var(--red); }
 .sidebar-user-pop-item svg { width: 16px; height: 16px; flex-shrink: 0; }
 
