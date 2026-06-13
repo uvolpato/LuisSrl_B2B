@@ -7,11 +7,15 @@
   --blue: oklch(55% 0.15 250);
   --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
   --sidebar-w: 260px;
+  /* --radius-lg e' definito in landing.css ma scoped a .landing: qui in admin
+     non si risolverebbe (angoli squadrati). Lo ridichiariamo. */
+  --radius-lg: 16px;
   /* Colore "soft" del prototipo (era usato ma mai definito nell'app). */
   --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
-  /* Stessa tinta dell'header tabella ma OPACA: l'header e' sticky e sopra le
-     righe in scroll, quindi non puo' essere trasparente. */
-  --table-head-bg: color-mix(in oklch, var(--fg) 6%, var(--surface));
+  /* Colore header tabella: valore esatto del prototipo (--fg-soft sopra il
+     fondo crema), opaco perche' l'header e' sticky sopra le righe in scroll.
+     Letterale per non dipendere dalle var --fg/--bg dell'app (in lab()). */
+  --table-head-bg: oklch(92.5% 0.006 79);
 }
 
 /* ── Sidebar ── */
@@ -79,25 +83,111 @@
 .sidebar-link:hover { background: var(--fg-soft); color: var(--fg); }
 .sidebar-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
 .sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
-.sidebar-footer {
-  padding: 16px 20px;
+/* ── Sezione utente (come nella foto: avatar, nome, stato Attivo, logout) ── */
+.sidebar-user {
+  position: relative;
+  padding: 10px 12px;
   border-top: 1px solid var(--border);
+}
+.sidebar-user-btn {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
-  color: var(--muted);
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
 }
-.sidebar-footer .avatar {
-  width: 32px;
-  height: 32px;
+.sidebar-user-btn:hover { background: var(--fg-soft); }
+.sidebar-user-avatar {
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
   display: grid;
   place-items: center;
   font-weight: 600;
   font-size: 13px;
+  flex-shrink: 0;
+}
+.sidebar-user-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--surface);
+}
+.sidebar-user-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sidebar-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-status {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sidebar-user-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* Popover utente */
+.sidebar-user-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 12px;
+  right: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px oklch(20% 0.02 60 / 0.16);
+  padding: 6px;
+  z-index: 30;
+}
+.sidebar-user-pop-header { display: flex; align-items: center; gap: 10px; padding: 8px; }
+.sidebar-user-pop hr { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+.sidebar-user-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sidebar-user-pop-item:hover { background: var(--fg-soft); }
+.sidebar-user-pop-item.danger:hover { background: var(--red-soft); color: var(--red); }
+.sidebar-user-pop-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.sidebar-credit {
+  padding: 8px 16px 16px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
 }
 
 /* ── Main ── */
@@ -292,6 +382,7 @@
   position: relative;
   width: 32px;
   height: 32px;
+  padding: 0;
   display: inline-grid;
   place-items: center;
   margin-left: 2px;
@@ -348,6 +439,7 @@
 .data-table-footer .pager button {
   width: 30px;
   height: 30px;
+  padding: 0;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
@@ -359,7 +451,7 @@
 }
 .data-table-footer .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .data-table-footer .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
-.data-table-footer .pager button svg { width: 16px; height: 16px; }
+.data-table-footer .pager button svg { width: 16px; height: 16px; display: block; }
 
 /* Cella "entita'": thumbnail/avatar + titolo + sottotitolo. Comune a tutte
    le tabelle (Clienti = iniziali, Articoli = immagine). */
