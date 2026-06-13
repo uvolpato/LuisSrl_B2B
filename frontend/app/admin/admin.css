@@ -7,6 +7,11 @@
   --blue: oklch(55% 0.15 250);
   --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
   --sidebar-w: 260px;
+  /* Colore "soft" del prototipo (era usato ma mai definito nell'app). */
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  /* Stessa tinta dell'header tabella ma OPACA: l'header e' sticky e sopra le
+     righe in scroll, quindi non puo' essere trasparente. */
+  --table-head-bg: color-mix(in oklch, var(--fg) 6%, var(--surface));
 }
 
 /* ── Sidebar ── */
@@ -99,7 +104,9 @@
 .admin-main {
   margin-left: var(--sidebar-w);
   flex: 1;
-  min-height: 100vh;
+  /* App-shell a tutta altezza: solo il corpo tabella scrolla, non la pagina. */
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -189,12 +196,19 @@
 .view-toggle button svg { width: 16px; height: 16px; }
 
 /* ── Content ── */
-.admin-content { flex: 1; padding: 32px; }
+.admin-content {
+  flex: 1;
+  min-height: 0; /* permette ai figli flex di scrollare invece di sforare */
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
 .content-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-shrink: 0;
 }
 .content-header h2 {
   font-family: var(--font-display);
@@ -204,6 +218,172 @@
   margin: 0;
 }
 .content-header .meta { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   DataTable — tabella unica per tutte le sezioni admin.
+   Layout e comportamento identici ovunque: header sticky col colore del
+   prototipo, larghezza + altezza piena, scroll verticale del solo corpo,
+   footer di paginazione, azioni a icone con tooltip.
+   ════════════════════════════════════════════════════════════════════════ */
+.data-table {
+  flex: 1;
+  min-height: 0;            /* riempie l'altezza disponibile e fa scrollare il corpo */
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  /* Bordo esterno sinistro/destro dello stesso colore dell'header. */
+  border-left: 1px solid var(--table-head-bg);
+  border-right: 1px solid var(--table-head-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.data-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;          /* scroll verticale del corpo, header resta fisso */
+}
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--table-head-bg);   /* colore header dal prototipo, opaco */
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 12px 16px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--fg);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.data-table-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Azioni a icone */
+.data-table-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.data-table .row-action {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.data-table .row-action:hover { background: var(--fg-soft); color: var(--fg); }
+.data-table .row-action.danger:hover { background: var(--red-soft); color: var(--red); }
+.data-table .row-action svg { width: 16px; height: 16px; }
+
+/* Tooltip CSS sulle icone azione */
+.data-table .row-action::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--fg);
+  color: var(--surface);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+.data-table .row-action:hover::after { opacity: 1; }
+
+/* Footer paginazione */
+.data-table-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.data-table-footer .pager { display: flex; align-items: center; gap: 8px; }
+.data-table-footer .pager-current { min-width: 56px; text-align: center; }
+.data-table-footer .pager button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.data-table-footer .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.data-table-footer .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.data-table-footer .pager button svg { width: 16px; height: 16px; }
+
+/* Cella "entita'": thumbnail/avatar + titolo + sottotitolo. Comune a tutte
+   le tabelle (Clienti = iniziali, Articoli = immagine). */
+.cell-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cell-entity-thumb {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+}
+.cell-entity-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.cell-entity-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-entity-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-entity-sub.mono { font-family: var(--font-mono); }
+.cell-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+
+/* Vista a griglia (gallery Articoli): scrolla anch'essa a tutta altezza. */
+.data-cards-scroll { flex: 1; min-height: 0; overflow: auto; }
 
 /* ── Buttons ── */
 .btn {
@@ -1047,3 +1227,4 @@
   .modal { width: 95vw; max-height: 95vh; }
   .modal-body { padding: 20px; }
 }
+

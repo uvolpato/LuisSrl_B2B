@@ -13,11 +13,16 @@ import { useAuth } from "../../lib/use-auth";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import AdminLayout from "../../components/admin/AdminLayout";
 import AdminTopBar from "../../components/admin/AdminTopBar";
-import UserTable from "../../components/users/UserTable";
+import DataTable, {
+  type Column,
+  type RowAction,
+} from "../../components/admin/DataTable";
 import UserEditorModal, {
   UserEditorTarget,
 } from "../../components/users/UserEditorModal";
 import ProvisionalPasswordModal from "../../components/users/ProvisionalPasswordModal";
+
+const PAGE_SIZE = 20;
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -28,6 +33,26 @@ const SECTION_TITLES: Record<string, string> = {
   import: "Import / Export",
   ai: "AI / Ricerca",
 };
+
+// ── Icone (stroke style del prototipo) ──
+const svg = (paths: React.ReactNode) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {paths}
+  </svg>
+);
+const IconEdit = svg(<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>);
+const IconKey = svg(<><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3 21 2m-4 0 3 3m-6 3 3 3" /></>);
+const IconLock = svg(<><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>);
+const IconUnlock = svg(<><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.9-1" /></>);
+const IconEye = svg(<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>);
+const IconEyeOff = svg(<><path d="M9.9 4.2A10 10 0 0 1 12 4c6.5 0 10 7 10 7a18 18 0 0 1-2.3 3.2M6.3 6.3A18 18 0 0 0 2 11s3.5 7 10 7a10 10 0 0 0 4-.8" /><path d="m4 3 16 16" /></>);
+const IconPlus = svg(<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>);
+
+function initials(name: string): string {
+  return name
+    ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+}
 
 interface ArticleVariant {
   codice: string;
@@ -58,8 +83,8 @@ const MOCK_ARTICLES: Article[] = [
     famigliaPrincipale: "Cotto da Esterno", raccolte: ["Best Seller"], stato: "attivo",
     img: "/images/b2b/catalogo-cotto-esterni.webp",
     varianti: [
-      { codice: "COT-EST-010", dim1: { nome: "Altezza", val: "60 cm" }, dim2: { nome: "Diametro", val: "50 cm" }, multiplo: 2, giacenza: 25, prezzo: 19.50, stato: "attivo" },
-      { codice: "COT-EST-011", dim1: { nome: "Altezza", val: "80 cm" }, dim2: { nome: "Diametro", val: "60 cm" }, multiplo: 1, giacenza: 10, prezzo: 32.00, stato: "attivo" },
+      { codice: "COT-EST-010", dim1: { nome: "Altezza", val: "60 cm" }, dim2: { nome: "Diametro", val: "50 cm" }, multiplo: 2, giacenza: 25, prezzo: 19.5, stato: "attivo" },
+      { codice: "COT-EST-011", dim1: { nome: "Altezza", val: "80 cm" }, dim2: { nome: "Diametro", val: "60 cm" }, multiplo: 1, giacenza: 10, prezzo: 32.0, stato: "attivo" },
     ],
   },
   {
@@ -67,7 +92,7 @@ const MOCK_ARTICLES: Article[] = [
     famigliaPrincipale: "Fiberstone", raccolte: ["Promo"], stato: "nascosto",
     img: "/images/b2b/vasi-bianchi.webp",
     varianti: [
-      { codice: "FIB-010", dim1: { nome: "Set", val: "3 pezzi" }, multiplo: 1, giacenza: 15, prezzo: 34.00, stato: "nascosto" },
+      { codice: "FIB-010", dim1: { nome: "Set", val: "3 pezzi" }, multiplo: 1, giacenza: 15, prezzo: 34.0, stato: "nascosto" },
     ],
   },
 ];
@@ -78,10 +103,13 @@ export default function AdminPage() {
   const { user: admin, loading } = useAuth("ADMIN");
 
   const [section, setSection] = useState("articoli");
+
+  // ── Clienti (dati reali, paginazione server-side) ──
   const [items, setItems] = useState<UserProfile[]>([]);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState("");
   const [stato, setStato] = useState("");
+  const [cliPage, setCliPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [editor, setEditor] = useState<UserEditorTarget | null>(null);
   const [provisional, setProvisional] = useState<{
@@ -89,8 +117,10 @@ export default function AdminPage() {
     password: string;
   } | null>(null);
 
+  // ── Articoli (mock, paginazione client-side) ──
   const [view, setView] = useState<"list" | "grid">("list");
   const [articleFilter, setArticleFilter] = useState("tutti");
+  const [artPage, setArtPage] = useState(1);
   const [articles, setArticles] = useState<Article[]>(MOCK_ARTICLES);
 
   const filteredArticles = articles.filter((a) => {
@@ -99,7 +129,7 @@ export default function AdminPage() {
     if (articleFilter === "senza-raccolta") return !a.raccolte?.length;
     return true;
   });
-
+  const artRows = filteredArticles.slice((artPage - 1) * PAGE_SIZE, artPage * PAGE_SIZE);
   const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.varianti?.length ?? 0), 0)} varianti`;
 
   const reload = useCallback(async () => {
@@ -107,16 +137,22 @@ export default function AdminPage() {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (stato) params.set("stato", stato);
+    params.set("page", String(cliPage));
+    params.set("pageSize", String(PAGE_SIZE));
     const res = await api.get<UserListResponse>(`/api/users?${params}`);
     setItems(res.items);
     setTotal(res.total);
-  }, [q, stato, section]);
+  }, [q, stato, cliPage, section]);
 
   useEffect(() => {
     if (!loading) {
       reload().catch(() => setError("errors.generic"));
     }
   }, [loading, reload]);
+
+  // Tornare a pagina 1 quando cambiano ricerca/filtro/sezione
+  useEffect(() => setCliPage(1), [q, stato, section]);
+  useEffect(() => setArtPage(1), [articleFilter]);
 
   async function run(action: () => Promise<void>) {
     setError(null);
@@ -157,6 +193,116 @@ export default function AdminPage() {
     );
   }
 
+  // ── Configurazione tabella Clienti ──
+  const clientColumns: Column<UserProfile>[] = [
+    {
+      key: "cliente",
+      header: "Cliente",
+      grow: true,
+      cell: (u) => (
+        <div className="cell-entity">
+          <span className="cell-entity-thumb">{initials(u.nome)}</span>
+          <div className="cell-entity-text">
+            <span className="cell-entity-sub">{u.email}</span>
+            <span className="cell-entity-title">{u.nome || "—"}</span>
+            <span className="cell-entity-sub">{u.ragioneSociale || "—"}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "piva",
+      header: "P.IVA",
+      width: "150px",
+      mono: true,
+      cell: (u) => u.partitaIva || "—",
+    },
+    {
+      key: "stato",
+      header: "Stato",
+      width: "120px",
+      align: "center",
+      cell: (u) => (
+        <span className={`status ${u.stato === "ATTIVO" ? "status-active" : "status-hidden"}`}>
+          {u.stato === "ATTIVO" ? t("statusActive") : t("statusBlocked")}
+        </span>
+      ),
+    },
+  ];
+  const clientActions: RowAction<UserProfile>[] = [
+    { icon: () => IconEdit, tooltip: () => t("edit"), onClick: (u) => setEditor({ mode: "edit", user: u }) },
+    { icon: () => IconKey, tooltip: () => t("resetPassword"), onClick: onResetPassword },
+    {
+      icon: (u) => (u.stato === "ATTIVO" ? IconLock : IconUnlock),
+      tooltip: (u) => (u.stato === "ATTIVO" ? t("block") : t("unblock")),
+      onClick: onBlockToggle,
+      variant: "danger",
+    },
+  ];
+
+  // ── Configurazione tabella Articoli ──
+  const articleColumns: Column<Article>[] = [
+    {
+      key: "articolo",
+      header: "Articolo",
+      grow: true,
+      cell: (a) => (
+        <div className="cell-entity">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="cell-entity-thumb"
+            src={a.img || ""}
+            alt={a.name}
+            onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
+          />
+          <div className="cell-entity-text">
+            <span className="cell-entity-sub mono">{a.id}</span>
+            <span className="cell-entity-title">{a.name}</span>
+            <span className="cell-entity-sub">
+              <span className="cell-swatch" style={{ background: a.coloreHex || "#888" }} />
+              {a.colore}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "stato",
+      header: "Stato",
+      width: "120px",
+      align: "center",
+      cell: (a) => (
+        <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
+          {a.stato}
+        </span>
+      ),
+    },
+    {
+      key: "varianti",
+      header: "Varianti",
+      width: "100px",
+      align: "center",
+      mono: true,
+      cell: (a) => a.varianti?.length ?? 0,
+    },
+    {
+      key: "raccolte",
+      header: "Raccolte",
+      width: "100px",
+      align: "center",
+      mono: true,
+      cell: (a) => a.raccolte?.length ?? 0,
+    },
+  ];
+  const articleActions: RowAction<Article>[] = [
+    { icon: () => IconEdit, tooltip: () => "Modifica", onClick: () => {} },
+    {
+      icon: (a) => (a.stato === "attivo" ? IconEyeOff : IconEye),
+      tooltip: (a) => (a.stato === "attivo" ? "Nascondi" : "Mostra"),
+      onClick: toggleArticleStatus,
+    },
+  ];
+
   if (loading || !admin) return <LoadingScreen />;
 
   return (
@@ -196,67 +342,65 @@ export default function AdminPage() {
                 </div>
                 <div className="view-toggle">
                   <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
                   </button>
                   <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
                   </button>
                 </div>
               </div>
             </div>
 
-            {view === "list" && (
-              <div className="table-header visible">
-                <span></span>
-                <span>Articolo</span>
-                <span>Stato</span>
-                <span>Varianti</span>
-                <span>Raccolte</span>
-                <span style={{ textAlign: "right" }}>Azioni</span>
+            {view === "list" ? (
+              <DataTable
+                columns={articleColumns}
+                rows={artRows}
+                rowKey={(a) => a.id}
+                actions={articleActions}
+                emptyText="Nessun articolo trovato"
+                page={artPage}
+                pageSize={PAGE_SIZE}
+                total={filteredArticles.length}
+                onPageChange={setArtPage}
+              />
+            ) : (
+              <div className="data-cards-scroll">
+                <div className="article-grid">
+                  {artRows.map((a) => (
+                    <div key={a.id} className="article-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="article-card-img" src={a.img || ""} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
+                      <div className="article-card-body">
+                        <div className="article-card-top">
+                          <span className="article-card-id">{a.id}</span>
+                          <h3>{a.name}</h3>
+                          <span className="article-card-color">
+                            <span className="color-swatch" style={{ background: a.coloreHex || "#888" }} />
+                            {a.colore}
+                          </span>
+                        </div>
+                        <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
+                          {a.stato}
+                        </span>
+                        <div className="article-card-counts">{a.varianti?.length ?? 0} varianti</div>
+                        <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
+                        <div className="article-card-actions">
+                          <button className="btn btn-secondary btn-sm">Modifica</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => toggleArticleStatus(a)}>
+                            {a.stato === "attivo" ? "Disattiva" : "Attiva"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {artRows.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 14, gridColumn: "1 / -1" }}>
+                      Nessun articolo trovato
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-            <div className={`article-grid ${view === "list" ? "view-list" : ""}`}>
-              {filteredArticles.map((a) => (
-                <div key={a.id} className="article-card">
-                  {view === "grid" && (
-                    <img className="article-card-img" src={a.img || ""} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
-                  )}
-                  {view === "list" && (
-                    <img className="article-card-img" src={a.img || ""} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
-                  )}
-                  <div className={`article-card-body${view === "grid" ? "" : ""}`}>
-                    <div className="article-card-top">
-                      <span className="article-card-id">{a.id}</span>
-                      <h3>{a.name}</h3>
-                      <span className="article-card-color">
-                        <span className="color-swatch" style={{ background: a.coloreHex || "#888" }} />
-                        {a.colore}
-                      </span>
-                    </div>
-                    <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
-                      {a.stato}
-                    </span>
-                    <div className={`article-card-counts ${view === "list" ? "article-card-variants" : ""}`}>
-                      {a.varianti?.length ?? 0} varianti
-                    </div>
-                    <div className={`article-card-counts ${view === "list" ? "article-card-famiglie" : ""}`}>
-                      {a.raccolte?.length ?? 0} raccolte
-                    </div>
-                    <div className="article-card-actions">
-                      <button className="btn btn-secondary btn-sm">Modifica</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => toggleArticleStatus(a)}>
-                        {a.stato === "attivo" ? "Disattiva" : "Attiva"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {filteredArticles.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 14, gridColumn: "1 / -1" }}>
-                  Nessun articolo trovato
-                </div>
-              )}
-            </div>
           </>
         )}
 
@@ -269,16 +413,21 @@ export default function AdminPage() {
                 <span className="meta">{t("total", { count: total })}</span>
               </div>
               <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => setEditor({ mode: "create" })}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                {IconPlus}
                 {t("newClient")}
               </button>
             </div>
             {error && <div className="error-box">{tServer(error)}</div>}
-            <UserTable
-              items={items}
-              onEdit={(u) => setEditor({ mode: "edit", user: u })}
-              onResetPassword={onResetPassword}
-              onBlockToggle={onBlockToggle}
+            <DataTable
+              columns={clientColumns}
+              rows={items}
+              rowKey={(u) => u.id}
+              actions={clientActions}
+              emptyText={t("noResults")}
+              page={cliPage}
+              pageSize={PAGE_SIZE}
+              total={total}
+              onPageChange={setCliPage}
             />
           </>
         )}
@@ -300,8 +449,8 @@ export default function AdminPage() {
               <h2>Raccolte di portale</h2>
               <span className="meta">Collezioni/etichette gestite e modificate dal portale. Ogni Articolo può appartenere a più Raccolte.</span>
             </div>
-            <button className="btn btn-primary btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button className="admin-btn admin-btn-primary admin-btn-sm">
+              {IconPlus}
               Nuova Raccolta
             </button>
           </div>
