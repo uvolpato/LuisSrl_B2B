@@ -1,21 +1,64 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: bozza 4.1 — 12 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
+Versione: bozza 4.2 — 13 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 ---
 
+## Progresso attuale
+
+### Blocco 1 — Infrastruttura e accessi — ✅ IN CORSO (parziale)
+
+**Completato — backend e accessi (commit 4502b97, a00adb7):**
+- NestJS + Prisma 6 su PostgreSQL `LuisSrlDb` (pgvector abilitato), Docker compose
+- **Stored procedure PL/pgSQL** per ogni scrittura applicativa (`fn_user_create`,
+  `fn_user_update`, `fn_user_set_blocked`, `fn_user_set_password`, `fn_audit_log`,
+  `fn_auth_log_attempt`): audit nella stessa transazione
+- **Autenticazione completa**: login argon2id, sessioni server-side su Postgres,
+  cookie **HttpOnly + SameSite** (Secure in produzione), **CSRF**, **rate limiting
+  5 login/min**, Helmet, CORS ristretto — tutto testato
+- Cookie "Ricordami" (sessione 30 giorni) opzionale
+- **Gestione clienti** via API (crea con password provvisoria, modifica,
+  blocca/sblocca — mai cancellare, reset password)
+- **Area cliente** con cambio password obbligato al primo accesso
+- **Multilingua it/en** (next-intl), errori backend tradotti
+
+**Completato — UI dal prototipo (commit da4c5b8):**
+- Landing page pubblica da prototipo (hero, features, AI search, stats, linee, CTA, footer)
+- Struttura immagini: `public/images/b2b/` (portale) + `public/images/articoli/` (prodotti futuri)
+- Disclaimer "Prototipo dimostrativo" in fixed bottom
+- Login modal riutilizzabile (`LoginModal`): Esc, click fuori, auto-focus, focus trap,
+  toggle password, "password dimenticata", nota "accesso su invito → info@luisbg.it"
+- `LoginForm` condiviso tra modale e pagina `/login`
+- Admin con sidebar a sezioni (Gestione/Vendite/Strumenti) in stile prototipo
+- `CLAUDE.md` aggiornato con architettura server locale + Mini PC
+
+**Da fare:** HTTPS/tunnel per il go-live; sezioni admin oltre Clienti (Articoli,
+Famiglie, Raccolte, Ordini) attualmente con dati mock — diventano reali dal Blocco 2.
+
+### Credenziali admin
+- Email: `admin@luissrl.it`
+- Password: `LuisAdmin2026!`
+
+---
+
 ## Blocco 1 — Infrastruttura e accessi (2-3 giorni)
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Setup server locale | App + DB su macchina interna, accesso riservato |
-| Autenticazione | Login email + password, ruoli admin/cliente |
-| Gestione utenti | Admin crea, modifica, blocca clienti |
-| Sicurezza | HTTPS, sessioni, rate limiting |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Setup server locale | App + DB su macchina interna (Docker, Postgres+pgvector) | ✅ fatto (deploy go-live a parte) |
+| Landing page pubblica | Da prototipo HTML, immagini reali, hero/features/CTA | ✅ fatto |
+| Login modale riutilizzabile | Con focus trap, Esc, toggle pwd, "password dimenticata" | ✅ fatto |
+| LoginForm condiviso | Stesso form in modale e pagina `/login` | ✅ fatto |
+| Autenticazione | Login argon2id, ruoli admin/cliente, sessioni Postgres | ✅ fatto |
+| Gestione utenti | Crea/modifica/blocca/reset via stored procedure | ✅ fatto |
+| Sicurezza app | Sessioni HttpOnly+SameSite, CSRF, rate limiting, Helmet | ✅ fatto |
+| HTTPS in produzione | Reverse proxy / tunnel crittografato | 🔴 al go-live |
+| Struttura immagini | `public/images/b2b/` + `public/images/articoli/` | ✅ fatto |
 
-**Cosa si vede:** admin accede al pannello, crea il primo cliente, il cliente riceve le credenziali.
+**Cosa si vede:** landing pubblica, login accessibile, admin che crea/blocca clienti
+reali, cliente che cambia la password provvisoria. Tutto in italiano o inglese.
 
 **Valore: €1.050 (3 giorni × €350)**
 
