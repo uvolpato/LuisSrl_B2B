@@ -18,13 +18,15 @@ export class AuditService {
     dettagli?: unknown;
     esito?: 'OK' | 'KO';
     ip?: string;
+    /** Tabella dell'attore: 'admin' (users) o 'customer' (customers). */
+    actorType?: 'admin' | 'customer';
   }): Promise<void> {
     await this.prisma.$queryRaw`
-      SELECT fn_audit_log(
+      SELECT core.fn_audit_log(
         ${params.actorId}::int, ${params.azione},
         ${params.entita ?? null}, ${params.entitaId ?? null},
         ${params.dettagli === undefined ? null : JSON.stringify(params.dettagli)}::jsonb,
-        ${params.esito ?? 'OK'}, ${params.ip ?? null}
+        ${params.esito ?? 'OK'}, ${params.ip ?? null}, ${params.actorType ?? 'admin'}
       )`;
   }
 
@@ -34,11 +36,13 @@ export class AuditService {
     userId: number | null;
     motivo?: string;
     ip?: string;
+    actorType?: 'admin' | 'customer';
   }): Promise<void> {
     await this.prisma.$queryRaw`
-      SELECT fn_auth_log_attempt(
+      SELECT auth.fn_auth_log_attempt(
         ${params.email}, ${params.success},
-        ${params.userId}::int, ${params.motivo ?? null}, ${params.ip ?? null}
+        ${params.userId}::int, ${params.motivo ?? null}, ${params.ip ?? null},
+        ${params.actorType ?? 'admin'}
       )`;
   }
 }

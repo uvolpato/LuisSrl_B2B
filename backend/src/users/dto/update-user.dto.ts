@@ -12,19 +12,8 @@ export class UpdateUserDto {
   nome?: string;
 
   @IsOptional()
-  @IsString()
-  @Length(1, 200)
-  ragioneSociale?: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(5, 20, { message: 'validation.piva' })
-  partitaIva?: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(3, 30)
-  telefono?: string;
+  @IsIn(['SUPERUSER', 'AMMINISTRATORE', 'UTENTE', 'SOSPESO'])
+  ruolo?: string;
 
   @IsOptional()
   @IsIn(['it', 'en'])

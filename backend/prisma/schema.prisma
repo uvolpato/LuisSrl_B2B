@@ -7,8 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN
+enum AdminRole {
+  SUPERUSER
+  AMMINISTRATORE
+  UTENTE
+  SOSPESO
+}
+
+enum CustomerRole {
   CLIENTE
 }
 
@@ -18,29 +24,72 @@ enum UserStatus {
 }
 
 model User {
-  id                 Int        @id @default(autoincrement())
-  email              String     @unique
-  passwordHash       String     @map("password_hash")
-  nome               String
-  ragioneSociale     String?    @map("ragione_sociale")
-  // Vincolo "un solo account per azienda": P.IVA univoca (NULL ammesso per gli admin)
-  partitaIva         String?    @unique @map("partita_iva")
-  telefono           String?
-  ruolo              UserRole   @default(CLIENTE)
-  stato              UserStatus @default(ATTIVO)
-  preferredLanguage  String     @default("it") @map("preferred_language")
-  mustChangePassword Boolean    @default(true) @map("must_change_password")
-  createdAt          DateTime   @default(now()) @map("created_at")
-  updatedAt          DateTime   @updatedAt @map("updated_at")
-  auditLogs          AuditLog[]
+  id                Int        @id @default(autoincrement())
+  email             String     @unique
+  passwordHash      String     @map("password_hash")
+  nome              String
+  ruolo             AdminRole  @default(UTENTE)
+  stato             UserStatus @default(ATTIVO)
+  preferredLanguage String     @default("it") @map("preferred_language")
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  avatarColor       String     @default("oklch(55% 0.15 250)") @map("avatar_color")
+  groupId           Int?       @map("group_id")
+  group             PermissionGroup? @relation(fields: [groupId], references: [id])
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  adminPermissions  AdminPermission[]
 
   @@map("users")
 }
 
+model Customer {
+  id                Int          @id @default(autoincrement())
+  email             String       @unique
+  passwordHash      String       @map("password_hash")
+  nome              String
+  ragioneSociale    String?      @map("ragione_sociale")
+  partitaIva        String?      @unique @map("partita_iva")
+  telefono          String?
+  ruolo             CustomerRole @default(CLIENTE)
+  stato             UserStatus   @default(ATTIVO)
+  preferredLanguage String       @default("it") @map("preferred_language")
+  mustChangePassword Boolean     @default(true) @map("must_change_password")
+  avatarColor       String       @default("oklch(55% 0.15 250)") @map("avatar_color")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  @@map("customers")
+}
+
+model PermissionGroup {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  permissions String[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  users       User[]
+  @@map("permission_groups")
+}
+
+model AdminPermission {
+  id         Int     @id @default(autoincrement())
+  userId     Int     @map("user_id")
+  permission String
+  granted    Boolean @default(true)
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@map("admin_permissions")
+}
+
+/// Attore polimorfico: actorId puo' riferire users (admin) o customers
+/// (cliente) a seconda di actorType. Niente FK rigida: le due tabelle hanno
+/// sequenze di id indipendenti, quindi actorType disambigua.
 model AuditLog {
   id        BigInt   @id @default(autoincrement())
   actorId   Int?     @map("actor_id")
-  actor     User?    @relation(fields: [actorId], references: [id])
+  actorType String?  @map("actor_type")
   azione    String
   entita    String?
   entitaId  String?  @map("entita_id")
@@ -54,7 +103,6 @@ model AuditLog {
   @@map("audit_log")
 }
 
-// Tabella sessioni per connect-pg-simple (gestita dalla libreria, non dalle SP)
 model Session {
   sid    String   @id
   sess   Json

@@ -3,15 +3,16 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { UsersRepository } from '../users/users.repository';
+import { CustomersRepository } from '../customers/customers.repository';
 import {
   DUMMY_HASH,
   hashPassword,
   verifyPassword,
 } from '../common/password';
+import type { LoginLookupRow, AuthUser } from '../common/auth-types';
 
 @Injectable()
 export class AuthService {
@@ -19,91 +20,92 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly usersRepo: UsersRepository,
+    private readonly customersRepo: CustomersRepository,
   ) {}
 
-  /**
-   * Verifica le credenziali. Ogni tentativo (riuscito o no) viene tracciato
-   * in audit_log via fn_auth_log_attempt.
-   */
   async validateLogin(
     email: string,
     password: string,
     ip: string | undefined,
-  ): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+  ): Promise<AuthUser> {
+    const [row] = await this.prisma.$queryRaw<LoginLookupRow[]>`
+      SELECT * FROM auth.fn_login_lookup(${email.toLowerCase()})
+    `;
 
-    if (!user) {
-      // verifica fittizia per non rivelare l'esistenza dell'email via timing
+    if (!row?.user_id) {
       await verifyPassword(DUMMY_HASH, password);
-      await this.audit.logLoginAttempt({
-        email,
-        success: false,
-        userId: null,
-        motivo: 'utente inesistente',
-        ip,
-      });
+      await this.audit.logLoginAttempt({ email, success: false, userId: null, motivo: 'utente inesistente', ip });
       throw new UnauthorizedException('auth.invalid_credentials');
     }
 
-    const valid = await verifyPassword(user.passwordHash, password);
+    const valid = await verifyPassword(row.password_hash, password);
     if (!valid) {
-      await this.audit.logLoginAttempt({
-        email,
-        success: false,
-        userId: user.id,
-        motivo: 'password errata',
-        ip,
-      });
+      await this.audit.logLoginAttempt({ email, success: false, userId: row.user_id, motivo: 'password errata', ip, actorType: row.user_type });
       throw new UnauthorizedException('auth.invalid_credentials');
     }
-    if (user.stato === 'BLOCCATO') {
-      await this.audit.logLoginAttempt({
-        email,
-        success: false,
-        userId: user.id,
-        motivo: 'utente bloccato',
-        ip,
-      });
+
+    if (row.stato === 'BLOCCATO' || row.ruolo === 'SOSPESO') {
+      await this.audit.logLoginAttempt({ email, success: false, userId: row.user_id, motivo: 'utente bloccato/sospeso', ip, actorType: row.user_type });
       throw new UnauthorizedException('auth.user_blocked');
     }
 
-    await this.audit.logLoginAttempt({
+    await this.audit.logLoginAttempt({ email, success: true, userId: row.user_id, ip, actorType: row.user_type });
+
+    return {
+      id: row.user_id,
       email,
-      success: true,
-      userId: user.id,
-      ip,
-    });
-    return user;
+      nome: row.nome,
+      userType: row.user_type,
+      ruolo: row.ruolo,
+      stato: row.stato,
+      avatarColor: row.avatar_color,
+    };
   }
 
   async changePassword(
-    user: User,
+    user: AuthUser,
     oldPassword: string,
     newPassword: string,
     ip: string | undefined,
   ): Promise<void> {
-    const valid = await verifyPassword(user.passwordHash, oldPassword);
-    if (!valid) {
+    const hash =
+      user.userType === 'admin'
+        ? (await this.prisma.user.findUnique({ where: { id: user.id } }))?.passwordHash
+        : (await this.prisma.customer.findUnique({ where: { id: user.id } }))?.passwordHash;
+
+    if (!hash || !(await verifyPassword(hash, oldPassword))) {
       throw new BadRequestException('auth.wrong_password');
     }
-    await this.usersRepo.spSetPassword({
-      actorId: user.id,
-      userId: user.id,
-      passwordHash: await hashPassword(newPassword),
-      mustChange: false,
-      ip,
-    });
+
+    const newHash = await hashPassword(newPassword);
+    if (user.userType === 'admin') {
+      await this.usersRepo.spSetPassword({
+        actorId: user.id,
+        userId: user.id,
+        passwordHash: newHash,
+        mustChange: false,
+        ip,
+      });
+    } else {
+      await this.customersRepo.spSetPassword({
+        actorId: user.id,
+        customerId: user.id,
+        passwordHash: newHash,
+        mustChange: false,
+        ip,
+        actorType: 'customer',
+      });
+    }
   }
 
-  async logLogout(userId: number, ip: string | undefined): Promise<void> {
+  async logLogout(userId: number, userType: string, ip: string | undefined): Promise<void> {
     await this.audit.log({
       actorId: userId,
       azione: 'auth.logout',
-      entita: 'users',
+      entita: userType === 'admin' ? 'users' : 'customers',
       entitaId: String(userId),
       ip,
+      actorType: userType === 'admin' ? 'admin' : 'customer',
     });
   }
 }

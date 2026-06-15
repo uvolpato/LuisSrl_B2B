@@ -13,20 +13,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CustomersService } from './customers.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermission } from '../auth/decorators/permission.decorator';
 
-@Controller('users')
+@Controller('customers')
 @UseGuards(AuthenticatedGuard, RolesGuard, PermissionsGuard)
 @Roles('admin')
-export class UsersController {
-  constructor(private readonly users: UsersService) {}
+export class CustomersController {
+  constructor(private readonly customers: CustomersService) {}
 
   @Get()
   @RequirePermission('admin.users.view')
@@ -36,7 +36,7 @@ export class UsersController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize = 20,
   ) {
-    return this.users.list({
+    return this.customers.list({
       q,
       stato: stato === 'ATTIVO' || stato === 'BLOCCATO' ? stato : undefined,
       page: Math.max(1, page),
@@ -47,32 +47,32 @@ export class UsersController {
   @Get(':id')
   @RequirePermission('admin.users.view')
   async getOne(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.users.getById(id);
-    if (!user) throw new NotFoundException('users.not_found');
-    return user;
+    const c = await this.customers.getById(id);
+    if (!c) throw new NotFoundException('customers.not_found');
+    return c;
   }
 
   @Post()
   @RequirePermission('admin.users.create')
-  create(@Body() dto: CreateUserDto, @Req() req: AuthenticatedRequest) {
-    return this.users.create(req.user.id, dto, req.ip);
+  create(@Body() dto: CreateCustomerDto, @Req() req: AuthenticatedRequest) {
+    return this.customers.create(req.user.id, dto, req.ip);
   }
 
   @Patch(':id')
   @RequirePermission('admin.users.edit')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateUserDto,
+    @Body() dto: UpdateCustomerDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.users.update(req.user.id, id, dto, req.ip);
+    return this.customers.update(req.user.id, id, dto, req.ip);
   }
 
   @Post(':id/block')
   @HttpCode(200)
   @RequirePermission('admin.users.block')
   block(@Param('id', ParseIntPipe) id: number, @Req() req: AuthenticatedRequest) {
-    return this.users.setBlocked(req.user.id, id, true, req.ip);
+    return this.customers.setBlocked(req.user.id, id, true, req.ip);
   }
 
   @Post(':id/unblock')
@@ -82,7 +82,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.users.setBlocked(req.user.id, id, false, req.ip);
+    return this.customers.setBlocked(req.user.id, id, false, req.ip);
   }
 
   @Post(':id/reset-password')
@@ -92,6 +92,6 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.users.resetPassword(req.user.id, id, req.ip);
+    return this.customers.resetPassword(req.user.id, id, req.ip);
   }
 }

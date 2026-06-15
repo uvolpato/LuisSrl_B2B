@@ -28,18 +28,12 @@ export class UsersService {
     pageSize: number;
   }): Promise<{ items: UserProfile[]; total: number }> {
     const where: Prisma.UserWhereInput = {
-      ruolo: 'CLIENTE',
       ...(params.stato ? { stato: params.stato } : {}),
       ...(params.q
-        ? {
-            OR: [
-              { email: { contains: params.q, mode: 'insensitive' } },
-              { nome: { contains: params.q, mode: 'insensitive' } },
-              {
-                ragioneSociale: { contains: params.q, mode: 'insensitive' },
-              },
-            ],
-          }
+        ? { OR: [
+            { email: { contains: params.q, mode: 'insensitive' } },
+            { nome: { contains: params.q, mode: 'insensitive' } },
+          ]}
         : {}),
     };
     const [items, total] = await Promise.all([
@@ -59,8 +53,8 @@ export class UsersService {
     return user ? userToProfile(user) : null;
   }
 
-  /** Crea un cliente con password provvisoria (mostrata una sola volta all'admin). */
-  async createCliente(
+  /** Crea un admin/staff con password provvisoria. */
+  async create(
     actorId: number,
     dto: CreateUserDto,
     ip: string | undefined,
@@ -71,10 +65,7 @@ export class UsersService {
       email: dto.email,
       passwordHash: await hashPassword(provisionalPassword),
       nome: dto.nome,
-      ragioneSociale: dto.ragioneSociale,
-      partitaIva: dto.partitaIva,
-      telefono: dto.telefono,
-      ruolo: 'CLIENTE',
+      ruolo: dto.ruolo ?? 'UTENTE',
       preferredLanguage: dto.preferredLanguage,
       ip,
     });
@@ -101,7 +92,6 @@ export class UsersService {
     return rowToProfile(row);
   }
 
-  /** Reset password: nuova provvisoria, cambio obbligato al prossimo accesso. */
   async resetPassword(
     actorId: number,
     userId: number,

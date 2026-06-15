@@ -16,17 +16,22 @@ import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
 import type { AuthenticatedRequest } from './guards/authenticated.guard';
+import { PrismaService } from '../prisma/prisma.service';
 import { userToProfile } from '../common/user-row';
+import { customerToProfile } from '../common/customer-row';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /** Login: max 5 tentativi al minuto per IP. */
   @Post('login')
   @HttpCode(200)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
     const user = await this.auth.validateLogin(dto.email, dto.password, req.ip);
 
     // rigenera l'id di sessione: previene session fixation
@@ -34,10 +39,17 @@ export class AuthController {
       req.session.regenerate((err) => (err ? reject(err) : resolve())),
     );
     req.session.userId = user.id;
+    req.session.userType = user.userType;
+    req.session.email = user.email;
+    req.session.nome = user.nome;
     req.session.csrfToken = randomBytes(32).toString('hex');
     req.session.cookie.maxAge = dto.remember ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
-    return { user: userToProfile(user), csrfToken: req.session.csrfToken };
+    const profile = user.userType === 'admin'
+      ? userToProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
+      : customerToProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
+
+    return { user: profile, csrfToken: req.session.csrfToken };
   }
 
   @Post('logout')
@@ -47,7 +59,7 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.auth.logLogout(req.user.id, req.ip);
+    await this.auth.logLogout(req.user.id, req.user.userType, req.ip);
     await new Promise<void>((resolve, reject) =>
       req.session.destroy((err) => (err ? reject(err) : resolve())),
     );
@@ -58,9 +70,12 @@ export class AuthController {
   /** Profilo corrente + token CSRF (per ripristinare lo stato dopo un refresh). */
   @Get('me')
   @UseGuards(AuthenticatedGuard)
-  me(@Req() req: AuthenticatedRequest) {
+  async me(@Req() req: AuthenticatedRequest) {
+    const profile = req.user.userType === 'admin'
+      ? userToProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: req.user.id } }))
+      : customerToProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: req.user.id } }));
     return {
-      user: userToProfile(req.user),
+      user: profile,
       csrfToken: req.session.csrfToken,
     };
   }
