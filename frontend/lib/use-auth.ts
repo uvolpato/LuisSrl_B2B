@@ -3,15 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, setCsrfToken } from "./api";
-import type { MeResponse, UserProfile } from "./types";
+import type { MeResponse, UserProfile, CustomerProfile } from "./types";
 
-/**
- * Ripristina la sessione (utente + token CSRF) e applica il controllo ruolo.
- * Reindirizza a /login se non autenticato, alla home giusta se ruolo errato.
- */
-export function useAuth(requiredRole?: "ADMIN" | "CLIENTE") {
+export function useAuth(requiredType?: "admin" | "customer") {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,8 +17,8 @@ export function useAuth(requiredRole?: "ADMIN" | "CLIENTE") {
       .then((me) => {
         if (cancelled) return;
         setCsrfToken(me.csrfToken);
-        if (requiredRole && me.user.ruolo !== requiredRole) {
-          router.replace(me.user.ruolo === "ADMIN" ? "/admin" : "/area");
+        if (requiredType && me.user.userType !== requiredType) {
+          router.replace(me.user.userType === "admin" ? "/admin" : "/area");
           return;
         }
         setUser(me.user);
@@ -34,7 +30,7 @@ export function useAuth(requiredRole?: "ADMIN" | "CLIENTE") {
     return () => {
       cancelled = true;
     };
-  }, [requiredRole, router]);
+  }, [requiredType, router]);
 
   return { user, loading, setUser };
 }

@@ -8,9 +8,9 @@ import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 
 export default function AreaClientePage() {
   const t = useTranslations("area");
-  const { user, loading, setUser } = useAuth("CLIENTE");
+  const { user, loading, setUser } = useAuth("customer");
 
-  if (loading || !user) return <LoadingScreen />;
+  if (loading || !user || user.userType !== "customer") return <LoadingScreen />;
 
   return (
     <>

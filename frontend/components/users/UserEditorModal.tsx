@@ -4,16 +4,14 @@ import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 import type {
-  ProvisionalPasswordResponse,
-  UserProfile,
+  CustomerProfile,
 } from "../../lib/types";
 import Modal from "../common/Modal";
 
 export type UserEditorTarget =
   | { mode: "create" }
-  | { mode: "edit"; user: UserProfile };
+  | { mode: "edit"; user: CustomerProfile };
 
-/** Form di creazione/modifica cliente in modale. */
 export default function UserEditorModal({
   target,
   onClose,
@@ -56,14 +54,14 @@ export default function UserEditorModal({
     };
     try {
       if (editing) {
-        await api.patch(`/api/users/${editing.id}`, payload);
+        await api.patch(`/api/customers/${editing.id}`, payload);
         onSaved(null);
       } else {
-        const res = await api.post<ProvisionalPasswordResponse>("/api/users", {
+        const res = await api.post<{ customer: CustomerProfile; provisionalPassword: string }>("/api/customers", {
           email: form.email,
           ...payload,
         });
-        onSaved({ email: res.user.email, password: res.provisionalPassword });
+        onSaved({ email: res.customer.email, password: res.provisionalPassword });
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.code : "errors.generic");

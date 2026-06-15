@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { api, setCsrfToken } from "../../lib/api";
-import type { UserProfile } from "../../lib/types";
+import type { CustomerProfile } from "../../lib/types";
 
-export default function Header({ user }: { user: UserProfile }) {
+export default function Header({ user }: { user: CustomerProfile }) {
   const t = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function Header({ user }: { user: UserProfile }) {
       await api.post("/api/auth/logout");
     } finally {
       setCsrfToken(null);
-      router.replace("/login");
+      router.replace("/");
     }
   }
 

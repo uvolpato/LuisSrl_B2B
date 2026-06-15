@@ -114,15 +114,19 @@
 .landing .hero-image-full {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, 50vw, 520px);
+  height: clamp(360px, 50vw, 520px);
   overflow: hidden;
   border-bottom: 1px solid var(--border);
+  /* Fallback scuro: qualunque area non coperta dalla foto resta sul tono
+     caldo scuro del brand, mai grigia (durante il load o su proporzioni estreme). */
+  background: oklch(25% 0.02 60);
 }
 .landing .hero-image-full img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 .landing .hero-overlay {
   position: absolute;

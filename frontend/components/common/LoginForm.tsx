@@ -22,12 +22,21 @@ const EyeOffIcon = (
   </svg>
 );
 
+// Dev only — remove for production
+const DEV_EMAIL = "admin@luissrl.it";
+const DEV_PASSWORD = "LuisAdmin2026!";
+
+function isDev(): boolean {
+  if (typeof window === "undefined") return false;
+  return process.env.NODE_ENV === "development" || window.location.hostname === "localhost";
+}
+
 export default function LoginForm() {
   const t = useTranslations("login");
   const tServer = useTranslations("server");
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(isDev() ? DEV_EMAIL : "");
+  const [password, setPassword] = useState(isDev() ? DEV_PASSWORD : "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [forgot, setForgot] = useState(false);

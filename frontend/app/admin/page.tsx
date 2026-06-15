@@ -6,7 +6,8 @@ import "./admin.css";
 import { api, ApiError } from "../../lib/api";
 import type {
   ProvisionalPasswordResponse,
-  UserListResponse,
+  CustomerListResponse,
+  CustomerProfile,
   UserProfile,
 } from "../../lib/types";
 import { useAuth } from "../../lib/use-auth";
@@ -17,6 +18,7 @@ import DataTable, {
   type Column,
   type RowAction,
 } from "../../components/admin/DataTable";
+import AdminPanel from "../../components/admin/AdminPanel";
 import UserEditorModal, {
   UserEditorTarget,
 } from "../../components/users/UserEditorModal";
@@ -32,6 +34,7 @@ const SECTION_TITLES: Record<string, string> = {
   ordini: "Ordini",
   import: "Import / Export",
   ai: "AI / Ricerca",
+  "admin-panel": "Pannello di Amministrazione",
 };
 
 // ── Icone (stroke style del prototipo) ──
@@ -100,12 +103,12 @@ const MOCK_ARTICLES: Article[] = [
 export default function AdminPage() {
   const t = useTranslations("admin");
   const tServer = useTranslations("server");
-  const { user: admin, loading } = useAuth("ADMIN");
+  const { user: admin, loading } = useAuth("admin");
 
   const [section, setSection] = useState("articoli");
 
   // ── Clienti (dati reali, paginazione server-side) ──
-  const [items, setItems] = useState<UserProfile[]>([]);
+  const [items, setItems] = useState<CustomerProfile[]>([]);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState("");
   const [stato, setStato] = useState("");
@@ -139,7 +142,7 @@ export default function AdminPage() {
     if (stato) params.set("stato", stato);
     params.set("page", String(cliPage));
     params.set("pageSize", String(PAGE_SIZE));
-    const res = await api.get<UserListResponse>(`/api/users?${params}`);
+    const res = await api.get<CustomerListResponse>(`/api/customers?${params}`);
     setItems(res.items);
     setTotal(res.total);
   }, [q, stato, cliPage, section]);
@@ -164,20 +167,20 @@ export default function AdminPage() {
     }
   }
 
-  function onBlockToggle(u: UserProfile) {
+  function onBlockToggle(u: CustomerProfile) {
     if (u.stato === "ATTIVO" && !window.confirm(t("confirmBlock"))) return;
     void run(async () => {
       await api.post(
-        `/api/users/${u.id}/${u.stato === "ATTIVO" ? "block" : "unblock"}`,
+        `/api/customers/${u.id}/${u.stato === "ATTIVO" ? "block" : "unblock"}`,
       );
     });
   }
 
-  function onResetPassword(u: UserProfile) {
+  function onResetPassword(u: CustomerProfile) {
     if (!window.confirm(t("confirmReset"))) return;
     void run(async () => {
       const res = await api.post<ProvisionalPasswordResponse>(
-        `/api/users/${u.id}/reset-password`,
+        `/api/customers/${u.id}/reset-password`,
       );
       setProvisional({ email: u.email, password: res.provisionalPassword });
     });
@@ -194,7 +197,7 @@ export default function AdminPage() {
   }
 
   // ── Configurazione tabella Clienti ──
-  const clientColumns: Column<UserProfile>[] = [
+  const clientColumns: Column<CustomerProfile>[] = [
     {
       key: "cliente",
       header: "Cliente",
@@ -229,7 +232,7 @@ export default function AdminPage() {
       ),
     },
   ];
-  const clientActions: RowAction<UserProfile>[] = [
+  const clientActions: RowAction<CustomerProfile>[] = [
     { icon: () => IconEdit, tooltip: () => t("edit"), onClick: (u) => setEditor({ mode: "edit", user: u }) },
     { icon: () => IconKey, tooltip: () => t("resetPassword"), onClick: onResetPassword },
     {
@@ -303,7 +306,7 @@ export default function AdminPage() {
     },
   ];
 
-  if (loading || !admin) return <LoadingScreen />;
+  if (loading || !admin || admin.userType !== "admin") return <LoadingScreen />;
 
   return (
     <AdminLayout
@@ -455,6 +458,9 @@ export default function AdminPage() {
             </button>
           </div>
         )}
+
+        {/* ═══ Admin Panel ═══ */}
+        {section === "admin-panel" && <AdminPanel />}
 
         {/* ═══ Other sections ═══ */}
         {["ordini", "import", "ai"].includes(section) && (
