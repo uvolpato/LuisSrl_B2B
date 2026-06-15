@@ -1,6 +1,6 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: bozza 4.2 — 13 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
+Versione: bozza 4.3 — 13 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
@@ -8,7 +8,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 ## Progresso attuale
 
-### Blocco 1 — Infrastruttura e accessi — ✅ IN CORSO (parziale)
+### Blocco 1 — Infrastruttura e accessi — ✅ COMPLETATO
 
 **Completato — backend e accessi (commit 4502b97, a00adb7):**
 - NestJS + Prisma 6 su PostgreSQL `LuisSrlDb` (pgvector abilitato), Docker compose
@@ -34,8 +34,26 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 - Admin con sidebar a sezioni (Gestione/Vendite/Strumenti) in stile prototipo
 - `CLAUDE.md` aggiornato con architettura server locale + Mini PC
 
-**Da fare:** HTTPS/tunnel per il go-live; sezioni admin oltre Clienti (Articoli,
-Famiglie, Raccolte, Ordini) attualmente con dati mock — diventano reali dal Blocco 2.
+**Blocco 1 — Completato in sessione 13/06/2026:**
+- **SettingsModal**: modale impostazioni con bordo fisso dal viewport, menu sinistro (cerca, Account, Informazioni), voce fissa "Impostazioni amministrazione" in basso
+- **Login prefill**: credenziali admin precompilate in sviluppo (NODE_ENV=development o localhost), facili da rimuovere per produzione
+- **Pannello di Amministrazione**: nuova sezione admin con tab Utenti e sub-nav Panoramica/Gruppi. Tabella utenti con DataTable condiviso, ricerca, paginazione, ruolo, nome, email, ultima attività, creato il
+- **DataTable**: pagination footer nascosto quando totalPages ≤ 1
+- **AdminSidebar**: click "Pannello di Amministrazione" naviga alla sezione
+
+**Blocco 1A — Backend completato in sessione 13/06/2026:**
+- Nuovi model Prisma: PermissionGroup, AdminPermission, isSuperAdmin + groupId su User
+- 6 stored procedure PL/pgSQL per scritture: `fn_permission_group_create/update/delete`, `fn_admin_permission_upsert/remove`, `fn_user_assign_group`
+- AdminRepository + AdminService (letture Prisma, scritture SP)
+- `@RequirePermission(perm)` decorator + PermissionsGuard
+- API: CRUD gruppi, permessi utente, assegnazione gruppo
+- UsersController protetto con permessi granulari
+- Seed: 2 gruppi predefiniti, admin promosso a super admin
+- **Schemi PostgreSQL:** funzioni organizzate in `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group) — tutte chiamate con nome qualificato da codice e tra SP
+
+**Da fare — frontend Blocco 1A:** editor gruppi, modale utente con permessi, sidebar filtrata.
+
+**Da fare — Blocco 2:** HTTPS/tunnel per il go-live (differito); sezioni admin oltre Clienti (Articoli, Famiglie, Raccolte, Ordini) con dati mock — diventano reali dal Blocco 2.
 
 ### Credenziali admin
 - Email: `admin@luissrl.it`
@@ -51,16 +69,79 @@ Famiglie, Raccolte, Ordini) attualmente con dati mock — diventano reali dal Bl
 | Landing page pubblica | Da prototipo HTML, immagini reali, hero/features/CTA | ✅ fatto |
 | Login modale riutilizzabile | Con focus trap, Esc, toggle pwd, "password dimenticata" | ✅ fatto |
 | LoginForm condiviso | Stesso form in modale e pagina `/login` | ✅ fatto |
+| Login prefill dev | Credenziali admin precompilate in sviluppo | ✅ fatto |
 | Autenticazione | Login argon2id, ruoli admin/cliente, sessioni Postgres | ✅ fatto |
 | Gestione utenti | Crea/modifica/blocca/reset via stored procedure | ✅ fatto |
 | Sicurezza app | Sessioni HttpOnly+SameSite, CSRF, rate limiting, Helmet | ✅ fatto |
+| Settings modal | Modale impostazioni con menu (Account, Info, Impostazioni amministrazione) | ✅ fatto |
+| Pannello Amministrazione | Sezione admin con tab Utenti (Panoramica + Gruppi), tabella DataTable | ✅ fatto |
 | HTTPS in produzione | Reverse proxy / tunnel crittografato | 🔴 al go-live |
 | Struttura immagini | `public/images/b2b/` + `public/images/articoli/` | ✅ fatto |
 
-**Cosa si vede:** landing pubblica, login accessibile, admin che crea/blocca clienti
-reali, cliente che cambia la password provvisoria. Tutto in italiano o inglese.
+**Cosa si vede:** landing pubblica, login accessibile (con credenziali precompilate in dev),
+admin con sezioni complete, modale impostazioni, pannello amministrazione con tabella utenti.
+Tutto in italiano o inglese.
 
 **Valore: €1.050 (3 giorni × €350)**
+
+---
+
+## Blocco 1A — Profilazione ruoli e permessi admin (2-3 giorni)
+
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| **Frontend UI shell** | AdminPanel (tab Utenti, sub-nav Panoramica/Gruppi), SettingsModal | ✅ fatto |
+| **Panoramica utenti** | Tabella DataTable con colonne, ricerca, "+", icona edit, mock data | ✅ fatto (da collegare a API) |
+| **Gruppi placeholder** | Pagina vuota per editor gruppi | ✅ fatto (da riempire) |
+| Backend: tabella PermissionGroup | Nome, slug, set permessi (array text[]) | ✅ fatto |
+| Backend: tabella AdminPermission | userId, permission, granted (UNIQUE su userId+permission) | ✅ fatto |
+| Backend: flag super admin | `is_super_admin` su users + `groupId` (FK → permission_groups) | ✅ fatto |
+| Backend: migration Prisma | `20260613183553_permission_models` | ✅ fatto |
+| Backend: seed iniziale | Gruppo "Amministratore" (tutti permessi) + "Visualizzatore" (sola lettura), admin esistente promosso a super admin | ✅ fatto |
+| Backend: stored procedure profili | `fn_permission_group_create`, `fn_permission_group_update`, `fn_permission_group_delete`, `fn_admin_permission_upsert`, `fn_admin_permission_remove`, `fn_user_assign_group` — audit in transazione, errori `LAI01`÷`LAI05` | ✅ fatto |
+| Backend: schemi PostgreSQL | Funzioni organizzate in 4 schemi: `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group). Riferimenti fully qualified tra SP e dal codice NestJS. | ✅ fatto |
+| Backend: AdminRepository | Wrapper SP stessi pattern di UsersRepository | ✅ fatto |
+| Backend: AdminService | Letture Prisma, scritture su SP | ✅ fatto |
+| Backend: decorator + guard | `@RequirePermission('...')` + `PermissionsGuard` (super admin bypassa, altrimenti set effettivo da gruppo + override) | ✅ fatto |
+| Backend: API gruppi | `GET/POST/PUT/DELETE /api/admin/groups` | ✅ fatto |
+| Backend: API permessi utente | `GET /api/admin/users/:id/permissions`, `PUT .../permissions`, `PUT .../group` | ✅ fatto |
+| Backend: protezione controller esistenti | UsersController protetto con permessi granulari (view, create, edit, block) | ✅ fatto |
+| Panoramica utenti da DB | Tabella reale da GET /api/admin/users, avatar color, presenza WS | ✅ fatto |
+| Avatar color utenti | Colonna avatar_color, palette 10 oklch, SP fn_user_create assegna random | ✅ fatto |
+| WebSocket presenza | socket.io path /ws, auth via session, presence broadcast | ✅ fatto |
+| Hook useWebSocket/usePresence | Singleton WS, reconnect, onAny router, isOnline(userId) | ✅ fatto |
+| Pallino presenza tabella | Verde pulsante = WS online, grigio = offline | ✅ fatto |
+| Panoramica: modale crea/modifica utente | Editor admin con gruppo + override permessi | 🔴 da fare |
+| Gruppi: editor completo | Checkbox permessi, crea/modifica/elimina gruppo | 🔴 da fare |
+| Sidebar filtrata | Voci admin si mostrano/nascondono in base ai permessi | 🔴 da fare |
+| Settings → Impostazioni amministrazione | Pagina con config di sistema | 🔴 da fare |
+| Separazione Anagrafica clienti | Sezione Clienti diventa read-only (da Integra) | 🔴 da fare |
+
+**Blocco 1A — Backend completato in sessione 13/06/2026:**
+- Tutto il backend profili e permessi: migrazione, SP, repository, service, guard, decorator, API
+- Ogni scrittura passa da stored procedure PL/pgSQL con audit nella stessa transazione
+- Gruppi di permessi (PermissionGroup) con set di permessi in array text[]
+- Override per utente (AdminPermission): può concedere un permesso non nel gruppo o negarne uno presente
+- Super admin bypassa tutti i controlli
+- Seed: due gruppi predefiniti, admin esistente promosso a super admin
+- API `/api/admin/groups` e `/api/admin/users/:id/permissions` + `/api/admin/users/:id/group`
+- **Schemi PostgreSQL:** funzioni organizzate in `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group) — riferimenti fully qualified, tabelle restano in `public`
+
+**Aggiornamenti successivi (sessione 13-14/06/2026):**
+- **Avatar color:** colonna `avatar_color` su users, palette 10 colori oklch assegnata random via `fn_user_create`. Migration `20260613220000_avatar_color`. Utenti esistenti aggiornati con colori random.
+- **Endpoint `GET /api/admin/users`:** lista completa (ADMIN + CLIENTE) con paginazione, ricerca, filtro stato. Permesso `admin.permissions.view`.
+- **AdminPanel da DB:** tabella utenti collegata all'API reale invece di mock data. Avatar circolare con colore dal DB.
+- **WebSocket presenza:** socket.io su stesso server HTTP (path `/ws`). Autenticazione via session cookie `luis.sid`. Presenza in tempo reale: broadcast `user.online`/`user.offline`, lista `presence` al nuovo connesso.
+- **Hook frontend riutilizzabili:** `useWebSocket()` (connessione singleton, reconnect auto, onAny router), `usePresence()` (isOnline, onlineIds, connected). Stesso socket usabile da qualsiasi componente per eventi futuri (notifiche, aggiornamenti).
+- **Pallino presenza:** verde pulsante = utente con WS attiva online ora, grigio = offline (indipendentemente da stato DB).
+
+**Cosa si vede:** backend completo per la gestione di gruppi e permessi; admin panel collegato al DB con avatar colorati e presenza WebSocket reale.
+
+**Aggiornamenti nella tabella Blocco 1A:**
+- Panoramica utenti: ✅ fatto (da DB reale, avatar color + presenza WS)
+- Avatar color: ✅ fatto (colonna, palette, SP, migration)
+- WebSocket presenza: ✅ fatto (socket.io, auth via session, useWebSocket/usePresence)
+- Pallino presenza tabella: ✅ fatto (verde pulsante online, grigio offline)
 
 ---
 
@@ -239,6 +320,7 @@ reali, cliente che cambia la password provvisoria. Tutto in italiano o inglese.
 | # | Blocco | Giorni | €/giorno | **Valore** |
 |---|--------|--------|----------|-----------|
 | 1 | Infrastruttura e accessi | 3 | €350 | **€1.050** |
+| 1A | Profilazione ruoli e permessi admin | 3 | €350 | **€1.050** |
 | 2 | Integrazione Integra (viste Postgres + Excel AGOMIR) | 4 | €350 | **€1.400** |
 | 3 | Listini e prezzi | 2 | €350 | **€700** |
 | 4 | Gestione articoli + AI | 4 | €350 | **€1.400** |
@@ -249,7 +331,7 @@ reali, cliente che cambia la password provvisoria. Tutto in italiano o inglese.
 | 9 | Export ordini verso Integra | 2 | €350 | **€700** |
 | 10 | AI lato cliente | 3 | €350 | **€1.050** |
 | 11 | Collaudo, formazione, go-live | 3 | €350 | **€1.050** |
-| | **Totale** | **29 giorni** | | **€10.150** |
+| | **Totale** | **32 giorni** | | **€11.200** |
 
 ### Opzioni di fatturazione
 
@@ -257,7 +339,7 @@ reali, cliente che cambia la password provvisoria. Tutto in italiano o inglese.
 |---------|---------|------|
 | **Forfait unico** | **€9.450** | Prezzo fisso, pagato a milestone |
 | **Giornaliera** | €350/giorno | Fatturato a fine mese su ore effettive |
-| **Solo blocchi 1-4** (primo rilascio utile) | €3.850 | Cliente inizia subito a caricare articoli, poi si decide il resto |
+| **Solo blocchi 1-4** (primo rilascio utile) | €4.900 | Cliente inizia subito a caricare articoli, poi si decide il resto |
 
 ### Costi operativi mensili (a carico del cliente)
 
