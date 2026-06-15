@@ -2,6 +2,11 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import cookie from 'cookie';
 import { Pool } from 'pg';
+// cookie-signature (dipendenza di express-session) non ha tipi propri.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const signature = require('cookie-signature') as {
+  unsign(input: string, secret: string): string | false;
+};
 
 const online = new Map<number, Set<string>>();
 
@@ -19,8 +24,16 @@ export function setupWebSocket(httpServer: HttpServer) {
   io.use(async (socket, next) => {
     try {
       const cookies = cookie.parse(socket.handshake.headers.cookie ?? '');
-      const sid = cookies['luis.sid'];
-      if (!sid) return next(new Error('auth.no_session'));
+      const raw = cookies['luis.sid'];
+      if (!raw) return next(new Error('auth.no_session'));
+
+      // Il cookie e' firmato da express-session ("s:<id>.<firma>"): va
+      // defirmato per ricavare l'id reale della sessione (la chiave nella
+      // tabella session e' l'id NON firmato).
+      const sid = raw.startsWith('s:')
+        ? signature.unsign(raw.slice(2), process.env.SESSION_SECRET as string)
+        : raw;
+      if (!sid) return next(new Error('auth.invalid_signature'));
 
       const res = await pool.query(
         `SELECT sess FROM session WHERE sid = $1 AND expire > now()`,

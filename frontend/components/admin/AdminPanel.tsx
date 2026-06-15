@@ -90,7 +90,6 @@ export default function AdminPanel() {
           <div className="user-cell-name">
             <span className="user-avatar" style={{ background: u.avatarColor, color: "#fff" }}>{u.nome.charAt(0).toUpperCase()}</span>
             <span className="cell-entity-title">{u.nome}</span>
-            {u.ruolo === "SUPERUSER" && <span className="admin-panel-super-badge">Super Admin</span>}
             <span className={`user-status-dot ${online ? "online" : "offline"}`} />
           </div>
         );
@@ -118,13 +117,11 @@ export default function AdminPanel() {
       header: "Nome",
       grow: true,
       cell: (c) => {
-        const online = isOnline(c.id);
         return (
           <div className="user-cell-name">
             <span className="user-avatar" style={{ background: c.avatarColor, color: "#fff" }}>{c.nome.charAt(0).toUpperCase()}</span>
             <span className="cell-entity-title">{c.nome}</span>
             <span className="cell-subtitle">{c.ragioneSociale}</span>
-            <span className={`user-status-dot ${online ? "online" : "offline"}`} />
           </div>
         );
       },
