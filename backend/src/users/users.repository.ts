@@ -87,4 +87,23 @@ export class UsersRepository {
       mapSpError(e);
     }
   }
+
+  async spSetDeleted(params: {
+    actorId: number;
+    userId: number;
+    deletedAt: Date;
+    ip?: string;
+  }): Promise<UserRow> {
+    try {
+      const [row] = await this.prisma.$queryRaw<UserRow[]>`
+        UPDATE users
+        SET stato = 'BLOCCATO', deleted_at = ${params.deletedAt}, updated_at = now()
+        WHERE id = ${params.userId}
+        RETURNING *
+      `;
+      return row;
+    } catch (e) {
+      mapSpError(e);
+    }
+  }
 }

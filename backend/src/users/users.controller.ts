@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   HttpCode,
   NotFoundException,
@@ -13,7 +14,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UsersService, type UserFilter } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
@@ -32,13 +33,14 @@ export class UsersController {
   @RequirePermission('admin.users.view')
   list(
     @Query('q') q?: string,
-    @Query('stato') stato?: 'ATTIVO' | 'BLOCCATO',
+    @Query('stato') stato?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize = 20,
   ) {
+    const validStati: UserFilter[] = ['ATTIVO', 'BLOCCATO', 'ELIMINATO', 'TUTTI'];
     return this.users.list({
       q,
-      stato: stato === 'ATTIVO' || stato === 'BLOCCATO' ? stato : undefined,
+      stato: validStati.includes(stato as UserFilter) ? (stato as UserFilter) : undefined,
       page: Math.max(1, page),
       pageSize: Math.min(100, Math.max(1, pageSize)),
     });
@@ -93,5 +95,16 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.users.resetPassword(req.user.id, id, req.ip);
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  @RequirePermission('admin.users.block')
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = await this.users.softDelete(req.user.id, id, req.ip);
+    return user;
   }
 }

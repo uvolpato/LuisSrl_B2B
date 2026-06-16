@@ -11,6 +11,7 @@ export interface UserRow {
   must_change_password: boolean;
   avatar_color: string;
   group_id: number | null;
+  deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -26,6 +27,7 @@ export interface UserProfile {
   mustChangePassword: boolean;
   avatarColor: string;
   groupId: number | null;
+  deletedAt: Date | null;
   createdAt: Date;
 }
 
@@ -41,6 +43,7 @@ export function rowToProfile(r: UserRow): UserProfile {
     mustChangePassword: r.must_change_password,
     avatarColor: r.avatar_color,
     groupId: r.group_id,
+    deletedAt: r.deleted_at,
     createdAt: r.created_at,
   };
 }
@@ -57,6 +60,7 @@ export function userToProfile(u: User): UserProfile {
     mustChangePassword: u.mustChangePassword,
     avatarColor: u.avatarColor,
     groupId: u.groupId,
+    deletedAt: u.deletedAt,
     createdAt: u.createdAt,
   };
 }

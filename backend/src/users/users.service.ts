@@ -14,6 +14,8 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+export type UserFilter = 'ATTIVO' | 'BLOCCATO' | 'ELIMINATO' | 'TUTTI';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -23,12 +25,12 @@ export class UsersService {
 
   async list(params: {
     q?: string;
-    stato?: 'ATTIVO' | 'BLOCCATO';
+    stato?: UserFilter;
     page: number;
     pageSize: number;
   }): Promise<{ items: UserProfile[]; total: number }> {
     const where: Prisma.UserWhereInput = {
-      ...(params.stato ? { stato: params.stato } : {}),
+      ...this.buildStatoFilter(params.stato),
       ...(params.q
         ? { OR: [
             { email: { contains: params.q, mode: 'insensitive' } },
@@ -46,6 +48,21 @@ export class UsersService {
       this.prisma.user.count({ where }),
     ]);
     return { items: items.map(userToProfile), total };
+  }
+
+  private buildStatoFilter(stato?: UserFilter): Prisma.UserWhereInput {
+    switch (stato) {
+      case 'ATTIVO':
+        return { stato: 'ATTIVO', deletedAt: null };
+      case 'BLOCCATO':
+        return { stato: 'BLOCCATO', deletedAt: null };
+      case 'ELIMINATO':
+        return { deletedAt: { not: null } };
+      case 'TUTTI':
+        return {};
+      default:
+        return { deletedAt: null };
+    }
   }
 
   async getById(id: number): Promise<UserProfile | null> {
@@ -106,5 +123,20 @@ export class UsersService {
       ip,
     });
     return { user: rowToProfile(row), provisionalPassword };
+  }
+
+  /** Soft-delete: imposta deletedAt + stato BLOCCATO. */
+  async softDelete(
+    actorId: number,
+    userId: number,
+    ip: string | undefined,
+  ): Promise<UserProfile> {
+    const row = await this.repo.spSetDeleted({
+      actorId,
+      userId,
+      deletedAt: new Date(),
+      ip,
+    });
+    return rowToProfile(row);
   }
 }

@@ -73,13 +73,14 @@ export class AdminController {
   @RequirePermission('admin.permissions.view')
   listUsers(
     @Query('q') q?: string,
-    @Query('stato') stato?: 'ATTIVO' | 'BLOCCATO',
+    @Query('stato') stato?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize = 20,
   ) {
+    const validStati = ['ATTIVO', 'BLOCCATO', 'ELIMINATO', 'TUTTI'] as const;
     return this.admin.listAllUsers({
       q,
-      stato: stato === 'ATTIVO' || stato === 'BLOCCATO' ? stato : undefined,
+      stato: validStati.includes(stato as any) ? (stato as any) : undefined,
       page: Math.max(1, page),
       pageSize: Math.min(100, Math.max(1, pageSize)),
     });

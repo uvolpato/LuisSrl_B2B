@@ -1,6 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import cookie from 'cookie';
+import { parse as parseCookie } from 'cookie';
 import { Pool } from 'pg';
 // cookie-signature (dipendenza di express-session) non ha tipi propri.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -23,7 +23,7 @@ export function setupWebSocket(httpServer: HttpServer) {
 
   io.use(async (socket, next) => {
     try {
-      const cookies = cookie.parse(socket.handshake.headers.cookie ?? '');
+      const cookies = parseCookie(socket.handshake.headers.cookie ?? '');
       const raw = cookies['luis.sid'];
       if (!raw) return next(new Error('auth.no_session'));
 

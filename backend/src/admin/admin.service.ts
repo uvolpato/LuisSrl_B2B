@@ -6,6 +6,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { rowToProfile, userToProfile, type UserProfile } from '../common/user-row';
+import type { UserFilter } from '../users/users.service';
 
 @Injectable()
 export class AdminService {
@@ -69,12 +70,12 @@ export class AdminService {
 
   async listAllUsers(params: {
     q?: string;
-    stato?: 'ATTIVO' | 'BLOCCATO';
+    stato?: UserFilter;
     page: number;
     pageSize: number;
   }): Promise<{ items: UserProfile[]; total: number }> {
     const where: Prisma.UserWhereInput = {
-      ...(params.stato ? { stato: params.stato } : {}),
+      ...this.buildStatoFilter(params.stato),
       ...(params.q
         ? {
             OR: [
@@ -94,6 +95,21 @@ export class AdminService {
       this.prisma.user.count({ where }),
     ]);
     return { items: items.map(userToProfile), total };
+  }
+
+  private buildStatoFilter(stato?: UserFilter): Prisma.UserWhereInput {
+    switch (stato) {
+      case 'ATTIVO':
+        return { stato: 'ATTIVO', deletedAt: null };
+      case 'BLOCCATO':
+        return { stato: 'BLOCCATO', deletedAt: null };
+      case 'ELIMINATO':
+        return { deletedAt: { not: null } };
+      case 'TUTTI':
+        return {};
+      default:
+        return { deletedAt: null };
+    }
   }
 
   // ── Permessi utente (letture: Prisma; scritture: SP) ─
