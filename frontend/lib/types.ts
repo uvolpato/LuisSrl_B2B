@@ -9,6 +9,7 @@ export interface UserProfile {
   mustChangePassword: boolean;
   avatarColor: string;
   groupId: number | null;
+  deletedAt: string | null;
   createdAt: string;
 }
 

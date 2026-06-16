@@ -5,6 +5,9 @@ import { api } from "../../lib/api";
 import type { UserProfile, CustomerProfile, UserListResponse, CustomerListResponse } from "../../lib/types";
 import { usePresence } from "../../lib/use-presence";
 import DataTable, { type Column, type RowAction } from "./DataTable";
+import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEditorModal";
+import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
+import Modal from "../common/Modal";
 
 const svg = (paths: React.ReactNode) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -15,8 +18,9 @@ const svg = (paths: React.ReactNode) => (
 const IconSearch = svg(<><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>);
 const IconPlus = svg(<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>);
 const IconEdit = svg(<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>);
-const IconPanoramica = svg(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>);
-const IconGruppi = svg(<><circle cx="12" cy="8" r="5" /><circle cx="6" cy="18" r="4" /><circle cx="18" cy="18" r="4" /></>);
+const IconLock = svg(<><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>);
+const IconReset = svg(<><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="16" cy="12" r="1" fill="currentColor" /></>);
+const IconTrash = svg(<><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>);
 
 const PAGE_SIZE = 20;
 
@@ -27,17 +31,51 @@ function formatDate(d: string): string {
 }
 
 type UserTab = "utenti" | "clienti";
+type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
+
+const STATO_FILTERS: { value: StatoFilter; label: string }[] = [
+  { value: "", label: "Attivi" },
+  { value: "BLOCCATO", label: "Bloccati" },
+  { value: "ELIMINATO", label: "Eliminati" },
+  { value: "TUTTI", label: "Tutti" },
+];
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<UserTab>("utenti");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statoFilter, setStatoFilter] = useState<StatoFilter>("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<UserListResponse | CustomerListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { isOnline } = usePresence();
+
+  const [userEditorTarget, setUserEditorTarget] = useState<UserAdminTarget | null>(null);
+  const [customerEditorTarget, setCustomerEditorTarget] = useState<UserEditorTarget | null>(null);
+  const [provisional, setProvisional] = useState<{ email: string; password: string } | null>(null);
+
+  const isUsers = useMemo(() => activeTab === "utenti", [activeTab]);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("pageSize", String(PAGE_SIZE));
+      if (debouncedSearch) params.set("q", debouncedSearch);
+      if (isUsers && statoFilter) params.set("stato", statoFilter);
+      const endpoint = isUsers ? "/api/admin/users" : "/api/customers";
+      const res = await api.get<UserListResponse | CustomerListResponse>(endpoint + "?" + params);
+      setData(res);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Errore caricamento");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debouncedSearch, isUsers, statoFilter]);
 
   useEffect(() => {
     clearTimeout(searchTimer.current);
@@ -48,27 +86,83 @@ export default function AdminPanel() {
     return () => clearTimeout(searchTimer.current);
   }, [search]);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      params.set("page", String(page));
-      params.set("pageSize", String(PAGE_SIZE));
-      if (debouncedSearch) params.set("q", debouncedSearch);
-      const endpoint = activeTab === "utenti" ? "/api/admin/users" : "/api/customers";
-      const res = await api.get<UserListResponse | CustomerListResponse>(endpoint + "?" + params);
-      setData(res);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Errore caricamento");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, debouncedSearch, activeTab]);
-
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const handleUserSaved = useCallback((prov?: { email: string; password: string } | null) => {
+    setUserEditorTarget(null);
+    if (prov) setProvisional(prov);
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleCustomerSaved = useCallback((prov: { email: string; password: string } | null) => {
+    setCustomerEditorTarget(null);
+    if (prov) setProvisional(prov);
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const userActions: RowAction<UserProfile>[] = useMemo(() => [
+    {
+      icon: () => IconEdit,
+      tooltip: () => "Modifica",
+      onClick: (u) => setUserEditorTarget({ mode: "edit", user: u }),
+      hidden: (u) => !!u.deletedAt,
+    },
+    {
+      icon: () => IconReset,
+      tooltip: () => "Reset password",
+      onClick: async (u) => {
+        const res = await api.post<{ user: UserProfile; provisionalPassword: string }>(
+          `/api/users/${u.id}/reset-password`
+        );
+        setProvisional({ email: u.email, password: res.provisionalPassword });
+      },
+      hidden: (u) => u.ruolo === "SUPERUSER" || !!u.deletedAt,
+    },
+    {
+      icon: () => IconLock,
+      tooltip: (u) => u.stato === "ATTIVO" ? "Blocca" : "Sblocca",
+      variant: "danger",
+      onClick: async (u) => {
+        const endpoint = u.stato === "ATTIVO"
+          ? `/api/users/${u.id}/block`
+          : `/api/users/${u.id}/unblock`;
+        await api.post(endpoint);
+        fetchUsers();
+      },
+      hidden: (u) => !!u.deletedAt,
+    },
+    {
+      icon: () => IconTrash,
+      tooltip: () => "Elimina",
+      variant: "danger",
+      onClick: async (u) => {
+        if (!window.confirm(`Eliminare l'utente ${u.nome}?`)) return;
+        await api.del(`/api/users/${u.id}`);
+        fetchUsers();
+      },
+      hidden: (u) => u.ruolo === "SUPERUSER" || !!u.deletedAt,
+    },
+  ], [fetchUsers]);
+
+  const customerActions: RowAction<CustomerProfile>[] = useMemo(() => [
+    {
+      icon: () => IconEdit,
+      tooltip: () => "Modifica",
+      onClick: (c) => setCustomerEditorTarget({ mode: "edit", user: c }),
+    },
+    {
+      icon: () => IconReset,
+      tooltip: () => "Reset password",
+      onClick: async (c) => {
+        const res = await api.post<{ customer: CustomerProfile; provisionalPassword: string }>(
+          `/api/customers/${c.id}/reset-password`
+        );
+        setProvisional({ email: c.email, password: res.provisionalPassword });
+      },
+    },
+  ], []);
 
   const userColumns: Column<UserProfile>[] = useMemo(() => [
     {
@@ -90,7 +184,8 @@ export default function AdminPanel() {
           <div className="user-cell-name">
             <span className="user-avatar" style={{ background: u.avatarColor, color: "#fff" }}>{u.nome.charAt(0).toUpperCase()}</span>
             <span className="cell-entity-title">{u.nome}</span>
-            <span className={`user-status-dot ${online ? "online" : "offline"}`} />
+            {u.deletedAt && <span className="user-status-dot deleted" />}
+            {!u.deletedAt && <span className={`user-status-dot ${online ? "online" : "offline"}`} />}
           </div>
         );
       },
@@ -154,13 +249,7 @@ export default function AdminPanel() {
       mono: true,
       cell: (c) => formatDate(c.createdAt as string),
     },
-  ], [isOnline]);
-
-  const actions: RowAction<any>[] = [
-    { icon: () => IconEdit, tooltip: () => "Modifica", onClick: () => {} },
-  ];
-
-  const isUsers = activeTab === "utenti";
+  ], []);
 
   return (
     <div className="admin-panel">
@@ -176,23 +265,42 @@ export default function AdminPanel() {
       <div className="admin-panel-body">
         <div className="admin-panel-content">
           <div className="admin-panel-header">
-            <h2 className="admin-panel-title">{isUsers ? "Utenti" : "Clienti"}</h2>
-            {data && <span className="admin-panel-count-badge">{data.total}</span>}
-          </div>
-          <div className="admin-panel-toolbar">
-            <div className="admin-panel-search">
-              {IconSearch}
-              <input
-                type="text"
-                placeholder={isUsers ? "Cerca utenti..." : "Cerca clienti..."}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="admin-panel-header-left">
+              <h2 className="admin-panel-title">{isUsers ? "Utenti" : "Clienti"}</h2>
+              {data && <span className="admin-panel-count-badge">{data.total}</span>}
             </div>
-            <button className="admin-btn admin-btn-primary admin-btn-sm">
-              {IconPlus}
-              {isUsers ? "Nuovo utente" : "Nuovo cliente"}
-            </button>
+            <div className="admin-panel-actions">
+              {isUsers && (
+                <select
+                  className="admin-panel-filter-select"
+                  value={statoFilter}
+                  onChange={(e) => { setStatoFilter(e.target.value as StatoFilter); setPage(1); }}
+                >
+                  {STATO_FILTERS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              )}
+              <div className="admin-panel-search">
+                {IconSearch}
+                <input
+                  type="text"
+                  placeholder={isUsers ? "Cerca utenti..." : "Cerca clienti..."}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <button
+                className="admin-btn admin-btn-primary admin-btn-sm"
+                onClick={() => isUsers
+                  ? setUserEditorTarget({ mode: "create" })
+                  : setCustomerEditorTarget({ mode: "create" })
+                }
+              >
+                {IconPlus}
+                {isUsers ? "Nuovo utente" : "Nuovo cliente"}
+              </button>
+            </div>
           </div>
 
           {loading && <div className="admin-panel-loading">Caricamento...</div>}
@@ -202,7 +310,7 @@ export default function AdminPanel() {
               columns={(isUsers ? userColumns : customerColumns) as any}
               rows={data.items}
               rowKey={(r: any) => String(r.id)}
-              actions={actions}
+              actions={(isUsers ? userActions : customerActions) as any}
               emptyText={isUsers ? "Nessun utente trovato" : "Nessun cliente trovato"}
               page={page}
               pageSize={PAGE_SIZE}
@@ -212,6 +320,38 @@ export default function AdminPanel() {
           )}
         </div>
       </div>
+
+      {userEditorTarget && (
+        <UserAdminEditorModal
+          target={userEditorTarget}
+          onClose={() => setUserEditorTarget(null)}
+          onSaved={handleUserSaved}
+        />
+      )}
+
+      {customerEditorTarget && (
+        <UserEditorModal
+          target={customerEditorTarget}
+          onClose={() => setCustomerEditorTarget(null)}
+          onSaved={handleCustomerSaved}
+        />
+      )}
+
+      {provisional && (
+        <Modal title="Password provvisoria" size="sm" onClose={() => setProvisional(null)}>
+          <p style={{ fontSize: 14, marginBottom: 16 }}>
+            Comunica queste credenziali all&apos;utente. La password viene mostrata solo ora:
+            al primo accesso dovrà cambiarla.
+          </p>
+          <div style={{ background: "var(--fg-soft)", padding: 12, borderRadius: 8, fontSize: 14, marginBottom: 12 }}>
+            <div style={{ marginBottom: 8 }}><strong>Email:</strong> {provisional.email}</div>
+            <div><strong>Password:</strong> <code style={{ wordBreak: "break-all" }}>{provisional.password}</code></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => setProvisional(null)}>Chiudi</button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

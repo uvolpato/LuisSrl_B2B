@@ -503,6 +503,7 @@
 .user-status-dot.attivo { background: var(--green); }
 .user-status-dot.bloccato { background: var(--red); }
 .user-status-dot.offline { background: var(--border); }
+.user-status-dot.deleted { background: var(--muted); opacity: 0.4; }
 .user-status-dot.online {
   background: var(--green);
   box-shadow: 0 0 0 0 oklch(55% 0.15 145 / 0.5);
@@ -1427,16 +1428,6 @@
   display: flex;
   flex-direction: column;
 }
-.admin-panel-toolbar {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
 .admin-panel-search {
   position: relative;
 }
@@ -1467,8 +1458,34 @@
 .admin-panel-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   margin-bottom: 20px;
+}
+.admin-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.admin-panel-filter-select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+.admin-panel-filter-select:focus {
+  border-color: var(--accent);
 }
 .admin-panel-title {
   font-size: 20px;

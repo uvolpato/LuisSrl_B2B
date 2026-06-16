@@ -44,7 +44,7 @@ const svg = (paths: React.ReactNode) => (
   </svg>
 );
 const IconEdit = svg(<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>);
-const IconKey = svg(<><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3 21 2m-4 0 3 3m-6 3 3 3" /></>);
+const IconReset = svg(<><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="8" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="16" cy="12" r="1" fill="currentColor" /></>);
 const IconLock = svg(<><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>);
 const IconUnlock = svg(<><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.9-1" /></>);
 const IconEye = svg(<><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>);
@@ -234,7 +234,7 @@ export default function AdminPage() {
   ];
   const clientActions: RowAction<CustomerProfile>[] = [
     { icon: () => IconEdit, tooltip: () => t("edit"), onClick: (u) => setEditor({ mode: "edit", user: u }) },
-    { icon: () => IconKey, tooltip: () => t("resetPassword"), onClick: onResetPassword },
+    { icon: () => IconReset, tooltip: () => t("resetPassword"), onClick: onResetPassword },
     {
       icon: (u) => (u.stato === "ATTIVO" ? IconLock : IconUnlock),
       tooltip: (u) => (u.stato === "ATTIVO" ? t("block") : t("unblock")),
