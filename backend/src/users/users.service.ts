@@ -131,12 +131,7 @@ export class UsersService {
     userId: number,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    const row = await this.repo.spSetDeleted({
-      actorId,
-      userId,
-      deletedAt: new Date(),
-      ip,
-    });
+    const row = await this.repo.spSoftDelete({ actorId, userId, ip });
     return rowToProfile(row);
   }
 }

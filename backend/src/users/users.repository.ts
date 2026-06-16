@@ -88,19 +88,17 @@ export class UsersRepository {
     }
   }
 
-  async spSetDeleted(params: {
+  /** Soft-delete via SP: imposta stato/deleted_at e scrive l'audit (user.delete). */
+  async spSoftDelete(params: {
     actorId: number;
     userId: number;
-    deletedAt: Date;
     ip?: string;
   }): Promise<UserRow> {
     try {
       const [row] = await this.prisma.$queryRaw<UserRow[]>`
-        UPDATE users
-        SET stato = 'BLOCCATO', deleted_at = ${params.deletedAt}, updated_at = now()
-        WHERE id = ${params.userId}
-        RETURNING *
-      `;
+        SELECT * FROM users.fn_user_soft_delete(
+          ${params.actorId}::int, ${params.userId}::int, ${params.ip ?? null}
+        )`;
       return row;
     } catch (e) {
       mapSpError(e);
