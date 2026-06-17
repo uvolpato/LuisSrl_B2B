@@ -1849,7 +1849,73 @@
 }
 .settings-empty-state p { font-size: 14px; margin: 0; }
 
+/* ── Tab Account (impostazioni profilo) ── */
+.account-tab { display: flex; flex-direction: column; max-width: 640px; }
+.account-head { margin-bottom: 20px; }
+.account-head h3 { font-size: 17px; font-weight: 600; color: var(--fg); margin: 0 0 2px; }
+.account-head p { font-size: 13px; color: var(--muted); margin: 0; }
+
+.account-main { display: flex; gap: 20px; align-items: flex-start; }
+.account-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 600; font-size: 26px;
+  flex-shrink: 0;
+}
+.account-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+.account-field { display: flex; flex-direction: column; gap: 4px; }
+.account-field-indent { margin-top: 16px; padding-left: 92px; }
+.account-field > label {
+  font-size: 12px; font-weight: 600; color: var(--fg);
+  margin: 0; padding: 0; text-transform: none; letter-spacing: 0;
+}
+.account-input {
+  width: 100%;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit; font-size: 14px;
+  background: transparent; color: var(--fg);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.account-input:hover { background: var(--fg-soft); }
+.account-input:focus {
+  outline: none;
+  border: 1px solid var(--accent);
+  background: var(--surface);
+}
+.account-input::placeholder { color: var(--muted); }
+.account-textarea { resize: vertical; min-height: 38px; }
+
+.account-select-wrap { position: relative; }
+.account-select { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer; }
+.account-chevron {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--muted); pointer-events: none;
+}
+
+.account-divider { height: 1px; background: var(--border); margin: 24px 0 4px; }
+
+.account-pw { display: flex; flex-direction: column; }
+.account-pw-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 12px 0;
+  border: none; background: none; cursor: pointer;
+  font-size: 14px; font-weight: 600; color: var(--fg);
+}
+.account-pw-action { color: var(--accent); font-weight: 600; }
+.account-pw-form {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 4px 0 8px;
+}
+
 @media (max-width: 640px) {
+  .account-field-indent { padding-left: 0; }
+  .account-main { gap: 14px; }
+  .account-avatar { width: 56px; height: 56px; font-size: 20px; }
   .admin-content { padding: 20px 16px; }
   .article-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }

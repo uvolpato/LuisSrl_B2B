@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import Modal from "../common/Modal";
+import { api, ApiError } from "../../lib/api";
+import type { UserProfile } from "../../lib/types";
 
 const IconUser = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -39,11 +42,19 @@ const MENU_ITEMS = [
   { id: "informazioni", label: "Informazioni", icon: IconInfo },
 ];
 
+function initials(name: string): string {
+  return name
+    ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+}
+
 export default function SettingsModal({
+  user,
   onClose,
   isAdmin,
   onNavigateAdmin,
 }: {
+  user: UserProfile;
   onClose: () => void;
   isAdmin?: boolean;
   onNavigateAdmin?: () => void;
@@ -112,13 +123,7 @@ export default function SettingsModal({
             </button>
           </div>
           <div className="settings-page">
-            {activeTab === "account" && (
-              <div className="settings-empty-state">
-                <div className="settings-empty-icon">{IconUser}</div>
-                <h3>Account</h3>
-                <p>Le impostazioni dell&apos;account saranno disponibili qui.</p>
-              </div>
-            )}
+            {activeTab === "account" && <AccountTab user={user} />}
             {activeTab === "informazioni" && (
               <div className="settings-empty-state">
                 <div className="settings-empty-icon">{IconInfo}</div>
@@ -130,5 +135,148 @@ export default function SettingsModal({
         </div>
       </div>
     </Modal>
+  );
+}
+
+function AccountTab({ user }: { user: UserProfile }) {
+  const [nome, setNome] = useState(user.nome);
+  const [bio, setBio] = useState("");
+  const [gender, setGender] = useState("non-specificato");
+  const [birthDate, setBirthDate] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div className="account-tab">
+      <div className="account-head">
+        <h3>Il tuo account</h3>
+        <p>Gestisci le informazioni del tuo account.</p>
+      </div>
+
+      <div className="account-main">
+        <span className="account-avatar" style={{ background: user.avatarColor }}>
+          {initials(user.nome)}
+        </span>
+        <div className="account-fields">
+          <div className="account-field">
+            <label>Nome</label>
+            <input
+              className="account-input"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+            />
+          </div>
+          <div className="account-field">
+            <label>Bio</label>
+            <textarea
+              className="account-input account-textarea"
+              placeholder="Condividi il tuo background e i tuoi interessi"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={2}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="account-field account-field-indent">
+        <label>Genere</label>
+        <div className="account-select-wrap">
+          <select
+            className="account-input account-select"
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+          >
+            <option value="non-specificato">Preferisco non dirlo</option>
+            <option value="uomo">Uomo</option>
+            <option value="donna">Donna</option>
+            <option value="altro">Altro</option>
+          </select>
+          <svg className="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+        </div>
+      </div>
+
+      <div className="account-field account-field-indent">
+        <label>Data di nascita</label>
+        <input
+          className="account-input"
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+        />
+      </div>
+
+      <div className="account-divider" />
+
+      <div className="account-pw">
+        <button
+          className="account-pw-toggle"
+          onClick={() => setShowPassword((o) => !o)}
+          aria-expanded={showPassword}
+        >
+          <span>Cambia password</span>
+          <span className="account-pw-action">{showPassword ? "Nascondi" : "Mostra"}</span>
+        </button>
+        {showPassword && <ChangePasswordInline onDone={() => setShowPassword(false)} />}
+      </div>
+    </div>
+  );
+}
+
+function ChangePasswordInline({ onDone }: { onDone: () => void }) {
+  const tServer = useTranslations("server");
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post("/api/auth/change-password", { oldPassword, newPassword });
+      setDone(true);
+      setOldPassword("");
+      setNewPassword("");
+      setTimeout(onDone, 1200);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : "errors.generic");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="account-pw-form" onSubmit={onSubmit}>
+      {error && <div className="error-box">{tServer(error)}</div>}
+      {done && <div className="ok-box">Password aggiornata.</div>}
+      <div className="account-field">
+        <label>Password attuale</label>
+        <input
+          className="account-input"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+        />
+      </div>
+      <div className="account-field">
+        <label>Nuova password</label>
+        <input
+          className="account-input"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+      </div>
+      <button className="admin-btn admin-btn-primary admin-btn-sm" disabled={busy} style={{ alignSelf: "flex-start" }}>
+        {busy ? "Salvataggio…" : "Aggiorna password"}
+      </button>
+    </form>
   );
 }

@@ -204,6 +204,7 @@ export default function AdminSidebar({
 
       {settingsOpen && (
         <SettingsModal
+          user={user}
           isAdmin={user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE"}
           onClose={() => setSettingsOpen(false)}
           onNavigateAdmin={() => { setSettingsOpen(false); onSectionChange("admin-panel"); }}
