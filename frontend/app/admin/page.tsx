@@ -254,6 +254,8 @@ export default function AdminPage() {
       key: "articolo",
       header: "Articolo",
       grow: true,
+      sortable: true,
+      sortValue: (a) => a.name,
       cell: (a) => (
         <div className="cell-entity">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -279,6 +281,8 @@ export default function AdminPage() {
       header: "Stato",
       width: "120px",
       align: "center",
+      sortable: true,
+      sortValue: (a) => a.stato,
       cell: (a) => (
         <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
           {a.stato}
@@ -291,6 +295,8 @@ export default function AdminPage() {
       width: "100px",
       align: "center",
       mono: true,
+      sortable: true,
+      sortValue: (a) => a.varianti?.length ?? 0,
       cell: (a) => a.varianti?.length ?? 0,
     },
     {
@@ -299,6 +305,8 @@ export default function AdminPage() {
       width: "100px",
       align: "center",
       mono: true,
+      sortable: true,
+      sortValue: (a) => a.raccolte?.length ?? 0,
       cell: (a) => a.raccolte?.length ?? 0,
     },
   ];
