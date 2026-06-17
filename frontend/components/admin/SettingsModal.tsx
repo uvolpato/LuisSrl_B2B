@@ -39,7 +39,15 @@ const MENU_ITEMS = [
   { id: "informazioni", label: "Informazioni", icon: IconInfo },
 ];
 
-export default function SettingsModal({ onClose }: { onClose: () => void }) {
+export default function SettingsModal({
+  onClose,
+  isAdmin,
+  onNavigateAdmin,
+}: {
+  onClose: () => void;
+  isAdmin?: boolean;
+  onNavigateAdmin?: () => void;
+}) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("account");
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -74,12 +82,14 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </nav>
-          <div className="settings-sidebar-bottom">
-            <button className="settings-nav-item settings-admin-item">
-              {IconAdminUser}
-              Impostazioni amministrazione
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="settings-sidebar-bottom">
+              <button className="settings-nav-item settings-admin-item" onClick={onNavigateAdmin}>
+                {IconAdminUser}
+                Impostazioni amministrazione
+              </button>
+            </div>
+          )}
         </div>
         {mobileSidebar && (
           <div className="settings-mobile-backdrop" onClick={() => setMobileSidebar(false)} />

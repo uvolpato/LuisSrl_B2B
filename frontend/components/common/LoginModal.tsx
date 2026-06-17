@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import LoginForm from "./LoginForm";
+import MustChangePasswordModal from "../auth/MustChangePasswordModal";
+import type { MeResponse } from "../../lib/types";
 
 /** Modale di login: backdrop cliccabile, chiusura con Esc, auto-focus. */
 export default function LoginModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const backdropRef = useRef<HTMLDivElement>(null);
+  const [mustChange, setMustChange] = useState<{ res: MeResponse; oldPassword: string } | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -20,15 +25,38 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
     el?.focus();
   }, []);
 
+  function onLoginSuccess(res: MeResponse, oldPassword: string) {
+    if (res.user.mustChangePassword) {
+      setMustChange({ res, oldPassword });
+    } else {
+      onClose();
+      router.replace(res.user.userType === "admin" ? "/admin" : "/area");
+    }
+  }
+
+  function onMustChangeClose() {
+    setMustChange(null);
+  }
+
+  if (mustChange) {
+    return (
+      <MustChangePasswordModal
+        oldPassword={mustChange.oldPassword}
+        userType={mustChange.res.user.userType}
+        onClose={onMustChangeClose}
+      />
+    );
+  }
+
   return (
     <FocusTrap>
       <div
         ref={backdropRef}
         className="modal-backdrop"
-        onClick={onClose}
+        onPointerDown={(e) => { if (e.target === backdropRef.current && e.button === 0) onClose(); }}
         style={{ zIndex: 10000 }}
       >
-        <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Accesso">
+        <div className="modal" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Accesso">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div />
             <button
@@ -39,7 +67,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               &times;
             </button>
           </div>
-          <LoginForm />
+          <LoginForm onLoginSuccess={onLoginSuccess} />
         </div>
       </div>
     </FocusTrap>

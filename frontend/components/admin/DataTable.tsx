@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 /** Definizione di una colonna: header e cella usano la stessa colonna,
  *  quindi l'incolonnamento header↔valori e' garantito. */
@@ -16,6 +16,10 @@ export interface Column<T> {
   /** Numeri tabellari (monospace, tabular-nums). */
   mono?: boolean;
   cell: (row: T) => ReactNode;
+  /** Abilita ordinamento su questa colonna. */
+  sortable?: boolean;
+  /** Valore usato per l'ordinamento (se omesso usa la cella renderizzata come stringa). */
+  sortValue?: (row: T) => string | number;
 }
 
 /** Azione di riga: icona + tooltip che spiega cosa fa. */
@@ -42,6 +46,10 @@ export interface DataTableProps<T> {
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
+  /** Ordinamento (controllato dal genitore per server-side). */
+  sortKey?: string;
+  sortDir?: "asc" | "desc";
+  onSort?: (key: string, dir: "asc" | "desc") => void;
 }
 
 export default function DataTable<T>({
@@ -55,7 +63,43 @@ export default function DataTable<T>({
   pageSize,
   total,
   onPageChange,
+  sortKey: propSortKey,
+  sortDir: propSortDir,
+  onSort,
 }: DataTableProps<T>) {
+  const [localSortKey, setLocalSortKey] = useState<string | null>(null);
+  const [localSortDir, setLocalSortDir] = useState<"asc" | "desc">("asc");
+
+  const isControlled = onSort !== undefined;
+  const activeSortKey = isControlled ? propSortKey ?? null : localSortKey;
+  const activeSortDir = isControlled ? propSortDir ?? "asc" : localSortDir;
+
+  const sortedRows = useMemo(() => {
+    if (!activeSortKey) return rows;
+    const col = columns.find((c) => c.key === activeSortKey);
+    if (!col || !col.sortable) return rows;
+
+    return [...rows].sort((a, b) => {
+      const va = col.sortValue ? col.sortValue(a) : String(col.cell(a));
+      const vb = col.sortValue ? col.sortValue(b) : String(col.cell(b));
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return activeSortDir === "desc" ? -cmp : cmp;
+    });
+  }, [rows, activeSortKey, activeSortDir, columns]);
+
+  const handleSort = useCallback(
+    (key: string) => {
+      if (isControlled) {
+        const nextDir = propSortKey === key && propSortDir === "asc" ? "desc" : "asc";
+        onSort(key, nextDir);
+      } else {
+        setLocalSortDir((prev) => (localSortKey === key && prev === "asc" ? "desc" : "asc"));
+        setLocalSortKey(key);
+      }
+    },
+    [isControlled, localSortKey, propSortKey, propSortDir, onSort],
+  );
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
@@ -77,8 +121,16 @@ export default function DataTable<T>({
           <thead>
             <tr>
               {columns.map((c) => (
-                <th key={c.key} style={{ textAlign: c.align ?? "left" }}>
+                <th
+                  key={c.key}
+                  className={c.sortable ? "sortable" : undefined}
+                  style={{ textAlign: c.align ?? "left" }}
+                  onClick={c.sortable ? () => handleSort(c.key) : undefined}
+                >
                   {c.header}
+                  {c.sortable && activeSortKey === c.key && (
+                    <span className="sort-arrow">{activeSortDir === "asc" ? " ▲" : " ▼"}</span>
+                  )}
                 </th>
               ))}
               {actions.length > 0 && (
@@ -94,7 +146,7 @@ export default function DataTable<T>({
                 </td>
               </tr>
             )}
-            {!loading && rows.length === 0 && (
+            {!loading && sortedRows.length === 0 && (
               <tr>
                 <td colSpan={colCount} className="data-table-empty">
                   {emptyText}
@@ -102,7 +154,7 @@ export default function DataTable<T>({
               </tr>
             )}
             {!loading &&
-              rows.map((row) => (
+              sortedRows.map((row) => (
                 <tr key={rowKey(row)}>
                   {columns.map((c) => (
                     <td

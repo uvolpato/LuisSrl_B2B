@@ -44,9 +44,9 @@ export default function Modal({
     <div
       className="modal-root-overlay"
       ref={overlayRef}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onPointerDown={(e) => { if (e.target === overlayRef.current && e.button === 0) onClose(); }}
     >
-      <div className="modal-root" style={{ inset: INSET[size] }}>
+      <div className="modal-root" onPointerDown={(e) => e.stopPropagation()} style={{ inset: INSET[size] }}>
         {!noHeader && (
           <div className="modal-root-header">
             {title && <h2>{title}</h2>}

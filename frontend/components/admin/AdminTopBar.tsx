@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 export default function AdminTopBar({
   title,
@@ -8,14 +8,23 @@ export default function AdminTopBar({
   onSearchChange,
   filter,
   onFilterChange,
+  filterOptions,
+  children,
 }: {
   title: string;
   searchValue: string;
   onSearchChange: (q: string) => void;
   filter: string;
   onFilterChange: (f: string) => void;
+  filterOptions?: { value: string; label: string }[];
+  children?: ReactNode;
 }) {
-  const tc = useTranslations("common");
+  const pills = filterOptions ?? [
+    { value: "tutti", label: "Tutti" },
+    { value: "attivi", label: "Attivi" },
+    { value: "nascosti", label: "Nascosti" },
+    { value: "da-configurare", label: "Da Configurare" },
+  ];
 
   return (
     <header className="admin-top">
@@ -30,22 +39,23 @@ export default function AdminTopBar({
           </span>
           <input
             type="text"
-            placeholder={tc("search")}
+            placeholder="Cerca articolo, colore, famiglia…"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         <div className="filter-pills">
-          {["tutti", "attivi", "nascosti", "da-configurare"].map((f) => (
+          {pills.map((f) => (
             <button
-              key={f}
-              className={`filter-pill ${filter === f ? "active" : ""}`}
-              onClick={() => onFilterChange(f)}
+              key={f.value}
+              className={`filter-pill ${filter === f.value ? "active" : ""}`}
+              onClick={() => onFilterChange(f.value)}
             >
-              {f === "tutti" ? "Tutti" : f === "attivi" ? "Attivi" : f === "nascosti" ? "Nascosti" : "Da Configurare"}
+              {f.label}
             </button>
           ))}
         </div>
+        {children}
       </div>
     </header>
   );

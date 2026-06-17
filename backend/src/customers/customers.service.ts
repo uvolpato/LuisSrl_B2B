@@ -11,6 +11,7 @@ import {
   customerToProfile,
   CustomerProfile,
 } from '../common/customer-row';
+import { MailService } from '../mail/mail.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 
@@ -19,6 +20,7 @@ export class CustomersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repo: CustomersRepository,
+    private readonly mail: MailService,
   ) {}
 
   async list(params: {
@@ -73,6 +75,7 @@ export class CustomersService {
       preferredLanguage: dto.preferredLanguage,
       ip,
     });
+    this.mail.sendProvisionalPassword(dto.email, row.nome, provisionalPassword, false).catch(() => {});
     return { customer: customerRowToProfile(row), provisionalPassword };
   }
 
@@ -109,6 +112,7 @@ export class CustomersService {
       mustChange: true,
       ip,
     });
+    this.mail.sendProvisionalPassword(row.email, row.nome, provisionalPassword, true).catch(() => {});
     return { customer: customerRowToProfile(row), provisionalPassword };
   }
 }

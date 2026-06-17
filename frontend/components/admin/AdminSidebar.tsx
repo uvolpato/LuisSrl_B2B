@@ -156,17 +156,21 @@ export default function AdminSidebar({
               {IconSettings}
               Impostazioni
             </button>
-            <button className="sidebar-user-pop-item" onClick={() => { setMenuOpen(false); onSectionChange("admin-panel"); }}>
-              {IconShield}
-              Pannello di Amministrazione
-            </button>
+            {(user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE") && (
+              <button className="sidebar-user-pop-item" onClick={() => { setMenuOpen(false); onSectionChange("admin-panel"); }}>
+                {IconShield}
+                Pannello di Amministrazione
+              </button>
+            )}
             <hr />
-            {/* TMP DEMO: anteprime modali — da eliminare */}
-            <span className="sidebar-section" style={{ padding: "8px 8px 2px", fontSize: 10 }}>PROVA MODALI</span>
-            <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("sm"); }}>Modal SM (120px)</button>
-            <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("md"); }}>Modal MD (80px)</button>
-            <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("lg"); }}>Modal LG (40px)</button>
-            <hr />
+            {(user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE") && (<>
+              {/* TMP DEMO: anteprime modali — da eliminare */}
+              <span className="sidebar-section" style={{ padding: "8px 8px 2px", fontSize: 10 }}>PROVA MODALI</span>
+              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("sm"); }}>Modal SM (120px)</button>
+              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("md"); }}>Modal MD (80px)</button>
+              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("lg"); }}>Modal LG (40px)</button>
+              <hr />
+            </>)}
             <button className="sidebar-user-pop-item danger" onClick={logout}>
               {IconLogout}
               {tc("logout")}
@@ -198,7 +202,13 @@ export default function AdminSidebar({
       </div>
     </aside>
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          isAdmin={user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE"}
+          onClose={() => setSettingsOpen(false)}
+          onNavigateAdmin={() => { setSettingsOpen(false); onSectionChange("admin-panel"); }}
+        />
+      )}
 
       {/* TMP DEMO modali — da eliminare */}
       <Modal open={demoModal === "sm"} size="sm" title="Modal SM" onClose={() => setDemoModal(null)}>

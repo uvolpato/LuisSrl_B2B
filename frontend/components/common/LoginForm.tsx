@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { api, ApiError, setCsrfToken } from "../../lib/api";
 import type { MeResponse } from "../../lib/types";
@@ -31,10 +30,13 @@ function isDev(): boolean {
   return process.env.NODE_ENV === "development" || window.location.hostname === "localhost";
 }
 
-export default function LoginForm() {
+export default function LoginForm({
+  onLoginSuccess,
+}: {
+  onLoginSuccess?: (res: MeResponse, password: string) => void;
+}) {
   const t = useTranslations("login");
   const tServer = useTranslations("server");
-  const router = useRouter();
   const [email, setEmail] = useState(isDev() ? DEV_EMAIL : "");
   const [password, setPassword] = useState(isDev() ? DEV_PASSWORD : "");
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function LoginForm() {
         remember,
       });
       setCsrfToken(res.csrfToken);
-      router.replace(res.user.ruolo === "ADMIN" ? "/admin" : "/area");
+      onLoginSuccess?.(res, password);
     } catch (err) {
       setError(err instanceof ApiError ? err.code : "errors.generic");
       setBusy(false);
@@ -63,7 +65,7 @@ export default function LoginForm() {
 
   return (
     <>
-      <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ height: 28, width: "auto", marginBottom: 6 }} />
+      <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ maxWidth: "100%", maxHeight: 48, width: "auto", height: "auto", marginBottom: 6 }} />
       <h2 style={{ margin: 0 }}>{t("title")}</h2>
       <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 16 }}>{t("subtitle")}</p>
 

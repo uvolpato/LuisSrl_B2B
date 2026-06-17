@@ -25,7 +25,7 @@ enum UserStatus {
 
 model User {
   id                Int        @id @default(autoincrement())
-  email             String     @unique
+  email             String
   passwordHash      String     @map("password_hash")
   nome              String
   ruolo             AdminRole  @default(UTENTE)
@@ -45,11 +45,11 @@ model User {
 
 model Customer {
   id                Int          @id @default(autoincrement())
-  email             String       @unique
+  email             String
   passwordHash      String       @map("password_hash")
   nome              String
   ragioneSociale    String?      @map("ragione_sociale")
-  partitaIva        String?      @unique @map("partita_iva")
+  partitaIva        String?      @map("partita_iva")
   telefono          String?
   ruolo             CustomerRole @default(CLIENTE)
   stato             UserStatus   @default(ATTIVO)

@@ -217,6 +217,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  container-type: inline-size;
 }
 .admin-top h1 {
   font-family: var(--font-display);
@@ -226,6 +227,12 @@
   margin: 0;
 }
 .top-actions { display: flex; align-items: center; gap: 12px; }
+.action-buttons { display: flex; flex-direction: column; gap: 4px; }
+.action-buttons > .btn { width: 100%; justify-content: center; }
+@container (min-width: 660px) {
+  .action-buttons { flex-direction: row; gap: 8px; }
+  .action-buttons > .btn { width: auto; }
+}
 
 /* Search */
 .admin-search {
@@ -272,23 +279,24 @@
 .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* View toggle */
-.view-toggle { display: flex; gap: 0; }
+.view-toggle { display: flex; gap: 8px; }
 .view-toggle button {
   width: 36px; height: 36px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--muted);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
   transition: all 0.12s ease;
+  line-height: 0;
 }
-.view-toggle button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
-.view-toggle button:last-child { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; }
 .view-toggle button:hover { border-color: var(--fg); color: var(--fg); }
 .view-toggle button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.view-toggle button svg { width: 16px; height: 16px; }
+.view-toggle button svg { width: 14px; height: 14px; display: block; }
 
 /* ── Content ── */
 .admin-content {
@@ -359,6 +367,9 @@
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
 }
+.data-table thead th.sortable { cursor: pointer; user-select: none; }
+.data-table thead th.sortable:hover { color: var(--fg); }
+.sort-arrow { font-size: 10px; margin-left: 2px; }
 .data-table tbody td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
@@ -789,19 +800,7 @@
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 .modal-overlay.open { opacity: 1; visibility: visible; }
-.modal {
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  width: 90vw;
-  max-width: 960px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: translateY(12px);
-  transition: transform 0.2s ease;
-}
-.modal-overlay.open .modal { transform: translateY(0); }
+
 .modal-header {
   display: flex;
   align-items: center;

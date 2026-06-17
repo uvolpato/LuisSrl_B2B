@@ -123,6 +123,7 @@ export default function AdminPage() {
   // ── Articoli (mock, paginazione client-side) ──
   const [view, setView] = useState<"list" | "grid">("list");
   const [articleFilter, setArticleFilter] = useState("tutti");
+  const [articleSearch, setArticleSearch] = useState("");
   const [artPage, setArtPage] = useState(1);
   const [articles, setArticles] = useState<Article[]>(MOCK_ARTICLES);
 
@@ -131,6 +132,10 @@ export default function AdminPage() {
     if (articleFilter === "nascosti") return a.stato === "nascosto";
     if (articleFilter === "senza-raccolta") return !a.raccolte?.length;
     return true;
+  }).filter((a) => {
+    if (!articleSearch) return true;
+    const q = articleSearch.toLowerCase();
+    return a.id.toLowerCase().includes(q) || a.name.toLowerCase().includes(q);
   });
   const artRows = filteredArticles.slice((artPage - 1) * PAGE_SIZE, artPage * PAGE_SIZE);
   const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.varianti?.length ?? 0), 0)} varianti`;
@@ -316,11 +321,41 @@ export default function AdminPage() {
     >
       <AdminTopBar
         title={SECTION_TITLES[section] || section}
-        searchValue={q}
-        onSearchChange={setQ}
-        filter={stato}
-        onFilterChange={setStato}
-      />
+        searchValue={section === "articoli" ? articleSearch : q}
+        onSearchChange={(v) => section === "articoli" ? setArticleSearch(v) : setQ(v)}
+        filter={section === "articoli" ? articleFilter : stato}
+        onFilterChange={(v) => section === "articoli" ? setArticleFilter(v) : setStato(v)}
+        filterOptions={
+          section === "articoli"
+            ? [
+                { value: "tutti", label: "Tutti" },
+                { value: "attivi", label: "Attivi" },
+                { value: "nascosti", label: "Nascosti" },
+                { value: "senza-raccolta", label: "Senza Raccolta" },
+              ]
+            : undefined
+        }
+      >
+        {section === "articoli" && (
+          <div className="action-buttons">
+            <button className="btn btn-secondary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ width: 16, height: 16 }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Importa Excel
+            </button>
+            <button className="btn btn-primary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nuovo Articolo
+            </button>
+          </div>
+        )}
+      </AdminTopBar>
       <div className="admin-content">
 
         {/* ═══ SECTION: Articoli ═══ */}
@@ -331,18 +366,6 @@ export default function AdminPage() {
                 <h2>Tutti gli articoli</h2>
                 <span className="meta">{artMeta}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div className="filter-pills">
-                  {(["tutti", "attivi", "nascosti", "senza-raccolta"] as const).map((f) => (
-                    <button
-                      key={f}
-                      className={`filter-pill ${articleFilter === f ? "active" : ""}`}
-                      onClick={() => setArticleFilter(f)}
-                    >
-                      {f === "tutti" ? "Tutti" : f === "attivi" ? "Attivi" : f === "nascosti" ? "Nascosti" : "Senza Raccolta"}
-                    </button>
-                  ))}
-                </div>
                 <div className="view-toggle">
                   <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
@@ -351,7 +374,6 @@ export default function AdminPage() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
                   </button>
                 </div>
-              </div>
             </div>
 
             {view === "list" ? (
@@ -488,7 +510,6 @@ export default function AdminPage() {
       {provisional && (
         <ProvisionalPasswordModal
           email={provisional.email}
-          password={provisional.password}
           onClose={() => setProvisional(null)}
         />
       )}

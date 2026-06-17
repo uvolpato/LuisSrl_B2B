@@ -51,7 +51,21 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 - Seed: 2 gruppi predefiniti, admin promosso a super admin
 - **Schemi PostgreSQL:** funzioni organizzate in `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group) — tutte chiamate con nome qualificato da codice e tra SP
 
-**Da fare — frontend Blocco 1A:** editor gruppi, modale utente con permessi, sidebar filtrata.
+**Completato — frontend Blocco 1A (sessione 17/06/2026):**
+- **MustChangePasswordModal**: cambio password obbligatorio al login (prima di entrare in admin), con logo Luis, campi nuova password + conferma, validazione client-side
+- **Flusso change password spostato**: da admin page a livello login — LoginForm → onLoginSuccess → MustChangePasswordModal → redirect
+- **Modal unificati**: backdrop onPointerDown con target check, stopPropagation sul div modale — fix chiusura involontaria
+- **AdminPanel — sub-nav utenti**: Panoramica + Gruppi nella sidebar sinistra quando activeTab === "utenti"
+- **GroupsSection**: DataTable con ricerca, crea/modifica/elimina gruppi
+- **GroupEditorModal**: 21 permessi checkbox, CRUD via API (GET/POST/PUT/DELETE /api/admin/groups)
+- **DataTable sorting**: sortable per colonna, client-side locale o server-side via onSort. Attivo su colonne utenti (Ruolo, Nome, Email, Creato il), clienti (Nome, Email), gruppi (Nome, Slug)
+- **SettingsModal**: pulsante "Impostazioni amministrazione" solo per AMMINISTRATORE/SUPERUSER
+- **AdminSidebar**: "Pannello di Amministrazione" nascosto per ruolo UTENTE
+- **ProvisionalPasswordModal**: rimossa esposizione password in chiaro, solo messaggio "email inviata a X"
+- **Bottone blocco/sblocco**: lucchetto chiuso rosso (BLOCCATO) / aperto (ATTIVO) via `icon` callback in RowAction
+- **Conferma dialogo**: window.confirm su reset password, blocco/sblocco, elimina
+- **Sezione Articoli (shell)**: header unificato con ricerca, filter pills, view toggle (Vista riga/Vista griglia — due bottoni separati con icona + tooltip), bottone "Nuovo Articolo", "Importa Excel"
+- **View toggle responsive**: i bottoni Importa Excel e Nuovo Articolo si impilano verticalmente nel contenitore `.action-buttons` quando lo spazio è insufficiente; restando nella stessa riga di ricerca e pills
 
 **Da fare — Blocco 2:** HTTPS/tunnel per il go-live (differito); sezioni admin oltre Clienti (Articoli, Famiglie, Raccolte, Ordini) con dati mock — diventano reali dal Blocco 2.
 
@@ -112,9 +126,13 @@ Tutto in italiano o inglese.
 | Hook useWebSocket/usePresence | Singleton WS, reconnect, onAny router, isOnline(userId) | ✅ fatto |
 | Pallino presenza tabella | Verde pulsante = WS online, grigio = offline | ✅ fatto |
 | Panoramica: modale crea/modifica utente | Editor admin con gruppo + override permessi | 🔴 da fare |
-| Gruppi: editor completo | Checkbox permessi, crea/modifica/elimina gruppo | 🔴 da fare |
-| Sidebar filtrata | Voci admin si mostrano/nascondono in base ai permessi | 🔴 da fare |
-| Settings → Impostazioni amministrazione | Pagina con config di sistema | 🔴 da fare |
+| Gruppi: editor completo | Checkbox permessi, crea/modifica/elimina gruppo | ✅ fatto |
+| Sidebar filtrata | Voci admin si mostrano/nascondono in base ai permessi | ✅ fatto |
+| Settings → Impostazioni amministrazione | Pagina con config di sistema | ✅ fatto |
+| Change password al login | MustChangePasswordModal prima di entrare in admin | ✅ fatto |
+| Provisional password via email | Password provvisoria mai mostrata in chiaro | ✅ fatto |
+| DataTable sorting | Ordinamento colonne cliccabili | ✅ fatto |
+| Sezione Articoli (shell) | Header con ricerca, filtri, view toggle, bottoni azione | ✅ fatto |
 | Separazione Anagrafica clienti | Sezione Clienti diventa read-only (da Integra) | 🔴 da fare |
 
 **Blocco 1A — Backend completato in sessione 13/06/2026:**
@@ -134,6 +152,17 @@ Tutto in italiano o inglese.
 - **WebSocket presenza:** socket.io su stesso server HTTP (path `/ws`). Autenticazione via session cookie `luis.sid`. Presenza in tempo reale: broadcast `user.online`/`user.offline`, lista `presence` al nuovo connesso.
 - **Hook frontend riutilizzabili:** `useWebSocket()` (connessione singleton, reconnect auto, onAny router), `usePresence()` (isOnline, onlineIds, connected). Stesso socket usabile da qualsiasi componente per eventi futuri (notifiche, aggiornamenti).
 - **Pallino presenza:** verde pulsante = utente con WS attiva online ora, grigio = offline (indipendentemente da stato DB).
+
+**Aggiornamenti successivi (sessione 15-17/06/2026):**
+- **Split utenti/clienti in due tabelle DB:** `users` (admin/staff) e `customers` (clienti). Model Prisma separati, migration `split_users_customers`. Profili (`UserProfile`/`CustomerProfile`) e service separati.
+- **Login bifasico:** `auth.fn_login_lookup()` cerca prima `users` poi `customers`. `RolesGuard` controlla `userType` (`'admin'`|`'customer'`), `PermissionsGuard` solo per admin.
+- **Soft-delete utenti admin:** campo `deletedAt` su `users`. Migration `soft_delete_users`. Endpoint `DELETE /users/:id` con soft-delete (stato BLOCCATO + deletedAt). Lista filtra per stato: ATTIVO, BLOCCATO, ELIMINATO, TUTTI. SUPERUSER escluso da blocco/eliminazione.
+- **AdminPanel frontend — tabella unificata:** tab Utenti e tab Clienti con colonne distinte, DataTable condiviso. Azioni riga: Modifica, Reset password (icona `[===]`), Blocca/Sblocca (lucchetto), Elimina (solo admin). Filtro stato a tendina (solo tab Utenti). Bottone "+" per creazione.
+- **Barra strumenti:** titolo, filtro stato, ricerca e bottone "Nuovo" sulla stessa riga.
+- **Modali creazione/modifica utente:** `UserAdminEditorModal` per admin (email, nome, ruolo, lingua). Azioni interne: Reset password, Blocca/Sblocca, Elimina. Modale password provvisoria dopo creazione/reset.
+- **Modali creazione/modifica cliente:** `UserEditorModal` già esistente, usato da entrambe le tabelle clienti.
+- **Invio email password provvisoria:** `MailModule` + `MailService` con nodemailer. SMTP configurato in `.env`. Invia email con password provvisoria alla creazione e al reset password, sia per utenti admin che per clienti.
+- **Icone azioni DataTable:** `IconLock` per blocca/sblocca, `IconReset` (rectangle-ellipsis) per reset password, `IconTrash` per elimina. Bottone blocco e reset nascosti per SUPERUSER.
 
 **Cosa si vede:** backend completo per la gestione di gruppi e permessi; admin panel collegato al DB con avatar colorati e presenza WebSocket reale.
 

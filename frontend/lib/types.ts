@@ -48,3 +48,12 @@ export interface ProvisionalPasswordResponse {
   user: UserProfile;
   provisionalPassword: string;
 }
+
+export interface PermissionGroup {
+  id: number;
+  name: string;
+  slug: string;
+  permissions: string[];
+  _count: { users: number };
+  createdAt: string;
+}

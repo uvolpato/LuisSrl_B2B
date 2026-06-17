@@ -11,6 +11,7 @@ import {
   userToProfile,
   UserProfile,
 } from '../common/user-row';
+import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -21,6 +22,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repo: UsersRepository,
+    private readonly mail: MailService,
   ) {}
 
   async list(params: {
@@ -86,6 +88,7 @@ export class UsersService {
       preferredLanguage: dto.preferredLanguage,
       ip,
     });
+    this.mail.sendProvisionalPassword(dto.email, row.nome, provisionalPassword, false).catch(() => {});
     return { user: rowToProfile(row), provisionalPassword };
   }
 
@@ -122,6 +125,7 @@ export class UsersService {
       mustChange: true,
       ip,
     });
+    this.mail.sendProvisionalPassword(row.email, row.nome, provisionalPassword, true).catch(() => {});
     return { user: rowToProfile(row), provisionalPassword };
   }
 
