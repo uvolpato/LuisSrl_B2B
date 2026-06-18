@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "../common/Modal";
 import ChangePasswordModal from "../auth/ChangePasswordModal";
 import { api, ApiError } from "../../lib/api";
+import { APP_VERSION } from "../../lib/version";
 import type { UserProfile } from "../../lib/types";
 
 const IconUser = (
@@ -126,17 +127,38 @@ export default function SettingsModal({
           </div>
           <div className="settings-page">
             {activeTab === "account" && <AccountTab user={user} onUserUpdate={onUserUpdate} />}
-            {activeTab === "informazioni" && (
-              <div className="settings-empty-state">
-                <div className="settings-empty-icon">{IconInfo}</div>
-                <h3>Informazioni</h3>
-                <p>Le informazioni sulla piattaforma saranno disponibili qui.</p>
-              </div>
-            )}
+            {activeTab === "informazioni" && <InfoTab />}
           </div>
         </div>
       </div>
     </Modal>
+  );
+}
+
+function InfoTab() {
+  return (
+    <div className="info-tab">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/images/b2b/logo.webp" alt="Luis S.r.l." className="info-logo" />
+      <span className="info-version">v{APP_VERSION}</span>
+      <h3 className="info-name">Portale B2B Luis S.r.l.</h3>
+      <p className="info-desc">
+        Piattaforma riservata ai rivenditori: catalogo sempre aggiornato, prezzi e
+        sconti personalizzati per cliente, disponibilità di magazzino e gestione
+        ordini, con integrazione al gestionale Integra.
+      </p>
+      <div className="info-divider" />
+      <div className="info-credits">
+        <div className="info-credit-row">
+          <span className="info-credit-label">Progettato da</span>
+          <span className="info-credit-value">Ugo Volpato</span>
+        </div>
+        <div className="info-credit-row">
+          <span className="info-credit-label">Sviluppo</span>
+          <span className="info-credit-value">realizzato con l&apos;intelligenza artificiale</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
