@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
@@ -14,6 +15,7 @@ import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
 import type { AuthenticatedRequest } from './guards/authenticated.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -78,6 +80,18 @@ export class AuthController {
       user: profile,
       csrfToken: req.session.csrfToken,
     };
+  }
+
+  /** Aggiornamento del proprio profilo (tab Account). */
+  @Patch('profile')
+  @HttpCode(200)
+  @UseGuards(AuthenticatedGuard)
+  async updateProfile(
+    @Body() dto: UpdateProfileDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = await this.auth.updateProfile(req.user, dto, req.ip);
+    return { user };
   }
 
   @Post('change-password')

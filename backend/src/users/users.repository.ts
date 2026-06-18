@@ -104,4 +104,28 @@ export class UsersRepository {
       mapSpError(e);
     }
   }
+
+  /** Aggiornamento del proprio profilo (nome/bio/genere/data nascita) + audit. */
+  async spUpdateProfile(params: {
+    actorId: number;
+    userId: number;
+    nome?: string;
+    bio?: string | null;
+    gender?: string | null;
+    birthDate?: string | null;
+    ip?: string;
+  }): Promise<UserRow> {
+    try {
+      const [row] = await this.prisma.$queryRaw<UserRow[]>`
+        SELECT * FROM users.fn_user_update_profile(
+          ${params.actorId}::int, ${params.userId}::int,
+          ${params.nome ?? null}, ${params.bio ?? null},
+          ${params.gender ?? null}, ${params.birthDate ?? null}::date,
+          ${params.ip ?? null}
+        )`;
+      return row;
+    } catch (e) {
+      mapSpError(e);
+    }
+  }
 }

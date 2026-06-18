@@ -13,6 +13,7 @@ import {
   verifyPassword,
 } from '../common/password';
 import type { LoginLookupRow, AuthUser } from '../common/auth-types';
+import { rowToProfile } from '../common/user-row';
 
 @Injectable()
 export class AuthService {
@@ -96,6 +97,28 @@ export class AuthService {
         actorType: 'customer',
       });
     }
+  }
+
+  /** Aggiornamento del proprio profilo. Disponibile per gli admin (i campi
+   *  bio/genere/data nascita sono sulla tabella users). */
+  async updateProfile(
+    user: AuthUser,
+    dto: { nome?: string; bio?: string | null; gender?: string | null; birthDate?: string | null },
+    ip: string | undefined,
+  ) {
+    if (user.userType !== 'admin') {
+      throw new BadRequestException('auth.forbidden');
+    }
+    const row = await this.usersRepo.spUpdateProfile({
+      actorId: user.id,
+      userId: user.id,
+      nome: dto.nome,
+      bio: dto.bio,
+      gender: dto.gender,
+      birthDate: dto.birthDate,
+      ip,
+    });
+    return rowToProfile(row);
   }
 
   async logLogout(userId: number, userType: string, ip: string | undefined): Promise<void> {

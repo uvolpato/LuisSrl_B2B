@@ -10,6 +10,9 @@ export interface UserRow {
   preferred_language: string;
   must_change_password: boolean;
   avatar_color: string;
+  bio: string | null;
+  gender: string | null;
+  birth_date: Date | null;
   group_id: number | null;
   deleted_at: Date | null;
   created_at: Date;
@@ -26,6 +29,9 @@ export interface UserProfile {
   preferredLanguage: string;
   mustChangePassword: boolean;
   avatarColor: string;
+  bio: string | null;
+  gender: string | null;
+  birthDate: Date | null;
   groupId: number | null;
   deletedAt: Date | null;
   createdAt: Date;
@@ -42,6 +48,9 @@ export function rowToProfile(r: UserRow): UserProfile {
     preferredLanguage: r.preferred_language,
     mustChangePassword: r.must_change_password,
     avatarColor: r.avatar_color,
+    bio: r.bio,
+    gender: r.gender,
+    birthDate: r.birth_date,
     groupId: r.group_id,
     deletedAt: r.deleted_at,
     createdAt: r.created_at,
@@ -59,6 +68,9 @@ export function userToProfile(u: User): UserProfile {
     preferredLanguage: u.preferredLanguage,
     mustChangePassword: u.mustChangePassword,
     avatarColor: u.avatarColor,
+    bio: u.bio,
+    gender: u.gender,
+    birthDate: u.birthDate,
     groupId: u.groupId,
     deletedAt: u.deletedAt,
     createdAt: u.createdAt,
