@@ -9,11 +9,13 @@ export default function AdminLayout({
   activeSection,
   onSectionChange,
   user,
+  onUserUpdate,
 }: {
   children: ReactNode;
   activeSection: string;
   onSectionChange: (id: string) => void;
   user: UserProfile;
+  onUserUpdate?: (u: UserProfile) => void;
 }) {
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
@@ -45,6 +47,7 @@ export default function AdminLayout({
           activeSection={activeSection}
           onSectionChange={(id) => { onSectionChange(id); setMobileSidebar(false); }}
           user={user}
+          onUserUpdate={onUserUpdate}
         />
       </div>
 

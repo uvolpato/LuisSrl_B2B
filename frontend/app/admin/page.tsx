@@ -103,7 +103,7 @@ const MOCK_ARTICLES: Article[] = [
 export default function AdminPage() {
   const t = useTranslations("admin");
   const tServer = useTranslations("server");
-  const { user: admin, loading } = useAuth("admin");
+  const { user: admin, loading, setUser } = useAuth("admin");
 
   const [section, setSection] = useState("articoli");
 
@@ -326,6 +326,7 @@ export default function AdminPage() {
       activeSection={section}
       onSectionChange={setSection}
       user={admin}
+      onUserUpdate={setUser}
     >
       <AdminTopBar
         title={SECTION_TITLES[section] || section}

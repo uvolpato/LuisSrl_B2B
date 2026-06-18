@@ -72,10 +72,12 @@ export default function AdminSidebar({
   activeSection,
   onSectionChange,
   user,
+  onUserUpdate,
 }: {
   activeSection: string;
   onSectionChange: (id: string) => void;
   user: UserProfile;
+  onUserUpdate?: (u: UserProfile) => void;
 }) {
   const tc = useTranslations("common");
   const router = useRouter();
@@ -208,6 +210,7 @@ export default function AdminSidebar({
           isAdmin={user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE"}
           onClose={() => setSettingsOpen(false)}
           onNavigateAdmin={() => { setSettingsOpen(false); onSectionChange("admin-panel"); }}
+          onUserUpdate={onUserUpdate}
         />
       )}
 

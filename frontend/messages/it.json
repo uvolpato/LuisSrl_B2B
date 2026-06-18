@@ -86,6 +86,7 @@
       "password_min": "La password deve avere almeno 8 caratteri.",
       "password_letter": "La password deve contenere almeno una lettera.",
       "password_digit": "La password deve contenere almeno un numero.",
+      "password_mismatch": "Le password non coincidono.",
       "piva": "Partita IVA non valida."
     },
     "errors": {

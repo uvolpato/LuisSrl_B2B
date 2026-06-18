@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useState } from "react";
 import Modal from "../common/Modal";
+import ChangePasswordModal from "../auth/ChangePasswordModal";
 import { api, ApiError } from "../../lib/api";
 import type { UserProfile } from "../../lib/types";
 
@@ -53,11 +53,13 @@ export default function SettingsModal({
   onClose,
   isAdmin,
   onNavigateAdmin,
+  onUserUpdate,
 }: {
   user: UserProfile;
   onClose: () => void;
   isAdmin?: boolean;
   onNavigateAdmin?: () => void;
+  onUserUpdate?: (u: UserProfile) => void;
 }) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("account");
@@ -123,7 +125,7 @@ export default function SettingsModal({
             </button>
           </div>
           <div className="settings-page">
-            {activeTab === "account" && <AccountTab user={user} />}
+            {activeTab === "account" && <AccountTab user={user} onUserUpdate={onUserUpdate} />}
             {activeTab === "informazioni" && (
               <div className="settings-empty-state">
                 <div className="settings-empty-icon">{IconInfo}</div>
@@ -138,12 +140,42 @@ export default function SettingsModal({
   );
 }
 
-function AccountTab({ user }: { user: UserProfile }) {
+function AccountTab({
+  user,
+  onUserUpdate,
+}: {
+  user: UserProfile;
+  onUserUpdate?: (u: UserProfile) => void;
+}) {
   const [nome, setNome] = useState(user.nome);
-  const [bio, setBio] = useState("");
-  const [gender, setGender] = useState("non-specificato");
-  const [birthDate, setBirthDate] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [bio, setBio] = useState(user.bio ?? "");
+  const [gender, setGender] = useState(user.gender ?? "non-specificato");
+  const [birthDate, setBirthDate] = useState(user.birthDate ? user.birthDate.slice(0, 10) : "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPwModal, setShowPwModal] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      const res = await api.patch<{ user: UserProfile }>("/api/auth/profile", {
+        nome,
+        bio: bio.trim() || null,
+        gender,
+        birthDate: birthDate || null,
+      });
+      onUserUpdate?.(res.user);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Errore nel salvataggio");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="account-tab">
@@ -205,78 +237,27 @@ function AccountTab({ user }: { user: UserProfile }) {
         />
       </div>
 
+      <div className="account-actions">
+        {error && <span className="account-save-msg account-save-err">{error}</span>}
+        {saved && <span className="account-save-msg account-save-ok">Salvato ✓</span>}
+        <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={save} disabled={saving}>
+          {saving ? "Salvataggio…" : "Salva"}
+        </button>
+      </div>
+
       <div className="account-divider" />
 
-      <div className="account-pw">
-        <button
-          className="account-pw-toggle"
-          onClick={() => setShowPassword((o) => !o)}
-          aria-expanded={showPassword}
-        >
-          <span>Cambia password</span>
-          <span className="account-pw-action">{showPassword ? "Nascondi" : "Mostra"}</span>
-        </button>
-        {showPassword && <ChangePasswordInline onDone={() => setShowPassword(false)} />}
-      </div>
-    </div>
-  );
-}
-
-function ChangePasswordInline({ onDone }: { onDone: () => void }) {
-  const tServer = useTranslations("server");
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post("/api/auth/change-password", { oldPassword, newPassword });
-      setDone(true);
-      setOldPassword("");
-      setNewPassword("");
-      setTimeout(onDone, 1200);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.code : "errors.generic");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <form className="account-pw-form" onSubmit={onSubmit}>
-      {error && <div className="error-box">{tServer(error)}</div>}
-      {done && <div className="ok-box">Password aggiornata.</div>}
-      <div className="account-field">
-        <label>Password attuale</label>
-        <input
-          className="account-input"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-        />
-      </div>
-      <div className="account-field">
-        <label>Nuova password</label>
-        <input
-          className="account-input"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-      </div>
-      <button className="admin-btn admin-btn-primary admin-btn-sm" disabled={busy} style={{ alignSelf: "flex-start" }}>
-        {busy ? "Salvataggio…" : "Aggiorna password"}
+      <button className="account-pw-toggle" onClick={() => setShowPwModal(true)}>
+        <span>Cambia password</span>
+        <span className="account-pw-action">Modifica</span>
       </button>
-    </form>
+
+      {showPwModal && (
+        <ChangePasswordModal
+          onClose={() => setShowPwModal(false)}
+          onChanged={() => setShowPwModal(false)}
+        />
+      )}
+    </div>
   );
 }

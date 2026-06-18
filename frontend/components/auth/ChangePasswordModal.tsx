@@ -1,17 +1,22 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 
 export default function ChangePasswordModal({
   onChanged,
   onClose,
+  subtitle = "Inserisci la password attuale e scegline una nuova.",
 }: {
   onChanged: () => void;
   onClose: () => void;
+  subtitle?: string;
 }) {
+  const tServer = useTranslations("server");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +32,10 @@ export default function ChangePasswordModal({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setError("validation.password_mismatch");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -59,10 +68,10 @@ export default function ChangePasswordModal({
             </button>
           </div>
           <p style={{ color: "var(--muted)", fontSize: 13, margin: "8px 0 16px" }}>
-            Al primo accesso è necessario cambiare la password provvisoria.
+            {subtitle}
           </p>
           <form onSubmit={onSubmit}>
-            {error && <div className="error-box">{error}</div>}
+            {error && <div className="error-box">{tServer(error)}</div>}
             <label htmlFor="cp-old">Password attuale</label>
             <input
               id="cp-old"
@@ -74,6 +83,12 @@ export default function ChangePasswordModal({
               id="cp-new"
               type="password" required autoComplete="new-password" minLength={8}
               value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <label htmlFor="cp-confirm">Conferma nuova password</label>
+            <input
+              id="cp-confirm"
+              type="password" required autoComplete="new-password" minLength={8}
+              value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
             />
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
               <button type="button" onClick={onClose}>Annulla</button>

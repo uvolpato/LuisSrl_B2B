@@ -8,6 +8,9 @@ export interface UserProfile {
   preferredLanguage: string;
   mustChangePassword: boolean;
   avatarColor: string;
+  bio: string | null;
+  gender: string | null;
+  birthDate: string | null;
   groupId: number | null;
   deletedAt: string | null;
   createdAt: string;
