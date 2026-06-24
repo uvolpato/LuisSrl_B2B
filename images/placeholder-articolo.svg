@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="12" fill="#E8E8E8"/>
+  <!-- pot shape - wide -->
+  <path d="M130 300 C130 300 120 260 125 230 C130 200 145 185 155 170 L245 170 C255 185 270 200 275 230 C280 260 270 300 270 300 Z" fill="#B0B0B0"/>
+  <!-- rim -->
+  <rect x="150" y="165" width="100" height="10" rx="5" fill="#A0A0A0"/>
+  <!-- handle left -->
+  <path d="M130 200 C110 200 100 220 105 240 C110 255 120 260 130 255" stroke="#A0A0A0" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- handle right -->
+  <path d="M270 200 C290 200 300 220 295 240 C290 255 280 260 270 255" stroke="#A0A0A0" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- shadow -->
+  <ellipse cx="200" cy="308" rx="60" ry="8" fill="#D0D0D0"/>
+  <!-- label -->
+  <text x="200" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" fill="#999">ARTICOLO</text>
+</svg>
