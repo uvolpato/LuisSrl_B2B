@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-/**
- * Punto unico di scrittura dell'audit applicativo.
- * Le stored procedure di entita' (fn_user_*) scrivono gia' il proprio audit:
- * questo servizio copre le azioni senza scrittura propria (login, logout).
- */
 @Injectable()
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,16 +13,20 @@ export class AuditService {
     dettagli?: unknown;
     esito?: 'OK' | 'KO';
     ip?: string;
-    /** Tabella dell'attore: 'admin' (users) o 'customer' (customers). */
     actorType?: 'admin' | 'customer';
   }): Promise<void> {
-    await this.prisma.$queryRaw`
-      SELECT core.fn_audit_log(
-        ${params.actorId}::int, ${params.azione},
-        ${params.entita ?? null}, ${params.entitaId ?? null},
-        ${params.dettagli === undefined ? null : JSON.stringify(params.dettagli)}::jsonb,
-        ${params.esito ?? 'OK'}, ${params.ip ?? null}, ${params.actorType ?? 'admin'}
-      )`;
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: params.actorId,
+        actorType: params.actorType ?? 'admin',
+        azione: params.azione,
+        entita: params.entita ?? null,
+        entitaId: params.entitaId ?? null,
+        dettagli: params.dettagli ?? undefined,
+        esito: params.esito ?? 'OK',
+        ip: params.ip ?? null,
+      },
+    });
   }
 
   async logLoginAttempt(params: {
@@ -38,11 +37,19 @@ export class AuditService {
     ip?: string;
     actorType?: 'admin' | 'customer';
   }): Promise<void> {
-    await this.prisma.$queryRaw`
-      SELECT auth.fn_auth_log_attempt(
-        ${params.email}, ${params.success},
-        ${params.userId}::int, ${params.motivo ?? null}, ${params.ip ?? null},
-        ${params.actorType ?? 'admin'}
-      )`;
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: params.userId,
+        actorType: params.actorType ?? 'admin',
+        azione: params.success ? 'auth.login_success' : 'auth.login_failed',
+        entita: 'auth',
+        dettagli: {
+          email: params.email,
+          motivo: params.motivo,
+        },
+        esito: params.success ? 'OK' : 'KO',
+        ip: params.ip ?? null,
+      },
+    });
   }
 }

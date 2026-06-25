@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { api, setCsrfToken } from "../../lib/api";
 import type { UserProfile } from "../../lib/types";
 import SettingsModal from "./SettingsModal";
-import Modal from "../common/Modal";
+import { initials } from "../../lib/helpers";
 
 const NAV_ITEMS = [
   {
@@ -63,11 +63,6 @@ const IconShield = (
   </svg>
 );
 
-function getInitials(name: string | null): string {
-  if (!name) return "??";
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-}
-
 export default function AdminSidebar({
   activeSection,
   onSectionChange,
@@ -83,7 +78,6 @@ export default function AdminSidebar({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [demoModal, setDemoModal] = useState<"sm" | "md" | "lg" | null>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
   // Chiude il menu utente al click fuori
@@ -108,7 +102,7 @@ export default function AdminSidebar({
   }
 
   const name = user.nome || user.email;
-  const initials = getInitials(user.nome);
+  const userInitials = initials(user.nome);
 
   return (
     <>
@@ -143,7 +137,7 @@ export default function AdminSidebar({
           <div className="sidebar-user-pop">
             <div className="sidebar-user-pop-header">
               <span className="sidebar-user-avatar" style={{ background: user.avatarColor, color: "#fff" }}>
-                {initials}
+                {userInitials}
                 <span className="sidebar-user-dot" />
               </span>
               <div className="sidebar-user-text">
@@ -165,14 +159,6 @@ export default function AdminSidebar({
               </button>
             )}
             <hr />
-            {(user.ruolo === "SUPERUSER" || user.ruolo === "AMMINISTRATORE") && (<>
-              {/* TMP DEMO: anteprime modali — da eliminare */}
-              <span className="sidebar-section" style={{ padding: "8px 8px 2px", fontSize: 10 }}>PROVA MODALI</span>
-              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("sm"); }}>Modal SM (120px)</button>
-              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("md"); }}>Modal MD (80px)</button>
-              <button className="sidebar-user-pop-item" style={{ fontSize: 12 }} onClick={() => { setMenuOpen(false); setDemoModal("lg"); }}>Modal LG (40px)</button>
-              <hr />
-            </>)}
             <button className="sidebar-user-pop-item danger" onClick={logout}>
               {IconLogout}
               {tc("logout")}
@@ -187,7 +173,7 @@ export default function AdminSidebar({
           aria-expanded={menuOpen}
         >
           <span className="sidebar-user-avatar" style={{ background: user.avatarColor, color: "#fff" }}>
-            {initials}
+            {userInitials}
             <span className="sidebar-user-dot" />
           </span>
           <div className="sidebar-user-text">
@@ -213,17 +199,6 @@ export default function AdminSidebar({
           onUserUpdate={onUserUpdate}
         />
       )}
-
-      {/* TMP DEMO modali — da eliminare */}
-      <Modal open={demoModal === "sm"} size="sm" title="Modal SM" onClose={() => setDemoModal(null)}>
-        <p style={{ color: "var(--muted)", padding: "40px 0", textAlign: "center" }}>Contenuto SM — inset 120px</p>
-      </Modal>
-      <Modal open={demoModal === "md"} size="md" title="Modal MD" onClose={() => setDemoModal(null)}>
-        <p style={{ color: "var(--muted)", padding: "60px 0", textAlign: "center" }}>Contenuto MD — inset 80px</p>
-      </Modal>
-      <Modal open={demoModal === "lg"} size="lg" title="Modal LG" onClose={() => setDemoModal(null)}>
-        <p style={{ color: "var(--muted)", padding: "80px 0", textAlign: "center" }}>Contenuto LG — inset 40px</p>
-      </Modal>
     </>
   );
 }

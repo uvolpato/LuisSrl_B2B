@@ -19,8 +19,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
 import type { AuthenticatedRequest } from './guards/authenticated.guard';
 import { PrismaService } from '../prisma/prisma.service';
-import { userToProfile } from '../common/user-row';
-import { customerToProfile } from '../common/customer-row';
+import { toUserProfile, toCustomerProfile } from '../common/auth-types';
 
 @Controller('auth')
 export class AuthController {
@@ -32,7 +31,7 @@ export class AuthController {
   /** Login: max 5 tentativi al minuto per IP. */
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     const user = await this.auth.validateLogin(dto.email, dto.password, req.ip);
 
@@ -48,8 +47,8 @@ export class AuthController {
     req.session.cookie.maxAge = dto.remember ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
     const profile = user.userType === 'admin'
-      ? userToProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
-      : customerToProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
+      ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
+      : toCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
 
     return { user: profile, csrfToken: req.session.csrfToken };
   }
@@ -74,8 +73,8 @@ export class AuthController {
   @UseGuards(AuthenticatedGuard)
   async me(@Req() req: AuthenticatedRequest) {
     const profile = req.user.userType === 'admin'
-      ? userToProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: req.user.id } }))
-      : customerToProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: req.user.id } }));
+      ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: req.user.id } }))
+      : toCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: req.user.id } }));
     return {
       user: profile,
       csrfToken: req.session.csrfToken,

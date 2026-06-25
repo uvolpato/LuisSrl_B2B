@@ -30,6 +30,10 @@ dist/
 .next/
 *.tsbuildinfo
 npm-debug.log*
+*.log
+
+# Immagini caricate/generate a runtime (non sorgenti)
+frontend/public/images/
 
 # Segreti: mai versionare i .env reali (tenere i .env.example)
 .env

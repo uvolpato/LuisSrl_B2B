@@ -14,7 +14,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService, type UserFilter } from './users.service';
+import { UsersService } from './users.service';
+import type { UserFilter } from '../common/filters';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';

@@ -1,21 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AdminRepository } from './admin.repository';
+import { AuditService } from '../audit/audit.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
-import { rowToProfile, userToProfile, type UserProfile } from '../common/user-row';
-import type { UserFilter } from '../users/users.service';
+import { toUserProfile } from '../common/auth-types';
+import type { UserProfile } from '../common/auth-types';
+import { buildStatoFilter } from '../common/filters';
+import type { UserFilter } from '../common/filters';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly repo: AdminRepository,
+    private readonly audit: AuditService,
   ) {}
-
-  // ── Gruppi (letture: Prisma; scritture: SP) ──────────
 
   listGroups() {
     return this.prisma.permissionGroup.findMany({
@@ -34,28 +34,39 @@ export class AdminService {
   }
 
   async createGroup(dto: CreateGroupDto, actorId: number, ip?: string) {
-    const row = await this.repo.spCreateGroup({
-      actorId,
-      name: dto.name,
-      slug: dto.slug,
-      permissions: dto.permissions,
-      ip,
+    const existing = await this.prisma.permissionGroup.findUnique({ where: { slug: dto.slug } });
+    if (existing) throw new ConflictException('admin.group_slug_exists');
+
+    const group = await this.prisma.permissionGroup.create({
+      data: { name: dto.name, slug: dto.slug, permissions: dto.permissions },
     });
+    await this.audit.log({ actorId, azione: 'admin.group_create', entita: 'permission_groups', entitaId: String(group.id), ip });
+
     return this.prisma.permissionGroup.findUnique({
-      where: { id: row.id },
+      where: { id: group.id },
       include: { _count: { select: { users: true } } },
     });
   }
 
   async updateGroup(id: number, dto: UpdateGroupDto, actorId: number, ip?: string) {
-    await this.repo.spUpdateGroup({
-      actorId,
-      groupId: id,
-      name: dto.name,
-      slug: dto.slug,
-      permissions: dto.permissions,
-      ip,
+    const group = await this.prisma.permissionGroup.findUnique({ where: { id } });
+    if (!group) throw new NotFoundException('admin.group_not_found');
+
+    if (dto.slug && dto.slug !== group.slug) {
+      const slugExists = await this.prisma.permissionGroup.findUnique({ where: { slug: dto.slug } });
+      if (slugExists) throw new ConflictException('admin.group_slug_exists');
+    }
+
+    await this.prisma.permissionGroup.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+        ...(dto.permissions !== undefined && { permissions: dto.permissions }),
+      },
     });
+    await this.audit.log({ actorId, azione: 'admin.group_update', entita: 'permission_groups', entitaId: String(id), ip });
+
     return this.prisma.permissionGroup.findUnique({
       where: { id },
       include: { _count: { select: { users: true } } },
@@ -63,10 +74,13 @@ export class AdminService {
   }
 
   async deleteGroup(id: number, actorId: number, ip?: string) {
-    await this.repo.spDeleteGroup({ actorId, groupId: id, ip });
-  }
+    const group = await this.prisma.permissionGroup.findUnique({ where: { id }, include: { _count: { select: { users: true } } } });
+    if (!group) throw new NotFoundException('admin.group_not_found');
+    if (group._count.users > 0) throw new ConflictException('admin.group_has_users');
 
-  // ── Utenti (lista completa per admin panel) ─────────
+    await this.prisma.permissionGroup.delete({ where: { id } });
+    await this.audit.log({ actorId, azione: 'admin.group_delete', entita: 'permission_groups', entitaId: String(id), ip });
+  }
 
   async listAllUsers(params: {
     q?: string;
@@ -75,52 +89,29 @@ export class AdminService {
     pageSize: number;
   }): Promise<{ items: UserProfile[]; total: number }> {
     const where: Prisma.UserWhereInput = {
-      ...this.buildStatoFilter(params.stato),
+      ...buildStatoFilter(params.stato),
       ...(params.q
-        ? {
-            OR: [
-              { email: { contains: params.q, mode: 'insensitive' } },
-              { nome: { contains: params.q, mode: 'insensitive' } },
-            ],
-          }
+        ? { OR: [
+            { email: { contains: params.q, mode: 'insensitive' } },
+            { nome: { contains: params.q, mode: 'insensitive' } },
+          ]}
         : {}),
     };
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
+        where, orderBy: { createdAt: 'desc' },
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { items: items.map(userToProfile), total };
+    return { items: items.map(toUserProfile), total };
   }
-
-  private buildStatoFilter(stato?: UserFilter): Prisma.UserWhereInput {
-    switch (stato) {
-      case 'ATTIVO':
-        return { stato: 'ATTIVO', deletedAt: null };
-      case 'BLOCCATO':
-        return { stato: 'BLOCCATO', deletedAt: null };
-      case 'ELIMINATO':
-        return { deletedAt: { not: null } };
-      case 'TUTTI':
-        return {};
-      default:
-        return { deletedAt: null };
-    }
-  }
-
-  // ── Permessi utente (letture: Prisma; scritture: SP) ─
 
   async getUserPermissions(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        group: true,
-        adminPermissions: true,
-      },
+      include: { group: true, adminPermissions: true },
     });
     if (!user) throw new NotFoundException('users.not_found');
 
@@ -128,66 +119,47 @@ export class AdminService {
     const overrides: { permission: string; granted: boolean }[] = [];
 
     for (const o of user.adminPermissions) {
-      if (o.granted) {
-        effective.add(o.permission);
-      } else {
-        effective.delete(o.permission);
-      }
+      if (o.granted) effective.add(o.permission);
+      else effective.delete(o.permission);
       overrides.push({ permission: o.permission, granted: o.granted });
     }
 
     return {
-      user: userToProfile(user),
-      group: user.group
-        ? { id: user.group.id, name: user.group.name, slug: user.group.slug }
-        : null,
+      user: toUserProfile(user),
+      group: user.group ? { id: user.group.id, name: user.group.name, slug: user.group.slug } : null,
       overrides,
       effectivePermissions: [...effective].sort(),
     };
   }
 
-  async updateUserPermissions(
-    userId: number,
-    dto: UpdateUserPermissionsDto,
-    actorId: number,
-    ip?: string,
-  ) {
+  async updateUserPermissions(userId: number, dto: UpdateUserPermissionsDto, actorId: number, ip?: string) {
     if (dto.overrides) {
       for (const ov of dto.overrides) {
-        await this.repo.spUpsertPermission({
-          actorId,
-          userId,
-          permission: ov.permission,
-          granted: ov.granted,
-          ip,
+        await this.prisma.adminPermission.upsert({
+          where: { userId_permission: { userId, permission: ov.permission } },
+          update: { granted: ov.granted },
+          create: { userId, permission: ov.permission, granted: ov.granted },
         });
       }
     }
-
     if (dto.removeOverrides && dto.removeOverrides.length > 0) {
-      await this.repo.spRemovePermissions({
-        actorId,
-        userId,
-        permissions: dto.removeOverrides,
-        ip,
+      await this.prisma.adminPermission.deleteMany({
+        where: { userId, permission: { in: dto.removeOverrides } },
       });
     }
-
+    await this.audit.log({ actorId, azione: 'admin.permissions_update', entita: 'users', entitaId: String(userId), ip });
     return this.getUserPermissions(userId);
   }
 
-  async assignUserGroup(
-    userId: number,
-    groupId: number | null,
-    actorId: number,
-    ip?: string,
-  ) {
-    const row = await this.repo.spAssignGroup({
-      actorId,
-      userId,
-      groupId,
-      ip,
+  async assignUserGroup(userId: number, groupId: number | null, actorId: number, ip?: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('users.not_found');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { groupId },
     });
-    return rowToProfile(row);
+    await this.audit.log({ actorId, azione: 'admin.user_assign_group', entita: 'users', entitaId: String(userId), ip });
+    return toUserProfile(updated);
   }
 }

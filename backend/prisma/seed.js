@@ -30,6 +30,23 @@ const PERMISSION_KEYS = [
 
 const READ_ONLY_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith('.view'));
 
+const AVATAR_COLORS = [
+  'oklch(55% 0.18 25)',
+  'oklch(55% 0.15 250)',
+  'oklch(55% 0.16 100)',
+  'oklch(55% 0.15 160)',
+  'oklch(55% 0.14 300)',
+  'oklch(55% 0.17 40)',
+  'oklch(55% 0.15 200)',
+  'oklch(55% 0.13 350)',
+  'oklch(55% 0.16 280)',
+  'oklch(55% 0.14 80)',
+];
+
+function randomAvatarColor() {
+  return AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+}
+
 (async () => {
   // ── Gruppo Amministratore ──
   let groupAdmin = await prisma.permissionGroup.findUnique({ where: { slug: 'super-admin' } });
@@ -61,15 +78,22 @@ const READ_ONLY_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith('.view'));
     throw new Error('ADMIN_EMAIL e ADMIN_PASSWORD devono essere definiti in .env');
   }
 
-  let admin = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const normalizedEmail = email.toLowerCase();
+  let admin = await prisma.user.findFirst({ where: { email: normalizedEmail } });
   if (!admin) {
     const hash = await argon2.hash(password, { type: argon2.argon2id });
-    const [user] = await prisma.$queryRaw`
-      SELECT id, email FROM users.fn_user_create(
-        NULL, ${email}, ${hash}, ${nome},
-        'SUPERUSER'::"AdminRole", 'it', 'seed'
-      )`;
-    admin = await prisma.user.findUnique({ where: { id: user.id } });
+    admin = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash: hash,
+        nome,
+        ruolo: 'SUPERUSER',
+        preferredLanguage: 'it',
+        stato: 'ATTIVO',
+        groupId: groupAdmin.id,
+        avatarColor: randomAvatarColor(),
+      },
+    });
     console.log(`Admin creato: ${admin.email} (id ${admin.id})`);
   } else {
     console.log(`Admin ${email} gia' presente (id ${admin.id})`);
@@ -91,15 +115,25 @@ const READ_ONLY_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith('.view'));
   ];
 
   for (const c of customerSeeds) {
-    let existing = await prisma.customer.findUnique({ where: { email: c.email.toLowerCase() } });
+    const normEmail = c.email.toLowerCase();
+    let existing = await prisma.customer.findFirst({ where: { email: normEmail } });
     if (!existing) {
       const hash = await argon2.hash(c.password, { type: argon2.argon2id });
-      const [cust] = await prisma.$queryRaw`
-        SELECT id, email FROM customers.fn_customer_create(
-          ${admin.id}::int, ${c.email}, ${hash}, ${c.nome},
-          ${c.ragioneSociale}, ${c.partitaIva}, ${c.telefono}, 'it', 'seed'
-        )`;
-      console.log(`Cliente creato: ${c.email} (id ${cust.id})`);
+      const customer = await prisma.customer.create({
+        data: {
+          email: normEmail,
+          passwordHash: hash,
+          nome: c.nome,
+          ragioneSociale: c.ragioneSociale,
+          partitaIva: c.partitaIva,
+          telefono: c.telefono,
+          stato: 'ATTIVO',
+          ruolo: 'CLIENTE',
+          preferredLanguage: 'it',
+          avatarColor: randomAvatarColor(),
+        },
+      });
+      console.log(`Cliente creato: ${c.email} (id ${customer.id})`);
     } else {
       console.log(`Cliente ${c.email} gia' presente (id ${existing.id})`);
     }

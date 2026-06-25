@@ -5,23 +5,18 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { UsersRepository } from '../users/users.repository';
-import { CustomersRepository } from '../customers/customers.repository';
 import {
   DUMMY_HASH,
   hashPassword,
   verifyPassword,
 } from '../common/password';
-import type { LoginLookupRow, AuthUser } from '../common/auth-types';
-import { rowToProfile } from '../common/user-row';
+import type { AuthUser } from '../common/auth-types';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-    private readonly usersRepo: UsersRepository,
-    private readonly customersRepo: CustomersRepository,
   ) {}
 
   async validateLogin(
@@ -29,37 +24,48 @@ export class AuthService {
     password: string,
     ip: string | undefined,
   ): Promise<AuthUser> {
-    const [row] = await this.prisma.$queryRaw<LoginLookupRow[]>`
-      SELECT * FROM auth.fn_login_lookup(${email.toLowerCase()})
-    `;
+    const normalizedEmail = email.toLowerCase();
+    let row: {
+      id: number; email: string; passwordHash: string;
+      nome: string; ruolo: string; stato: string; avatarColor: string;
+      userType: 'admin' | 'customer';
+    } | null = null;
 
-    if (!row?.user_id) {
+    const user = await this.prisma.user.findFirst({ where: { email: normalizedEmail }, select: { id: true, email: true, passwordHash: true, nome: true, ruolo: true, stato: true, avatarColor: true } });
+    if (user) {
+      row = { ...user, userType: 'admin' };
+    } else {
+      const customer = await this.prisma.customer.findFirst({ where: { email: normalizedEmail }, select: { id: true, email: true, passwordHash: true, nome: true, ruolo: true, stato: true, avatarColor: true } });
+      if (customer) row = { ...customer, userType: 'customer' };
+    }
+
+    if (!row) {
       await verifyPassword(DUMMY_HASH, password);
-      await this.audit.logLoginAttempt({ email, success: false, userId: null, motivo: 'utente inesistente', ip });
+      await this.audit.logLoginAttempt({ email: normalizedEmail, success: false, userId: null, motivo: 'utente inesistente', ip });
       throw new UnauthorizedException('auth.invalid_credentials');
     }
 
-    const valid = await verifyPassword(row.password_hash, password);
+    const valid = await verifyPassword(row.passwordHash, password);
     if (!valid) {
-      await this.audit.logLoginAttempt({ email, success: false, userId: row.user_id, motivo: 'password errata', ip, actorType: row.user_type });
+      await this.audit.logLoginAttempt({ email: normalizedEmail, success: false, userId: row.id, motivo: 'password errata', ip, actorType: row.userType });
       throw new UnauthorizedException('auth.invalid_credentials');
     }
 
     if (row.stato === 'BLOCCATO' || row.ruolo === 'SOSPESO') {
-      await this.audit.logLoginAttempt({ email, success: false, userId: row.user_id, motivo: 'utente bloccato/sospeso', ip, actorType: row.user_type });
+      await this.audit.logLoginAttempt({ email: normalizedEmail, success: false, userId: row.id, motivo: 'utente bloccato/sospeso', ip, actorType: row.userType });
       throw new UnauthorizedException('auth.user_blocked');
     }
 
-    await this.audit.logLoginAttempt({ email, success: true, userId: row.user_id, ip, actorType: row.user_type });
+    await this.audit.logLoginAttempt({ email: normalizedEmail, success: true, userId: row.id, ip, actorType: row.userType });
 
     return {
-      id: row.user_id,
-      email,
+      id: row.id,
+      email: row.email,
       nome: row.nome,
-      userType: row.user_type,
+      userType: row.userType,
       ruolo: row.ruolo,
       stato: row.stato,
-      avatarColor: row.avatar_color,
+      avatarColor: row.avatarColor,
     };
   }
 
@@ -80,27 +86,18 @@ export class AuthService {
 
     const newHash = await hashPassword(newPassword);
     if (user.userType === 'admin') {
-      await this.usersRepo.spSetPassword({
-        actorId: user.id,
-        userId: user.id,
-        passwordHash: newHash,
-        mustChange: false,
-        ip,
-      });
+      await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash, mustChangePassword: false } });
     } else {
-      await this.customersRepo.spSetPassword({
-        actorId: user.id,
-        customerId: user.id,
-        passwordHash: newHash,
-        mustChange: false,
-        ip,
-        actorType: 'customer',
-      });
+      await this.prisma.customer.update({ where: { id: user.id }, data: { passwordHash: newHash, mustChangePassword: false } });
     }
+
+    await this.audit.log({
+      actorId: user.id, azione: 'auth.password_change',
+      entita: user.userType === 'admin' ? 'users' : 'customers',
+      entitaId: String(user.id), ip, actorType: user.userType,
+    });
   }
 
-  /** Aggiornamento del proprio profilo. Disponibile per gli admin (i campi
-   *  bio/genere/data nascita sono sulla tabella users). */
   async updateProfile(
     user: AuthUser,
     dto: { nome?: string; bio?: string | null; gender?: string | null; birthDate?: string | null },
@@ -109,25 +106,34 @@ export class AuthService {
     if (user.userType !== 'admin') {
       throw new BadRequestException('auth.forbidden');
     }
-    const row = await this.usersRepo.spUpdateProfile({
-      actorId: user.id,
-      userId: user.id,
-      nome: dto.nome,
-      bio: dto.bio,
-      gender: dto.gender,
-      birthDate: dto.birthDate,
-      ip,
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...(dto.nome !== undefined && { nome: dto.nome }),
+        ...(dto.bio !== undefined && { bio: dto.bio }),
+        ...(dto.gender !== undefined && { gender: dto.gender }),
+        ...(dto.birthDate !== undefined && { birthDate: dto.birthDate ? new Date(dto.birthDate) : null }),
+      },
     });
-    return rowToProfile(row);
+    await this.audit.log({
+      actorId: user.id, azione: 'profile.update',
+      entita: 'users', entitaId: String(user.id), ip, actorType: 'admin',
+    });
+    return {
+      id: updated.id, email: updated.email, nome: updated.nome,
+      userType: 'admin' as const, ruolo: updated.ruolo, stato: updated.stato,
+      preferredLanguage: updated.preferredLanguage, mustChangePassword: updated.mustChangePassword,
+      avatarColor: updated.avatarColor, bio: updated.bio, gender: updated.gender,
+      birthDate: updated.birthDate, groupId: updated.groupId, deletedAt: updated.deletedAt,
+      createdAt: updated.createdAt,
+    };
   }
 
   async logLogout(userId: number, userType: string, ip: string | undefined): Promise<void> {
     await this.audit.log({
-      actorId: userId,
-      azione: 'auth.logout',
+      actorId: userId, azione: 'auth.logout',
       entita: userType === 'admin' ? 'users' : 'customers',
-      entitaId: String(userId),
-      ip,
+      entitaId: String(userId), ip,
       actorType: userType === 'admin' ? 'admin' : 'customer',
     });
   }

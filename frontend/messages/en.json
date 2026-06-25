@@ -17,9 +17,20 @@
     "title": "Restricted access",
     "subtitle": "Luis S.r.l. reseller portal",
     "email": "Email",
+    "emailPlaceholder": "Your email",
     "password": "Password",
+    "passwordPlaceholder": "Your password",
     "submit": "Sign in",
-    "submitting": "Signing in…"
+    "submitting": "Signing in…",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "remember": "Remember me",
+    "forgot": "Forgot password?",
+    "forgotTitle": "Forgot password",
+    "forgotDesc": "Enter your email, we'll send you a link to reset your password.",
+    "back": "Back",
+    "sending": "Sending…",
+    "send": "Send"
   },
   "admin": {
     "title": "Customer management",

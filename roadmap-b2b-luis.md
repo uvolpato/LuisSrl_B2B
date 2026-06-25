@@ -12,9 +12,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 **Completato — backend e accessi (commit 4502b97, a00adb7):**
 - NestJS + Prisma 6 su PostgreSQL `LuisSrlDb` (pgvector abilitato), Docker compose
-- **Stored procedure PL/pgSQL** per ogni scrittura applicativa (`fn_user_create`,
-  `fn_user_update`, `fn_user_set_blocked`, `fn_user_set_password`, `fn_audit_log`,
-  `fn_auth_log_attempt`): audit nella stessa transazione
+- ~~Stored procedure PL/pgSQL per ogni scrittura applicativa~~ → **rifattorizzato in Prisma CRUD (19/06)**
 - **Autenticazione completa**: login argon2id, sessioni server-side su Postgres,
   cookie **HttpOnly + SameSite** (Secure in produzione), **CSRF**, **rate limiting
   5 login/min**, Helmet, CORS ristretto — tutto testato
@@ -41,15 +39,15 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 - **DataTable**: pagination footer nascosto quando totalPages ≤ 1
 - **AdminSidebar**: click "Pannello di Amministrazione" naviga alla sezione
 
-**Blocco 1A — Backend completato in sessione 13/06/2026:**
+**Blocco 1A — Backend completato in sessione 13/06/2026 (rifattorizzato in Prisma CRUD 19/06):**
 - Nuovi model Prisma: PermissionGroup, AdminPermission, isSuperAdmin + groupId su User
-- 6 stored procedure PL/pgSQL per scritture: `fn_permission_group_create/update/delete`, `fn_admin_permission_upsert/remove`, `fn_user_assign_group`
-- AdminRepository + AdminService (letture Prisma, scritture SP)
+- ~~6 stored procedure PL/pgSQL~~ → **Prisma CRUD diretto**
+- ~~AdminRepository + AdminService~~ → **AdminService usa Prisma direttamente**
 - `@RequirePermission(perm)` decorator + PermissionsGuard
 - API: CRUD gruppi, permessi utente, assegnazione gruppo
 - UsersController protetto con permessi granulari
 - Seed: 2 gruppi predefiniti, admin promosso a super admin
-- **Schemi PostgreSQL:** funzioni organizzate in `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group) — tutte chiamate con nome qualificato da codice e tra SP
+- ~~Schemi PostgreSQL organizzati in core/auth/users/admin~~ → **eliminati, tutto in TypeScript**
 
 **Completato — frontend Blocco 1A (sessione 17/06/2026):**
 - **MustChangePasswordModal**: cambio password obbligatorio al login (prima di entrare in admin), con logo Luis, campi nuova password + conferma, validazione client-side
@@ -85,7 +83,7 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | LoginForm condiviso | Stesso form in modale e pagina `/login` | ✅ fatto |
 | Login prefill dev | Credenziali admin precompilate in sviluppo | ✅ fatto |
 | Autenticazione | Login argon2id, ruoli admin/cliente, sessioni Postgres | ✅ fatto |
-| Gestione utenti | Crea/modifica/blocca/reset via stored procedure | ✅ fatto |
+| Gestione utenti | Crea/modifica/blocca/reset via stored procedure | ✅ rifattorizzato (Prisma CRUD) |
 | Sicurezza app | Sessioni HttpOnly+SameSite, CSRF, rate limiting, Helmet | ✅ fatto |
 | Settings modal | Modale impostazioni con menu (Account, Info, Impostazioni amministrazione) | ✅ fatto |
 | Pannello Amministrazione | Sezione admin con tab Utenti (Panoramica + Gruppi), tabella DataTable | ✅ fatto |
@@ -112,16 +110,16 @@ Tutto in italiano o inglese.
 | Backend: flag super admin | `is_super_admin` su users + `groupId` (FK → permission_groups) | ✅ fatto |
 | Backend: migration Prisma | `20260613183553_permission_models` | ✅ fatto |
 | Backend: seed iniziale | Gruppo "Amministratore" (tutti permessi) + "Visualizzatore" (sola lettura), admin esistente promosso a super admin | ✅ fatto |
-| Backend: stored procedure profili | `fn_permission_group_create`, `fn_permission_group_update`, `fn_permission_group_delete`, `fn_admin_permission_upsert`, `fn_admin_permission_remove`, `fn_user_assign_group` — audit in transazione, errori `LAI01`÷`LAI05` | ✅ fatto |
-| Backend: schemi PostgreSQL | Funzioni organizzate in 4 schemi: `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group). Riferimenti fully qualified tra SP e dal codice NestJS. | ✅ fatto |
-| Backend: AdminRepository | Wrapper SP stessi pattern di UsersRepository | ✅ fatto |
+| Backend: stored procedure profili | Eliminate, sostituite con Prisma CRUD | ✅ rifattorizzato |
+| Backend: schemi PostgreSQL | Eliminati (tutto in TypeScript) | ✅ rifattorizzato |
+| Backend: AdminRepository | Eliminato (service usa Prisma direttamente) | ✅ rifattorizzato |
 | Backend: AdminService | Letture Prisma, scritture su SP | ✅ fatto |
 | Backend: decorator + guard | `@RequirePermission('...')` + `PermissionsGuard` (super admin bypassa, altrimenti set effettivo da gruppo + override) | ✅ fatto |
 | Backend: API gruppi | `GET/POST/PUT/DELETE /api/admin/groups` | ✅ fatto |
 | Backend: API permessi utente | `GET /api/admin/users/:id/permissions`, `PUT .../permissions`, `PUT .../group` | ✅ fatto |
 | Backend: protezione controller esistenti | UsersController protetto con permessi granulari (view, create, edit, block) | ✅ fatto |
 | Panoramica utenti da DB | Tabella reale da GET /api/admin/users, avatar color, presenza WS | ✅ fatto |
-| Avatar color utenti | Colonna avatar_color, palette 10 oklch, SP fn_user_create assegna random | ✅ fatto |
+| Avatar color utenti | Colonna avatar_color, palette 10 oklch | ✅ fatto |
 | WebSocket presenza | socket.io path /ws, auth via session, presence broadcast | ✅ fatto |
 | Hook useWebSocket/usePresence | Singleton WS, reconnect, onAny router, isOnline(userId) | ✅ fatto |
 | Pallino presenza tabella | Verde pulsante = WS online, grigio = offline | ✅ fatto |
@@ -135,18 +133,18 @@ Tutto in italiano o inglese.
 | Sezione Articoli (shell) | Header con ricerca, filtri, view toggle, bottoni azione | ✅ fatto |
 | Separazione Anagrafica clienti | Sezione Clienti diventa read-only (da Integra) | 🔴 da fare |
 
-**Blocco 1A — Backend completato in sessione 13/06/2026:**
-- Tutto il backend profili e permessi: migrazione, SP, repository, service, guard, decorator, API
-- Ogni scrittura passa da stored procedure PL/pgSQL con audit nella stessa transazione
+**Blocco 1A — Backend completato in sessione 13/06/2026 (rifattorizzato 19/06):**
+- Migrazione, guard, decorator, API invariati
+- ~~Ogni scrittura passa da stored procedure PL/pgSQL con audit~~ → **Prisma CRUD + audit log inline**
 - Gruppi di permessi (PermissionGroup) con set di permessi in array text[]
 - Override per utente (AdminPermission): può concedere un permesso non nel gruppo o negarne uno presente
 - Super admin bypassa tutti i controlli
 - Seed: due gruppi predefiniti, admin esistente promosso a super admin
 - API `/api/admin/groups` e `/api/admin/users/:id/permissions` + `/api/admin/users/:id/group`
-- **Schemi PostgreSQL:** funzioni organizzate in `core` (fn_audit_log), `auth` (fn_auth_log_attempt), `users` (fn_user_*), `admin` (fn_permission_group_*, fn_admin_permission_*, fn_user_assign_group) — riferimenti fully qualified, tabelle restano in `public`
+- ~~Schemi PostgreSQL: core/auth/users/admin~~ → **eliminati**
 
 **Aggiornamenti successivi (sessione 13-14/06/2026):**
-- **Avatar color:** colonna `avatar_color` su users, palette 10 colori oklch assegnata random via `fn_user_create`. Migration `20260613220000_avatar_color`. Utenti esistenti aggiornati con colori random.
+- **Avatar color:** colonna `avatar_color` su users, palette 10 colori oklch assegnata random via service (ex `fn_user_create`). Migration `20260613220000_avatar_color`. Utenti esistenti aggiornati con colori random.
 - **Endpoint `GET /api/admin/users`:** lista completa (ADMIN + CLIENTE) con paginazione, ricerca, filtro stato. Permesso `admin.permissions.view`.
 - **AdminPanel da DB:** tabella utenti collegata all'API reale invece di mock data. Avatar circolare con colore dal DB.
 - **WebSocket presenza:** socket.io su stesso server HTTP (path `/ws`). Autenticazione via session cookie `luis.sid`. Presenza in tempo reale: broadcast `user.online`/`user.offline`, lista `presence` al nuovo connesso.
@@ -155,7 +153,7 @@ Tutto in italiano o inglese.
 
 **Aggiornamenti successivi (sessione 15-17/06/2026):**
 - **Split utenti/clienti in due tabelle DB:** `users` (admin/staff) e `customers` (clienti). Model Prisma separati, migration `split_users_customers`. Profili (`UserProfile`/`CustomerProfile`) e service separati.
-- **Login bifasico:** `auth.fn_login_lookup()` cerca prima `users` poi `customers`. `RolesGuard` controlla `userType` (`'admin'`|`'customer'`), `PermissionsGuard` solo per admin.
+- **Login bifasico:** query Prisma diretta su `users` poi `customers` (sostituisce `auth.fn_login_lookup()`). `RolesGuard` controlla `userType` (`'admin'`|`'customer'`), `PermissionsGuard` solo per admin.
 - **Soft-delete utenti admin:** campo `deletedAt` su `users`. Migration `soft_delete_users`. Endpoint `DELETE /users/:id` con soft-delete (stato BLOCCATO + deletedAt). Lista filtra per stato: ATTIVO, BLOCCATO, ELIMINATO, TUTTI. SUPERUSER escluso da blocco/eliminazione.
 - **AdminPanel frontend — tabella unificata:** tab Utenti e tab Clienti con colonne distinte, DataTable condiviso. Azioni riga: Modifica, Reset password (icona `[===]`), Blocca/Sblocca (lucchetto), Elimina (solo admin). Filtro stato a tendina (solo tab Utenti). Bottone "+" per creazione.
 - **Barra strumenti:** titolo, filtro stato, ricerca e bottone "Nuovo" sulla stessa riga.
@@ -171,6 +169,16 @@ Tutto in italiano o inglese.
 - Avatar color: ✅ fatto (colonna, palette, SP, migration)
 - WebSocket presenza: ✅ fatto (socket.io, auth via session, useWebSocket/usePresence)
 - Pallino presenza tabella: ✅ fatto (verde pulsante online, grigio offline)
+
+**REFACTOR — stored procedure → Prisma CRUD (sessione 19/06/2026):**
+- Eliminate tutte le stored procedure PL/pgSQL (`fn_user_*`, `fn_customer_*`, `fn_auth_log_attempt`, `fn_audit_log`, `fn_permission_group_*`, `fn_admin_permission_*`, `fn_user_assign_group`)
+- Eliminati repository wrapper (`users.repository.ts`, `customers.repository.ts`, `admin.repository.ts`) e mapper errori (`sp-error.ts`, `user-row.ts`, `customer-row.ts`)
+- Eliminati schemi PostgreSQL (`core`, `auth`, `users`, `customers`, `admin`)
+- Sostituito con Prisma CRUD diretto nei service (`prisma.user.create/update/findUnique/...`)
+- Audit log inline con `prisma.auditLog.create(...)` nei service
+- Avatar color assegnato inline nel service (non più via SP)
+- Login lookup unificato: query diretta Prisma su `users` e `customers` invece di `auth.fn_login_lookup()`
+- ~1700 righe eliminate tra SQL raw e TypeScript boilerplate
 
 ---
 

@@ -1,27 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
+import { AdminRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { UsersRepository } from './users.repository';
+import { AuditService } from '../audit/audit.service';
 import {
   generateProvisionalPassword,
   hashPassword,
 } from '../common/password';
-import {
-  rowToProfile,
-  userToProfile,
-  UserProfile,
-} from '../common/user-row';
+import { toUserProfile } from '../common/auth-types';
+import type { UserProfile } from '../common/auth-types';
+import { buildStatoFilter } from '../common/filters';
+import type { UserFilter } from '../common/filters';
 import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-export type UserFilter = 'ATTIVO' | 'BLOCCATO' | 'ELIMINATO' | 'TUTTI';
+const AVATAR_COLORS = [
+  'oklch(55% 0.15 250)', 'oklch(55% 0.18 180)', 'oklch(55% 0.17 40)',
+  'oklch(55% 0.16 330)', 'oklch(55% 0.15 150)', 'oklch(55% 0.14 80)',
+  'oklch(55% 0.16 20)',  'oklch(55% 0.15 300)', 'oklch(55% 0.15 200)',
+  'oklch(55% 0.15 120)',
+];
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly repo: UsersRepository,
+    private readonly audit: AuditService,
     private readonly mail: MailService,
   ) {}
 
@@ -32,7 +37,7 @@ export class UsersService {
     pageSize: number;
   }): Promise<{ items: UserProfile[]; total: number }> {
     const where: Prisma.UserWhereInput = {
-      ...this.buildStatoFilter(params.stato),
+      ...buildStatoFilter(params.stato),
       ...(params.q
         ? { OR: [
             { email: { contains: params.q, mode: 'insensitive' } },
@@ -49,47 +54,36 @@ export class UsersService {
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { items: items.map(userToProfile), total };
-  }
-
-  private buildStatoFilter(stato?: UserFilter): Prisma.UserWhereInput {
-    switch (stato) {
-      case 'ATTIVO':
-        return { stato: 'ATTIVO', deletedAt: null };
-      case 'BLOCCATO':
-        return { stato: 'BLOCCATO', deletedAt: null };
-      case 'ELIMINATO':
-        return { deletedAt: { not: null } };
-      case 'TUTTI':
-        return {};
-      default:
-        return { deletedAt: null };
-    }
+    return { items: items.map(toUserProfile), total };
   }
 
   async getById(id: number): Promise<UserProfile | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    return user ? userToProfile(user) : null;
+    return user ? toUserProfile(user) : null;
   }
 
-  /** Crea un admin/staff con password provvisoria. */
   async create(
     actorId: number,
     dto: CreateUserDto,
     ip: string | undefined,
   ): Promise<{ user: UserProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const row = await this.repo.spCreate({
-      actorId,
-      email: dto.email,
-      passwordHash: await hashPassword(provisionalPassword),
-      nome: dto.nome,
-      ruolo: dto.ruolo ?? 'UTENTE',
-      preferredLanguage: dto.preferredLanguage,
-      ip,
+    const existing = await this.prisma.user.findFirst({ where: { email: dto.email.toLowerCase() } });
+    if (existing) throw new ConflictException('users.email_exists');
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email.toLowerCase(),
+        passwordHash: await hashPassword(provisionalPassword),
+        nome: dto.nome,
+        ruolo: (dto.ruolo ?? 'UTENTE') as AdminRole,
+        preferredLanguage: dto.preferredLanguage ?? 'it',
+        avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+      },
     });
-    this.mail.sendProvisionalPassword(dto.email, row.nome, provisionalPassword, false).catch(() => {});
-    return { user: rowToProfile(row), provisionalPassword };
+    await this.audit.log({ actorId, azione: 'user.create', entita: 'users', entitaId: String(user.id), ip });
+    this.mail.sendProvisionalPassword(dto.email, user.nome, provisionalPassword, false).catch(() => {});
+    return { user: toUserProfile(user), provisionalPassword };
   }
 
   async update(
@@ -98,8 +92,19 @@ export class UsersService {
     dto: UpdateUserDto,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    const row = await this.repo.spUpdate({ actorId, userId, ...dto, ip });
-    return rowToProfile(row);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('users.not_found');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.nome !== undefined && { nome: dto.nome }),
+        ...(dto.ruolo !== undefined && { ruolo: dto.ruolo as AdminRole }),
+        ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
+      },
+    });
+    await this.audit.log({ actorId, azione: 'user.update', entita: 'users', entitaId: String(userId), ip });
+    return toUserProfile(updated);
   }
 
   async setBlocked(
@@ -108,8 +113,19 @@ export class UsersService {
     blocked: boolean,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    const row = await this.repo.spSetBlocked({ actorId, userId, blocked, ip });
-    return rowToProfile(row);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('users.not_found');
+    if (user.ruolo === 'SUPERUSER') throw new Error('users.cannot_block_admin');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { stato: blocked ? 'BLOCCATO' : 'ATTIVO' },
+    });
+    await this.audit.log({
+      actorId, azione: blocked ? 'user.block' : 'user.unblock',
+      entita: 'users', entitaId: String(userId), ip,
+    });
+    return toUserProfile(updated);
   }
 
   async resetPassword(
@@ -117,25 +133,33 @@ export class UsersService {
     userId: number,
     ip: string | undefined,
   ): Promise<{ user: UserProfile; provisionalPassword: string }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('users.not_found');
+
     const provisionalPassword = generateProvisionalPassword();
-    const row = await this.repo.spSetPassword({
-      actorId,
-      userId,
-      passwordHash: await hashPassword(provisionalPassword),
-      mustChange: true,
-      ip,
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await hashPassword(provisionalPassword), mustChangePassword: true },
     });
-    this.mail.sendProvisionalPassword(row.email, row.nome, provisionalPassword, true).catch(() => {});
-    return { user: rowToProfile(row), provisionalPassword };
+    await this.audit.log({ actorId, azione: 'user.password_reset', entita: 'users', entitaId: String(userId), ip });
+    this.mail.sendProvisionalPassword(updated.email, updated.nome, provisionalPassword, true).catch(() => {});
+    return { user: toUserProfile(updated), provisionalPassword };
   }
 
-  /** Soft-delete: imposta deletedAt + stato BLOCCATO. */
   async softDelete(
     actorId: number,
     userId: number,
     ip: string | undefined,
   ): Promise<UserProfile> {
-    const row = await this.repo.spSoftDelete({ actorId, userId, ip });
-    return rowToProfile(row);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('users.not_found');
+    if (user.ruolo === 'SUPERUSER') throw new Error('users.cannot_block_admin');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { stato: 'BLOCCATO', deletedAt: new Date() },
+    });
+    await this.audit.log({ actorId, azione: 'user.delete', entita: 'users', entitaId: String(userId), ip });
+    return toUserProfile(updated);
   }
 }

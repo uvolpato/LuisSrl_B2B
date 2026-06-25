@@ -120,7 +120,7 @@ export default function LoginForm({
             onChange={(e) => setRemember(e.target.checked)}
             style={{ width: "auto" }}
           />
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>Ricordami (sessione 30 giorni)</span>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>{t("remember")}</span>
         </label>
 
         <button
@@ -138,7 +138,7 @@ export default function LoginForm({
           onClick={() => setForgot(!forgot)}
           style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", padding: 0, fontSize: 13, textDecoration: "underline" }}
         >
-          Ho dimenticato la password
+          {t("forgot")}
         </button>
       </div>
 

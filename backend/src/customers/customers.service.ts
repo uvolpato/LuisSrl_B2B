@@ -1,16 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CustomersRepository } from './customers.repository';
+import { AuditService } from '../audit/audit.service';
 import {
   generateProvisionalPassword,
   hashPassword,
 } from '../common/password';
-import {
-  customerRowToProfile,
-  customerToProfile,
-  CustomerProfile,
-} from '../common/customer-row';
+import { toCustomerProfile } from '../common/auth-types';
+import type { CustomerProfile } from '../common/auth-types';
 import { MailService } from '../mail/mail.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -19,7 +16,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 export class CustomersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly repo: CustomersRepository,
+    private readonly audit: AuditService,
     private readonly mail: MailService,
   ) {}
 
@@ -32,51 +29,56 @@ export class CustomersService {
     const where: Prisma.CustomerWhereInput = {
       ...(params.stato ? { stato: params.stato } : {}),
       ...(params.q
-        ? {
-            OR: [
-              { email: { contains: params.q, mode: 'insensitive' } },
-              { nome: { contains: params.q, mode: 'insensitive' } },
-              { ragioneSociale: { contains: params.q, mode: 'insensitive' } },
-            ],
-          }
+        ? { OR: [
+            { email: { contains: params.q, mode: 'insensitive' } },
+            { nome: { contains: params.q, mode: 'insensitive' } },
+            { ragioneSociale: { contains: params.q, mode: 'insensitive' } },
+          ]}
         : {}),
     };
     const [items, total] = await Promise.all([
       this.prisma.customer.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
+        where, orderBy: { createdAt: 'desc' },
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
       }),
       this.prisma.customer.count({ where }),
     ]);
-    return { items: items.map(customerToProfile), total };
+    return { items: items.map(toCustomerProfile), total };
   }
 
   async getById(id: number): Promise<CustomerProfile | null> {
     const c = await this.prisma.customer.findUnique({ where: { id } });
-    return c ? customerToProfile(c) : null;
+    return c ? toCustomerProfile(c) : null;
   }
 
   async create(
     actorId: number,
     dto: CreateCustomerDto,
     ip: string | undefined,
-  ): Promise<{ customer: CustomerProfile; provisionalPassword: string }> {
+  ): Promise<{ user: CustomerProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const row = await this.repo.spCreate({
-      actorId,
-      email: dto.email,
-      passwordHash: await hashPassword(provisionalPassword),
-      nome: dto.nome,
-      ragioneSociale: dto.ragioneSociale,
-      partitaIva: dto.partitaIva,
-      telefono: dto.telefono,
-      preferredLanguage: dto.preferredLanguage,
-      ip,
+    const existing = await this.prisma.customer.findFirst({ where: { email: dto.email.toLowerCase() } });
+    if (existing) throw new ConflictException('users.email_exists');
+    if (dto.partitaIva) {
+      const pivaExists = await this.prisma.customer.findFirst({ where: { partitaIva: dto.partitaIva } });
+      if (pivaExists) throw new ConflictException('users.piva_exists');
+    }
+
+    const customer = await this.prisma.customer.create({
+      data: {
+        email: dto.email.toLowerCase(),
+        passwordHash: await hashPassword(provisionalPassword),
+        nome: dto.nome,
+        ragioneSociale: dto.ragioneSociale ?? null,
+        partitaIva: dto.partitaIva ?? null,
+        telefono: dto.telefono ?? null,
+        preferredLanguage: dto.preferredLanguage ?? 'it',
+      },
     });
-    this.mail.sendProvisionalPassword(dto.email, row.nome, provisionalPassword, false).catch(() => {});
-    return { customer: customerRowToProfile(row), provisionalPassword };
+    await this.audit.log({ actorId, azione: 'customer.create', entita: 'customers', entitaId: String(customer.id), ip });
+    this.mail.sendProvisionalPassword(dto.email, customer.nome, provisionalPassword, false).catch(() => {});
+    return { user: toCustomerProfile(customer), provisionalPassword };
   }
 
   async update(
@@ -85,8 +87,21 @@ export class CustomersService {
     dto: UpdateCustomerDto,
     ip: string | undefined,
   ): Promise<CustomerProfile> {
-    const row = await this.repo.spUpdate({ actorId, customerId, ...dto, ip });
-    return customerRowToProfile(row);
+    const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!existing) throw new NotFoundException('users.not_found');
+
+    const updated = await this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        ...(dto.nome !== undefined && { nome: dto.nome }),
+        ...(dto.ragioneSociale !== undefined && { ragioneSociale: dto.ragioneSociale }),
+        ...(dto.partitaIva !== undefined && { partitaIva: dto.partitaIva }),
+        ...(dto.telefono !== undefined && { telefono: dto.telefono }),
+        ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
+      },
+    });
+    await this.audit.log({ actorId, azione: 'customer.update', entita: 'customers', entitaId: String(customerId), ip });
+    return toCustomerProfile(updated);
   }
 
   async setBlocked(
@@ -95,24 +110,35 @@ export class CustomersService {
     blocked: boolean,
     ip: string | undefined,
   ): Promise<CustomerProfile> {
-    const row = await this.repo.spSetBlocked({ actorId, customerId, blocked, ip });
-    return customerRowToProfile(row);
+    const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!existing) throw new NotFoundException('users.not_found');
+
+    const updated = await this.prisma.customer.update({
+      where: { id: customerId },
+      data: { stato: blocked ? 'BLOCCATO' : 'ATTIVO' },
+    });
+    await this.audit.log({
+      actorId, azione: blocked ? 'customer.block' : 'customer.unblock',
+      entita: 'customers', entitaId: String(customerId), ip,
+    });
+    return toCustomerProfile(updated);
   }
 
   async resetPassword(
     actorId: number,
     customerId: number,
     ip: string | undefined,
-  ): Promise<{ customer: CustomerProfile; provisionalPassword: string }> {
+  ): Promise<{ user: CustomerProfile; provisionalPassword: string }> {
+    const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!existing) throw new NotFoundException('users.not_found');
+
     const provisionalPassword = generateProvisionalPassword();
-    const row = await this.repo.spSetPassword({
-      actorId,
-      customerId,
-      passwordHash: await hashPassword(provisionalPassword),
-      mustChange: true,
-      ip,
+    const updated = await this.prisma.customer.update({
+      where: { id: customerId },
+      data: { passwordHash: await hashPassword(provisionalPassword), mustChangePassword: true },
     });
-    this.mail.sendProvisionalPassword(row.email, row.nome, provisionalPassword, true).catch(() => {});
-    return { customer: customerRowToProfile(row), provisionalPassword };
+    await this.audit.log({ actorId, azione: 'customer.password_reset', entita: 'customers', entitaId: String(customerId), ip });
+    this.mail.sendProvisionalPassword(updated.email, updated.nome, provisionalPassword, true).catch(() => {});
+    return { user: toCustomerProfile(updated), provisionalPassword };
   }
 }

@@ -17,9 +17,20 @@
     "title": "Accesso riservato",
     "subtitle": "Portale rivenditori Luis S.r.l.",
     "email": "Email",
+    "emailPlaceholder": "La tua email",
     "password": "Password",
+    "passwordPlaceholder": "La tua password",
     "submit": "Accedi",
-    "submitting": "Accesso in corso…"
+    "submitting": "Accesso in corso…",
+    "showPassword": "Mostra password",
+    "hidePassword": "Nascondi password",
+    "remember": "Ricordami",
+    "forgot": "Password dimenticata?",
+    "forgotTitle": "Password dimenticata",
+    "forgotDesc": "Inserisci la tua email, ti invieremo un link per reimpostare la password.",
+    "back": "Indietro",
+    "sending": "Invio in corso…",
+    "send": "Invia"
   },
   "admin": {
     "title": "Gestione clienti",
