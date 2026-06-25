@@ -241,13 +241,13 @@ export class IntegrazioneService {
         giacenza: v.giacenza,
         stato: v.stato === 'NASCOSTO' ? 'nascosto' : 'attivo',
       })),
-      immagini: art.immagini.map((i) => ({ id: i.id, url: i.url, ordinamento: i.ordinamento, copertina: i.copertina, tipo: i.tipo, inGalleria: i.inGalleria })),
+      immagini: art.immagini.map((i) => ({ id: i.id, url: i.url, ordinamento: i.ordinamento, copertina: i.copertina, tipo: i.tipo, inGalleria: i.inGalleria, css: i.css })),
     };
   }
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean> },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new Error('Articolo non trovato');
@@ -268,6 +268,14 @@ export class IntegrazioneService {
         });
       }
     }
+    if (data.immaginiDaEliminare?.length) {
+      const toDelete = await this.prisma.immagine.findMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
+      for (const img of toDelete) {
+        const filePath = path.join(UPLOAD_BASE_DIR, img.url.replace(`${UPLOAD_PUBLIC_URL}/`, ''));
+        try { fs.unlinkSync(filePath); } catch { /* file già assente */ }
+      }
+      await this.prisma.immagine.deleteMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
+    }
     if (data.immaginiOrdine) {
       await this.prisma.$transaction(
         data.immaginiOrdine.map((id, idx) =>
@@ -284,6 +292,18 @@ export class IntegrazioneService {
           this.prisma.immagine.update({
             where: { id: Number(id) },
             data: { inGalleria: val },
+          }),
+        ),
+      );
+    }
+    if (data.immaginiDisplay) {
+      await this.prisma.$transaction(
+        Object.entries(data.immaginiDisplay).map(([id, props]) =>
+          this.prisma.immagine.update({
+            where: { id: Number(id) },
+            data: {
+              ...(props.css !== undefined ? { css: props.css } : {}),
+            },
           }),
         ),
       );

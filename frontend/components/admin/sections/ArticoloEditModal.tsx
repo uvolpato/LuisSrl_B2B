@@ -5,6 +5,7 @@ import { api } from "../../../lib/api";
 import Modal from "../../common/Modal";
 import { IconInfo, IconSearch, IconPlus, IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
+import EditImageModal from "./EditImageModal";
 interface VarianteDetail {
   codice: string;
   descrizione: string;
@@ -26,7 +27,7 @@ interface ArticoloDetail {
   variantiCount: number;
   updatedAt: string;
   varianti: VarianteDetail[];
-  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean }[];
+  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string }[];
 }
 
 const tabs = [
@@ -77,6 +78,9 @@ export default function ArticoloEditModal({
   const [dragGalleriaOver, setDragGalleriaOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [immaginiGalleria, setImmaginiGalleria] = useState<Record<number, boolean> | null>(null);
+  const [immaginiDisplay, setImmaginiDisplay] = useState<Record<number, { css: string }>>({});
+  const [pendingDeleteImages, setPendingDeleteImages] = useState<number[]>([]);
+  const [editingImage, setEditingImage] = useState<number | null>(null);
 
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
@@ -96,6 +100,8 @@ export default function ArticoloEditModal({
       setPendingExtra([]);
       setUploadError(null);
       setImmaginiGalleria(null);
+      setImmaginiDisplay({});
+      setPendingDeleteImages([]);
     } catch {
       setError("Errore caricamento articolo");
     } finally {
@@ -112,12 +118,14 @@ export default function ArticoloEditModal({
     if (editColoreRgb !== (article.coloreRgb || "")) return true;
     if (editStato !== article.stato) return true;
     if (pendingImages.length > 0 || pendingExtra.length > 0) return true;
+    if (pendingDeleteImages.length > 0) return true;
     if (immaginiOrdine) return true;
+    if (Object.keys(immaginiDisplay).length > 0) return true;
     for (const v of article.varianti) {
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
     }
     return false;
-  }, [article, editNome, editColore, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, immaginiGalleria]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
   function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -147,6 +155,8 @@ export default function ArticoloEditModal({
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti };
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
+      if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
+      if (pendingDeleteImages.length > 0) payload.immaginiDaEliminare = pendingDeleteImages;
       await api.put(`/api/integrazione/articoli/${article.codiceLinea}`, payload);
       onSaved?.();
       fetch();
@@ -174,6 +184,17 @@ export default function ArticoloEditModal({
   }
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  function imgStyle(img: { id: number; css: string }): React.CSSProperties {
+    const css = immaginiDisplay[img.id]?.css || img.css;
+    const parts: Record<string, string> = {};
+    css.split(";").filter(Boolean).forEach((p) => { const [k, v] = p.split(":"); if (k && v) parts[k.trim()] = v.trim(); });
+    const s: React.CSSProperties = { width: "100%", height: "100%", display: "block" };
+    if (parts["object-fit"]) s.objectFit = parts["object-fit"] as any;
+    if (parts["object-position"]) s.objectPosition = parts["object-position"];
+    if (parts.transform) s.transform = parts.transform;
+    return s;
+  }
 
   if (!open) return null;
 
@@ -263,7 +284,7 @@ export default function ArticoloEditModal({
                     <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini. Attiva/disattiva la visibilità in galleria. La prima è la copertina.</p>
                     {uploadError && <div className="error-box" style={{ marginBottom: 12 }}>{uploadError}</div>}
                     <div className="gallery-compact">
-                      {(immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).map((id, idx) => {
+                      {(immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id)).map((id, idx) => {
                         const img = article.immagini.find((i) => i.id === id);
                         if (!img) return null;
                         const isDrag = dragIdx === idx;
@@ -274,12 +295,13 @@ export default function ArticoloEditModal({
                             key={img.id}
                             className="gallery-item"
                             draggable
-                            onDragStart={() => setDragIdx(idx)}
+                            onClick={() => setEditingImage(img.id)}
+                            onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.setData('text/plain', ''); }}
                             onDragOver={(e) => { if (dragIdx === null) return; e.preventDefault(); if (dragIdx !== idx) { const list = immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id); const copy = [...list]; const [moved] = copy.splice(dragIdx, 1); copy.splice(idx, 0, moved); setImmaginiOrdine(copy); setDragIdx(idx); } }}
                             onDragEnd={() => setDragIdx(null)}
                             style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab", position: "relative", display: "flex" }}
                           >
-                            <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: desaturate ? "grayscale(1)" : "none" }} />
+                             <img src={img.url} alt="" draggable={false} style={{ ...imgStyle(img), filter: desaturate ? "grayscale(1)" : "none" }} />
                             {idx === 0 && <span className="cover-badge">Copertina</span>}
                             <button type="button" onClick={() => setImmaginiGalleria((prev) => ({ ...prev ?? {}, [img.id]: !(prev?.[img.id] ?? img.inGalleria) }))} style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: "50%", border: `2px solid ${galleriaVal ? "var(--accent)" : "var(--muted)"}`, background: galleriaVal ? "var(--accent)" : "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: galleriaVal ? "#fff" : "var(--muted)", fontSize: 12, lineHeight: 1, padding: 0 }} title={galleriaVal ? "Visibile in galleria" : "Nascosto in galleria"}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 12, height: 12 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -289,7 +311,7 @@ export default function ArticoloEditModal({
                       })}
                       {pendingExtra.map((f, i) => (
                         <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
-                          <img src={URL.createObjectURL(f)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           <button type="button" style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 14, lineHeight: 1 }} onClick={() => setPendingExtra((prev) => prev.filter((_, j) => j !== i))}>×</button>
                         </div>
                       ))}
@@ -312,14 +334,14 @@ export default function ArticoloEditModal({
                     <div
                       className="gallery-compact"
                     >
-                      {article.immagini.filter((i) => i.tipo === 'CARICATA').map((img) => (
-                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex" }}>
-                          <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {article.immagini.filter((i) => i.tipo === 'CARICATA' && !pendingDeleteImages.includes(i.id)).map((img) => (
+                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex", cursor: "pointer" }} onClick={() => setEditingImage(img.id)}>
+                          <img src={img.url} alt="" draggable={false} style={imgStyle(img)} />
                         </div>
                       ))}
                       {pendingImages.map((f, i) => (
                         <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
-                          <img src={URL.createObjectURL(f)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           <button
                             type="button"
                             style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 14, lineHeight: 1 }}
@@ -338,9 +360,9 @@ export default function ArticoloEditModal({
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16 }}>
                     <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI.</p>
                     <div className="gallery-compact">
-                      {article.immagini.filter((i) => i.tipo === 'AI').map((img) => (
-                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex" }}>
-                          <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {article.immagini.filter((i) => i.tipo === 'AI' && !pendingDeleteImages.includes(i.id)).map((img) => (
+                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex", cursor: "pointer" }} onClick={() => setEditingImage(img.id)}>
+                          <img src={img.url} alt="" draggable={false} style={imgStyle(img)} />
                         </div>
                       ))}
                       <div className="gallery-upload" style={{ aspectRatio: 1 }}>
@@ -499,6 +521,41 @@ export default function ArticoloEditModal({
           {saving ? "Salvataggio…" : "Salva Modifiche"}
         </button>
       </div>
+      <EditImageModal
+        open={editingImage !== null}
+        image={editingImage !== null && article ? (() => {
+          const img = article.immagini.find((i) => i.id === editingImage);
+          if (!img) return null;
+          const d = immaginiDisplay[editingImage];
+          return {
+            id: editingImage,
+            url: img.url,
+            css: d?.css || img.css || "",
+            tipo: img.tipo,
+            inGalleria: immaginiGalleria?.[img.id] ?? img.inGalleria,
+            copertina: img.copertina,
+            ordinamento: img.ordinamento,
+          };
+        })() : null}
+        onClose={() => setEditingImage(null)}
+        onDeleteImage={(id) => { setPendingDeleteImages((prev) => [...prev, id]); setEditingImage(null); }}
+        onResetImage={(id) => { setImmaginiDisplay((prev) => { const n = { ...prev }; delete n[id]; return n; }); setImmaginiGalleria((prev) => { if (!prev) return prev; const n = { ...prev }; delete n[id]; return n; }); setPendingDeleteImages((prev) => prev.filter((x) => x !== id)); }}
+        onChange={(id, props) => {
+          if ("css" in props) {
+            setImmaginiDisplay((prev) => ({ ...prev, [id]: { css: props.css as string } }));
+          }
+          if ("inGalleria" in props) {
+            setImmaginiGalleria((prev) => ({ ...(prev ?? {}), [id]: props.inGalleria as boolean }));
+          }
+          if ("copertina" in props && props.copertina === true) {
+            setImmaginiOrdine((prev) => {
+              const base = prev ?? (article ? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id) : []);
+              const copy = base.filter((x) => x !== id);
+              return [id, ...copy];
+            });
+          }
+        }}
+      />
     </Modal>
   );
 }

@@ -163,16 +163,17 @@ model Variante {
 }
 
 model Immagine {
-  id          Int       @id @default(autoincrement())
-  articoloId  Int       @map("articolo_id")
-  articolo    Articolo  @relation(fields: [articoloId], references: [id], onDelete: Cascade)
-  url         String
-  ordinamento Int       @default(0)
-  copertina   Boolean   @default(false)
-  tipo        String    @default("CARICATA")
-  inGalleria  Boolean   @default(true) @map("in_galleria")
-  prompt      String?
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id              Int       @id @default(autoincrement())
+  articoloId      Int       @map("articolo_id")
+  articolo        Articolo  @relation(fields: [articoloId], references: [id], onDelete: Cascade)
+  url             String
+  ordinamento     Int       @default(0)
+  copertina       Boolean   @default(false)
+  tipo            String    @default("CARICATA")
+  inGalleria      Boolean   @default(true) @map("in_galleria")
+  css             String    @default("")
+  prompt          String?
+  createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("immagini")
 }
