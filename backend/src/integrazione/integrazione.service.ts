@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fs from 'fs';
+import { randomUUID } from 'crypto';
 
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
@@ -379,6 +380,120 @@ export class IntegrazioneService {
       uploaded.push({ url: img.url });
     }
     return { uploaded };
+  }
+
+  // ── AI: ambientazione immagini (Nano Banana / Gemini 2.5 Flash Image) ──
+  // Cache effimera delle generazioni: il client persiste per generationId+indici,
+  // cosi' non si ricaricano megabyte di base64 e si scartano le non scelte.
+  // ponytail: in-memory (singola istanza). Con piu' repliche servira' uno store condiviso.
+  private aiCache = new Map<string, { items: { mime: string; b64: string }[]; ts: number }>();
+
+  private aiCacheGet(id: string) {
+    const now = Date.now();
+    for (const [k, v] of this.aiCache) if (now - v.ts > 15 * 60_000) this.aiCache.delete(k);
+    return this.aiCache.get(id);
+  }
+
+  private async callGemini(
+    prompt: string,
+    srcImg: { mime: string; b64: string },
+    cfg: { aspectRatio?: string; temperature?: number; seed?: number },
+  ): Promise<{ mime: string; b64: string }> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
+    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+    const body = {
+      contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: srcImg.mime, data: srcImg.b64 } }] }],
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+        ...(cfg.temperature !== undefined ? { temperature: cfg.temperature } : {}),
+        ...(cfg.seed !== undefined ? { seed: cfg.seed } : {}),
+        ...(cfg.aspectRatio ? { imageConfig: { aspectRatio: cfg.aspectRatio } } : {}),
+      },
+    };
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) },
+    );
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      let detail = txt.slice(0, 300);
+      try { detail = (JSON.parse(txt) as { error?: { message?: string } })?.error?.message ?? detail; } catch { /* testo grezzo */ }
+      if (res.status === 429) {
+        throw new BadRequestException(`Quota AI esaurita (429): verifica piano/billing su Google AI Studio. ${detail.slice(0, 140)}`);
+      }
+      throw new BadRequestException(`Errore AI (${res.status}): ${detail.slice(0, 200)}`);
+    }
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[];
+    };
+    const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+    if (!part?.inlineData?.data) throw new BadRequestException("La generazione AI non ha restituito un'immagine.");
+    return { mime: part.inlineData.mimeType || 'image/png', b64: part.inlineData.data };
+  }
+
+  /** Genera N varianti ambientate dall'immagine sorgente. Non salva nulla:
+   *  ritorna le immagini (base64) + un generationId per la persistenza. */
+  async ambientaImmagine(
+    codiceLinea: string,
+    imageId: number,
+    opts: { prompt: string; n?: number; aspectRatio?: string; temperature?: number; seed?: number },
+  ) {
+    if (!opts.prompt?.trim()) throw new BadRequestException('Inserisci un prompt.');
+    const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
+    if (!art) throw new NotFoundException('Articolo non trovato');
+    const img = await this.prisma.immagine.findFirst({ where: { id: imageId, articoloId: art.id } });
+    if (!img) throw new NotFoundException('Immagine non trovata');
+
+    const rel = img.url.replace(`${UPLOAD_PUBLIC_URL}/`, '');
+    const filePath = path.join(UPLOAD_BASE_DIR, rel);
+    let buf: Buffer;
+    try { buf = fs.readFileSync(filePath); } catch { throw new BadRequestException('File immagine sorgente non trovato sul disco.'); }
+    const ext = path.extname(filePath).toLowerCase();
+    const srcMime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    const src = { mime: srcMime, b64: buf.toString('base64') };
+
+    const n = Math.min(Math.max(opts.n ?? 1, 1), 4);
+    const results = await Promise.all(
+      Array.from({ length: n }, (_, i) =>
+        this.callGemini(opts.prompt, src, {
+          aspectRatio: opts.aspectRatio,
+          temperature: opts.temperature,
+          seed: opts.seed !== undefined ? opts.seed + i : undefined,
+        }),
+      ),
+    );
+    const generationId = randomUUID();
+    this.aiCache.set(generationId, { items: results, ts: Date.now() });
+    return { generationId, images: results };
+  }
+
+  /** Persiste le generazioni selezionate come immagini tipo='AI'. */
+  async persistAiImmagini(codiceLinea: string, generationId: string, indices: number[]) {
+    const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
+    if (!art) throw new NotFoundException('Articolo non trovato');
+    const gen = this.aiCacheGet(generationId);
+    if (!gen) throw new BadRequestException('Generazione scaduta: rigenera le immagini.');
+    const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
+    const artDir = path.join(UPLOAD_BASE_DIR, safeCod);
+    fs.mkdirSync(artDir, { recursive: true });
+    let aiCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo: 'AI' } });
+    const saved: { url: string }[] = [];
+    for (const idx of indices) {
+      const item = gen.items[idx];
+      if (!item) continue;
+      const fileExt = item.mime === 'image/jpeg' ? '.jpg' : item.mime === 'image/webp' ? '.webp' : '.png';
+      aiCount += 1;
+      const filename = `${safeCod}_ai_${String(aiCount).padStart(3, '0')}${fileExt}`;
+      fs.writeFileSync(path.join(artDir, filename), Buffer.from(item.b64, 'base64'));
+      const ord = await this.prisma.immagine.count({ where: { articoloId: art.id } });
+      const rec = await this.prisma.immagine.create({
+        data: { articoloId: art.id, url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: ord, tipo: 'AI' },
+      });
+      saved.push({ url: rec.url });
+    }
+    this.aiCache.delete(generationId);
+    return { saved: saved.length, immagini: saved };
   }
 
   /** Restituisce il mapping corrente (utile per debug) */

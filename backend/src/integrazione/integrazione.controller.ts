@@ -61,6 +61,23 @@ export class IntegrazioneController {
     return this.integrazione.configuraArticolo(codiceLinea);
   }
 
+  @Post('articoli/:codiceLinea/immagini/:id/ambienta')
+  async ambienta(
+    @Param('codiceLinea') codiceLinea: string,
+    @Param('id') id: string,
+    @Body() body: { prompt: string; n?: number; aspectRatio?: string; temperature?: number; seed?: number },
+  ) {
+    return this.integrazione.ambientaImmagine(codiceLinea, Number(id), body);
+  }
+
+  @Post('articoli/:codiceLinea/immagini/ai/persisti')
+  async persistAi(
+    @Param('codiceLinea') codiceLinea: string,
+    @Body() body: { generationId: string; indices: number[] },
+  ) {
+    return this.integrazione.persistAiImmagini(codiceLinea, body.generationId, body.indices ?? []);
+  }
+
   @Get('articoli/:codiceLinea')
   async getArticolo(@Param('codiceLinea') codiceLinea: string) {
     return this.integrazione.getArticolo(codiceLinea);

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Modal from "../../common/Modal";
 import { useConfirm } from "../../common/ConfirmProvider";
+import Notice from "../../common/Notice";
+import { api, ApiError } from "../../../lib/api";
 
 const FIT_OPTIONS = [
   { value: "cover", label: "Copri" },
@@ -28,6 +30,8 @@ interface EditImageModalProps {
   onChange: (id: number, props: Record<string, unknown>) => void;
   onDeleteImage?: (id: number) => void;
   onResetImage?: (id: number) => void;
+  codiceLinea: string;
+  onPersisted?: () => void;
 }
 
 type CssProps = { objectFit: string; objectPosition: string; zoom: number; rotation: number; posX: number; posY: number };
@@ -62,10 +66,24 @@ function toPositionStr(x: number, y: number) {
   return `${Math.round(x)}% ${Math.round(y)}%`;
 }
 
-export default function EditImageModal({ open, image, onClose, onChange, onDeleteImage, onResetImage }: EditImageModalProps) {
+export default function EditImageModal({ open, image, onClose, onChange, onDeleteImage, onResetImage, codiceLinea, onPersisted }: EditImageModalProps) {
   const [tab, setTab] = useState<"dettagli" | "posizionamento" | "ambienta-ai">("dettagli");
   const [editPrompt, setEditPrompt] = useState("");
   const confirm = useConfirm();
+  // Stato generatore AI ("ambienta")
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiN, setAiN] = useState(2);
+  const [aiAspect, setAiAspect] = useState("1:1");
+  const [aiTemp, setAiTemp] = useState(0.7);
+  const [aiSeed, setAiSeed] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [aiResults, setAiResults] = useState<{ mime: string; b64: string }[]>([]);
+  const [aiGenId, setAiGenId] = useState<string | null>(null);
+  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [persisting, setPersisting] = useState(false);
+  const [aiSaved, setAiSaved] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   useEffect(() => { setEditPrompt(image?.prompt || ""); }, [image?.id, image?.prompt]);
   if (!image) return null;
   // il narrowing della guard non si propaga nelle funzioni annidate sotto: alias non-null
@@ -98,6 +116,45 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   function handlePositionClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
     handleChange({ posX: ((e.clientX - rect.left) / rect.width) * 100, posY: ((e.clientY - rect.top) / rect.height) * 100 });
+  }
+
+  async function handleGenera() {
+    if (!aiPrompt.trim()) { setAiError("Inserisci un prompt."); return; }
+    setGenerating(true); setAiError(null); setAiSaved(null);
+    try {
+      const res = await api.post<{ generationId: string; images: { mime: string; b64: string }[] }>(
+        `/api/integrazione/articoli/${codiceLinea}/immagini/${img.id}/ambienta`,
+        { prompt: aiPrompt, n: aiN, aspectRatio: aiAspect, temperature: aiTemp, seed: aiSeed.trim() === "" ? undefined : Number(aiSeed) },
+      );
+      setAiGenId(res.generationId);
+      setAiResults(res.images);
+      setAiSelected(new Set());
+    } catch (e) {
+      setAiError(e instanceof ApiError ? e.code : "Errore di generazione.");
+    } finally { setGenerating(false); }
+  }
+
+  function toggleSel(i: number) {
+    setAiSelected((prev) => { const s = new Set(prev); if (s.has(i)) s.delete(i); else s.add(i); return s; });
+  }
+  function selAll() {
+    setAiSelected((prev) => (prev.size === aiResults.length ? new Set() : new Set(aiResults.map((_, i) => i))));
+  }
+
+  async function handlePersist() {
+    if (!aiGenId || aiSelected.size === 0) return;
+    setPersisting(true); setAiError(null);
+    try {
+      const res = await api.post<{ saved: number }>(
+        `/api/integrazione/articoli/${codiceLinea}/immagini/ai/persisti`,
+        { generationId: aiGenId, indices: [...aiSelected] },
+      );
+      onPersisted?.();
+      setAiResults([]); setAiSelected(new Set()); setAiGenId(null);
+      setAiSaved(`${res.saved} immagine/i salvate nella galleria AI.`);
+    } catch (e) {
+      setAiError(e instanceof ApiError ? e.code : "Errore di salvataggio.");
+    } finally { setPersisting(false); }
   }
 
   return (
@@ -201,29 +258,85 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
             )}
 
             {tab === "ambienta-ai" && (
-              <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>
                 <div className="ai-section-header">
                   <div className="ai-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
                   </div>
                   <div>
                     <h3>Generatore Immagini Ambientate</h3>
-                    <p>Scrivi un prompt per generare un&apos;immagine del prodotto in contesto d&apos;uso.</p>
+                    <p>L&apos;immagine viene inviata a Nano Banana (Gemini) col prompt per ambientarla in un contesto d&apos;uso.</p>
                   </div>
                 </div>
+
+                {aiError && <Notice variant="error" onClose={() => setAiError(null)}>{aiError}</Notice>}
+                {aiSaved && <Notice variant="success" onClose={() => setAiSaved(null)}>{aiSaved}</Notice>}
+
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label style={{ fontSize: 12 }}>Prompt di ambientazione</label>
-                  <textarea className="textarea" placeholder="Es. Vaso su un tavolo in legno di una veranda mediterranea…" rows={3} />
+                  <textarea className="textarea" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Es. Vaso su un tavolo in legno di una veranda mediterranea, luce calda del tramonto…" rows={3} />
                 </div>
-                <button className="btn btn-primary" disabled style={{ alignSelf: "flex-start" }}>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px 16px" }}>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>N. immagini</label>
+                    <select className="input" value={aiN} onChange={(e) => setAiN(Number(e.target.value))}>
+                      {[1, 2, 3, 4].map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>Proporzioni</label>
+                    <select className="input" value={aiAspect} onChange={(e) => setAiAspect(e.target.value)}>
+                      {["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"].map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>Creatività ({aiTemp.toFixed(2)})</label>
+                    <input type="range" min={0} max={1} step={0.05} value={aiTemp} onChange={(e) => setAiTemp(Number(e.target.value))} style={{ width: "100%" }} />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>Seed (opz.)</label>
+                    <input className="input" type="number" value={aiSeed} onChange={(e) => setAiSeed(e.target.value)} placeholder="casuale" />
+                  </div>
+                </div>
+
+                <button className="btn btn-primary" onClick={handleGenera} disabled={generating || !aiPrompt.trim()} style={{ alignSelf: "flex-start" }}>
                   <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                  Genera Immagine
+                  {generating ? "Generazione…" : "Genera Immagine"}
                 </button>
-                <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 1</div>
-                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 2</div>
-                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 3</div>
-                </div>
+
+                {aiResults.length > 0 && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>Clicca per selezionare, lente per ingrandire.</span>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={selAll}>
+                        {aiSelected.size === aiResults.length ? "Deseleziona tutte" : "Seleziona tutte"}
+                      </button>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+                      {aiResults.map((im, i) => {
+                        const sel = aiSelected.has(i);
+                        const url = `data:${im.mime};base64,${im.b64}`;
+                        return (
+                          <div key={i} onClick={() => toggleSel(i)} style={{ position: "relative", aspectRatio: 1, borderRadius: "var(--radius)", overflow: "hidden", cursor: "pointer", border: `2px solid ${sel ? "var(--accent)" : "transparent"}` }}>
+                            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            {sel && (
+                              <div style={{ position: "absolute", top: 4, left: 4, width: 20, height: 20, borderRadius: "50%", background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center" }}>
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                              </div>
+                            )}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setLightbox(url); }} title="Ingrandisci" style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: 6, border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <button className="btn btn-primary" onClick={handlePersist} disabled={persisting || aiSelected.size === 0} style={{ alignSelf: "flex-start" }}>
+                      {persisting ? "Salvataggio…" : `Salva selezionate (${aiSelected.size})`}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -236,6 +349,12 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
         <button type="button" className="btn btn-secondary btn-sm" onClick={() => onResetImage?.(image.id)}>Annulla modifiche</button>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Chiudi</button>
       </div>
+
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, cursor: "zoom-out" }}>
+          <img src={lightbox} alt="" style={{ maxWidth: "92%", maxHeight: "92%", borderRadius: "var(--radius)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} />
+        </div>
+      )}
     </Modal>
   );
 }

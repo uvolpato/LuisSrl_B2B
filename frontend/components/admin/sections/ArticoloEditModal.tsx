@@ -544,6 +544,8 @@ export default function ArticoloEditModal({
           };
         })() : null}
         onClose={() => setEditingImage(null)}
+        codiceLinea={article?.codiceLinea ?? ""}
+        onPersisted={() => { fetch(); }}
         onDeleteImage={(id) => { setPendingDeleteImages((prev) => [...prev, id]); setEditingImage(null); }}
         onResetImage={(id) => { setImmaginiDisplay((prev) => { const n = { ...prev }; delete n[id]; return n; }); setImmaginiGalleria((prev) => { if (!prev) return prev; const n = { ...prev }; delete n[id]; return n; }); setPendingDeleteImages((prev) => prev.filter((x) => x !== id)); }}
         onChange={(id, props) => {
