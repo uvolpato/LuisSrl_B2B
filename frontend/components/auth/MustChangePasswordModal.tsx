@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "../../lib/api";
 import FocusTrap from "../common/FocusTrap";
+import Notice from "../common/Notice";
 
 const EyeIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -83,7 +84,7 @@ export default function MustChangePasswordModal({
             Al primo accesso è necessario cambiare la password provvisoria.
           </p>
           <form onSubmit={onSubmit}>
-            {error && <div className="error-box">{error}</div>}
+            {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
             <label htmlFor="cp-new">Nuova password</label>
             <div style={{ position: "relative" }}>
               <input

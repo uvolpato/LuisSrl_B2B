@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Modal from "../../common/Modal";
+import { useConfirm } from "../../common/ConfirmProvider";
 
 const FIT_OPTIONS = [
   { value: "cover", label: "Copri" },
@@ -62,8 +63,9 @@ function toPositionStr(x: number, y: number) {
 }
 
 export default function EditImageModal({ open, image, onClose, onChange, onDeleteImage, onResetImage }: EditImageModalProps) {
-  const [tab, setTab] = useState<"dettagli" | "posizionamento">("dettagli");
+  const [tab, setTab] = useState<"dettagli" | "posizionamento" | "ambienta-ai">("dettagli");
   const [editPrompt, setEditPrompt] = useState("");
+  const confirm = useConfirm();
   useEffect(() => { setEditPrompt(image?.prompt || ""); }, [image?.id, image?.prompt]);
   if (!image) return null;
   // il narrowing della guard non si propaga nelle funzioni annidate sotto: alias non-null
@@ -122,6 +124,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
           <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
             <button className={`subtab-btn ${tab === "dettagli" ? "active" : ""}`} onClick={() => setTab("dettagli")}>Dettagli</button>
             <button className={`subtab-btn ${tab === "posizionamento" ? "active" : ""}`} onClick={() => setTab("posizionamento")}>Posizionamento</button>
+            {image.tipo === "CARICATA" && <button className={`subtab-btn ${tab === "ambienta-ai" ? "active" : ""}`} onClick={() => setTab("ambienta-ai")}>Ambienta AI</button>}
           </div>
 
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -196,12 +199,39 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                 </div>
               </div>
             )}
+
+            {tab === "ambienta-ai" && (
+              <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="ai-section-header">
+                  <div className="ai-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                  </div>
+                  <div>
+                    <h3>Generatore Immagini Ambientate</h3>
+                    <p>Scrivi un prompt per generare un&apos;immagine del prodotto in contesto d&apos;uso.</p>
+                  </div>
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Prompt di ambientazione</label>
+                  <textarea className="textarea" placeholder="Es. Vaso su un tavolo in legno di una veranda mediterranea…" rows={3} />
+                </div>
+                <button className="btn btn-primary" disabled style={{ alignSelf: "flex-start" }}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                  Genera Immagine
+                </button>
+                <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 1</div>
+                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 2</div>
+                  <div style={{ width: 140, height: 100, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 12 }}>Anteprima 3</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="modal-root-footer">
-        <button type="button" className="btn btn-danger-outline btn-sm" onClick={() => { if (window.confirm(`Eliminare l'immagine #${image.id}?`)) onDeleteImage?.(image.id); }}>Elimina</button>
+        <button type="button" className="btn btn-danger-outline btn-sm" onClick={async () => { if (await confirm({ message: `Eliminare l'immagine #${img.id}?`, tone: "danger" })) onDeleteImage?.(img.id); }}>Elimina</button>
         <div style={{ flex: 1 }} />
         <button type="button" className="btn btn-secondary btn-sm" onClick={() => onResetImage?.(image.id)}>Annulla modifiche</button>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Chiudi</button>

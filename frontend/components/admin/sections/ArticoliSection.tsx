@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
+import Notice from "../../common/Notice";
 import type { Article } from "../types";
 import { PAGE_SIZE } from "../types";
 import AdminTopBar from "../AdminTopBar";
@@ -166,7 +167,7 @@ export default function ArticoliSection() {
             </button>
           </div>
         </div>
-        {error && <div className="error-box">{error}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
         {view === "list" ? (
           <DataTable
             columns={articleColumns}

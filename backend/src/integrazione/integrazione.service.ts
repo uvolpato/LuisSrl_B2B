@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -202,13 +202,40 @@ export class IntegrazioneService {
 
   async toggleArticoloStato(codiceLinea: string) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
-    if (!art) throw new Error('Articolo non trovato');
+    if (!art) throw new NotFoundException('Articolo non trovato');
     const nuovoStato = art.stato === 'ATTIVO' ? 'NASCOSTO' : 'ATTIVO';
+    if (nuovoStato === 'ATTIVO' && !art.configurato) {
+      throw new BadRequestException('Articolo da configurare: non puo\' essere reso visibile.');
+    }
     await this.prisma.articolo.update({
       where: { codiceLinea },
       data: { stato: nuovoStato },
     });
     return { stato: nuovoStato === 'ATTIVO' ? 'attivo' : 'nascosto' };
+  }
+
+  /**
+   * Passaggio "da configurare" -> "configurato". IRREVERSIBILE.
+   * Criteri: almeno una foto, un colore, almeno una variante.
+   * ponytail: criterio "listino associato" da aggiungere quando esistera' il
+   * modello listini (per ora non applicato - vedi task di tracking).
+   */
+  async configuraArticolo(codiceLinea: string) {
+    const art = await this.prisma.articolo.findUnique({
+      where: { codiceLinea },
+      include: { _count: { select: { immagini: true, varianti: true } } },
+    });
+    if (!art) throw new NotFoundException('Articolo non trovato');
+    if (art.configurato) return { configurato: true };
+    const mancanti: string[] = [];
+    if (art._count.immagini < 1) mancanti.push('almeno una foto');
+    if (!art.colore || !art.colore.trim()) mancanti.push('un colore');
+    if (art._count.varianti < 1) mancanti.push('almeno una variante');
+    if (mancanti.length) {
+      throw new BadRequestException(`Impossibile configurare: manca ${mancanti.join(', ')}.`);
+    }
+    await this.prisma.articolo.update({ where: { codiceLinea }, data: { configurato: true } });
+    return { configurato: true };
   }
 
   async getArticolo(codiceLinea: string) {
@@ -250,12 +277,17 @@ export class IntegrazioneService {
     data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
-    if (!art) throw new Error('Articolo non trovato');
+    if (!art) throw new NotFoundException('Articolo non trovato');
     const updateData: Record<string, unknown> = {};
     if (data.nome !== undefined) updateData.nome = data.nome;
     if (data.colore !== undefined) updateData.colore = data.colore;
     if (data.coloreRgb !== undefined) updateData.coloreRgb = data.coloreRgb;
-    if (data.stato !== undefined) updateData.stato = data.stato === 'attivo' ? 'ATTIVO' : 'NASCOSTO';
+    if (data.stato !== undefined) {
+      if (data.stato === 'attivo' && !art.configurato) {
+        throw new BadRequestException('Articolo da configurare: non puo\' essere reso visibile.');
+      }
+      updateData.stato = data.stato === 'attivo' ? 'ATTIVO' : 'NASCOSTO';
+    }
     if (Object.keys(updateData).length > 0) {
       await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData });
     }

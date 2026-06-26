@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
+import Notice from "../common/Notice";
 
 /** Form di cambio password dell'utente corrente. */
 export default function ChangePasswordCard({
@@ -41,7 +42,7 @@ export default function ChangePasswordCard({
     <form className="card" onSubmit={onSubmit}>
       <h2 style={{ marginTop: 0 }}>{t("changePassword")}</h2>
 
-      {error && <div className="error-box">{tServer(error)}</div>}
+      {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
       {done && <div className="ok-box">{t("passwordChanged")}</div>}
 
       <label htmlFor="oldPassword">{t("oldPassword")}</label>

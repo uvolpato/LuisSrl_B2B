@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../lib/api";
 import Modal from "../common/Modal";
+import Notice from "../common/Notice";
 import type { ProdottoView, SearchResult } from "./types";
 import { IconSearch, IconInfo, IconChevronLeft, IconChevronRight } from "./icons";
 
@@ -146,8 +147,8 @@ export default function ImportaArticoliModal({
           />
         </div>
 
-        {error && <div className="error-box" style={{ marginBottom: 12 }}>{error}</div>}
-        {importResult && <div className="error-box" style={{ background: "var(--green-soft)", color: "var(--green)", marginBottom: 12 }}>{importResult}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
+        {importResult && <Notice variant="success" onClose={() => setImportResult(null)} style={{ marginBottom: 12 }}>{importResult}</Notice>}
 
         <div className="data-table" style={{ flex: 1, minHeight: 0 }}>
           <div className="data-table-scroll">

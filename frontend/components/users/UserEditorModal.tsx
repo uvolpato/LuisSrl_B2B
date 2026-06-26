@@ -7,6 +7,7 @@ import type {
   CustomerProfile,
 } from "../../lib/types";
 import Modal from "../common/Modal";
+import Notice from "../common/Notice";
 
 export type UserEditorTarget =
   | { mode: "create" }
@@ -72,7 +73,7 @@ export default function UserEditorModal({
   return (
     <Modal title={editing ? t("editTitle") : t("createTitle")} onClose={onClose}>
       <form onSubmit={onSubmit}>
-        {error && <div className="error-box">{tServer(error)}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
 
         <label>{t("fieldEmail")}</label>
         <input

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 import FocusTrap from "../common/FocusTrap";
+import Notice from "../common/Notice";
 
 export default function ChangePasswordModal({
   onChanged,
@@ -72,7 +73,7 @@ export default function ChangePasswordModal({
             {subtitle}
           </p>
           <form onSubmit={onSubmit}>
-            {error && <div className="error-box">{tServer(error)}</div>}
+            {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
             <label htmlFor="cp-old">Password attuale</label>
             <input
               id="cp-old"

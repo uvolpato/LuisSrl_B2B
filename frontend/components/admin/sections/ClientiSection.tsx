@@ -11,10 +11,13 @@ import ProvisionalPasswordModal from "../../users/ProvisionalPasswordModal";
 import { IconEdit, IconLock, IconPlus, IconReset, IconUnlock } from "../icons";
 import { initials } from "../../../lib/helpers";
 import { PAGE_SIZE } from "../types";
+import { useConfirm } from "../../common/ConfirmProvider";
+import Notice from "../../common/Notice";
 
 export default function ClientiSection() {
   const t = useTranslations("admin");
   const tServer = useTranslations("server");
+  const confirm = useConfirm();
 
   const [items, setItems] = useState<CustomerProfile[]>([]);
   const [total, setTotal] = useState(0);
@@ -53,15 +56,15 @@ export default function ClientiSection() {
     }
   }
 
-  function onBlockToggle(u: CustomerProfile) {
-    if (u.stato === "ATTIVO" && !window.confirm(t("confirmBlock"))) return;
+  async function onBlockToggle(u: CustomerProfile) {
+    if (u.stato === "ATTIVO" && !(await confirm({ message: t("confirmBlock"), tone: "danger" }))) return;
     void run(async () => {
       await api.post(`/api/customers/${u.id}/${u.stato === "ATTIVO" ? "block" : "unblock"}`);
     });
   }
 
-  function onResetPassword(u: CustomerProfile) {
-    if (!window.confirm(t("confirmReset"))) return;
+  async function onResetPassword(u: CustomerProfile) {
+    if (!(await confirm({ message: t("confirmReset"), tone: "danger" }))) return;
     void run(async () => {
       const res = await api.post<ProvisionalPasswordResponse>(`/api/customers/${u.id}/reset-password`);
       setProvisional({ email: u.email, password: res.provisionalPassword });
@@ -135,7 +138,7 @@ export default function ClientiSection() {
             <span className="meta">{t("total", { count: total })}</span>
           </div>
         </div>
-        {error && <div className="error-box">{tServer(error)}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
         <DataTable
           columns={clientColumns}
           rows={items}

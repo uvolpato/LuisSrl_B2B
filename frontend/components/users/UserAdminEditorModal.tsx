@@ -4,6 +4,7 @@ import { FormEvent, useState, useCallback } from "react";
 import { api, ApiError } from "../../lib/api";
 import type { UserProfile } from "../../lib/types";
 import Modal from "../common/Modal";
+import Notice from "../common/Notice";
 
 export type UserAdminTarget =
   | { mode: "create" }
@@ -94,7 +95,7 @@ export default function UserAdminEditorModal({
       onClose={onClose}
     >
       <form onSubmit={onSubmit}>
-        {error && <div className="error-box" style={{ marginBottom: 14 }}>{error}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 14 }}>{error}</Notice>}
 
         <label>Email</label>
         <input

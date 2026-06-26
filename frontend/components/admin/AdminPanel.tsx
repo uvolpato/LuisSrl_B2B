@@ -8,6 +8,8 @@ import DataTable, { type Column, type RowAction } from "./DataTable";
 import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEditorModal";
 import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
 import Modal from "../common/Modal";
+import Notice from "../common/Notice";
+import { useConfirm } from "../common/ConfirmProvider";
 
 const svg = (paths: React.ReactNode) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -67,6 +69,7 @@ const STATO_FILTERS: { value: StatoFilter; label: string }[] = [
 ];
 
 export default function AdminPanel() {
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState<UserTab>("utenti");
   const [userSubTab, setUserSubTab] = useState<UserSubTab>("panoramica");
   const [search, setSearch] = useState("");
@@ -140,7 +143,7 @@ export default function AdminPanel() {
       icon: () => IconReset,
       tooltip: () => "Reset password",
       onClick: async (u) => {
-        if (!window.confirm(`Resettare la password di ${u.nome}?`)) return;
+        if (!(await confirm({ message: `Resettare la password di ${u.nome}?`, tone: "danger" }))) return;
         const res = await api.post<{ user: UserProfile; provisionalPassword: string }>(
           `/api/users/${u.id}/reset-password`
         );
@@ -157,7 +160,7 @@ export default function AdminPanel() {
       variant: "danger",
       onClick: async (u) => {
         const isBlock = u.stato === "ATTIVO";
-        if (!window.confirm(`${isBlock ? "Bloccare" : "Sbloccare"} l'utente ${u.nome}?`)) return;
+        if (!(await confirm({ message: `${isBlock ? "Bloccare" : "Sbloccare"} l'utente ${u.nome}?`, tone: "danger" }))) return;
         const endpoint = isBlock
           ? `/api/users/${u.id}/block`
           : `/api/users/${u.id}/unblock`;
@@ -171,13 +174,13 @@ export default function AdminPanel() {
       tooltip: () => "Elimina",
       variant: "danger",
       onClick: async (u) => {
-        if (!window.confirm(`Eliminare l'utente ${u.nome}?`)) return;
+        if (!(await confirm({ message: `Eliminare l'utente ${u.nome}?`, tone: "danger" }))) return;
         await api.del(`/api/users/${u.id}`);
         fetchUsers();
       },
       hidden: (u) => u.ruolo === "SUPERUSER" || !!u.deletedAt,
     },
-  ], [fetchUsers]);
+  ], [fetchUsers, confirm]);
 
   const customerActions: RowAction<CustomerProfile>[] = useMemo(() => [
     {
@@ -189,7 +192,7 @@ export default function AdminPanel() {
       icon: () => IconReset,
       tooltip: () => "Reset password",
       onClick: async (c) => {
-        if (!window.confirm(`Resettare la password di ${c.nome}?`)) return;
+        if (!(await confirm({ message: `Resettare la password di ${c.nome}?`, tone: "danger" }))) return;
         const res = await api.post<{ customer: CustomerProfile; provisionalPassword: string }>(
           `/api/customers/${c.id}/reset-password`
         );
@@ -463,6 +466,7 @@ export default function AdminPanel() {
 // ── Sezione Gruppi (sotto-voce di Utenti) ──
 
 function GroupsSection() {
+  const confirm = useConfirm();
   const [groups, setGroups] = useState<PermissionGroup[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -532,8 +536,8 @@ function GroupsSection() {
       icon: () => IconTrash,
       tooltip: () => "Elimina",
       variant: "danger",
-      onClick: (g) => {
-        if (!window.confirm(`Eliminare il gruppo "${g.name}"?`)) return;
+      onClick: async (g) => {
+        if (!(await confirm({ message: `Eliminare il gruppo "${g.name}"?`, tone: "danger" }))) return;
         api.del(`/api/admin/groups/${g.id}`).then(() => fetchGroups()).catch(() => {});
       },
     },
@@ -637,7 +641,7 @@ function GroupEditorModal({
           {group ? "Modifica gruppo" : "Nuovo gruppo"}
         </h2>
         <form onSubmit={onSubmit}>
-          {error && <div className="error-box" style={{ marginBottom: 12 }}>{error}</div>}
+          {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
           <label htmlFor="ge-name">Nome</label>
           <input id="ge-name" required value={name} onChange={(e) => setName(e.target.value)} />
           <label htmlFor="ge-slug">Slug</label>

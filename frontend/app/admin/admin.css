@@ -2134,7 +2134,7 @@
 .account-select-wrap { position: relative; }
 .account-select { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer; }
 .account-chevron {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; color: var(--muted); pointer-events: none;
 }
 

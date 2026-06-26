@@ -61,6 +61,17 @@ input, select {
 }
 input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
 
+/* Caret custom su tutte le dropdown, qualche px piu' a sinistra del nativo.
+   .account-select ha gia' il suo chevron (.account-chevron) -> escluso. */
+select:not(.account-select) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  padding-right: 34px;
+}
+
 button {
   font: inherit;
   border-radius: 10px;
@@ -93,6 +104,66 @@ button.small { padding: 5px 10px; font-size: 13px; }
   margin: 12px 0;
   font-size: 14px;
 }
+
+/* Messaggio inline a livelli (Notice): info / warning / error / success */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.notice-icon { flex-shrink: 0; display: flex; padding-top: 1px; }
+.notice-icon svg { width: 18px; height: 18px; }
+.notice-text { flex: 1; min-width: 0; }
+.notice-close {
+  flex-shrink: 0;
+  display: flex;
+  padding: 0;
+  margin: -2px -2px 0 0;
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.notice-close:hover { opacity: 1; background: transparent; }
+.notice-close svg { width: 16px; height: 16px; }
+.notice-error   { background: oklch(96% 0.03 25);  border-color: var(--danger); color: var(--danger); }
+.notice-warning { background: oklch(96% 0.06 85);  border-color: oklch(72% 0.14 85);  color: oklch(45% 0.11 75); }
+.notice-info    { background: oklch(96% 0.03 250); border-color: oklch(70% 0.10 250); color: oklch(45% 0.12 255); }
+.notice-success { background: oklch(95% 0.06 150); border-color: oklch(62% 0.13 150); color: oklch(40% 0.12 150); }
+
+/* Dialog su misura per conferme/avvisi (NON il Modal generico): dimensionato
+   sul contenuto, centrato, non ancorato ai bordi. */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: color-mix(in oklch, var(--fg) 45%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.confirm-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  width: max-content;
+  max-width: 440px;
+  min-width: 300px;
+  padding: 22px 24px;
+}
+.confirm-dialog-title { font-size: 17px; font-weight: 600; margin: 0 0 8px; color: var(--fg); }
+.confirm-dialog-message { margin: 0 0 20px; color: var(--fg); line-height: 1.5; white-space: pre-line; font-size: 14px; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
 .ok-box {
   background: oklch(96% 0.03 150);

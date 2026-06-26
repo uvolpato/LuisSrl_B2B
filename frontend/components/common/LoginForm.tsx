@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError, setCsrfToken } from "../../lib/api";
+import Notice from "./Notice";
 import type { MeResponse } from "../../lib/types";
 
 const EyeIcon = (
@@ -75,7 +76,7 @@ export default function LoginForm({
         </div>
       )}
 
-      {error && <div className="error-box">{tServer(error)}</div>}
+      {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
 
       <form onSubmit={onSubmit}>
         <label htmlFor="login-email">{t("email")}</label>

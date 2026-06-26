@@ -56,6 +56,11 @@ export class IntegrazioneController {
     return this.integrazione.toggleArticoloStato(codiceLinea);
   }
 
+  @Post('articoli/:codiceLinea/configura')
+  async configura(@Param('codiceLinea') codiceLinea: string) {
+    return this.integrazione.configuraArticolo(codiceLinea);
+  }
+
   @Get('articoli/:codiceLinea')
   async getArticolo(@Param('codiceLinea') codiceLinea: string) {
     return this.integrazione.getArticolo(codiceLinea);

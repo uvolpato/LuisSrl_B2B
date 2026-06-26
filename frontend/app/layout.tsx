@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import ConfirmProvider from "../components/common/ConfirmProvider";
 import "./globals.css";
 import "./landing.css";
 
@@ -18,7 +19,7 @@ export default async function RootLayout({
     <html lang={locale}>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <ConfirmProvider>{children}</ConfirmProvider>
         </NextIntlClientProvider>
       </body>
     </html>

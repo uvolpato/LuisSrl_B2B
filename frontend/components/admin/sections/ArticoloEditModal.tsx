@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "../../../lib/api";
+import { api, ApiError } from "../../../lib/api";
 import Modal from "../../common/Modal";
+import Notice from "../../common/Notice";
+import { useConfirm } from "../../common/ConfirmProvider";
 import { IconInfo, IconSearch, IconPlus, IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
@@ -37,7 +39,6 @@ const tabs = [
   { key: "descrizione-ai", label: "Descrizione AI" },
   { key: "famiglia", label: "Famiglia" },
   { key: "raccolte", label: "Raccolte" },
-  { key: "ai", label: "Genera AI" },
 ];
 
 const subTabs = [
@@ -63,6 +64,7 @@ export default function ArticoloEditModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const [editNome, setEditNome] = useState("");
   const [editColore, setEditColore] = useState("");
@@ -127,9 +129,9 @@ export default function ArticoloEditModal({
     return false;
   }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
-  function handleClose() {
+  async function handleClose() {
     if (!isDirty) { onClose(); return; }
-    if (confirm("Modifiche non salvate.\nOK = Salva e chiudi\nAnnulla = Perdi modifiche")) {
+    if (await confirm({ title: "Modifiche non salvate", message: "Vuoi salvare le modifiche prima di chiudere?", confirmLabel: "Salva e chiudi", cancelLabel: "Esci senza salvare" })) {
       handleSave();
     } else {
       onClose();
@@ -170,7 +172,7 @@ export default function ArticoloEditModal({
 
   async function handleDelete() {
     if (!article) return;
-    if (!window.confirm(`Eliminare l'articolo "${article.nome}"?`)) return;
+    if (!(await confirm({ message: `Eliminare l'articolo "${article.nome}"?`, tone: "danger" }))) return;
     setSaving(true);
     try {
       await api.del(`/api/integrazione/articoli/${article.codiceLinea}`);
@@ -178,6 +180,21 @@ export default function ArticoloEditModal({
       onClose();
     } catch {
       setError("Errore eliminazione");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleConfigura() {
+    if (!article) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.post(`/api/integrazione/articoli/${article.codiceLinea}/configura`);
+      onSaved?.();
+      await fetch();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.code : "Errore configurazione");
     } finally {
       setSaving(false);
     }
@@ -216,7 +233,7 @@ export default function ArticoloEditModal({
       </div>
 
       <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "immagini" ? " modal-body-edit--fill" : ""}`}>
-        {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+        {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 16 }}>{error}</Notice>}
 
         {loading && <p style={{ color: "var(--muted)", padding: 40, textAlign: "center" }}>Caricamento…</p>}
 
@@ -231,10 +248,11 @@ export default function ArticoloEditModal({
                   </div>
                   <div className="field">
                     <label>Colore</label>
-                    <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)", boxSizing: "border-box" }}>
+                    <div style={{ position: "relative", display: "flex", alignItems: "center", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)", boxSizing: "border-box" }}>
                       <input type="text" value={editColore} onChange={(e) => setEditColore(e.target.value)} placeholder="# esadecimale" className="input" style={{ border: "none", background: "transparent", padding: "10px 14px", flex: 1, minWidth: 0 }} />
                       <label htmlFor="color-picker-article" style={{ width: 22, height: 22, margin: 0, marginRight: 10, borderRadius: 3, background: editColoreRgb || editColore || "#ccc", cursor: "pointer", border: "2px solid rgba(0,0,0,.15)", flexShrink: 0, display: "block" }} />
-                      <input id="color-picker-article" type="color" value={editColoreRgb || "#000000"} onChange={(e) => setEditColoreRgb(e.target.value)} style={{ width: 0, height: 0, opacity: 0, position: "absolute", pointerEvents: "none" }} />
+                      {/* ancorato sotto lo swatch: il picker nativo si apre sotto il quadrato */}
+                      <input id="color-picker-article" type="color" value={editColoreRgb || "#000000"} onChange={(e) => setEditColoreRgb(e.target.value)} style={{ width: 22, height: 0, padding: 0, margin: 0, border: "none", opacity: 0, position: "absolute", right: 10, bottom: 0, pointerEvents: "none" }} />
                     </div>
                   </div>
                 </div>
@@ -245,10 +263,17 @@ export default function ArticoloEditModal({
                   </div>
                   <div className="field">
                     <label>Stato Pubblicazione</label>
-                    <select className="input" value={editStato} onChange={(e) => setEditStato(e.target.value as "attivo" | "nascosto")}>
-                      <option value="attivo">Attivo</option>
-                      <option value="nascosto">Nascosto</option>
-                    </select>
+                    {article.configurato ? (
+                      <select className="input" value={editStato} onChange={(e) => setEditStato(e.target.value as "attivo" | "nascosto")}>
+                        <option value="attivo">Attivo</option>
+                        <option value="nascosto">Nascosto</option>
+                      </select>
+                    ) : (
+                      <>
+                        <input className="input" type="text" value="Nascosto" readOnly />
+                        <span style={{ fontSize: 11, color: "var(--muted)", display: "block", marginTop: 4 }}>Disponibile dopo la configurazione.</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="field-row">
@@ -282,7 +307,7 @@ export default function ArticoloEditModal({
                     onDrop={(e) => { e.preventDefault(); setDragGalleriaOver(false); if (dragIdx !== null) return; setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingExtra((prev) => [...prev, ...images]); }}
                   >
                     <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini. Attiva/disattiva la visibilità in galleria. La prima è la copertina.</p>
-                    {uploadError && <div className="error-box" style={{ marginBottom: 12 }}>{uploadError}</div>}
+                    {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
                     <div className="gallery-compact">
                       {(immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id)).map((id, idx) => {
                         const img = article.immagini.find((i) => i.id === id);
@@ -480,41 +505,22 @@ export default function ArticoloEditModal({
                 </div>
               </div>
             )}
-
-            {activeTab === "ai" && (
-              <div>
-                <div className="ai-section">
-                  <div className="ai-section-header">
-                    <div className="ai-icon">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                    </div>
-                    <div>
-                      <h3>Generatore Immagini Ambientate</h3>
-                      <p>Scrivi un prompt per generare un&apos;immagine del prodotto in contesto d&apos;uso.</p>
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label>Prompt di ambientazione</label>
-                    <textarea className="textarea" placeholder="Es. Vaso su un tavolo in legno di una veranda mediterranea…" />
-                  </div>
-                  <button className="btn btn-primary" disabled>
-                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                    Genera Immagine
-                  </button>
-                  <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    <div style={{ width: 160, height: 120, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>Anteprima 1</div>
-                    <div style={{ width: 160, height: 120, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>Anteprima 2</div>
-                    <div style={{ width: 160, height: 120, borderRadius: "var(--radius)", background: "var(--fg-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>Anteprima 3</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
 
       <div className="modal-root-footer">
         <button type="button" className="btn btn-danger-outline btn-sm" onClick={handleDelete} disabled={saving || !article}>Elimina</button>
+        {article && !article.configurato && (
+          <button type="button" className="btn btn-primary btn-sm" onClick={handleConfigura} disabled={saving || isDirty} title={isDirty ? "Salva prima le modifiche" : "Verifica i requisiti e marca l'articolo come configurato (irreversibile)"}>
+            Imposta a configurato
+          </button>
+        )}
+        {article?.configurato && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)" }}>
+            <span className="user-status-dot attivo" /> Configurato
+          </span>
+        )}
         <div style={{ flex: 1 }} />
         <button type="button" className="btn btn-secondary btn-sm" onClick={handleClose}>Annulla</button>
         <button type="button" className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !article || !isDirty}>
