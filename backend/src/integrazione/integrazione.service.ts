@@ -27,8 +27,8 @@ const CONFIG = {
   },
 };
 
-const UPLOAD_BASE_DIR = path.resolve(process.env.UPLOAD_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
-const UPLOAD_PUBLIC_URL = process.env.UPLOAD_PUBLIC_URL || '/images';
+const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
+const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
 
 type ViewType = keyof typeof CONFIG;
 
@@ -296,6 +296,12 @@ export class IntegrazioneService {
     if (Object.keys(updateData).length > 0) {
       await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData });
     }
+    // aggiorna il file .md ogni volta che cambia la descrizione
+    const finalDescrizione = data.descrizioneDettagliata !== undefined ? data.descrizioneDettagliata : art.descrizioneDettagliata;
+    if (finalDescrizione) {
+      const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
+      this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, finalDescrizione, data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti);
+    }
     if (data.varianti) {
       for (const [codice, stato] of Object.entries(data.varianti)) {
         const newStato = stato === 'attivo' ? 'ATTIVO' : 'NASCOSTO';
@@ -308,7 +314,7 @@ export class IntegrazioneService {
     if (data.immaginiDaEliminare?.length) {
       const toDelete = await this.prisma.immagine.findMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
       for (const img of toDelete) {
-        const filePath = path.join(UPLOAD_BASE_DIR, img.url.replace(`${UPLOAD_PUBLIC_URL}/`, ''));
+        const filePath = path.join(ASSETS_BASE_DIR, img.url.replace(`${ASSETS_PUBLIC_URL}/`, ''));
         try { fs.unlinkSync(filePath); } catch { /* file già assente */ }
       }
       await this.prisma.immagine.deleteMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
@@ -366,7 +372,7 @@ export class IntegrazioneService {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new Error('Articolo non trovato');
     const existingCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo } });
-    const baseDir = UPLOAD_BASE_DIR;
+    const baseDir = ASSETS_BASE_DIR;
     // ponytail: neutralizza path traversal — codiceLinea finisce nel filesystem
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(baseDir, safeCod);
@@ -381,7 +387,7 @@ export class IntegrazioneService {
       const filename = `${safeCod}_${infisso}_${n}${ext}`;
       fs.writeFileSync(path.join(artDir, filename), f.buffer);
       const img = await this.prisma.immagine.create({
-        data: { articoloId: art.id, url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo },
+        data: { articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo },
       });
       uploaded.push({ url: img.url });
     }
@@ -459,8 +465,8 @@ export class IntegrazioneService {
     const img = await this.prisma.immagine.findFirst({ where: { id: imageId, articoloId: art.id } });
     if (!img) throw new NotFoundException('Immagine non trovata');
 
-    const rel = img.url.replace(`${UPLOAD_PUBLIC_URL}/`, '');
-    const filePath = path.join(UPLOAD_BASE_DIR, rel);
+    const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
+    const filePath = path.join(ASSETS_BASE_DIR, rel);
     let buf: Buffer;
     try { buf = fs.readFileSync(filePath); } catch { throw new BadRequestException('File immagine sorgente non trovato sul disco.'); }
     const ext = path.extname(filePath).toLowerCase();
@@ -512,7 +518,7 @@ export class IntegrazioneService {
     const gen = this.aiCacheGet(generationId);
     if (!gen) throw new BadRequestException('Generazione scaduta: rigenera le immagini.');
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
-    const artDir = path.join(UPLOAD_BASE_DIR, safeCod);
+    const artDir = path.join(ASSETS_BASE_DIR, safeCod);
     fs.mkdirSync(artDir, { recursive: true });
     let aiCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo: 'AI' } });
     const saved: { url: string }[] = [];
@@ -527,7 +533,7 @@ export class IntegrazioneService {
       const rec = await this.prisma.immagine.create({
         data: {
           articoloId: art.id,
-          url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`,
+          url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`,
           ordinamento: ord,
           tipo: 'AI',
           prompt: gen.params.prompt,
@@ -574,6 +580,24 @@ export class IntegrazioneService {
     return text;
   }
 
+  /** Salva descrizioneDettagliata come .md nella cartella asset dell'articolo.
+   *  Il file puo' essere indicizzato da LLM Wiki / RAG in futuro. */
+  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[]) {
+    const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
+    const artDir = path.join(ASSETS_BASE_DIR, safeCod);
+    fs.mkdirSync(artDir, { recursive: true });
+    const lines: string[] = [];
+    lines.push(`# ${nome}`);
+    lines.push('');
+    if (colore) lines.push(`**Colore:** ${colore}`);
+    lines.push(`**Codice linea:** ${codiceLinea}`);
+    if (varianti.length) lines.push(`**Varianti:** ${varianti.map(v => `${v.descrizione} (${v.codice})`).join(', ')}`);
+    lines.push('');
+    if (breve) lines.push(`> ${breve}`, '');
+    if (dettagliata) lines.push(dettagliata);
+    fs.writeFileSync(path.join(artDir, `${safeCod}_descrizione.md`), lines.join('\n'), 'utf-8');
+  }
+
   /** Rielabora i 5 step del wizard in descrizione dettagliata + breve.
    *  Se azione='rigenera', usa eventuale promptPersonalizzato. */
   async wizardDescrizione(
@@ -613,6 +637,10 @@ Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizio
     const parts = result.split('---BREVE---');
     const descrizioneDettagliata = (parts[0] || '').trim();
     const descrizioneBreve = (parts[1] || descrizioneDettagliata.slice(0, 200)).trim();
+
+    // salva il .md subito dopo la generazione
+    const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
+    this.saveDescrizioneMd(codiceLinea, art.nome, descrizioneDettagliata, descrizioneBreve, art.colore, varianti);
 
     return { descrizioneDettagliata, descrizioneBreve, raw: result };
   }
