@@ -302,7 +302,7 @@ export class IntegrazioneService {
     const finalDescrizione = data.descrizioneDettagliata !== undefined ? data.descrizioneDettagliata : art.descrizioneDettagliata;
     if (finalDescrizione) {
       const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-      this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, finalDescrizione, data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti);
+      this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, finalDescrizione, data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined);
     }
     if (data.varianti) {
       for (const [codice, stato] of Object.entries(data.varianti)) {
@@ -611,7 +611,7 @@ export class IntegrazioneService {
 
   /** Salva descrizioneDettagliata come .md nella cartella asset dell'articolo.
    *  Il file puo' essere indicizzato da LLM Wiki / RAG in futuro. */
-  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[]) {
+  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[]) {
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(ASSETS_BASE_DIR, safeCod);
     fs.mkdirSync(artDir, { recursive: true });
@@ -624,6 +624,18 @@ export class IntegrazioneService {
     lines.push('');
     if (breve) lines.push(`> ${breve}`, '');
     if (dettagliata) lines.push(dettagliata);
+    if (stepTesti?.length) {
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+      lines.push('## Dimensioni sensoriali (testi grezzi)');
+      for (const s of stepTesti) {
+        if (!s.testo?.trim()) continue;
+        lines.push('');
+        lines.push(`### ${s.label}`);
+        lines.push(s.testo.trim());
+      }
+    }
     fs.writeFileSync(path.join(artDir, `${safeCod}_descrizione.md`), lines.join('\n'), 'utf-8');
   }
 
@@ -675,7 +687,7 @@ Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizio
 
     // salva il .md subito dopo la generazione
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-    this.saveDescrizioneMd(codiceLinea, art.nome, descrizioneDettagliata, descrizioneBreve, art.colore, varianti);
+    this.saveDescrizioneMd(codiceLinea, art.nome, descrizioneDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti);
 
     return { descrizioneDettagliata, descrizioneBreve, raw: result };
   }
