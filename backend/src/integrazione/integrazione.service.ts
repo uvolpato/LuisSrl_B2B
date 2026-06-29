@@ -261,6 +261,8 @@ export class IntegrazioneService {
       famiglia: { codice: art.famiglia.codice, nome: art.famiglia.nome },
       variantiCount: art._count.varianti,
       updatedAt: art.updatedAt,
+      descrizione: art.descrizione ?? null,
+      descrizioneDettagliata: art.descrizioneDettagliata ?? null,
       varianti: art.varianti.map((v) => ({
         codice: v.codice,
         descrizione: v.descrizione,
@@ -269,13 +271,13 @@ export class IntegrazioneService {
         giacenza: v.giacenza,
         stato: v.stato === 'NASCOSTO' ? 'nascosto' : 'attivo',
       })),
-      immagini: art.immagini.map((i) => ({ id: i.id, url: i.url, ordinamento: i.ordinamento, copertina: i.copertina, tipo: i.tipo, inGalleria: i.inGalleria, css: i.css })),
+      immagini: art.immagini.map((i) => ({ id: i.id, url: i.url, ordinamento: i.ordinamento, copertina: i.copertina, tipo: i.tipo, inGalleria: i.inGalleria, css: i.css, prompt: i.prompt, aiModel: i.aiModel, aiAspect: i.aiAspect, aiTemperature: i.aiTemperature, aiSeed: i.aiSeed, immaginePadreId: i.immaginePadreId })),
     };
   }
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -283,6 +285,8 @@ export class IntegrazioneService {
     if (data.nome !== undefined) updateData.nome = data.nome;
     if (data.colore !== undefined) updateData.colore = data.colore;
     if (data.coloreRgb !== undefined) updateData.coloreRgb = data.coloreRgb;
+    if (data.descrizione !== undefined) updateData.descrizione = data.descrizione;
+    if (data.descrizioneDettagliata !== undefined) updateData.descrizioneDettagliata = data.descrizioneDettagliata;
     if (data.stato !== undefined) {
       if (data.stato === 'attivo' && !art.configurato) {
         throw new BadRequestException('Articolo da configurare: non puo\' essere reso visibile.');
@@ -367,12 +371,14 @@ export class IntegrazioneService {
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(baseDir, safeCod);
     fs.mkdirSync(artDir, { recursive: true });
+    // infisso del nome file in base al tipo/tab: bianco / galleria / ai
+    const infisso = ({ CARICATA: 'bianco', GALLERIA: 'galleria', AI: 'ai' } as Record<string, string>)[tipo] ?? tipo.toLowerCase();
     const uploaded: { url: string }[] = [];
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       const ext = path.extname(f.originalname) || '.jpg';
       const n = String(existingCount + i + 1).padStart(3, '0');
-      const filename = `${safeCod}_bianco_${n}${ext}`;
+      const filename = `${safeCod}_${infisso}_${n}${ext}`;
       fs.writeFileSync(path.join(artDir, filename), f.buffer);
       const img = await this.prisma.immagine.create({
         data: { articoloId: art.id, url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo },
@@ -386,7 +392,15 @@ export class IntegrazioneService {
   // Cache effimera delle generazioni: il client persiste per generationId+indici,
   // cosi' non si ricaricano megabyte di base64 e si scartano le non scelte.
   // ponytail: in-memory (singola istanza). Con piu' repliche servira' uno store condiviso.
-  private aiCache = new Map<string, { items: { mime: string; b64: string }[]; ts: number }>();
+  private aiCache = new Map<
+    string,
+    {
+      items: { mime: string; b64: string }[];
+      params: { prompt: string; model: string; aspect?: string; temperature?: number; seed?: number };
+      parentImageId: number;
+      ts: number;
+    }
+  >();
 
   private aiCacheGet(id: string) {
     const now = Date.now();
@@ -453,10 +467,22 @@ export class IntegrazioneService {
     const srcMime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
     const src = { mime: srcMime, b64: buf.toString('base64') };
 
+    // Arricchisce il prompt col contesto prodotto
+    const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true, dimensioni: true } });
+    const caricate = await this.prisma.immagine.findMany({ where: { articoloId: art.id, tipo: 'CARICATA' }, select: { url: true, css: true, ordinamento: true }, orderBy: { ordinamento: 'asc' } });
+    const ctx: string[] = [];
+    if (art.descrizioneDettagliata) ctx.push(`Descrizione dettagliata: ${art.descrizioneDettagliata}`);
+    if (art.descrizione) ctx.push(`Descrizione breve: ${art.descrizione}`);
+    if (art.colore) ctx.push(`Colore: ${art.colore}${art.coloreRgb ? ` (RGB ${art.coloreRgb})` : ''}`);
+    if (varianti.length) ctx.push(`Varianti disponibili: ${varianti.map(v => `${v.descrizione} (${v.codice})${v.dimensioni ? ' dim:' + JSON.stringify(v.dimensioni) : ''}`).join('; ')}`);
+    if (caricate.length) ctx.push(`Immagini a sfondo bianco disponibili: ${caricate.length} (posizioni ${caricate.map(c => c.ordinamento).join(', ')})`);
+    const contestoProdotto = ctx.join('\n');
+    const promptFinale = contestoProdotto ? `Contesto prodotto:\n${contestoProdotto}\n\nRichiesta utente:\n${opts.prompt}` : opts.prompt;
+
     const n = Math.min(Math.max(opts.n ?? 1, 1), 4);
     const results = await Promise.all(
       Array.from({ length: n }, (_, i) =>
-        this.callGemini(opts.prompt, src, {
+        this.callGemini(promptFinale, src, {
           aspectRatio: opts.aspectRatio,
           temperature: opts.temperature,
           seed: opts.seed !== undefined ? opts.seed + i : undefined,
@@ -464,7 +490,18 @@ export class IntegrazioneService {
       ),
     );
     const generationId = randomUUID();
-    this.aiCache.set(generationId, { items: results, ts: Date.now() });
+    this.aiCache.set(generationId, {
+      items: results,
+      params: {
+        prompt: promptFinale,
+        model: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+        aspect: opts.aspectRatio,
+        temperature: opts.temperature,
+        seed: opts.seed,
+      },
+      parentImageId: imageId,
+      ts: Date.now(),
+    });
     return { generationId, images: results };
   }
 
@@ -488,12 +525,96 @@ export class IntegrazioneService {
       fs.writeFileSync(path.join(artDir, filename), Buffer.from(item.b64, 'base64'));
       const ord = await this.prisma.immagine.count({ where: { articoloId: art.id } });
       const rec = await this.prisma.immagine.create({
-        data: { articoloId: art.id, url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: ord, tipo: 'AI' },
+        data: {
+          articoloId: art.id,
+          url: `${UPLOAD_PUBLIC_URL}/${safeCod}/${filename}`,
+          ordinamento: ord,
+          tipo: 'AI',
+          prompt: gen.params.prompt,
+          aiModel: gen.params.model,
+          aiAspect: gen.params.aspect ?? null,
+          aiTemperature: gen.params.temperature ?? null,
+          aiSeed: gen.params.seed ?? null,
+          immaginePadreId: gen.parentImageId,
+        },
       });
       saved.push({ url: rec.url });
     }
     this.aiCache.delete(generationId);
     return { saved: saved.length, immagini: saved };
+  }
+
+  // ── AI: wizard descrizione sensoriale ──
+
+  private async callGeminiText(prompt: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
+    const model = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash';
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      let detail = txt.slice(0, 300);
+      try { detail = (JSON.parse(txt) as { error?: { message?: string } })?.error?.message ?? detail; } catch { /* */ }
+      throw new BadRequestException(`Errore AI testo (${res.status}): ${detail.slice(0, 200)}`);
+    }
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
+    return text;
+  }
+
+  /** Rielabora i 5 step del wizard in descrizione dettagliata + breve.
+   *  Se azione='rigenera', usa eventuale promptPersonalizzato. */
+  async wizardDescrizione(
+    codiceLinea: string,
+    body: { stepTesti: { step: number; label: string; testo: string }[]; azione?: string; promptPersonalizzato?: string },
+  ) {
+    const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
+    if (!art) throw new NotFoundException('Articolo non trovato');
+
+    if (!body.stepTesti?.length || body.stepTesti.every((s) => !s.testo?.trim())) {
+      throw new BadRequestException('Inserisci almeno un contributo vocale prima di generare la descrizione.');
+    }
+
+    const contributi = body.stepTesti
+      .filter((s) => s.testo?.trim())
+      .map((s) => `--- ${s.label} ---\n${s.testo.trim()}`)
+      .join('\n\n');
+
+    const systemPrompt = body.promptPersonalizzato?.trim()
+      ? body.promptPersonalizzato
+      : `Sei un copywriter specializzato in descrizioni prodotto per un catalogo B2B di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, terracotta).
+
+A partire dai contributi dell'operatore (suddivisi per dimensioni sensoriali), genera UNA descrizione dettagliata in italiano, in un unico paragrafo fluido e discorsivo (circa 150-300 parole).
+
+La descrizione deve:
+- Essere precisa, evocativa ma non eccessivamente poetica
+- Usare un tono professionale adatto a un rivenditore B2B
+- Integrare naturalmente gli spunti delle diverse dimensioni (forma, superficie, contesto, emozione)
+- Essere concreta: menziona materiali, finiture, caratteristiche fisiche osservabili
+
+Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 1-3 frasi (max 200 caratteri) adatta a elenchi e card.`;
+
+    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}`;
+
+    const result = await this.callGeminiText(fullPrompt);
+
+    const parts = result.split('---BREVE---');
+    const descrizioneDettagliata = (parts[0] || '').trim();
+    const descrizioneBreve = (parts[1] || descrizioneDettagliata.slice(0, 200)).trim();
+
+    return { descrizioneDettagliata, descrizioneBreve, raw: result };
   }
 
   /** Restituisce il mapping corrente (utile per debug) */
