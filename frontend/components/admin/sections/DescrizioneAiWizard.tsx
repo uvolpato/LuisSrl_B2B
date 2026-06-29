@@ -52,15 +52,21 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [interimText, setInterimText] = useState("");
   const recognitionRef = useRef<any>(null);
   const [result, setResult] = useState<WizardResult | null>(
-    hasExistingContent ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" } : null,
+    hasExistingContent
+      ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" }
+      : initialStepTesti?.some((s) => s.testo.trim().length > 0)
+        ? { descrizioneDettagliata: "", descrizioneBreve: "", raw: "" }
+        : null,
   );
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showGuida, setShowGuida] = useState(false);
+  const [wizardSuccess, setWizardSuccess] = useState("");
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
 
+  const hasSavedSteps = stepTesti.some((s) => s.testo.length > 0);
   const confirm = useConfirm();
   const copertina = immagini.find((i) => i.copertina) || immagini.find((i) => i.tipo === "CARICATA") || immagini[0];
 
@@ -156,6 +162,16 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }
   }
 
+  async function handleSaveBozza() {
+    try {
+      await api.put(`/api/integrazione/articoli/${codiceLinea}`, { wizardStepTesti: stepTesti });
+      onSave(null, null, stepTesti);
+      setProgressMsg(""); setWizardSuccess("Bozza salvata.");
+    } catch (e) {
+      setProgressMsg("Errore salvataggio bozza: " + String(e));
+    }
+  }
+
   const currentTesto = stepTesti[currentStep]?.testo || "";
   const wizardError = progressMsg.startsWith("Errore") ? progressMsg : null;
 
@@ -168,38 +184,61 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     );
   }
 
+  const hasGeneratedDesc = !!(result?.descrizioneDettagliata);
+
   if (result) {
     return (
       <div className="wizard-result">
+        {wizardError && <div className="wizard-error">{wizardError}</div>}
+        {wizardSuccess && <div className="wizard-success">{wizardSuccess}</div>}
         <div className="wizard-result-panels">
           <div className="wizard-result-col">
-            <h4>Descrizione dettagliata</h4>
-            <textarea
-              className="textarea wizard-result-textarea"
-              value={result.descrizioneDettagliata}
-              onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
-              rows={10}
-            />
-            <div className="wizard-result-actions">
-              <button className="btn btn-primary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata)}>
-                Salva come descrizione dettagliata
-              </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata, result.descrizioneBreve)}>
-                Salva anche come descrizione breve
-              </button>
-            </div>
+            {hasGeneratedDesc ? (
+              <>
+                <h4>Descrizione dettagliata</h4>
+                <textarea
+                  className="textarea wizard-result-textarea"
+                  value={result.descrizioneDettagliata}
+                  onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
+                  rows={10}
+                />
+                <div className="wizard-result-actions">
+                  <button className="btn btn-primary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata)}>
+                    Salva come descrizione dettagliata
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata, result.descrizioneBreve)}>
+                    Salva anche come descrizione breve
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h4>Nessuna descrizione generata</h4>
+                <p className="wizard-empty-desc">Hai salvato i tuoi contributi, ma non hai ancora generato la descrizione con AI.</p>
+                <div className="wizard-result-actions" style={{ marginTop: 16 }}>
+                  <button className="btn btn-primary" onClick={handleGenerate}>
+                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16, marginRight: 6 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                    Genera descrizione con AI
+                  </button>
+                </div>
+              </>
+            )}
           </div>
           <div className="wizard-result-col">
-            <h4>Descrizione breve (pubblica)</h4>
-            <textarea
-              className="textarea wizard-result-textarea"
-              value={result.descrizioneBreve}
-              onChange={(e) => setResult({ ...result, descrizioneBreve: e.target.value })}
-              rows={3}
-              maxLength={200}
-            />
-            <p className="wizard-char-count">{result.descrizioneBreve.length}/200 caratteri</p>
-            <h4 style={{ marginTop: 16 }}>Dimensioni sensoriali rilevate</h4>
+            {hasGeneratedDesc && (
+              <>
+                <h4>Descrizione breve (pubblica)</h4>
+                <textarea
+                  className="textarea wizard-result-textarea"
+                  value={result.descrizioneBreve}
+                  onChange={(e) => setResult({ ...result, descrizioneBreve: e.target.value })}
+                  rows={3}
+                  maxLength={200}
+                />
+                <p className="wizard-char-count">{result.descrizioneBreve.length}/200 caratteri</p>
+              </>
+            )}
+            <h4 style={{ marginTop: hasGeneratedDesc ? 16 : 0 }}>Dimensioni sensoriali</h4>
             <div className="wizard-dimensions">
               {stepTesti.filter(s => s.testo.trim()).map(s => (
                 <div key={s.step} className="wizard-dim-item">
@@ -215,11 +254,15 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               ))}
             </div>
             <div className="wizard-result-footer">
-              <button className="btn btn-secondary btn-sm" onClick={handleGenerate}>Rigenera</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
-                {showPromptEditor ? "Nascondi" : "Modifica prompt AI"}
+              {hasGeneratedDesc && (
+                <button className="btn btn-secondary btn-sm" onClick={handleGenerate}>Rigenera</button>
+              )}
+              <button className="btn btn-primary btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>
+                {hasGeneratedDesc ? "Modifica" : "Continua modifica"}
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>Torna indietro</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
+                {showPromptEditor ? "Nascondi" : "Prompt AI"}
+              </button>
             </div>
             {showPromptEditor && (
               <div className="wizard-prompt-editor">
@@ -316,9 +359,14 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               Indietro
             </button>
             <div className="row" style={{ gap: 12 }}>
-              <button className="btn btn-secondary btn-sm" style={{ marginRight: 16 }} onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
+              <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
               </button>
+              {hasSavedSteps && (
+                <button className="btn btn-secondary btn-sm" onClick={handleSaveBozza} disabled={loading}>
+                  Salva bozza
+                </button>
+              )}
               {currentStep < STEPS.length - 1 ? (
                 <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
                   Avanti
