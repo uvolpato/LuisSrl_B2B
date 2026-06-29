@@ -554,17 +554,19 @@ export class IntegrazioneService {
 
   // ── AI: wizard descrizione sensoriale ──
 
-  private async callGeminiText(prompt: string): Promise<string> {
+  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
     const model = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash';
+    const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [{ text: prompt }];
+    if (image) parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts }],
           generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
         }),
       },
@@ -580,6 +582,31 @@ export class IntegrazioneService {
     };
     const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
     return text;
+  }
+
+  private async describeWhiteImages(codiceLinea: string): Promise<string[]> {
+    const immagini = await this.prisma.immagine.findMany({
+      where: { articolo: { codiceLinea }, tipo: 'CARICATA' },
+      orderBy: { ordinamento: 'asc' },
+    });
+    if (!immagini.length) return [];
+    const descrizioni: string[] = [];
+    for (const img of immagini) {
+      const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
+      const filePath = path.join(ASSETS_BASE_DIR, rel);
+      let buf: Buffer;
+      try { buf = fs.readFileSync(filePath); } catch { continue; }
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      const prompt = 'Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti su forma, materiale, finitura, dimensioni percepite e colore. Sii concreto e preciso.';
+      try {
+        const desc = await this.callGeminiText(prompt, { mime, b64: buf.toString('base64') });
+        descrizioni.push(`[Immagine ${img.ordinamento}]: ${desc}`);
+      } catch {
+        // salta l'immagine se la chiamata fallisce
+      }
+    }
+    return descrizioni;
   }
 
   /** Salva descrizioneDettagliata come .md nella cartella asset dell'articolo.
@@ -632,7 +659,13 @@ La descrizione deve:
 
 Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 1-3 frasi (max 200 caratteri) adatta a elenchi e card.`;
 
-    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}`;
+    // Descrive le immagini a sfondo bianco e le include nel contesto
+    const imgDescs = await this.describeWhiteImages(codiceLinea);
+    const imgSection = imgDescs.length
+      ? `\n\nImmagini a sfondo bianco dell'articolo:\n${imgDescs.join('\n')}`
+      : '';
+
+    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}`;
 
     const result = await this.callGeminiText(fullPrompt);
 
