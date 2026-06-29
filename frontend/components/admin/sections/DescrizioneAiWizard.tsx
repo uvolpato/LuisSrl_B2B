@@ -114,13 +114,13 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     };
   }, []);
 
-  // Propaga stepTesti al padre appena cambiano (per isDirty modale),
+  // Propaga stepTesti + result descrizioni al padre appena cambiano (per isDirty modale),
   // ma saltando la prima inizializzazione
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    onSave(null, null, stepTesti);
-  }, [stepTesti]);
+    onSave(result?.descrizioneBreve ?? null, result?.descrizioneDettagliata ?? null, stepTesti);
+  }, [stepTesti, result?.descrizioneDettagliata, result?.descrizioneBreve]);
 
   function updateTesto(val: string) {
     setStepTesti((prev) => prev.map((s, idx) => idx === currentStep ? { ...s, testo: val } : s));
