@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { api } from "../../../lib/api";
 import { useConfirm } from "../../common/ConfirmProvider";
 
@@ -63,6 +64,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showGuida, setShowGuida] = useState(false);
+  const [mdView, setMdView] = useState(true);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
   const latestStepTesti = useRef(stepTesti);
   latestStepTesti.current = stepTesti;
@@ -186,13 +188,22 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           <div className="wizard-result-col">
             {hasGeneratedDesc ? (
               <>
-                <h4>Descrizione dettagliata</h4>
-                <textarea
-                  className="textarea wizard-result-textarea"
-                  value={result.descrizioneDettagliata}
-                  onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
-                  rows={10}
-                />
+                <div className="wizard-md-tabs">
+                  <button className={`wizard-md-tab ${mdView ? "active" : ""}`} onClick={() => setMdView(true)}>Visualizza</button>
+                  <button className={`wizard-md-tab ${mdView ? "" : "active"}`} onClick={() => setMdView(false)}>Modifica</button>
+                </div>
+                {mdView ? (
+                  <div className="wizard-md-preview">
+                    <ReactMarkdown>{result.descrizioneDettagliata}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <textarea
+                    className="textarea wizard-result-textarea"
+                    value={result.descrizioneDettagliata}
+                    onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
+                    rows={20}
+                  />
+                )}
               </>
             ) : (
               <>
@@ -216,9 +227,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                   value={result.descrizioneBreve}
                   onChange={(e) => setResult({ ...result, descrizioneBreve: e.target.value })}
                   rows={3}
-                  maxLength={200}
                 />
-                <p className="wizard-char-count">{result.descrizioneBreve.length}/200 caratteri</p>
               </>
             )}
             <h4 style={{ marginTop: hasGeneratedDesc ? 16 : 0 }}>Dimensioni sensoriali</h4>

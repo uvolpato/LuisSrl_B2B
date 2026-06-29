@@ -2304,6 +2304,19 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-prompt-editor { margin-top: 12px; padding: 12px; background: var(--fg-soft); border-radius: var(--radius); }
 .wizard-prompt-editor label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: var(--fg); }
 
+.wizard-md-tabs { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.wizard-md-tab { padding: 4px 14px; font-size: 13px; border: none; background: none; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s ease; }
+.wizard-md-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.wizard-md-tab:hover { color: var(--fg); }
+.wizard-md-preview { font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); max-height: 500px; overflow-y: auto; }
+.wizard-md-preview h1, .wizard-md-preview h2, .wizard-md-preview h3, .wizard-md-preview h4 { margin: 1em 0 0.5em; font-weight: 600; }
+.wizard-md-preview h1 { font-size: 1.3em; }
+.wizard-md-preview h2 { font-size: 1.15em; }
+.wizard-md-preview h3 { font-size: 1em; }
+.wizard-md-preview p { margin: 0 0 0.75em; }
+.wizard-md-preview blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); margin: 0 0 0.75em; }
+.wizard-md-preview code { background: var(--fg-soft); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+
 @keyframes wizard-spin {
   to { transform: rotate(360deg); }
 }

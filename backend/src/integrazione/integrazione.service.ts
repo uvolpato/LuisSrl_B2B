@@ -299,10 +299,16 @@ export class IntegrazioneService {
       await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData });
     }
     // aggiorna il file .md ogni volta che cambia la descrizione
-    const finalDescrizione = data.descrizioneDettagliata !== undefined ? data.descrizioneDettagliata : art.descrizioneDettagliata;
-    if (finalDescrizione) {
+    let nuovoMd: string | undefined;
+    if (data.descrizioneDettagliata !== undefined) {
+      // se arriva il full MD (da frontend), lo scrive cosi' com'e'
       const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-      this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, finalDescrizione, data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined);
+      nuovoMd = this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, data.descrizioneDettagliata ?? '', data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined);
+      // aggiorna descrizioneDettagliata col full MD nel DB
+      if (nuovoMd !== data.descrizioneDettagliata) {
+        updateData.descrizioneDettagliata = nuovoMd;
+        await this.prisma.articolo.update({ where: { codiceLinea }, data: { descrizioneDettagliata: nuovoMd } });
+      }
     }
     if (data.varianti) {
       for (const [codice, stato] of Object.entries(data.varianti)) {
@@ -609,9 +615,9 @@ export class IntegrazioneService {
     return descrizioni;
   }
 
-  /** Salva descrizioneDettagliata come .md nella cartella asset dell'articolo.
-   *  Il file puo' essere indicizzato da LLM Wiki / RAG in futuro. */
-  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[]) {
+  /** Costruisce il contenuto markdown completo e lo salva su disco.
+   *  Restituisce il contenuto per la memorizzazione in descrizioneDettagliata. */
+  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[]): string {
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(ASSETS_BASE_DIR, safeCod);
     fs.mkdirSync(artDir, { recursive: true });
@@ -636,7 +642,9 @@ export class IntegrazioneService {
         lines.push(s.testo.trim());
       }
     }
-    fs.writeFileSync(path.join(artDir, `${safeCod}_descrizione.md`), lines.join('\n'), 'utf-8');
+    const content = lines.join('\n');
+    fs.writeFileSync(path.join(artDir, `${safeCod}_descrizione.md`), content, 'utf-8');
+    return content;
   }
 
   /** Rielabora i 5 step del wizard in descrizione dettagliata + breve.
@@ -669,7 +677,7 @@ La descrizione deve:
 - Integrare naturalmente gli spunti delle diverse dimensioni (forma, superficie, contesto, emozione)
 - Essere concreta: menziona materiali, finiture, caratteristiche fisiche osservabili
 
-Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 1-3 frasi (max 200 caratteri) adatta a elenchi e card.`;
+Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 1-3 frasi, concisa, adatta a elenchi e card.`;
 
     // Descrive le immagini a sfondo bianco e le include nel contesto
     const imgDescs = await this.describeWhiteImages(codiceLinea);
@@ -682,12 +690,12 @@ Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizio
     const result = await this.callGeminiText(fullPrompt);
 
     const parts = result.split('---BREVE---');
-    const descrizioneDettagliata = (parts[0] || '').trim();
-    const descrizioneBreve = (parts[1] || descrizioneDettagliata.slice(0, 200)).trim();
+    const soloDettagliata = (parts[0] || '').trim();
+    const descrizioneBreve = (parts[1] || soloDettagliata).trim();
 
-    // salva il .md subito dopo la generazione
+    // salva il .md subito dopo la generazione e usa il contenuto completo
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-    this.saveDescrizioneMd(codiceLinea, art.nome, descrizioneDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti);
+    const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti);
 
     return { descrizioneDettagliata, descrizioneBreve, raw: result };
   }
