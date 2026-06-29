@@ -23,8 +23,19 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.use(helmet());
+  const allowedOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000').split(',');
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      for (const o of allowedOrigins) {
+        if (origin.startsWith(o)) return callback(null, true);
+      }
+      // auto-permetti LAN 192.168.x.x / 10.x.x.x su porta 3000 (HTTP o HTTPS)
+      if (/^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):3000$/.test(origin)) {
+        return callback(null, true);
+      }
+      callback(null, false);
+    },
     credentials: true,
   });
   app.use(cookieParser());
@@ -64,10 +75,9 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  await app.listen(Number(process.env.PORT ?? 3001));
-  console.log(
-    `API in ascolto su http://localhost:${process.env.PORT ?? 3001}/api`,
-  );
+  await app.listen(Number(process.env.PORT ?? 3001), '0.0.0.0');
+  const port = process.env.PORT ?? 3001;
+  console.log(`API in ascolto su http://0.0.0.0:${port}/api`);
 
   // WebSocket su stesso server HTTP
   const httpServer = app.getHttpServer();

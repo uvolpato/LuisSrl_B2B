@@ -11,10 +11,21 @@ const signature = require('cookie-signature') as {
 const online = new Map<number, Set<string>>();
 
 export function setupWebSocket(httpServer: HttpServer) {
+  const allowedWsOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000').split(',');
   const io = new Server(httpServer, {
     path: '/ws',
     cors: {
-      origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+      origin(origin, callback) {
+        if (!origin) return callback(null, true);
+        for (const o of allowedWsOrigins) {
+          if (origin.startsWith(o)) return callback(null, true);
+        }
+        // auto-permetti LAN 192.168.x.x / 10.x.x.x su porta 3000 (HTTP o HTTPS)
+        if (/^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):3000$/.test(origin)) {
+          return callback(null, true);
+        }
+        callback(null, false);
+      },
       credentials: true,
     },
   });
