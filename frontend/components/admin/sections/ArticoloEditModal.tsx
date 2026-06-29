@@ -63,6 +63,7 @@ export default function ArticoloEditModal({
   onSaved?: () => void;
 }) {
   const [article, setArticle] = useState<ArticoloDetail | null>(null);
+  const initialDescRef = useRef({ descrizione: "", descrizioneDettagliata: "" });
   const initialStepTestiRef = useRef<ArticoloDetail["wizardStepTesti"]>(null);
   const [activeTab, setActiveTab] = useState("generale");
   const [activeSubTab, setActiveSubTab] = useState("ordine");
@@ -96,6 +97,7 @@ export default function ArticoloEditModal({
     try {
       const a = await api.get<ArticoloDetail>(`/api/integrazione/articoli/${codiceLinea}`);
       setArticle(a);
+      initialDescRef.current = { descrizione: a.descrizione ?? "", descrizioneDettagliata: a.descrizioneDettagliata ?? "" };
       initialStepTestiRef.current = a.wizardStepTesti;
       setEditNome(a.nome);
       setEditColore(a.colore);
@@ -132,6 +134,8 @@ export default function ArticoloEditModal({
     for (const v of article.varianti) {
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
     }
+    if ((article.descrizione ?? "") !== initialDescRef.current.descrizione) return true;
+    if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
     if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
     return false;
   }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
