@@ -114,6 +114,14 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     };
   }, []);
 
+  // Propaga stepTesti al padre appena cambiano (per isDirty modale),
+  // ma saltando la prima inizializzazione
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    onSave(null, null, stepTesti);
+  }, [stepTesti]);
+
   function updateTesto(val: string) {
     setStepTesti((prev) => prev.map((s, idx) => idx === currentStep ? { ...s, testo: val } : s));
   }
