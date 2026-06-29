@@ -364,6 +364,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button className="btn btn-secondary btn-sm" onClick={handleSaveFull} disabled={!dirty || loading}>
                 Salva modifiche
               </button>
+              {hasExistingContent && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setResult({ descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" })}>
+                  Vedi descrizione
+                </button>
+              )}
               {currentStep < STEPS.length - 1 ? (
                 <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
                   Avanti
