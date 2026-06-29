@@ -185,65 +185,68 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       <div className="wizard-result">
         {wizardError && <div className="wizard-error">{wizardError}</div>}
         <div className="wizard-result-panels">
-          <div className="wizard-result-col">
-            {hasGeneratedDesc ? (
-              <>
-                <div className="wizard-md-tabs">
-                  <button className={`wizard-md-tab ${mdView ? "active" : ""}`} onClick={() => setMdView(true)}>Visualizza</button>
-                  <button className={`wizard-md-tab ${mdView ? "" : "active"}`} onClick={() => setMdView(false)}>Modifica</button>
-                </div>
+          {hasGeneratedDesc ? (
+            /* Colonna sinistra: preview/edit descrizione dettagliata (full height) */
+            <div className="wizard-result-col wizard-col-md">
+              <div className="wizard-md-area">
                 {mdView ? (
                   <div className="wizard-md-preview">
                     <ReactMarkdown>{result.descrizioneDettagliata}</ReactMarkdown>
                   </div>
                 ) : (
                   <textarea
-                    className="textarea wizard-result-textarea"
+                    className="textarea wizard-result-textarea wizard-md-textarea"
                     value={result.descrizioneDettagliata}
                     onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
-                    rows={20}
                   />
                 )}
-              </>
-            ) : (
-              <>
-                <h4>Nessuna descrizione generata</h4>
-                <p className="wizard-empty-desc">Hai salvato i tuoi contributi, ma non hai ancora generato la descrizione con AI.</p>
-                <div className="wizard-result-actions" style={{ marginTop: 16 }}>
-                  <button className="btn btn-primary" onClick={handleGenerate}>
-                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16, marginRight: 6 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                    Genera descrizione con AI
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="wizard-result-col">
+              </div>
+              <div className="wizard-md-tabs-bar">
+                <button className={`modal-tab-btn ${mdView ? "active" : ""}`} onClick={() => setMdView(true)}>Visualizza</button>
+                <button className={`modal-tab-btn ${mdView ? "" : "active"}`} onClick={() => setMdView(false)}>Modifica</button>
+              </div>
+            </div>
+          ) : (
+            <div className="wizard-result-col">
+              <h4>Nessuna descrizione generata</h4>
+              <p className="wizard-empty-desc">Hai salvato i tuoi contributi, ma non hai ancora generato la descrizione con AI.</p>
+              <div className="wizard-result-actions" style={{ marginTop: 16 }}>
+                <button className="btn btn-primary" onClick={handleGenerate}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16, marginRight: 6 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                  Genera descrizione con AI
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Colonna destra: descrizione breve + riepilogo dimensioni sensoriali */}
+          <div className="wizard-result-col wizard-col-side">
             {hasGeneratedDesc && (
-              <>
+              <div className="wizard-breve-section">
                 <h4>Descrizione breve (pubblica)</h4>
                 <textarea
                   className="textarea wizard-result-textarea"
                   value={result.descrizioneBreve}
                   onChange={(e) => setResult({ ...result, descrizioneBreve: e.target.value })}
-                  rows={3}
+                  rows={2}
                 />
-              </>
+              </div>
             )}
-            <h4 style={{ marginTop: hasGeneratedDesc ? 16 : 0 }}>Dimensioni sensoriali</h4>
-            <div className="wizard-dimensions">
-              {stepTesti.filter(s => s.testo.trim()).map(s => (
-                <div key={s.step} className="wizard-dim-item">
-                  <span className="wizard-dim-icon">{STEPS[s.step - 1]?.icon}</span>
-                  <div className="wizard-dim-info">
-                    <strong>{s.label}</strong>
-                    <div className="wizard-dim-dots">
-                      {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
+            <div className="wizard-dim-section">
+              <h4>Riepilogo dimensioni sensoriali</h4>
+              <div className="wizard-dimensions-scroll">
+                {stepTesti.filter(s => s.testo.trim()).map(s => (
+                  <div key={s.step} className="wizard-dim-item">
+                    <span className="wizard-dim-icon">{STEPS[s.step - 1]?.icon}</span>
+                    <div className="wizard-dim-info">
+                      <strong>{s.label}</strong>
+                      <div className="wizard-dim-dots">
+                        {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
+                      </div>
+                      <span className="wizard-dim-preview">{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
                     </div>
-                    <span className="wizard-dim-preview">{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             <div className="wizard-result-footer">
               {hasGeneratedDesc && (
