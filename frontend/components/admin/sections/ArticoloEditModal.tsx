@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
 import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
@@ -63,6 +63,7 @@ export default function ArticoloEditModal({
   onSaved?: () => void;
 }) {
   const [article, setArticle] = useState<ArticoloDetail | null>(null);
+  const initialStepTestiRef = useRef<ArticoloDetail["wizardStepTesti"]>(null);
   const [activeTab, setActiveTab] = useState("generale");
   const [activeSubTab, setActiveSubTab] = useState("ordine");
   const [loading, setLoading] = useState(false);
@@ -95,6 +96,7 @@ export default function ArticoloEditModal({
     try {
       const a = await api.get<ArticoloDetail>(`/api/integrazione/articoli/${codiceLinea}`);
       setArticle(a);
+      initialStepTestiRef.current = a.wizardStepTesti;
       setEditNome(a.nome);
       setEditColore(a.colore);
       setEditColoreRgb(a.coloreRgb || "");
@@ -130,6 +132,7 @@ export default function ArticoloEditModal({
     for (const v of article.varianti) {
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
     }
+    if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
     return false;
   }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
