@@ -63,9 +63,9 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showGuida, setShowGuida] = useState(false);
-  const [wizardSuccess, setWizardSuccess] = useState("");
-  const savedSnapshot = useRef({ stepTesti: JSON.stringify(stepTesti), desc: savedDettagliata ?? "", breve: savedDescrizione ?? "" });
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
+  const latestStepTesti = useRef(stepTesti);
+  latestStepTesti.current = stepTesti;
 
   const hasSavedSteps = stepTesti.some((s) => s.testo.length > 0);
   const confirm = useConfirm();
@@ -108,7 +108,10 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   }, []);
 
   useEffect(() => {
-    return () => { if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch { /* */ } } };
+    return () => {
+      if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch { /* */ } }
+      onSave(null, null, latestStepTesti.current);
+    };
   }, []);
 
   function updateTesto(val: string) {
@@ -121,10 +124,12 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
 
   function goNext() {
     stopListening();
+    onSave(null, null, stepTesti);
     if (currentStep < STEPS.length - 1) setCurrentStep((p) => p + 1);
   }
 
   function goBack() {
+    onSave(null, null, stepTesti);
     if (currentStep > 0) setCurrentStep((p) => p - 1);
   }
 
@@ -140,6 +145,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
         azione: "genera",
         promptPersonalizzato: customPrompt || undefined,
       });
+    onSave(null, null, stepTesti);
       setResult(res);
     } catch (e) {
       setResult(null); setProgressMsg("Errore: " + String(e));
@@ -152,32 +158,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
 
   const currentTesto = stepTesti[currentStep]?.testo || "";
   const wizardError = progressMsg.startsWith("Errore") ? progressMsg : null;
-
-  function isDirty(): boolean {
-    const stepsChanged = JSON.stringify(stepTesti) !== savedSnapshot.current.stepTesti;
-    if (!result) return stepsChanged;
-    const descChanged = result.descrizioneDettagliata !== savedSnapshot.current.desc
-      || result.descrizioneBreve !== savedSnapshot.current.breve;
-    return stepsChanged || descChanged;
-  }
-  const dirty = isDirty();
-
-  async function handleSaveFull() {
-    setWizardSuccess(""); setProgressMsg("");
-    const breve = result?.descrizioneBreve?.trim() || null;
-    const dettagliata = result?.descrizioneDettagliata?.trim() || null;
-    try {
-      await api.put(`/api/integrazione/articoli/${codiceLinea}`, {
-        ...(dettagliata ? { descrizione: breve ?? dettagliata.slice(0, 200), descrizioneDettagliata: dettagliata } : {}),
-        wizardStepTesti: stepTesti,
-      });
-      savedSnapshot.current = { stepTesti: JSON.stringify(stepTesti), desc: dettagliata ?? "", breve: breve ?? "" };
-      onSave(breve, dettagliata, stepTesti);
-      setWizardSuccess("Modifiche salvate.");
-    } catch (e) {
-      setProgressMsg("Errore salvataggio: " + String(e));
-    }
-  }
 
   if (loading) {
     return (
@@ -194,7 +174,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     return (
       <div className="wizard-result">
         {wizardError && <div className="wizard-error">{wizardError}</div>}
-        {wizardSuccess && <div className="wizard-success">{wizardSuccess}</div>}
         <div className="wizard-result-panels">
           <div className="wizard-result-col">
             {hasGeneratedDesc ? (
@@ -251,11 +230,8 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             </div>
             <div className="wizard-result-footer">
               {hasGeneratedDesc && (
-                <button className="btn btn-secondary btn-sm" onClick={handleGenerate}>Rigenera</button>
+                <button className="btn btn-primary btn-sm" onClick={handleGenerate}>Rigenera</button>
               )}
-              <button className="btn btn-primary btn-sm" onClick={handleSaveFull} disabled={!dirty}>
-                Salva modifiche
-              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>
                 {hasGeneratedDesc ? "Modifica" : "Continua modifica"}
               </button>
@@ -360,9 +336,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             <div className="row" style={{ gap: 12 }}>
               <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
-              </button>
-              <button className="btn btn-secondary btn-sm" onClick={handleSaveFull} disabled={!dirty || loading}>
-                Salva modifiche
               </button>
               {hasExistingContent && (
                 <button className="btn btn-ghost btn-sm" onClick={() => setResult({ descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" })}>
