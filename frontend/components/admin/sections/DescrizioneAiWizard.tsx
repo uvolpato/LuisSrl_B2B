@@ -64,6 +64,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [customPrompt, setCustomPrompt] = useState("");
   const [showGuida, setShowGuida] = useState(false);
   const [wizardSuccess, setWizardSuccess] = useState("");
+  const savedSnapshot = useRef({ stepTesti: JSON.stringify(stepTesti), desc: savedDettagliata ?? "", breve: savedDescrizione ?? "" });
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
 
   const hasSavedSteps = stepTesti.some((s) => s.testo.length > 0);
@@ -149,31 +150,34 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }
   }
 
-  async function handleSave(dettagliata: string, breve?: string) {
+  const currentTesto = stepTesti[currentStep]?.testo || "";
+  const wizardError = progressMsg.startsWith("Errore") ? progressMsg : null;
+
+  function isDirty(): boolean {
+    const stepsChanged = JSON.stringify(stepTesti) !== savedSnapshot.current.stepTesti;
+    if (!result) return stepsChanged;
+    const descChanged = result.descrizioneDettagliata !== savedSnapshot.current.desc
+      || result.descrizioneBreve !== savedSnapshot.current.breve;
+    return stepsChanged || descChanged;
+  }
+  const dirty = isDirty();
+
+  async function handleSaveFull() {
+    setWizardSuccess(""); setProgressMsg("");
+    const breve = result?.descrizioneBreve?.trim() || null;
+    const dettagliata = result?.descrizioneDettagliata?.trim() || null;
     try {
       await api.put(`/api/integrazione/articoli/${codiceLinea}`, {
-        descrizione: breve ?? dettagliata.slice(0, 200),
-        descrizioneDettagliata: dettagliata,
+        ...(dettagliata ? { descrizione: breve ?? dettagliata.slice(0, 200), descrizioneDettagliata: dettagliata } : {}),
         wizardStepTesti: stepTesti,
       });
-      onSave(breve ?? dettagliata.slice(0, 200), dettagliata, stepTesti);
+      savedSnapshot.current = { stepTesti: JSON.stringify(stepTesti), desc: dettagliata ?? "", breve: breve ?? "" };
+      onSave(breve, dettagliata, stepTesti);
+      setWizardSuccess("Modifiche salvate.");
     } catch (e) {
       setProgressMsg("Errore salvataggio: " + String(e));
     }
   }
-
-  async function handleSaveBozza() {
-    try {
-      await api.put(`/api/integrazione/articoli/${codiceLinea}`, { wizardStepTesti: stepTesti });
-      onSave(null, null, stepTesti);
-      setProgressMsg(""); setWizardSuccess("Bozza salvata.");
-    } catch (e) {
-      setProgressMsg("Errore salvataggio bozza: " + String(e));
-    }
-  }
-
-  const currentTesto = stepTesti[currentStep]?.testo || "";
-  const wizardError = progressMsg.startsWith("Errore") ? progressMsg : null;
 
   if (loading) {
     return (
@@ -202,14 +206,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                   onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
                   rows={10}
                 />
-                <div className="wizard-result-actions">
-                  <button className="btn btn-primary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata)}>
-                    Salva come descrizione dettagliata
-                  </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => handleSave(result.descrizioneDettagliata, result.descrizioneBreve)}>
-                    Salva anche come descrizione breve
-                  </button>
-                </div>
               </>
             ) : (
               <>
@@ -257,7 +253,10 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               {hasGeneratedDesc && (
                 <button className="btn btn-secondary btn-sm" onClick={handleGenerate}>Rigenera</button>
               )}
-              <button className="btn btn-primary btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>
+              <button className="btn btn-primary btn-sm" onClick={handleSaveFull} disabled={!dirty}>
+                Salva modifiche
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>
                 {hasGeneratedDesc ? "Modifica" : "Continua modifica"}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
@@ -362,11 +361,9 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
               </button>
-              {hasSavedSteps && (
-                <button className="btn btn-secondary btn-sm" onClick={handleSaveBozza} disabled={loading}>
-                  Salva bozza
-                </button>
-              )}
+              <button className="btn btn-secondary btn-sm" onClick={handleSaveFull} disabled={!dirty || loading}>
+                Salva modifiche
+              </button>
               {currentStep < STEPS.length - 1 ? (
                 <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
                   Avanti
