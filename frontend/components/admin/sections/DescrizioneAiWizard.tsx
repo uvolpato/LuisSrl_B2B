@@ -42,6 +42,7 @@ interface Props {
 
 export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, onSave }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
+  const hasExistingContent = !!(savedDettagliata && savedDettagliata.length > 0);
   const [stepTesti, setStepTesti] = useState<StepTesto[]>(
     initialStepTesti?.length === STEPS.length
       ? initialStepTesti
@@ -50,20 +51,15 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState("");
   const recognitionRef = useRef<any>(null);
-  const [result, setResult] = useState<WizardResult | null>(null);
+  const [result, setResult] = useState<WizardResult | null>(
+    hasExistingContent ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" } : null,
+  );
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [showGuida, setShowGuida] = useState(false);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
-
-  const hasExistingContent = savedDettagliata && savedDettagliata.length > 0;
-  const startStep = hasExistingContent ? 5 : 0;
-
-  useEffect(() => {
-    setCurrentStep(startStep);
-  }, [startStep]);
 
   const confirm = useConfirm();
   const copertina = immagini.find((i) => i.copertina) || immagini.find((i) => i.tipo === "CARICATA") || immagini[0];
@@ -223,7 +219,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
                 {showPromptEditor ? "Nascondi" : "Modifica prompt AI"}
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(0); }}>Torna indietro</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>Torna indietro</button>
             </div>
             {showPromptEditor && (
               <div className="wizard-prompt-editor">

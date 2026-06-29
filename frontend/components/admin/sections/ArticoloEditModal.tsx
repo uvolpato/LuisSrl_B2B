@@ -33,6 +33,7 @@ interface ArticoloDetail {
   updatedAt: string;
   varianti: VarianteDetail[];
   immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null }[];
+  wizardStepTesti?: { step: number; label: string; testo: string }[] | null;
 }
 
 const tabs = [
@@ -158,7 +159,7 @@ export default function ArticoloEditModal({
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti };
-      if ((article as any).wizardStepTesti) payload.wizardStepTesti = (article as any).wizardStepTesti;
+      if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
@@ -468,9 +469,9 @@ export default function ArticoloEditModal({
                   immagini={article.immagini}
                   descrizione={article.descrizione}
                   descrizioneDettagliata={article.descrizioneDettagliata}
-                  initialStepTesti={(article as any).wizardStepTesti}
+                  initialStepTesti={article.wizardStepTesti}
                   onSave={(descrizione, descrizioneDettagliata, stepTesti) => {
-                    setArticle({ ...article, descrizione, descrizioneDettagliata, wizardStepTesti: stepTesti });
+                    setArticle({ ...article, descrizione, descrizioneDettagliata, wizardStepTesti: stepTesti as ArticoloDetail["wizardStepTesti"] });
                   }}
                 />
               </div>
