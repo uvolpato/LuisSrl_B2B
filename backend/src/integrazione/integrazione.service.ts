@@ -263,6 +263,7 @@ export class IntegrazioneService {
       updatedAt: art.updatedAt,
       descrizione: art.descrizione ?? null,
       descrizioneDettagliata: art.descrizioneDettagliata ?? null,
+      wizardStepTesti: art.wizardStepTesti,
       varianti: art.varianti.map((v) => ({
         codice: v.codice,
         descrizione: v.descrizione,
@@ -277,7 +278,7 @@ export class IntegrazioneService {
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -287,6 +288,7 @@ export class IntegrazioneService {
     if (data.coloreRgb !== undefined) updateData.coloreRgb = data.coloreRgb;
     if (data.descrizione !== undefined) updateData.descrizione = data.descrizione;
     if (data.descrizioneDettagliata !== undefined) updateData.descrizioneDettagliata = data.descrizioneDettagliata;
+    if (data.wizardStepTesti !== undefined) updateData.wizardStepTesti = data.wizardStepTesti;
     if (data.stato !== undefined) {
       if (data.stato === 'attivo' && !art.configurato) {
         throw new BadRequestException('Articolo da configurare: non puo\' essere reso visibile.');

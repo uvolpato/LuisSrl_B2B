@@ -19,16 +19,16 @@ const STEPS: StepDef[] = [
   { step: 5, label: "Libera", icon: "♪", prompt: "Ora parlane liberamente. Racconta tutto ciò che ti viene in mente su questo prodotto. Non preoccuparti di essere ordinato: l'AI metterà ordine dopo." },
 ];
 
-interface StepTesto {
-  step: number;
-  label: string;
-  testo: string;
-}
-
 interface WizardResult {
   descrizioneDettagliata: string;
   descrizioneBreve: string;
   raw: string;
+}
+
+export interface StepTesto {
+  step: number;
+  label: string;
+  testo: string;
 }
 
 interface Props {
@@ -36,12 +36,17 @@ interface Props {
   immagini: { id: number; url: string; copertina: boolean; tipo: string }[];
   descrizione?: string | null;
   descrizioneDettagliata?: string | null;
-  onSave: (descrizione: string | null, descrizioneDettagliata: string | null) => void;
+  initialStepTesti?: StepTesto[] | null;
+  onSave: (descrizione: string | null, descrizioneDettagliata: string | null, stepTesti?: StepTesto[]) => void;
 }
 
-export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, onSave }: Props) {
+export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, onSave }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [stepTesti, setStepTesti] = useState<StepTesto[]>(STEPS.map((s) => ({ step: s.step, label: s.label, testo: "" })));
+  const [stepTesti, setStepTesti] = useState<StepTesto[]>(
+    initialStepTesti?.length === STEPS.length
+      ? initialStepTesti
+      : STEPS.map((s) => ({ step: s.step, label: s.label, testo: "" })),
+  );
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState("");
   const recognitionRef = useRef<any>(null);
@@ -147,8 +152,9 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       await api.put(`/api/integrazione/articoli/${codiceLinea}`, {
         descrizione: breve ?? dettagliata.slice(0, 200),
         descrizioneDettagliata: dettagliata,
+        wizardStepTesti: stepTesti,
       });
-      onSave(breve ?? dettagliata.slice(0, 200), dettagliata);
+      onSave(breve ?? dettagliata.slice(0, 200), dettagliata, stepTesti);
     } catch (e) {
       setProgressMsg("Errore salvataggio: " + String(e));
     }

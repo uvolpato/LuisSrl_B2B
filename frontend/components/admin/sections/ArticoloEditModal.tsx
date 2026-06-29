@@ -8,6 +8,7 @@ import { useConfirm } from "../../common/ConfirmProvider";
 import { IconInfo, IconSearch, IconPlus, IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
+import DescrizioneAiWizard from "./DescrizioneAiWizard";
 interface VarianteDetail {
   codice: string;
   descrizione: string;
@@ -23,13 +24,15 @@ interface ArticoloDetail {
   nome: string;
   colore: string;
   coloreRgb?: string;
+  descrizione?: string | null;
+  descrizioneDettagliata?: string | null;
   stato: "attivo" | "nascosto";
   configurato: boolean;
   famiglia: { codice: string; nome: string };
   variantiCount: number;
   updatedAt: string;
   varianti: VarianteDetail[];
-  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string }[];
+  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null }[];
 }
 
 const tabs = [
@@ -155,6 +158,7 @@ export default function ArticoloEditModal({
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti };
+      if ((article as any).wizardStepTesti) payload.wizardStepTesti = (article as any).wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
@@ -459,26 +463,16 @@ export default function ArticoloEditModal({
 
             {activeTab === "descrizione-ai" && (
               <div>
-                <div className="ai-section">
-                  <div className="ai-section-header">
-                    <div className="ai-icon">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                    </div>
-                    <div>
-                      <h3>Creatore di Descrizione</h3>
-                      <p>Descrivi il prodotto in linguaggio naturale. L&apos;AI genererà testo discorsivo, punti chiave e tag.</p>
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label>Descrizione libera del prodotto</label>
-                    <textarea className="textarea" placeholder="Es. Vaso alto in cotto terracotta…" />
-                  </div>
-                  <button className="btn btn-primary" disabled>
-                    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                    Genera Descrizione
-                  </button>
-                  <div className="ai-output empty" style={{ marginTop: 16 }}>La descrizione generata apparirà qui…</div>
-                </div>
+                <DescrizioneAiWizard
+                  codiceLinea={article.codiceLinea}
+                  immagini={article.immagini}
+                  descrizione={article.descrizione}
+                  descrizioneDettagliata={article.descrizioneDettagliata}
+                  initialStepTesti={(article as any).wizardStepTesti}
+                  onSave={(descrizione, descrizioneDettagliata, stepTesti) => {
+                    setArticle({ ...article, descrizione, descrizioneDettagliata, wizardStepTesti: stepTesti });
+                  }}
+                />
               </div>
             )}
 
@@ -533,6 +527,7 @@ export default function ArticoloEditModal({
           const img = article.immagini.find((i) => i.id === editingImage);
           if (!img) return null;
           const d = immaginiDisplay[editingImage];
+          const padre = img.immaginePadreId ? article.immagini.find((p) => p.id === img.immaginePadreId) : null;
           return {
             id: editingImage,
             url: img.url,
@@ -541,6 +536,13 @@ export default function ArticoloEditModal({
             inGalleria: immaginiGalleria?.[img.id] ?? img.inGalleria,
             copertina: img.copertina,
             ordinamento: img.ordinamento,
+            prompt: img.prompt ?? null,
+            aiModel: img.aiModel ?? null,
+            aiAspect: img.aiAspect ?? null,
+            aiTemperature: img.aiTemperature ?? null,
+            aiSeed: img.aiSeed ?? null,
+            immaginePadreId: img.immaginePadreId ?? null,
+            immaginePadreUrl: padre?.url ?? null,
           };
         })() : null}
         onClose={() => setEditingImage(null)}

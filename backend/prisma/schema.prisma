@@ -129,21 +129,24 @@ model Famiglia {
 }
 
 model Articolo {
-  id              Int       @id @default(autoincrement())
-  codiceLinea     String    @unique @map("codice_linea")
-  nome            String
-  colore          String    @default("")
-  coloreRgb       String?   @default("") @map("colore_rgb")
-  descrizioneAI   String?   @map("descrizione_ai")
-  stato           String    @default("ATTIVO")
-  configurato     Boolean   @default(false)
-  famigliaCodice  String    @map("famiglia_codice")
-  famiglia        Famiglia  @relation(fields: [famigliaCodice], references: [codice])
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  varianti        Variante[]
-  immagini        Immagine[]
-  raccolte        ArticoloRaccolta[]
+  id                    Int       @id @default(autoincrement())
+  codiceLinea           String    @unique @map("codice_linea")
+  nome                  String
+  colore                String    @default("")
+  coloreRgb             String?   @default("") @map("colore_rgb")
+  descrizioneAI         String?   @map("descrizione_ai")
+  descrizione           String?   @map("descrizione")
+  descrizioneDettagliata String?  @map("descrizione_dettagliata")
+  stato                 String    @default("ATTIVO")
+  configurato           Boolean   @default(false)
+  famigliaCodice        String    @map("famiglia_codice")
+  wizardStepTesti        Json?     @map("wizard_step_testi")
+  famiglia              Famiglia  @relation(fields: [famigliaCodice], references: [codice])
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  varianti              Variante[]
+  immagini              Immagine[]
+  raccolte              ArticoloRaccolta[]
 
   @@map("articoli")
 }
@@ -173,6 +176,15 @@ model Immagine {
   inGalleria      Boolean   @default(true) @map("in_galleria")
   css             String    @default("")
   prompt          String?
+  // Parametri di generazione AI (valorizzati solo per tipo='AI', sola lettura in UI)
+  aiModel         String?    @map("ai_model")
+  aiAspect        String?    @map("ai_aspect")
+  aiTemperature   Float?     @map("ai_temperature")
+  aiSeed          Int?       @map("ai_seed")
+  // Immagine sorgente da cui è stata generata (self-relation)
+  immaginePadreId Int?       @map("immagine_padre_id")
+  immaginePadre   Immagine?  @relation("ImmaginePadre", fields: [immaginePadreId], references: [id], onDelete: SetNull)
+  figlie          Immagine[] @relation("ImmaginePadre")
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("immagini")
