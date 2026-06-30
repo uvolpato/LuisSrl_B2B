@@ -689,7 +689,7 @@ export class IntegrazioneService {
       ? body.promptPersonalizzato
       : `Sei un copywriter specializzato in descrizioni prodotto per un catalogo B2B di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, terracotta).
 
-A partire dai contributi dell'operatore (suddivisi per dimensioni sensoriali), genera UNA descrizione dettagliata in italiano, in un unico paragrafo fluido e discorsivo (circa 150-300 parole).
+A partire dai contributi dell'operatore (suddivisi per dimensioni sensoriali), genera una descrizione dettagliata in italiano, in un unico paragrafo fluido e discorsivo (circa 150-300 parole).
 
 La descrizione deve:
 - Essere precisa, evocativa ma non eccessivamente poetica
@@ -697,7 +697,15 @@ La descrizione deve:
 - Integrare naturalmente gli spunti delle diverse dimensioni (forma, superficie, contesto, emozione)
 - Essere concreta: menziona materiali, finiture, caratteristiche fisiche osservabili
 
-Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 3-5 frasi, discorsiva e accattivante, adatta a un catalogo o a una card prodotto.`;
+Oltre alla descrizione dettagliata, scrivi anche una descrizione BREVE di 3-5 frasi, discorsiva e accattivante, adatta a un catalogo o a una card prodotto.
+
+Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
+\`\`\`json
+{
+  "descrizioneDettagliata": "testo della descrizione dettagliata in un unico paragrafo",
+  "descrizioneBreve": "testo della descrizione breve, 3-5 frasi"
+}
+\`\`\``;
 
     // Descrive le immagini a sfondo bianco e le include nel contesto
     const imgDescs = await this.describeWhiteImages(codiceLinea);
@@ -709,9 +717,23 @@ Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizio
 
     const result = await this.callGeminiText(fullPrompt);
 
-    const parts = result.split('---BREVE---');
-    const soloDettagliata = (parts[0] || '').trim();
-    const descrizioneBreve = (parts[1] || soloDettagliata).trim();
+    // Estrae il JSON dalla risposta (l'AI potrebbe incapsularlo in ```json ... ```)
+    let jsonStr = result.trim();
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)(?:\n?```|$)/);
+    if (jsonMatch) jsonStr = jsonMatch[1].trim();
+    let parsed: { descrizioneDettagliata?: string; descrizioneBreve?: string };
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      // Fallback: separatore testuale
+      const parts = result.split('---BREVE---');
+      parsed = {
+        descrizioneDettagliata: (parts[0] || '').trim(),
+        descrizioneBreve: (parts[1] || parts[0] || '').trim(),
+      };
+    }
+    const soloDettagliata = (parsed.descrizioneDettagliata || '').trim();
+    const descrizioneBreve = (parsed.descrizioneBreve || soloDettagliata).trim();
 
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
     const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti, imgDescs, fullPrompt);
