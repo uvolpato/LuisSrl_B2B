@@ -165,7 +165,7 @@ export default function ArticoloEditModal({
         form.append('tipo', 'GALLERIA');
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
-      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti };
+      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata };
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
@@ -478,7 +478,12 @@ export default function ArticoloEditModal({
                   descrizioneDettagliata={article.descrizioneDettagliata}
                   initialStepTesti={article.wizardStepTesti}
                   onSave={(descrizione, descrizioneDettagliata, stepTesti) => {
-                    setArticle({ ...article, descrizione, descrizioneDettagliata, wizardStepTesti: stepTesti as ArticoloDetail["wizardStepTesti"] });
+                    setArticle((prev) => prev ? ({
+                      ...prev,
+                      ...(descrizione !== null ? { descrizione } : {}),
+                      ...(descrizioneDettagliata !== null ? { descrizioneDettagliata } : {}),
+                      wizardStepTesti: stepTesti as ArticoloDetail["wizardStepTesti"],
+                    }) : prev);
                   }}
                 />
               </div>
