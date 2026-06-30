@@ -70,6 +70,14 @@ export class IntegrazioneController {
     return this.integrazione.ambientaImmagine(codiceLinea, Number(id), body);
   }
 
+  @Post('articoli/:codiceLinea/descrizione/wizard')
+  async wizardDescrizione(
+    @Param('codiceLinea') codiceLinea: string,
+    @Body() body: { stepTesti: { step: number; label: string; testo: string }[]; azione?: string; promptPersonalizzato?: string },
+  ) {
+    return this.integrazione.wizardDescrizione(codiceLinea, body);
+  }
+
   @Post('articoli/:codiceLinea/immagini/ai/persisti')
   async persistAi(
     @Param('codiceLinea') codiceLinea: string,

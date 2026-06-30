@@ -5,7 +5,9 @@ import { useEffect, useRef, type ReactNode } from "react";
 type ModalSize = "sm" | "md" | "lg";
 
 const INSET: Record<ModalSize, string> = {
-  sm: "120px",
+  // 2 valori = "verticale orizzontale": piccolo sopra/sotto (piu' alta),
+  // grande ai lati (piu' stretta).
+  sm: "48px 18%",
   md: "80px",
   lg: "40px",
 };

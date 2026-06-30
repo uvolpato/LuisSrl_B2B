@@ -3,9 +3,10 @@
 **Cliente:** Luis S.r.l. – Via F. Bellafino 28/30 (Centro Galassia), 24126 Bergamo
 **Settore:** commercio all'ingrosso di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, materiale per allestimenti)
 **Tipo progetto:** portale e‑commerce B2B riservato ai clienti rivenditori
-**Versione documento:** bozza 1.12
-**Data:** 5 giugno 2026
+**Versione documento:** bozza 1.13
+**Data:** 29 giugno 2026
 
+> Aggiornamento v1.13: descrizione AI a due livelli — breve (pubblica) e dettagliata (solo motore, con trascrizioni immagini CARICATE), più ricerca per immagine (upload cliente → trascrizione AI → similarità vettoriale). Aggiunte entità al glossario §2, nuovi §12.3–12.5, nuovi punti §14.17–20.
 > Aggiornamento v1.12: terminologia — il codice identificativo della Variante è indicato come **"codice articolo"** (anziché "codice Integra"). I riferimenti plurali generici ai codici di Integra restano invariati.
 > Aggiornamento v1.11: canali di integrazione — **lettura via viste Postgres**; **ritorno via Excel (automazioni AGOMIR S.p.A.)**.
 > Aggiornamento v1.10: integrazione Integra — entità da richiedere (§11.6) e strategia di sincronizzazione (§11.7).
@@ -39,6 +40,9 @@ Non rientrano in questa fase (salvo diversa indicazione): vendita al pubblico, p
 | **Ordine** | Documento d'acquisto del cliente, con un proprio stato di avanzamento. |
 | **Integra** | Gestionale aziendale, **fonte primaria dei dati**. **Lettura** via **viste Postgres**; **ritorno** (ordini, articoli con immagini…) via **automazioni Excel sviluppate da AGOMIR S.p.A.** Fornisce la gerarchia **Famiglia → Linea → Codice articolo**, che sul portale diventa **Famiglia principale → Articolo → Variante**. |
 | **AGOMIR S.p.A.** | Software house che **sviluppa e distribuisce Integra**. Controparte tecnica per le viste in lettura e per le automazioni Excel di import dei dati di ritorno in Integra. |
+| **Descrizione breve** | Testo pubblico dell'Articolo (1-3 frasi, stile marketing). Mostrato in scheda prodotto, griglia catalogo e risultati ricerca. Generabile dall'AI e modificabile manualmente dall'admin. |
+| **Descrizione dettagliata** | Testo esteso dell'Articolo (paragrafo), non esposto al pubblico. Integra dati di prodotto + trascrizione delle immagini. Alimenta il database vettoriale (pgvector) per la ricerca semantica e RAG. Aggiornabile manualmente dall'admin. |
+| **Trascrizione immagine** | Descrizione testuale generata dall'AI del contenuto visivo di un'immagine CARICATA (forma, materiali, texture, stile, elementi presenti). Serve a catturare ciò che è visibile nell'immagine ma non espresso nei dati strutturati. Ogni immagine CARICATA ha la propria trascrizione. |
 
 ---
 
@@ -354,13 +358,99 @@ Due funzionalità basate su intelligenza artificiale: una **ricerca semantica** 
 - Anche nei banner i prezzi sono mostrati secondo **listino e sconti del cliente**, e si propongono preferibilmente articoli disponibili e attivi.
 - **[DA DEFINIRE]** se i risultati del banner sono **ricalcolati periodicamente** (uguali per tutti, con caching) oppure **personalizzati per singolo cliente**.
 
-### 12.3 Aspetti tecnici e da definire
-- **Descrizione AI dell'Articolo**: **[DA DEFINIRE]** come viene prodotta (generata dall'AI sul portale a partire dai dati di Articolo/varianti, oppure importata/redatta) e se è anche **mostrata al cliente** oltre che usata per la ricerca; prevedere modifica/approvazione lato admin.
-- **Indicizzazione delle varianti**: l'indice deve includere gli **attributi di tutte le varianti** (dimensioni, ecc.), non solo i dati di testata dell'Articolo; richiede attributi delle varianti **completi e normalizzati** (es. altezza in cm) per supportare ricerche con vincoli dimensionali.
-- **[DA DEFINIRE]** modello/servizio AI da utilizzare e relativi costi/limiti.
-- **[DA DEFINIRE]** quando e come **aggiornare l'indice semantico** al variare del catalogo (tipicamente agganciato all'import Excel da Integra, §11).
-- **[DA DEFINIRE]** gestione dei casi senza risultati pertinenti (fallback su ricerca tradizionale per parole chiave/filtri).
+### 12.3 Aspetti tecnici trasversali
+- **Modello linguistico**: Google Gemini (`gemini-2.5-flash-pro` per testo, `gemini-2.5-flash-image` per visione e generazione immagini). Parametri (API key, modello, temperatura) configurabili via `.env`. L'inferenza AI avviene su un Mini PC nella LAN con LM Studio (Qwen 27B) come fallback/alternativa. **[DA DEFINIRE]** bilanciamento dei carichi tra cloud e locale.
+- **Indicizzazione delle varianti**: l'indice vettoriale deve includere gli **attributi di tutte le varianti** (dimensioni, materiali, ecc.), non solo i dati di testata dell'Articolo; richiede attributi delle varianti **completi e normalizzati** (es. altezza in cm) per supportare ricerche con vincoli dimensionali.
+- **Aggiornamento indice**: ricalcolato su ogni modifica della descrizione dettagliata o delle trascrizioni immagini, oppure su richiesta (pulsante "Re‑indicizza" in admin).
+- **Fallback**: quando la ricerca semantica non ritorna risultati, il sistema cade sulla ricerca full‑text tradizionale (parole chiave su nome articolo, descrizione breve, famiglia, codice).
 - Nei prompt e nelle richieste all'AI **non** vanno inseriti dati sensibili dei clienti.
+
+### 12.4 Generazione descrizione AI dell'Articolo (due livelli)
+
+Ogni Articolo ha **due descrizioni**, entrambe generabili dall'AI e modificate manualmente dall'admin:
+
+| Campo | Visibilità | Scopo | Generazione AI |
+|-------|-----------|-------|----------------|
+| **Descrizione breve** (`descrizione`) | Pubblica — scheda prodotto, catalogo, ricerca | Testo marketing / vendita (1-3 frasi). Deve vendere il prodotto: materiali, stile, uso consigliato. | Gemini elabora: nome articolo, colore, dimensioni varianti, materiali, famiglia → produce descrizione breve. |
+| **Descrizione dettagliata** (`descrizioneDettagliata`) | Solo motore interno — **mai esposta al cliente** | Alimenta embedding pgvector per ricerca semantica e RAG. Deve essere ricca di particolari tecnici, visivi, materici. | Gemini elabora: tutto ciò che usa la breve + **trascrizione immagini CARICATE** + eventuali note admin. |
+
+#### Flusso di generazione
+
+1. **Trascrizione immagini** — per ogni immagine CARICATA (sfondo bianco) dell'Articolo, l'AI (Gemini Vision) analizza l'immagine e produce un testo che descrive: forma, materiali percepiti, texture, stile, dettagli decorativi, proporzioni, elementi presenti. Ogni trascrizione è salvata associata all'immagine e visibile/emendabile in admin.
+2. **Generazione descrizione breve** — prompt system che istruisce l'AI a produrre un testo breve, accattivante, adatto al catalogo, usando: nome, colore, materiali, dimensioni salienti, famiglia.
+3. **Generazione descrizione dettagliata** — prompt system che istruisce l'AI a produrre un paragrafo esteso, tecnico e descrittivo, che includa: dati strutturati dell'Articolo + tutte le varianti + trascrizioni immagini CARICATE. Questo testo è quello che verrà indicizzato nel vettore.
+4. **Embedding** — la descrizione dettagliata viene vettorizzata e salvata in pgvector per la ricerca semantica (§12.1). L'embedding viene rigenerato ogni volta che cambia la descrizione dettagliata o le trascrizioni.
+
+```
+┌─────────────────────────────────────────────────────┐
+│               DATI ARTICOLO                          │
+│  nome · colore · materiali · famiglia               │
+│  varianti (dimensioni, prezzi)                      │
+└──────────────────┬──────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────┐
+│         TRASCRIZIONE IMMAGINI (CARICATA)            │
+│  AI analizza ogni foto sfondo bianco → testo:       │
+│  forma, texture, stile, dettagli visivi             │
+└──────────────────┬──────────────────────────────────┘
+                   │
+          ┌────────┴────────┐
+          ▼                  ▼
+┌─────────────────┐  ┌──────────────────────────┐
+│ Descrizione     │  │ Descrizione dettagliata   │
+│ breve (pubblica)│  │ (solo motore ricerca)     │
+│ 1-3 frasi       │  │ paragrafo esteso +        │
+│ stile marketing │  │ dati + trascrizioni       │
+└─────────────────┘  └───────────┬──────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │  embedding →     │
+                        │  pgvector        │
+                        │  (ricerca sem.)  │
+                        └──────────────────┘
+```
+
+#### Interfaccia admin (sezione "Generazione Descrizione" nella modale Articolo)
+
+- **Editor descrizione breve** — textarea, modificabile manualmente. Pulsante "Genera con AI" che la rigenera.
+- **Editor descrizione dettagliata** — textarea, modificabile manualmente. Pulsante "Genera con AI" che la rigenera.
+- **Pannello "Trascrizioni immagini"** — elenco di tutte le immagini CARICATE dell'Articolo, ciascuna con:
+  - miniatura dell'immagine;
+  - textarea con la trascrizione corrente (modificabile manualmente);
+  - pulsante "Trascrivi con AI" che rigenera la singola trascrizione.
+- **Pulsante "Genera tutto"** — esegue l'intero flusso: trascrivi tutte le immagini → genera descrizione breve → genera descrizione dettagliata → embedding.
+- Tutti i campi sono salvati singolarmente e mai sovrascritti automaticamente senza conferma.
+
+### 12.5 Ricerca per immagine (similarità visiva)
+
+Il cliente può caricare una propria foto per trovare articoli visivamente simili, senza dover descrivere a parole ciò che cerca.
+
+#### Flusso
+
+1. Il cliente carica un'immagine (drag‑drop o file picker) in un'apposita zona nella pagina di ricerca.
+2. L'immagine viene inviata all'AI (Gemini Vision) che la **trascrive** in testo: descrive forma, colore, stile, materiali percepiti, texture.
+3. La trascrizione viene usata come query di ricerca semantica su pgvector (cosine similarity sul campo `descrizione_dettagliata` degli Articoli, che già include le trascrizioni delle immagini CARICATE).
+4. I risultati sono mostrati in una griglia di Articoli ordinati per similarità (score), con prezzi secondo listino cliente e indicatori di disponibilità.
+
+```
+foto cliente ──→ AI (Gemini Vision) ──→ trascrizione
+                                              │
+                                              ▼
+                                   ricerca vettoriale
+                                   (pgvector cosine sim)
+                                              │
+                                              ▼
+                                   articoli simili
+                                   ordinati per score
+```
+
+#### Requisiti
+- L'immagine caricata **non viene salvata** (solo analizzata dall'AI, poi scartata).
+- Limite di peso upload: 10 MB. Formati: JPEG, PNG, WebP.
+- Se la trascrizione non produce match utili (score sotto soglia configurabile), mostrare messaggio "Nessun articolo simile trovato" senza fallback su ricerca testuale per evitare risultati fuorvianti.
+- Il risultato deve includere un indicatore di confidenza visiva (es. "Match al 78%").
 
 ---
 
@@ -378,6 +468,8 @@ Due funzionalità basate su intelligenza artificiale: una **ricerca semantica** 
 | 8 | Giacenza da Integra; al cliente solo "disponibile/non disponibile" + controllo quantità a carrello | §10 |
 | 9 | Integrazione Integra: **lettura via viste Postgres**, **ritorno via Excel (automazioni AGOMIR)**; strategia di sincronizzazione | §11 |
 | 10 | Ricerca semantica AI su **Articolo + tutte le varianti** (anche dimensioni) + banner con prompt admin | §12 |
+| 11 | **Descrizione AI a due livelli**: breve (pubblica) + dettagliata (solo motore, con trascrizioni immagini) | §12.4 |
+| 12 | **Ricerca per immagine**: upload foto cliente → trascrizione AI → similarità vettoriale su pgvector | §12.5 |
 
 ---
 
@@ -399,6 +491,10 @@ Due funzionalità basate su intelligenza artificiale: una **ricerca semantica** 
 14. **Descrizione AI dell'Articolo**: generata sul portale o importata? mostrata al cliente? (§12.3)
 15. **AI – banner**: risultati uguali per tutti (ricalcolati periodicamente) o personalizzati per cliente? (§12.2)
 16. **AI – modello/servizio** e costi/limiti; aggiornamento dell'indice (Articolo + varianti) al variare del catalogo. (§12.3)
+17. **Trascrizione immagini**: la trascrizione generata dall'AI va salvata per singola immagine o per Articolo (aggregata)? Proposta: per singola immagine CARICATA, poi aggregata nella descrizione dettagliata. (§12.4)
+18. **Ricerca per immagine**: soglia minima di cosine similarity sotto cui non mostrare risultati. Proposta: 0.65 come default configurabile. (§12.5)
+19. **Ricerca per immagine**: l'immagine caricata dal cliente è analizzata e scartata, o va conservata per audit/log? Proposta: scartata, non salvata. (§12.5)
+20. **Generazione descrizione**: il pulsante "Genera tutto" deve chiedere conferma prima di sovrascrivere modifiche manuali? Proposta: sì, con avviso "Questa operazione sovrascriverà le descrizioni e trascrizioni modificate manualmente. Continuare?". (§12.4)
 
 ---
 

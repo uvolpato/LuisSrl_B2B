@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3001";
+// WebSocket via proxy Next.js (stessa origine): niente mixed content.
+const WS_PATH = "/ws";
 
 export interface WsMessage {
   type: string;
@@ -15,8 +16,8 @@ const listeners = new Set<Listener>();
 
 function connect(): Socket {
   if (globalSocket?.connected) return globalSocket;
-  globalSocket = io(WS_URL, {
-    path: "/ws",
+  globalSocket = io({
+    path: WS_PATH,
     withCredentials: true,
     transports: ["websocket", "polling"],
     reconnection: true,

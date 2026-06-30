@@ -42,3 +42,9 @@ frontend/public/images/
 
 # Script scratch/debug usa-e-getta (es. backend/_check_db.cjs)
 _*.cjs
+
+# Certificati SSL dev generati localmente
+*-dev-key.pem
+*-dev-cert.pem
+*.pfx
+*.cer

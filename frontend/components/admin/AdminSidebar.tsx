@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { api, setCsrfToken } from "../../lib/api";
 import type { UserProfile } from "../../lib/types";
 import SettingsModal from "./SettingsModal";
+import Modal from "../common/Modal";
 import { initials } from "../../lib/helpers";
 
 const NAV_ITEMS = [
@@ -78,6 +79,7 @@ export default function AdminSidebar({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [demoSize, setDemoSize] = useState<"sm" | "md" | "lg" | null>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
   // Chiude il menu utente al click fuori
@@ -159,6 +161,11 @@ export default function AdminSidebar({
               </button>
             )}
             <hr />
+            {/* TMP DEMO — link per tarare le 3 dimensioni del Modal standard */}
+            <button className="sidebar-user-pop-item" onClick={() => { setMenuOpen(false); setDemoSize("sm"); }}>Modal SM</button>
+            <button className="sidebar-user-pop-item" onClick={() => { setMenuOpen(false); setDemoSize("md"); }}>Modal MD</button>
+            <button className="sidebar-user-pop-item" onClick={() => { setMenuOpen(false); setDemoSize("lg"); }}>Modal LG</button>
+            <hr />
             <button className="sidebar-user-pop-item danger" onClick={logout}>
               {IconLogout}
               {tc("logout")}
@@ -198,6 +205,16 @@ export default function AdminSidebar({
           onNavigateAdmin={() => { setSettingsOpen(false); onSectionChange("admin-panel"); }}
           onUserUpdate={onUserUpdate}
         />
+      )}
+
+      {/* TMP DEMO — Modal standard nelle 3 dimensioni, per tarare gli inset */}
+      {demoSize && (
+        <Modal title={`Modal ${demoSize.toUpperCase()}`} size={demoSize} onClose={() => setDemoSize(null)}>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.5 }}>
+            Contenuto di prova per tarare la dimensione <strong>{demoSize.toUpperCase()}</strong> del Modal standard
+            (inset dai bordi). Chiudi con la X, Esc o cliccando fuori.
+          </p>
+        </Modal>
       )}
     </>
   );

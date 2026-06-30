@@ -24,7 +24,13 @@ interface EditImageModalProps {
     inGalleria?: boolean;
     copertina?: boolean;
     ordinamento?: number;
-    prompt?: string;
+    prompt?: string | null;
+    aiModel?: string | null;
+    aiAspect?: string | null;
+    aiTemperature?: number | null;
+    aiSeed?: number | null;
+    immaginePadreId?: number | null;
+    immaginePadreUrl?: string | null;
   } | null;
   onClose: () => void;
   onChange: (id: number, props: Record<string, unknown>) => void;
@@ -66,12 +72,62 @@ function toPositionStr(x: number, y: number) {
   return `${Math.round(x)}% ${Math.round(y)}%`;
 }
 
+const INFO: Record<string, { title: string; lines: string[] }> = {
+  n: {
+    title: "N. immagini",
+    lines: [
+      "Quante varianti ambientate generare in un colpo solo (1–4).",
+      "Il costo API si moltiplica per il numero scelto: 3 immagini costano 3× la singola generazione.",
+      "Esempio: se vuoi scegliere tra più opzioni, usa 3–4 immagini. Se hai già un'idea chiara, 1–2 bastano.",
+    ],
+  },
+  aspect: {
+    title: "Proporzioni",
+    lines: [
+      "Il formato (rapporto larghezza/altezza) dell'immagine generata.",
+      "1:1 = quadrato — ideale per galleria prodotto e miniature.",
+      "4:3 = classico orizzontale — buon compromesso per contesto d'uso.",
+      "16:9 = panoramica — perfetto per hero banner o sfondi.",
+      "3:4, 9:16 = formati verticali — per mobile o storytelling.",
+      "Scegli in base a dove userai l'immagine: galleria, scheda prodotto, banner.",
+    ],
+  },
+  temp: {
+    title: "Creatività (temperature)",
+    lines: [
+      "Controlla quanto l'AI si discosta dal prompt che hai scritto.",
+      "0.0 = identico al prompt, risultati prevedibili e conservativi.",
+      "1.0 = massima libertà, risultati sorprendenti ma meno controllabili.",
+      "Consigliato: 0.6–0.8 per un buon equilibrio tra fedeltà al prompt e varietà creativa.",
+      "Esempio: prompt «vaso su tavolo in legno, luce naturale». Con 0.3 avrai una foto realistica. Con 0.9 l'AI potrebbe reinterpretare lo stile, i colori o l'ambiente.",
+    ],
+  },
+  seed: {
+    title: "Seed (seme casuale)",
+    lines: [
+      "Un numero fisso che rende il risultato riproducibile.",
+      "Stesso prompt + stessi parametri + stesso seed = stessa identica immagine.",
+      "Utile se hai trovato un'immagine che funziona e vuoi rigenerarla con piccole variazioni (es. cambiando il prompt ma tenendo lo stesso seed per coerenza).",
+      "Lascia vuoto per ottenere variazioni casuali ogni volta.",
+      "Esempio: prompt «vaso in giardino mediterraneo», seed=42. Se ti piace, puoi rifarlo con seed=42 e «vaso in giardino giapponese» per mantenere coerenza compositiva.",
+    ],
+  },
+};
+
+const InfoIcon = ({ id, onClick, className }: { id: string; onClick: (id: string) => void; className?: string }) => (
+  <span onClick={(e) => { e.stopPropagation(); onClick(id); }} className={className} style={{ cursor: "pointer", display: "inline-flex", verticalAlign: "middle" }}>
+    <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ opacity: 0.5 }}>
+      <circle cx="7" cy="7" r="6" /><line x1="7" y1="6" x2="7" y2="10" /><line x1="7" y1="4.5" x2="7" y2="4.5" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  </span>
+);
+
 export default function EditImageModal({ open, image, onClose, onChange, onDeleteImage, onResetImage, codiceLinea, onPersisted }: EditImageModalProps) {
-  const [tab, setTab] = useState<"dettagli" | "posizionamento" | "ambienta-ai">("dettagli");
+  const [tab, setTab] = useState<"dettagli" | "posizionamento" | "ambienta-ai" | "ai-params">("dettagli");
   const [editPrompt, setEditPrompt] = useState("");
   const confirm = useConfirm();
   // Stato generatore AI ("ambienta")
-  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("Genera in un ambiente lussuoso ma di classe");
   const [aiN, setAiN] = useState(2);
   const [aiAspect, setAiAspect] = useState("1:1");
   const [aiTemp, setAiTemp] = useState(0.7);
@@ -84,7 +140,10 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   const [persisting, setPersisting] = useState(false);
   const [aiSaved, setAiSaved] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState<string | null>(null);
   useEffect(() => { setEditPrompt(image?.prompt || ""); }, [image?.id, image?.prompt]);
+  // tab di default in base al tipo (evita tab "morto" cambiando immagine)
+  useEffect(() => { if (image) setTab(image.tipo === "AI" ? "ai-params" : "dettagli"); }, [image?.id, image?.tipo]);
   if (!image) return null;
   // il narrowing della guard non si propaga nelle funzioni annidate sotto: alias non-null
   const img = image;
@@ -182,9 +241,40 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
             <button className={`subtab-btn ${tab === "dettagli" ? "active" : ""}`} onClick={() => setTab("dettagli")}>Dettagli</button>
             <button className={`subtab-btn ${tab === "posizionamento" ? "active" : ""}`} onClick={() => setTab("posizionamento")}>Posizionamento</button>
             {image.tipo === "CARICATA" && <button className={`subtab-btn ${tab === "ambienta-ai" ? "active" : ""}`} onClick={() => setTab("ambienta-ai")}>Ambienta AI</button>}
+            {image.tipo === "AI" && <button className={`subtab-btn ${tab === "ai-params" ? "active" : ""}`} onClick={() => setTab("ai-params")}>AI</button>}
           </div>
 
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {tab === "ai-params" && image.tipo === "AI" && (
+              <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>
+                <div className="ai-section-header">
+                  <div className="ai-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                  </div>
+                  <div>
+                    <h3>Parametri di generazione</h3>
+                    <p>Sola lettura — i valori con cui questa immagine è stata generata.</p>
+                  </div>
+                </div>
+                <div className="readonly-field">
+                  <div className="label">Prompt</div>
+                  <div className="value" style={{ whiteSpace: "pre-wrap" }}>{image.prompt || "—"}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px 16px" }}>
+                  <div className="readonly-field"><div className="label">Modello</div><div className="value mono">{image.aiModel || "—"}</div></div>
+                  <div className="readonly-field"><div className="label">Proporzioni</div><div className="value mono">{image.aiAspect || "—"}</div></div>
+                  <div className="readonly-field"><div className="label">Temperatura</div><div className="value mono">{image.aiTemperature ?? "—"}</div></div>
+                  <div className="readonly-field"><div className="label">Seed</div><div className="value mono">{image.aiSeed ?? "casuale"}</div></div>
+                </div>
+                {image.immaginePadreUrl && (
+                  <div>
+                    <div className="label" style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Immagine di origine{image.immaginePadreId ? ` (#${image.immaginePadreId})` : ""}</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image.immaginePadreUrl} alt="" onClick={() => setLightbox(image.immaginePadreUrl!)} style={{ width: 150, height: 150, objectFit: "cover", borderRadius: "var(--radius)", cursor: "zoom-in", border: "1px solid var(--border)" }} />
+                  </div>
+                )}
+              </div>
+            )}
             {tab === "dettagli" && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", alignContent: "start" }}>
                 <div className="readonly-field" style={{ marginBottom: 0 }}>
@@ -279,23 +369,23 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px 16px" }}>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>N. immagini</label>
+                    <label style={{ fontSize: 12 }}>N. immagini <InfoIcon id="n" onClick={setInfoOpen} /></label>
                     <select className="input" value={aiN} onChange={(e) => setAiN(Number(e.target.value))}>
                       {[1, 2, 3, 4].map((v) => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Proporzioni</label>
+                    <label style={{ fontSize: 12 }}>Proporzioni <InfoIcon id="aspect" onClick={setInfoOpen} /></label>
                     <select className="input" value={aiAspect} onChange={(e) => setAiAspect(e.target.value)}>
                       {["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3"].map((v) => <option key={v} value={v}>{v}</option>)}
                     </select>
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Creatività ({aiTemp.toFixed(2)})</label>
+                    <label style={{ fontSize: 12 }}>Creatività ({aiTemp.toFixed(2)}) <InfoIcon id="temp" onClick={setInfoOpen} /></label>
                     <input type="range" min={0} max={1} step={0.05} value={aiTemp} onChange={(e) => setAiTemp(Number(e.target.value))} style={{ width: "100%" }} />
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Seed (opz.)</label>
+                    <label style={{ fontSize: 12 }}>Seed (opz.) <InfoIcon id="seed" onClick={setInfoOpen} /></label>
                     <input className="input" type="number" value={aiSeed} onChange={(e) => setAiSeed(e.target.value)} placeholder="casuale" />
                   </div>
                 </div>
@@ -350,6 +440,17 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Chiudi</button>
       </div>
 
+      {infoOpen && INFO[infoOpen] && (
+        <div onClick={() => setInfoOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 24px", maxWidth: 480, width: "100%", boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 600 }}>{INFO[infoOpen].title}</h3>
+            {INFO[infoOpen].lines.map((line, i) => <p key={i} style={{ margin: "0 0 8px", fontSize: 13, lineHeight: 1.55, color: "var(--fg)" }}>{line}</p>)}
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setInfoOpen(null)}>Chiudi</button>
+            </div>
+          </div>
+        </div>
+      )}
       {lightbox && (
         <div onClick={() => setLightbox(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, cursor: "zoom-out" }}>
           <img src={lightbox} alt="" style={{ maxWidth: "92%", maxHeight: "92%", borderRadius: "var(--radius)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} />
