@@ -286,8 +286,25 @@ export class IntegrazioneService {
     if (data.nome !== undefined) updateData.nome = data.nome;
     if (data.colore !== undefined) updateData.colore = data.colore;
     if (data.coloreRgb !== undefined) updateData.coloreRgb = data.coloreRgb;
-    if (data.descrizione !== undefined) updateData.descrizione = data.descrizione;
-    if (data.descrizioneDettagliata !== undefined) updateData.descrizioneDettagliata = data.descrizioneDettagliata;
+    if (data.descrizione !== undefined) {
+      updateData.descrizione = data.descrizione;
+      if (data.descrizione !== art.descrizione) {
+        // Breve cambiato → aggiorna riga "> [breve]" nell'MD
+        const md = data.descrizioneDettagliata ?? art.descrizioneDettagliata;
+        if (md) {
+          data.descrizioneDettagliata = md.replace(/^> .+$/m, `> ${data.descrizione}`);
+        }
+      } else if (data.descrizioneDettagliata !== undefined && data.descrizioneDettagliata !== null) {
+        // Breve invariato ma MD fornito → estrae breve dall'MD
+        const m = data.descrizioneDettagliata.match(/^> (.+)$/m);
+        if (m && m[1] !== data.descrizione) {
+          updateData.descrizione = m[1];
+        }
+      }
+    }
+    if (data.descrizioneDettagliata !== undefined) {
+      updateData.descrizioneDettagliata = data.descrizioneDettagliata;
+    }
     if (data.wizardStepTesti !== undefined) updateData.wizardStepTesti = data.wizardStepTesti;
     if (data.stato !== undefined) {
       if (data.stato === 'attivo' && !art.configurato) {
