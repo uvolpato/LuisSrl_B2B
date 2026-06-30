@@ -5,6 +5,7 @@ import { api, ApiError } from "../../../lib/api";
 import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
+import Tooltip from "../../common/Tooltip";
 import { IconInfo, IconSearch, IconPlus, IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
@@ -418,12 +419,14 @@ export default function ArticoloEditModal({
                 {(() => {
                   const vCols: Column<VarianteDetail>[] = [
                     { key: "codice", header: "Codice Integra", grow: true, cell: (v) => (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, whiteSpace: "nowrap" }}>{v.codice}</span>
-                        <span className="info-trigger" data-tip={v.descrizione}>
-                          <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5"/><text x="8" y="11.5" textAnchor="middle" fontSize="10" fontWeight="600" fill="currentColor">i</text></svg>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, whiteSpace: "nowrap" }}>{v.codice}</span>
+                          <Tooltip text={v.descrizione}>
+                            <span className="info-trigger">
+                              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5"/><text x="8" y="11.5" textAnchor="middle" fontSize="10" fontWeight="600" fill="currentColor">i</text></svg>
+                            </span>
+                          </Tooltip>
                         </span>
-                      </span>
                     )},
                     { key: "descrizione", header: "Descrizione", cell: (v) => (
                       <span className="desc-col" data-tip={v.descrizione}>{v.descrizione}</span>
