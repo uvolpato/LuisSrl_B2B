@@ -298,12 +298,12 @@ export class IntegrazioneService {
     if (Object.keys(updateData).length > 0) {
       await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData });
     }
-    // aggiorna il file .md ogni volta che cambia la descrizione
+    // rigenera il full MD se cambiano le descrizioni
     let nuovoMd: string | undefined;
     if (data.descrizioneDettagliata !== undefined) {
-      // se arriva il full MD (da frontend), lo scrive cosi' com'e'
       const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-      nuovoMd = this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, data.descrizioneDettagliata ?? '', data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined);
+      const imgDescs = await this.describeWhiteImages(codiceLinea);
+      nuovoMd = this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, data.descrizioneDettagliata ?? '', data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined, imgDescs);
       // aggiorna descrizioneDettagliata col full MD nel DB
       if (nuovoMd !== data.descrizioneDettagliata) {
         updateData.descrizioneDettagliata = nuovoMd;
@@ -616,7 +616,7 @@ export class IntegrazioneService {
   }
 
   /** Costruisce il contenuto markdown completo per descrizioneDettagliata. */
-  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[]): string {
+  private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[], imgDescs?: string[], prompt?: string): string {
     const lines: string[] = [];
     lines.push(`# ${nome}`);
     lines.push('');
@@ -637,6 +637,27 @@ export class IntegrazioneService {
         lines.push(`### ${s.label}`);
         lines.push(s.testo.trim());
       }
+    }
+    if (imgDescs?.length) {
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+      lines.push('## Descrizione immagini (AI)');
+      for (const d of imgDescs) {
+        if (!d.trim()) continue;
+        lines.push('');
+        lines.push(d.trim());
+      }
+    }
+    if (prompt) {
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+      lines.push('## Prompt AI');
+      lines.push('');
+      lines.push('```');
+      lines.push(prompt);
+      lines.push('```');
     }
     return lines.join('\n');
   }
@@ -687,9 +708,8 @@ Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizio
     const soloDettagliata = (parts[0] || '').trim();
     const descrizioneBreve = (parts[1] || soloDettagliata).trim();
 
-    // salva il .md subito dopo la generazione e usa il contenuto completo
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-    const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti);
+    const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti, imgDescs, fullPrompt);
 
     return { descrizioneDettagliata, descrizioneBreve, raw: result };
   }
