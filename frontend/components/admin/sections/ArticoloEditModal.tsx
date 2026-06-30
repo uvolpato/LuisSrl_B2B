@@ -35,6 +35,7 @@ interface ArticoloDetail {
   varianti: VarianteDetail[];
   immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null }[];
   wizardStepTesti?: { step: number; label: string; testo: string }[] | null;
+  promptAi?: string | null;
 }
 
 const tabs = [
@@ -66,6 +67,7 @@ export default function ArticoloEditModal({
   const [article, setArticle] = useState<ArticoloDetail | null>(null);
   const initialDescRef = useRef({ descrizione: "", descrizioneDettagliata: "" });
   const initialStepTestiRef = useRef<ArticoloDetail["wizardStepTesti"]>(null);
+  const initialPromptAiRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState("generale");
   const [activeSubTab, setActiveSubTab] = useState("ordine");
   const [loading, setLoading] = useState(false);
@@ -100,6 +102,7 @@ export default function ArticoloEditModal({
       setArticle(a);
       initialDescRef.current = { descrizione: a.descrizione ?? "", descrizioneDettagliata: a.descrizioneDettagliata ?? "" };
       initialStepTestiRef.current = a.wizardStepTesti;
+      initialPromptAiRef.current = a.promptAi ?? null;
       setEditNome(a.nome);
       setEditColore(a.colore);
       setEditColoreRgb(a.coloreRgb || "");
@@ -138,6 +141,7 @@ export default function ArticoloEditModal({
     if ((article.descrizione ?? "") !== initialDescRef.current.descrizione) return true;
     if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
     if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
+    if ((article.promptAi ?? null) !== initialPromptAiRef.current) return true;
     return false;
   }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
@@ -166,7 +170,7 @@ export default function ArticoloEditModal({
         form.append('tipo', 'GALLERIA');
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
-      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata };
+      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
@@ -480,11 +484,13 @@ export default function ArticoloEditModal({
                   descrizione={article.descrizione}
                   descrizioneDettagliata={article.descrizioneDettagliata}
                   initialStepTesti={article.wizardStepTesti}
-                  onSave={(descrizione, descrizioneDettagliata, stepTesti) => {
+                  promptAi={article.promptAi}
+                  onSave={(descrizione, descrizioneDettagliata, stepTesti, promptAi) => {
                     setArticle((prev) => prev ? ({
                       ...prev,
                       ...(descrizione !== null ? { descrizione } : {}),
                       ...(descrizioneDettagliata !== null ? { descrizioneDettagliata } : {}),
+                      ...(promptAi !== undefined ? { promptAi } : {}),
                       wizardStepTesti: stepTesti as ArticoloDetail["wizardStepTesti"],
                     }) : prev);
                   }}

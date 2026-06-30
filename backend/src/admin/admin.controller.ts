@@ -113,4 +113,23 @@ export class AdminController {
   ) {
     return this.admin.assignUserGroup(id, groupId, req.user.id, req.ip);
   }
+
+  // ── Configurazioni sito ──
+
+  @Get('config')
+  @RequirePermission('admin.settings.view')
+  listConfig() {
+    return this.admin.listConfig();
+  }
+
+  @Put('config/:key')
+  @RequirePermission('admin.settings.edit')
+  async updateConfig(
+    @Param('key') key: string,
+    @Body('value') value: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.admin.updateConfig(key, value, req.user.id, req.ip);
+    return { ok: true };
+  }
 }

@@ -9,6 +9,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
 import ArticoliSection from "../../components/admin/sections/ArticoliSection";
 import ClientiSection from "../../components/admin/sections/ClientiSection";
+
 import { IconPlus } from "../../components/admin/icons";
 
 const SECTION_TITLES: Record<string, string> = {

@@ -144,10 +144,15 @@ export class IntegrazioneService {
       const codLinea = famCodice.replace(/^FAM_/, '').replace(/[^A-Z0-9_]/g, '_');
       const nome = famNome;
 
-      // Upsert Articolo by codiceLinea
+      // Legge prompt AI di default dalla configurazione sito
+      let defaultPrompt: string | undefined;
+      const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
+      if (sc?.value?.trim()) defaultPrompt = sc.value.trim();
+
+      // Upsert Articolo by codiceLinea — imposta promptAi di default
       const art = await this.prisma.articolo.upsert({
         where: { codiceLinea: codLinea },
-        create: { codiceLinea: codLinea, nome, famigliaCodice: famCodice, stato: 'NASCOSTO' },
+        create: { codiceLinea: codLinea, nome, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
         update: { nome, famigliaCodice: famCodice },
       });
 
@@ -263,6 +268,7 @@ export class IntegrazioneService {
       updatedAt: art.updatedAt,
       descrizione: art.descrizione ?? null,
       descrizioneDettagliata: art.descrizioneDettagliata ?? null,
+      promptAi: art.promptAi ?? null,
       wizardStepTesti: art.wizardStepTesti,
       varianti: art.varianti.map((v) => ({
         codice: v.codice,
@@ -278,7 +284,7 @@ export class IntegrazioneService {
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -305,6 +311,7 @@ export class IntegrazioneService {
     if (data.descrizioneDettagliata !== undefined) {
       updateData.descrizioneDettagliata = data.descrizioneDettagliata;
     }
+    if (data.promptAi !== undefined) updateData.promptAi = data.promptAi;
     if (data.wizardStepTesti !== undefined) updateData.wizardStepTesti = data.wizardStepTesti;
     if (data.stato !== undefined) {
       if (data.stato === 'attivo' && !art.configurato) {
@@ -427,6 +434,42 @@ export class IntegrazioneService {
     return this.aiCache.get(id);
   }
 
+  /** Legge le config AI da site_config con fallback a env → hardcoded. */
+  private aiConfigCache: { ts: number; immagini: Record<string, string>; testi: Record<string, string> } | null = null;
+  private readonly AI_CONFIG_TTL = 60_000; // 1 minuto
+
+  private async getAiConfig(scope: 'immagini' | 'testi'): Promise<{
+    provider: string; model: string; endpoint: string; temperature: number; maxTokens: number;
+  }> {
+    const now = Date.now();
+    if (!this.aiConfigCache || now - this.aiConfigCache.ts > this.AI_CONFIG_TTL) {
+      const rows = await this.prisma.siteConfig.findMany({
+        where: { key: { startsWith: 'AI_Immagini_' } },
+      });
+      const rowsTesti = await this.prisma.siteConfig.findMany({
+        where: { key: { startsWith: 'AI_Testi_' } },
+      });
+      const immagini = Object.fromEntries(rows.map(r => [r.key, r.value]));
+      const testi = Object.fromEntries(rowsTesti.map(r => [r.key, r.value]));
+      this.aiConfigCache = { ts: now, immagini, testi };
+    }
+    const map = scope === 'immagini' ? this.aiConfigCache.immagini : this.aiConfigCache.testi;
+    const get = (key: string, fallback: string, env?: string) =>
+      map[key] ?? (env ? (process.env[env] || fallback) : fallback);
+    return {
+      provider:  get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Provider`, 'gemini'),
+      model:     get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Modello`,
+                    scope === 'immagini' ? 'gemini-2.5-flash-image' : 'gemini-2.5-flash',
+                    scope === 'immagini' ? 'GEMINI_IMAGE_MODEL' : 'GEMINI_TEXT_MODEL'),
+      endpoint:  get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Endpoint`,
+                    'https://generativelanguage.googleapis.com/v1beta/models/'),
+      temperature: parseFloat(get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Temperature`,
+                    scope === 'immagini' ? '0.4' : '0.7')),
+      maxTokens: parseInt(get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_MaxTokens`,
+                    scope === 'immagini' ? '4096' : '8192'), 10),
+    };
+  }
+
   private async callGemini(
     prompt: string,
     srcImg: { mime: string; b64: string },
@@ -434,7 +477,8 @@ export class IntegrazioneService {
   ): Promise<{ mime: string; b64: string }> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
-    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+    const aiCfg = await this.getAiConfig('immagini');
+    const model = aiCfg.model;
     const body = {
       contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: srcImg.mime, data: srcImg.b64 } }] }],
       generationConfig: {
@@ -444,10 +488,8 @@ export class IntegrazioneService {
         ...(cfg.aspectRatio ? { imageConfig: { aspectRatio: cfg.aspectRatio } } : {}),
       },
     };
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) },
-    );
+    const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${model}:generateContent`;
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) });
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
       let detail = txt.slice(0, 300);
@@ -509,11 +551,12 @@ export class IntegrazioneService {
       ),
     );
     const generationId = randomUUID();
+    const imgCfg = await this.getAiConfig('immagini');
     this.aiCache.set(generationId, {
       items: results,
       params: {
         prompt: promptFinale,
-        model: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+        model: imgCfg.model,
         aspect: opts.aspectRatio,
         temperature: opts.temperature,
         seed: opts.seed,
@@ -568,17 +611,22 @@ export class IntegrazioneService {
   private async callGeminiText(prompt: string, image?: { mime: string; b64: string }): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
-    const model = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash';
+    const aiCfg = await this.getAiConfig('testi');
     const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [{ text: prompt }];
     if (image) parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
+    const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${aiCfg.model}:generateContent`;
+    const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+          generationConfig: { temperature: aiCfg.temperature, maxOutputTokens: aiCfg.maxTokens },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          ],
         }),
       },
     );
@@ -589,9 +637,14 @@ export class IntegrazioneService {
       throw new BadRequestException(`Errore AI testo (${res.status}): ${detail.slice(0, 200)}`);
     }
     const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
     };
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts?.map((p) => p.text).join('\n') || '';
+    const finishReason = candidate?.finishReason ?? 'UNKNOWN';
+    if (finishReason !== 'STOP') {
+      console.warn(`Gemini finishReason=${finishReason} (atteso STOP). Testo ricevuto: ${text.slice(0, 200)}`);
+    }
     return text;
   }
 
@@ -680,14 +733,15 @@ export class IntegrazioneService {
       throw new BadRequestException('Inserisci almeno un contributo vocale prima di generare la descrizione.');
     }
 
-    const contributi = body.stepTesti
-      .filter((s) => s.testo?.trim())
-      .map((s) => `--- ${s.label} ---\n${s.testo.trim()}`)
-      .join('\n\n');
-
-    const systemPrompt = body.promptPersonalizzato?.trim()
-      ? body.promptPersonalizzato
-      : `Sei un copywriter specializzato in descrizioni prodotto per un catalogo B2B di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, terracotta).
+    // Cascade prompt: body > article.promptAi > siteConfig > hardcoded default
+    let systemPrompt = body.promptPersonalizzato?.trim();
+    if (!systemPrompt) systemPrompt = art.promptAi?.trim();
+    if (!systemPrompt) {
+      const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
+      systemPrompt = sc?.value?.trim();
+    }
+    if (!systemPrompt) {
+      systemPrompt = `Sei un copywriter specializzato in descrizioni prodotto per un catalogo B2B di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, terracotta).
 
 A partire dai contributi dell'operatore (suddivisi per dimensioni sensoriali), genera una descrizione dettagliata in italiano, in un unico paragrafo fluido e discorsivo (circa 150-300 parole).
 
@@ -706,6 +760,12 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
   "descrizioneBreve": "testo della descrizione breve, 3-5 frasi"
 }
 \`\`\``;
+    }
+
+    const contributi = body.stepTesti
+      .filter((s) => s.testo?.trim())
+      .map((s) => `--- ${s.label} ---\n${s.testo.trim()}`)
+      .join('\n\n');
 
     // Descrive le immagini a sfondo bianco e le include nel contesto
     const imgDescs = await this.describeWhiteImages(codiceLinea);
@@ -717,24 +777,51 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
 
     const raw = await this.callGeminiText(fullPrompt);
 
-    // Tenta parsing JSON (con o senza ```json ```)
-    let parsed: { descrizioneDettagliata?: string; descrizioneBreve?: string } | null = null;
-    const jsonInBlock = raw.match(/```(?:json)?\s*\n?(\{[\s\S]*?\})\n?```/);
-    const jsonRaw = raw.match(/\{[\s\S]*"descrizioneDettagliata"[\s\S]*"descrizioneBreve"[\s\S]*\}/);
-    const jsonStr = (jsonInBlock?.[1] || jsonRaw?.[0] || '').trim();
+    // Estrae descrizioneDettagliata e (opzionale) descrizioneBreve dal JSON di Gemini.
+    // Gestisce risposte troncate (mancanza di } finale o di descrizioneBreve).
+    let dettagliata = '';
+    let breve = '';
+
+    // 1. Prova a estrarre un blocco ```json { ... } ``` e parsarlo
+    const codeBlock = raw.match(/```(?:json)?\s*\n?(\{[\s\S]*?\})\n?```/);
+    let jsonStr = codeBlock?.[1] ?? '';
+    // 2. Se nessun code block, cerca un oggetto JSON con descrizioneDettagliata nel testo
+    if (!jsonStr) {
+      const obj = raw.match(/\{[\s\S]*?"descrizioneDettagliata"[\s\S]*?\}/);
+      jsonStr = obj?.[0] ?? '';
+    }
+    // 3. Prova a parsare il JSON trovato (gestendo chiusura mancante)
     if (jsonStr) {
-      try { parsed = JSON.parse(jsonStr); } catch { /* fallback */ }
+      if (!jsonStr.endsWith('}')) {
+        const b = jsonStr.lastIndexOf('}');
+        if (b !== -1) jsonStr = jsonStr.slice(0, b + 1);
+      }
+      try {
+        const p = JSON.parse(jsonStr) as Record<string, unknown>;
+        if (typeof p.descrizioneDettagliata === 'string') dettagliata = p.descrizioneDettagliata.trim();
+        if (typeof p.descrizioneBreve === 'string') breve = p.descrizioneBreve.trim();
+      } catch { /* fallback */ }
     }
-    if (!parsed) {
-      // Fallback: separatore testuale
-      const parts = raw.split('---BREVE---');
-      parsed = {
-        descrizioneDettagliata: (parts[0] || '').trim(),
-        descrizioneBreve: (parts.length > 1 ? parts.slice(1).join('---BREVE---') : parts[0] || '').trim(),
-      };
+    // 4. Se ancora niente, estrazione diretta del valore con regex
+    if (!dettagliata) {
+      const m = raw.match(/"descrizioneDettagliata"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) dettagliata = m[1].trim();
+      const m2 = raw.match(/"descrizioneBreve"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m2) breve = m2[1].trim();
     }
-    const soloDettagliata = (parsed.descrizioneDettagliata || '').trim();
-    const descrizioneBreve = (parsed.descrizioneBreve || soloDettagliata).trim();
+    // 5. Fallback: separatore testuale ---BREVE---
+    if (!dettagliata) {
+      const sep = '---BREVE---';
+      const idx = raw.indexOf(sep);
+      if (idx !== -1) {
+        dettagliata = raw.slice(0, idx).trim();
+        breve = raw.slice(idx + sep.length).trim();
+      } else {
+        dettagliata = raw.trim();
+      }
+    }
+    const soloDettagliata = dettagliata;
+    const descrizioneBreve = breve || dettagliata;
 
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
     const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti, imgDescs, fullPrompt);

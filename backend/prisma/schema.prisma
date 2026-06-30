@@ -141,6 +141,7 @@ model Articolo {
   configurato           Boolean   @default(false)
   famigliaCodice        String    @map("famiglia_codice")
   wizardStepTesti        Json?     @map("wizard_step_testi")
+  promptAi              String?   @map("prompt_ai")
   famiglia              Famiglia  @relation(fields: [famigliaCodice], references: [codice])
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
@@ -149,6 +150,16 @@ model Articolo {
   raccolte              ArticoloRaccolta[]
 
   @@map("articoli")
+}
+
+model SiteConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_config")
 }
 
 model Variante {
@@ -191,13 +202,15 @@ model Immagine {
 }
 
 model Raccolta {
-  id        Int               @id @default(autoincrement())
-  nome      String
-  slug      String            @unique
-  immagine  String?
-  stato     String            @default("ATTIVO")
-  createdAt DateTime          @default(now()) @map("created_at")
-  articoli  ArticoloRaccolta[]
+  id          Int               @id @default(autoincrement())
+  nome        String
+  slug        String            @unique
+  immagine    String?
+  descrizione String?
+  sconto      Float?
+  stato       String            @default("ATTIVO")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  articoli    ArticoloRaccolta[]
 
   @@map("raccolte")
 }

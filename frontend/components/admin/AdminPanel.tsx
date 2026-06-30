@@ -33,7 +33,7 @@ function formatDate(d: string): string {
   return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-type UserTab = "utenti" | "clienti";
+type AdminPanelTab = "utenti" | "clienti" | "ai";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -70,7 +70,7 @@ const STATO_FILTERS: { value: StatoFilter; label: string }[] = [
 
 export default function AdminPanel() {
   const confirm = useConfirm();
-  const [activeTab, setActiveTab] = useState<UserTab>("utenti");
+  const [activeTab, setActiveTab] = useState<AdminPanelTab>("utenti");
   const [userSubTab, setUserSubTab] = useState<UserSubTab>("panoramica");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -309,6 +309,9 @@ export default function AdminPanel() {
         <button className={`admin-panel-tab ${activeTab === "clienti" ? "active" : ""}`} onClick={() => { setActiveTab("clienti"); setPage(1); }}>
           Clienti
         </button>
+        <button className={`admin-panel-tab ${activeTab === "ai" ? "active" : ""}`} onClick={() => { setActiveTab("ai"); }}>
+          AI
+        </button>
       </div>
 
       <div className="admin-panel-body">
@@ -428,6 +431,9 @@ export default function AdminPanel() {
           )}
           {activeTab === "utenti" && userSubTab === "gruppi" && (
             <GroupsSection />
+          )}
+          {activeTab === "ai" && (
+            <AiConfigSection />
           )}
         </div>
       </div>
@@ -669,6 +675,160 @@ function GroupEditorModal({
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+// ── Configurazione AI ──
+
+type AiConfigEntry = { id: number; key: string; value: string };
+
+const AI_GROUPS = [
+  {
+    title: "Immagini (generazione sfondi ambientati)",
+    prefix: "AI_Immagini_",
+    fields: [
+      { key: "Provider", label: "Provider", type: "text", desc: "Provider AI per immagini (es. gemini)" },
+      { key: "Modello", label: "Modello", type: "text", desc: "Modello per generazione immagini" },
+      { key: "Temperature", label: "Temperature", type: "number", desc: "Creatività (0-1)" },
+      { key: "MaxTokens", label: "Max tokens", type: "number", desc: "Token massimi per risposta" },
+    ],
+  },
+  {
+    title: "Testi (descrizione sensoriale AI)",
+    prefix: "AI_Testi_",
+    fields: [
+      { key: "Provider", label: "Provider", type: "text", desc: "Provider AI per testi (es. gemini, futuro: openai-compat)" },
+      { key: "Modello", label: "Modello", type: "text", desc: "Modello per generazione testi" },
+      { key: "Endpoint", label: "Endpoint API", type: "text", desc: "URL base API (cambiare per AI locale)" },
+      { key: "Temperature", label: "Temperature", type: "number", desc: "Creatività (0-1)" },
+      { key: "MaxTokens", label: "Max tokens", type: "number", desc: "Token massimi per risposta" },
+    ],
+  },
+  {
+    title: "Prompt descrizione articolo",
+    prefix: "",
+    fields: [
+      { key: "Prompt_AI_Descrizione_Articolo", label: "Prompt descrizione articolo", type: "textarea", desc: "Prompt di sistema per la generazione della descrizione sensoriale" },
+    ],
+  },
+];
+
+function AiConfigSection() {
+  const [configs, setConfigs] = useState<AiConfigEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const fetchConfig = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<AiConfigEntry[]>("/api/admin/config");
+      setConfigs(data);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+
+  async function handleSave(key: string, value: string) {
+    setSaving(key);
+    try {
+      await api.put(`/api/admin/config/${encodeURIComponent(key)}`, { value });
+      setConfigs((prev) => prev.map((c) => c.key === key ? { ...c, value } : c));
+    } catch { /* ignore */ }
+    setSaving(null);
+  }
+
+  if (loading) return <div className="admin-panel-loading">Caricamento...</div>;
+
+  return (
+    <>
+      <div className="admin-panel-header">
+        <div className="admin-panel-header-left">
+          <h2 className="admin-panel-title">AI — Configurazione</h2>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 32, maxWidth: 800, padding: "16px 0" }}>
+        {AI_GROUPS.map((group) => {
+          const groupConfigs = configs.filter((c) => {
+            if (group.prefix) return c.key.startsWith(group.prefix);
+            return group.fields.some((f) => f.key === c.key);
+          });
+          if (!groupConfigs.length) return null;
+          return (
+            <div key={group.title}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 12px", color: "var(--muted)" }}>{group.title}</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {group.fields.map((field) => {
+                  const cfg = groupConfigs.find((c) => c.key === `${group.prefix}${field.key}`) || groupConfigs.find((c) => c.key === field.key);
+                  if (!cfg) return null;
+                  return (
+                    <ConfigField
+                      key={cfg.key}
+                      config={cfg}
+                      fieldDef={field}
+                      saving={saving === cfg.key}
+                      onSave={handleSave}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function ConfigField({ config, fieldDef, saving, onSave }: { config: AiConfigEntry; fieldDef: { key: string; label: string; type: string; desc: string }; saving: boolean; onSave: (key: string, value: string) => void }) {
+  const [value, setValue] = useState(config.value);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => { setValue(config.value); setDirty(false); }, [config.value]);
+
+  return (
+    <div className="readonly-field" style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}>
+      <div className="label">{fieldDef.label}</div>
+      <span style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>{fieldDef.desc}</span>
+      {fieldDef.type === "textarea" ? (
+        <textarea
+          className="textarea"
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setDirty(e.target.value !== config.value); }}
+          rows={12}
+          style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: 13 }}
+        />
+      ) : (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            type={fieldDef.type === "number" ? "number" : "text"}
+            value={value}
+            onChange={(e) => { setValue(e.target.value); setDirty(e.target.value !== config.value); }}
+            className="admin-panel-search"
+            style={{ flex: 1, padding: "6px 10px", fontSize: 13, fontFamily: "var(--font-mono)" }}
+          />
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ whiteSpace: "nowrap" }}
+            disabled={!dirty || saving}
+            onClick={() => onSave(config.key, value)}
+          >
+            {saving ? "…" : "Salva"}
+          </button>
+        </div>
+      )}
+      {fieldDef.type === "textarea" && (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={!dirty || saving}
+            onClick={() => onSave(config.key, value)}
+          >
+            {saving ? "Salvataggio…" : "Salva"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

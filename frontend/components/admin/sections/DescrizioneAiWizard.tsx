@@ -38,10 +38,11 @@ interface Props {
   descrizione?: string | null;
   descrizioneDettagliata?: string | null;
   initialStepTesti?: StepTesto[] | null;
-  onSave: (descrizione: string | null, descrizioneDettagliata: string | null, stepTesti?: StepTesto[]) => void;
+  promptAi?: string | null;
+  onSave: (descrizione: string | null, descrizioneDettagliata: string | null, stepTesti?: StepTesto[], promptAi?: string | null) => void;
 }
 
-export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, onSave }: Props) {
+export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, promptAi, onSave }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
   const hasExistingContent = !!(savedDettagliata && savedDettagliata.length > 0);
   const [stepTesti, setStepTesti] = useState<StepTesto[]>(
@@ -60,7 +61,9 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [showPromptEditor, setShowPromptEditor] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState("");
+  const initialPromptRef = useRef(promptAi ?? "");
+  const [customPrompt, setCustomPrompt] = useState(promptAi ?? "");
+  const promptDirty = customPrompt !== initialPromptRef.current;
   const [showGuida, setShowGuida] = useState(false);
   const [mdView, setMdView] = useState(true);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
@@ -119,13 +122,13 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     };
   }, []);
 
-  // Propaga stepTesti + result descrizioni al padre appena cambiano (per isDirty modale),
+  // Propaga stepTesti + result descrizioni + promptAi al padre (per isDirty modale),
   // ma saltando la prima inizializzazione
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    onSave(result?.descrizioneBreve ?? null, result?.descrizioneDettagliata ?? null, stepTesti);
-  }, [stepTesti, result?.descrizioneDettagliata, result?.descrizioneBreve]);
+    onSave(result?.descrizioneBreve ?? null, result?.descrizioneDettagliata ?? null, stepTesti, promptDirty ? customPrompt : undefined);
+  }, [stepTesti, result?.descrizioneDettagliata, result?.descrizioneBreve, customPrompt, promptDirty]);
 
   function updateTesto(val: string) {
     setStepTesti((prev) => prev.map((s, idx) => idx === currentStep ? { ...s, testo: val } : s));
@@ -271,7 +274,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             </div>
             <div className="wizard-result-footer">
               {hasGeneratedDesc && (
-                <button className="btn btn-primary btn-sm" onClick={handleGenerate}>Rigenera</button>
+                <button className="btn btn-primary btn-sm" onClick={handleGenerate} disabled={promptDirty} title={promptDirty ? "Salva prima il prompt modificato" : ""}>Rigenera</button>
               )}
               <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(0); }}>
                 {hasGeneratedDesc ? "Modifica" : "Continua modifica"}

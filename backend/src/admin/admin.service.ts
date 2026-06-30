@@ -162,4 +162,19 @@ export class AdminService {
     await this.audit.log({ actorId, azione: 'admin.user_assign_group', entita: 'users', entitaId: String(userId), ip });
     return toUserProfile(updated);
   }
+
+  // ── Configurazioni sito ──
+
+  async listConfig() {
+    return this.prisma.siteConfig.findMany({ orderBy: { key: 'asc' } });
+  }
+
+  async updateConfig(key: string, value: string, actorId: number, ip?: string) {
+    await this.prisma.siteConfig.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+    await this.audit.log({ actorId, azione: 'admin.config_update', entita: 'site_config', entitaId: key, ip });
+  }
 }

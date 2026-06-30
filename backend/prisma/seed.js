@@ -144,3 +144,4 @@ function randomAvatarColor() {
     process.exitCode = 1;
   })
   .finally(() => prisma.$disconnect());
+
