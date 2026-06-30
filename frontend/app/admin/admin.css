@@ -2302,7 +2302,9 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-dim-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .wizard-dimensions-scroll { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 4px; }
 .wizard-md-area { flex: 1; min-height: 0; display: flex; }
-.wizard-md-preview { flex: 1; font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-y: auto; overflow-x: hidden; word-break: break-word; }
+.wizard-md-preview { flex: 1; font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-y: auto; overflow-x: hidden; word-break: break-word; white-space: normal; }
+.wizard-md-preview pre { white-space: pre-wrap; word-break: break-word; }
+.wizard-md-preview code { white-space: pre-wrap; word-break: break-word; }
 .wizard-md-textarea { flex: 1; min-height: 0; resize: none; overflow-wrap: break-word; white-space: pre-wrap; }
 .wizard-md-tabs-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0; padding: 0; margin-top: 8px; }
 .wizard-md-tabs-bar .modal-tab-btn { padding: 8px 14px; font-size: 13px; }

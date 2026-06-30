@@ -715,21 +715,22 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
 
     const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}`;
 
-    const result = await this.callGeminiText(fullPrompt);
+    const raw = await this.callGeminiText(fullPrompt);
 
-    // Estrae il JSON dalla risposta (l'AI potrebbe incapsularlo in ```json ... ```)
-    let jsonStr = result.trim();
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)(?:\n?```|$)/);
-    if (jsonMatch) jsonStr = jsonMatch[1].trim();
-    let parsed: { descrizioneDettagliata?: string; descrizioneBreve?: string };
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch {
+    // Tenta parsing JSON (con o senza ```json ```)
+    let parsed: { descrizioneDettagliata?: string; descrizioneBreve?: string } | null = null;
+    const jsonInBlock = raw.match(/```(?:json)?\s*\n?(\{[\s\S]*?\})\n?```/);
+    const jsonRaw = raw.match(/\{[\s\S]*"descrizioneDettagliata"[\s\S]*"descrizioneBreve"[\s\S]*\}/);
+    const jsonStr = (jsonInBlock?.[1] || jsonRaw?.[0] || '').trim();
+    if (jsonStr) {
+      try { parsed = JSON.parse(jsonStr); } catch { /* fallback */ }
+    }
+    if (!parsed) {
       // Fallback: separatore testuale
-      const parts = result.split('---BREVE---');
+      const parts = raw.split('---BREVE---');
       parsed = {
         descrizioneDettagliata: (parts[0] || '').trim(),
-        descrizioneBreve: (parts[1] || parts[0] || '').trim(),
+        descrizioneBreve: (parts.length > 1 ? parts.slice(1).join('---BREVE---') : parts[0] || '').trim(),
       };
     }
     const soloDettagliata = (parsed.descrizioneDettagliata || '').trim();
@@ -738,7 +739,7 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
     const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti, imgDescs, fullPrompt);
 
-    return { descrizioneDettagliata, descrizioneBreve, raw: result };
+    return { descrizioneDettagliata, descrizioneBreve, raw };
   }
 
   /** Restituisce il mapping corrente (utile per debug) */
