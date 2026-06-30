@@ -677,7 +677,7 @@ La descrizione deve:
 - Integrare naturalmente gli spunti delle diverse dimensioni (forma, superficie, contesto, emozione)
 - Essere concreta: menziona materiali, finiture, caratteristiche fisiche osservabili
 
-Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 1-3 frasi, concisa, adatta a elenchi e card.`;
+Dopo la descrizione dettagliata, separa con "---BREVE---" e scrivi una descrizione BREVE di 3-5 frasi, discorsiva e accattivante, adatta a un catalogo o a una card prodotto.`;
 
     // Descrive le immagini a sfondo bianco e le include nel contesto
     const imgDescs = await this.describeWhiteImages(codiceLinea);

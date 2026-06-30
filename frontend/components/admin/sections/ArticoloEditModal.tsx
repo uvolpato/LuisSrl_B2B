@@ -470,7 +470,7 @@ export default function ArticoloEditModal({
             )}
 
             {activeTab === "descrizione-ai" && (
-              <div>
+              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <DescrizioneAiWizard
                   codiceLinea={article.codiceLinea}
                   immagini={article.immagini}

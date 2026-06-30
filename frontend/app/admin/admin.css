@@ -2242,7 +2242,7 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 /* Descrizione AI Wizard */
-.wizard { display: flex; flex-direction: column; gap: 20px; }
+.wizard { display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; flex: 1; }
 .wizard-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .wizard-steps { display: flex; align-items: center; gap: 0; flex: 1; }
 .wizard-step-dot { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: var(--radius); color: var(--muted); font-size: 13px; transition: all 0.15s ease; }
@@ -2257,10 +2257,10 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-guida table { width: 100%; border-collapse: collapse; }
 .wizard-guida th { text-align: left; padding: 6px 10px; font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .wizard-guida td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.wizard-body { display: flex; gap: 20px; }
+.wizard-body { display: flex; gap: 20px; flex: 1; min-height: 0; }
 .wizard-image { width: 140px; min-width: 140px; height: 140px; border-radius: var(--radius); overflow: hidden; background: var(--fg-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .wizard-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.wizard-content { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.wizard-content { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
 .wizard-prompt { display: flex; gap: 10px; align-items: flex-start; background: var(--fg-soft); border-radius: var(--radius); padding: 14px 16px; }
 .wizard-prompt-icon { font-size: 20px; line-height: 1.4; flex-shrink: 0; }
 .wizard-prompt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg); }
@@ -2286,19 +2286,21 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: wizard-spin 0.7s linear infinite; }
 @keyframes wizard-spin { to { transform: rotate(360deg); } }
 .wizard-loading p { font-size: 15px; color: var(--muted); margin: 0; }
-.wizard-result { display: flex; flex-direction: column; gap: 16px; height: 100%; }
-.wizard-result-panels { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 100%; }
+.wizard-result { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; flex: 1; }
+.wizard-result-panels { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 100%; min-height: 0; }
 .wizard-result-col { display: flex; flex-direction: column; gap: 8px; }
 .wizard-col-md { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .wizard-col-side { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.wizard-col-side .wizard-result-footer { margin-top: auto; padding-top: 8px; }
 .wizard-result-col h4 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--fg); flex-shrink: 0; }
 .wizard-result-textarea { font-size: 14px; line-height: 1.6; resize: vertical; }
 .wizard-result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .wizard-result-footer { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .wizard-dimensions { display: flex; flex-direction: column; gap: 10px; }
-.wizard-dim-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.wizard-breve-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.wizard-breve-section textarea { flex: 1; resize: none; }
+.wizard-dim-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .wizard-dimensions-scroll { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 4px; }
-.wizard-breve-section { flex-shrink: 0; }
 .wizard-md-area { flex: 1; min-height: 0; display: flex; }
 .wizard-md-preview { flex: 1; font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-y: auto; }
 .wizard-md-textarea { flex: 1; min-height: 0; resize: none; }
