@@ -66,6 +66,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
   const latestStepTesti = useRef(stepTesti);
   latestStepTesti.current = stepTesti;
+  const originalStepTestiRef = useRef<StepTesto[]>(
+    initialStepTesti?.length === STEPS.length
+      ? JSON.parse(JSON.stringify(initialStepTesti))
+      : STEPS.map((s) => ({ step: s.step, label: s.label, testo: "" })),
+  );
 
   const hasSavedSteps = stepTesti.some((s) => s.testo.length > 0);
   const confirm = useConfirm();
@@ -164,6 +169,37 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }
   }
 
+  async function handleShowDescrizioni() {
+    if (result) {
+      setResult({
+        descrizioneDettagliata: savedDettagliata ?? "",
+        descrizioneBreve: savedDescrizione ?? "",
+        raw: "",
+      });
+      return;
+    }
+    const orig = originalStepTestiRef.current;
+    const changed = stepTesti.some((s, i) => {
+      const o = orig[i];
+      if (!o) return s.testo.length > 0;
+      return s.testo !== o.testo;
+    });
+    if (changed) {
+      const ok = await confirm({
+        message: "Sono state apportate modifiche ai testi del wizard. Tornando alle descrizioni le modifiche verranno perse. Continuare?",
+        title: "Modifiche non salvate",
+        tone: "default",
+      });
+      if (!ok) return;
+      setStepTesti(orig.map((s) => ({ ...s })));
+    }
+    setResult({
+      descrizioneDettagliata: savedDettagliata ?? "",
+      descrizioneBreve: savedDescrizione ?? "",
+      raw: "",
+    });
+  }
+
   const currentTesto = stepTesti[currentStep]?.testo || "";
   const wizardError = progressMsg.startsWith("Errore") ? progressMsg : null;
 
@@ -237,7 +273,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               {hasGeneratedDesc && (
                 <button className="btn btn-primary btn-sm" onClick={handleGenerate}>Rigenera</button>
               )}
-              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(STEPS.length - 1); }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(0); }}>
                 {hasGeneratedDesc ? "Modifica" : "Continua modifica"}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
@@ -279,6 +315,16 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <span className="wizard-dot-label">{s.label}</span>
             </button>
           ))}
+          {hasExistingContent && (
+            <button
+              className={`wizard-step-dot descrizioni ${result ? "active" : ""}`}
+              onClick={handleShowDescrizioni}
+              title="Visualizza descrizioni"
+            >
+              <span className="wizard-dot-icon">✦</span>
+              <span className="wizard-dot-label">Descrizioni</span>
+            </button>
+          )}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => setShowGuida(!showGuida)} title="Guida sensoriale">?</button>
       </div>
@@ -342,11 +388,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
               </button>
-              {hasExistingContent && (
-                <button className="btn btn-ghost btn-sm" onClick={() => setResult({ descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" })}>
-                  Vedi descrizione
-                </button>
-              )}
+
               {currentStep < STEPS.length - 1 ? (
                 <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
                   Avanti
