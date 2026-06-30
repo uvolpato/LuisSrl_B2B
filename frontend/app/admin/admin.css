@@ -2293,7 +2293,7 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-col-side { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .wizard-col-side .wizard-result-footer { margin-top: auto; padding-top: 8px; }
 .wizard-result-col h4 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--fg); flex-shrink: 0; }
-.wizard-result-textarea { font-size: 14px; line-height: 1.6; resize: vertical; }
+.wizard-result-textarea { font-size: 14px; line-height: 1.6; resize: vertical; overflow-wrap: break-word; }
 .wizard-result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .wizard-result-footer { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .wizard-dimensions { display: flex; flex-direction: column; gap: 10px; }
@@ -2302,8 +2302,8 @@ select.input:disabled { opacity: 0.5; cursor: not-allowed; }
 .wizard-dim-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .wizard-dimensions-scroll { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 4px; }
 .wizard-md-area { flex: 1; min-height: 0; display: flex; }
-.wizard-md-preview { flex: 1; font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-y: auto; }
-.wizard-md-textarea { flex: 1; min-height: 0; resize: none; }
+.wizard-md-preview { flex: 1; font-size: 14px; line-height: 1.7; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-y: auto; overflow-x: hidden; word-break: break-word; }
+.wizard-md-textarea { flex: 1; min-height: 0; resize: none; overflow-wrap: break-word; white-space: pre-wrap; }
 .wizard-md-tabs-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0; padding: 0; margin-top: 8px; }
 .wizard-md-tabs-bar .modal-tab-btn { padding: 8px 14px; font-size: 13px; }
 .wizard-dim-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--fg-soft); border-radius: var(--radius); }
