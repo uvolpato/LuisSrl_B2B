@@ -298,18 +298,6 @@ export class IntegrazioneService {
     if (Object.keys(updateData).length > 0) {
       await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData });
     }
-    // rigenera il full MD se cambiano le descrizioni
-    let nuovoMd: string | undefined;
-    if (data.descrizioneDettagliata !== undefined) {
-      const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
-      const imgDescs = await this.describeWhiteImages(codiceLinea);
-      nuovoMd = this.saveDescrizioneMd(codiceLinea, data.nome ?? art.nome, data.descrizioneDettagliata ?? '', data.descrizione !== undefined ? data.descrizione : art.descrizione, art.colore, varianti, data.wizardStepTesti as { step: number; label: string; testo: string }[] | undefined, imgDescs);
-      // aggiorna descrizioneDettagliata col full MD nel DB
-      if (nuovoMd !== data.descrizioneDettagliata) {
-        updateData.descrizioneDettagliata = nuovoMd;
-        await this.prisma.articolo.update({ where: { codiceLinea }, data: { descrizioneDettagliata: nuovoMd } });
-      }
-    }
     if (data.varianti) {
       for (const [codice, stato] of Object.entries(data.varianti)) {
         const newStato = stato === 'attivo' ? 'ATTIVO' : 'NASCOSTO';
