@@ -615,12 +615,8 @@ export class IntegrazioneService {
     return descrizioni;
   }
 
-  /** Costruisce il contenuto markdown completo e lo salva su disco.
-   *  Restituisce il contenuto per la memorizzazione in descrizioneDettagliata. */
+  /** Costruisce il contenuto markdown completo per descrizioneDettagliata. */
   private saveDescrizioneMd(codiceLinea: string, nome: string, dettagliata: string, breve: string | null, colore: string | null, varianti: { codice: string; descrizione: string }[], stepTesti?: { step: number; label: string; testo: string }[]): string {
-    const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
-    const artDir = path.join(ASSETS_BASE_DIR, safeCod);
-    fs.mkdirSync(artDir, { recursive: true });
     const lines: string[] = [];
     lines.push(`# ${nome}`);
     lines.push('');
@@ -642,9 +638,7 @@ export class IntegrazioneService {
         lines.push(s.testo.trim());
       }
     }
-    const content = lines.join('\n');
-    fs.writeFileSync(path.join(artDir, `${safeCod}_descrizione.md`), content, 'utf-8');
-    return content;
+    return lines.join('\n');
   }
 
   /** Rielabora i 5 step del wizard in descrizione dettagliata + breve.
