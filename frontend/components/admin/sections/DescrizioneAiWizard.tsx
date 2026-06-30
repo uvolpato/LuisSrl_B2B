@@ -55,9 +55,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [result, setResult] = useState<WizardResult | null>(
     hasExistingContent
       ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" }
-      : initialStepTesti?.some((s) => s.testo.trim().length > 0)
-        ? { descrizioneDettagliata: "", descrizioneBreve: "", raw: "" }
-        : null,
+      : null,
   );
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
@@ -185,39 +183,26 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       <div className="wizard-result">
         {wizardError && <div className="wizard-error">{wizardError}</div>}
         <div className="wizard-result-panels">
-          {hasGeneratedDesc ? (
-            /* Colonna sinistra: preview/edit descrizione dettagliata (full height) */
-            <div className="wizard-result-col wizard-col-md">
-              <div className="wizard-md-area">
-                {mdView ? (
-                  <div className="wizard-md-preview">
-                    <ReactMarkdown>{result.descrizioneDettagliata}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <textarea
-                    className="textarea wizard-result-textarea wizard-md-textarea"
-                    value={result.descrizioneDettagliata}
-                    onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
-                  />
-                )}
-              </div>
-              <div className="wizard-md-tabs-bar">
-                <button className={`modal-tab-btn ${mdView ? "active" : ""}`} onClick={() => setMdView(true)}>Visualizza</button>
-                <button className={`modal-tab-btn ${mdView ? "" : "active"}`} onClick={() => setMdView(false)}>Modifica</button>
-              </div>
+          {/* Colonna sinistra: preview/edit descrizione dettagliata (full height) */}
+          <div className="wizard-result-col wizard-col-md">
+            <div className="wizard-md-area">
+              {mdView ? (
+                <div className="wizard-md-preview">
+                  <ReactMarkdown>{result.descrizioneDettagliata}</ReactMarkdown>
+                </div>
+              ) : (
+                <textarea
+                  className="textarea wizard-result-textarea wizard-md-textarea"
+                  value={result.descrizioneDettagliata}
+                  onChange={(e) => setResult({ ...result, descrizioneDettagliata: e.target.value })}
+                />
+              )}
             </div>
-          ) : (
-            <div className="wizard-result-col">
-              <h4>Nessuna descrizione generata</h4>
-              <p className="wizard-empty-desc">Hai salvato i tuoi contributi, ma non hai ancora generato la descrizione con AI.</p>
-              <div className="wizard-result-actions" style={{ marginTop: 16 }}>
-                <button className="btn btn-primary" onClick={handleGenerate}>
-                  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16, marginRight: 6 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                  Genera descrizione con AI
-                </button>
-              </div>
+            <div className="wizard-md-tabs-bar">
+              <button className={`modal-tab-btn ${mdView ? "active" : ""}`} onClick={() => setMdView(true)}>Visualizza</button>
+              <button className={`modal-tab-btn ${mdView ? "" : "active"}`} onClick={() => setMdView(false)}>Modifica</button>
             </div>
-          )}
+          </div>
           {/* Colonna destra: descrizione breve + riepilogo dimensioni sensoriali */}
           <div className="wizard-result-col wizard-col-side">
             {hasGeneratedDesc && (
