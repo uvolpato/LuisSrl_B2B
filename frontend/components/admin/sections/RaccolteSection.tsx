@@ -579,7 +579,7 @@ function RaccoltaEditModal({
                 ))}
               </div>
             </div>
-            <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: "auto", height: "100%" }}>
               <DataTable
                 columns={[
                   {
