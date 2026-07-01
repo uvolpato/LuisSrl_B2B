@@ -471,7 +471,7 @@ function RaccoltaEditModal({
 
       <div className="modal-body-edit modal-body-edit--fill">
         <form id="raccolta-form" onSubmit={handleSave} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24, minHeight: 0, flex: 1 }}>
-          <div style={{ overflow: "auto", paddingRight: 24, borderRight: "1px solid var(--border)" }}>
+          <div style={{ paddingRight: 24, borderRight: "1px solid var(--border)" }}>
             {saveError && <Notice variant="error" onClose={() => setSaveError(null)}>{saveError}</Notice>}
 
             <div className="field" style={{ marginBottom: 10 }}>
@@ -579,7 +579,7 @@ function RaccoltaEditModal({
                 ))}
               </div>
             </div>
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
               <DataTable
                 columns={[
                   {
