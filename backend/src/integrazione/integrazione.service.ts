@@ -191,18 +191,25 @@ export class IntegrazioneService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map((a) => ({
-      id: a.codiceLinea,
-      name: a.nome,
-      colore: a.colore || '',
-      coloreRgb: a.coloreRgb || null,
-      famigliaPrincipale: a.famigliaCodice,
-      raccolte: [] as string[],
-      stato: (a.stato === 'NASCOSTO' ? 'nascosto' : 'attivo') as 'attivo' | 'nascosto',
-      img: a.immagini[0]?.url ?? null,
-      varianti: [] as { codice: string; descIntegra?: string }[],
-      variantiCount: a._count.varianti,
-      configurato: a.configurato ?? false,
+    return Promise.all(rows.map(async (a) => {
+      const raccolte = await this.prisma.raccolta.findMany({
+        where: { articoli: { some: { articoloId: a.id } } },
+        select: { id: true, nome: true, slug: true, sconto: true },
+      });
+      return {
+        articoloId: a.id,
+        id: a.codiceLinea,
+        name: a.nome,
+        colore: a.colore || '',
+        coloreRgb: a.coloreRgb || null,
+        famigliaPrincipale: a.famigliaCodice,
+        raccolte: raccolte.map((r) => r.nome),
+        stato: (a.stato === 'NASCOSTO' ? 'nascosto' : 'attivo') as 'attivo' | 'nascosto',
+        img: a.immagini[0]?.url ?? null,
+        varianti: [] as { codice: string; descIntegra?: string }[],
+        variantiCount: a._count.varianti,
+        configurato: a.configurato ?? false,
+      };
     }));
   }
 
@@ -237,6 +244,7 @@ export class IntegrazioneService {
     if (art._count.immagini < 1) mancanti.push('almeno una foto');
     if (!art.colore || !art.colore.trim()) mancanti.push('un colore');
     if (art._count.varianti < 1) mancanti.push('almeno una variante');
+    if (!art.descrizioneAI || !art.descrizioneAI.trim()) mancanti.push('una descrizione AI');
     if (mancanti.length) {
       throw new BadRequestException(`Impossibile configurare: manca ${mancanti.join(', ')}.`);
     }
@@ -251,6 +259,7 @@ export class IntegrazioneService {
         varianti: true,
         famiglia: true,
         immagini: { orderBy: { ordinamento: 'asc' } },
+        raccolte: { include: { raccolta: { select: { id: true, nome: true, slug: true, sconto: true, stato: true } } } },
         _count: { select: { varianti: true } },
       },
     });
@@ -270,6 +279,13 @@ export class IntegrazioneService {
       descrizioneDettagliata: art.descrizioneDettagliata ?? null,
       promptAi: art.promptAi ?? null,
       wizardStepTesti: art.wizardStepTesti,
+      raccolte: art.raccolte.map((ar) => ({
+        id: ar.raccolta.id,
+        nome: ar.raccolta.nome,
+        slug: ar.raccolta.slug,
+        sconto: ar.raccolta.sconto,
+        stato: ar.raccolta.stato,
+      })),
       varianti: art.varianti.map((v) => ({
         codice: v.codice,
         descrizione: v.descrizione,

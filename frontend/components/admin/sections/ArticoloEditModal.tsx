@@ -19,6 +19,14 @@ interface VarianteDetail {
   stato: string;
 }
 
+interface RaccoltaSlim {
+  id: number;
+  nome: string;
+  slug: string;
+  sconto: number | null;
+  stato: string;
+}
+
 interface ArticoloDetail {
   id: string;
   codiceLinea: string;
@@ -32,6 +40,7 @@ interface ArticoloDetail {
   famiglia: { codice: string; nome: string };
   variantiCount: number;
   updatedAt: string;
+  raccolte: RaccoltaSlim[];
   varianti: VarianteDetail[];
   immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null }[];
   wizardStepTesti?: { step: number; label: string; testo: string }[] | null;
@@ -265,7 +274,7 @@ export default function ArticoloEditModal({
                   </div>
                   <div className="field">
                     <label>Colore</label>
-                    <div style={{ position: "relative", display: "flex", alignItems: "center", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--surface)", boxSizing: "border-box" }}>
+                    <div className="color-field-container">
                       <input type="text" value={editColore} onChange={(e) => setEditColore(e.target.value)} placeholder="# esadecimale" className="input" style={{ border: "none", background: "transparent", padding: "10px 14px", flex: 1, minWidth: 0 }} />
                       <label htmlFor="color-picker-article" style={{ width: 22, height: 22, margin: 0, marginRight: 10, borderRadius: 3, background: editColoreRgb || editColore || "#ccc", cursor: "pointer", border: "2px solid rgba(0,0,0,.15)", flexShrink: 0, display: "block" }} />
                       {/* ancorato sotto lo swatch: il picker nativo si apre sotto il quadrato */}
@@ -515,10 +524,29 @@ export default function ArticoloEditModal({
             {activeTab === "raccolte" && (
               <div>
                 <h3 style={{ fontSize: 16, margin: "0 0 16px" }}>Raccolte associate</h3>
-                <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Raccolte in sviluppo.</p>
-                <div className="family-tags">
-                  <span style={{ color: "var(--muted)", fontSize: 13 }}>Nessuna raccolta</span>
-                </div>
+                {(!article?.raccolte || article.raccolte.length === 0) ? (
+                  <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>Nessuna raccolta associata. Gestisci le raccolte dalla sezione Raccolte del pannello admin.</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {article.raccolte.map((r) => (
+                      <div key={r.id} style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "10px 12px", borderRadius: "var(--radius)",
+                        background: "var(--accent-soft)", fontSize: 14,
+                      }}>
+                        <span style={{ flex: 1, fontWeight: 500 }}>{r.nome}</span>
+                        {r.sconto != null && (
+                          <span style={{ fontSize: 13, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>
+                            -{r.sconto}%
+                          </span>
+                        )}
+                        <span className={`user-status-dot ${r.stato === "ATTIVO" ? "attivo" : "bloccato"}`}>
+                          {r.stato === "ATTIVO" ? "attiva" : "nascosta"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>

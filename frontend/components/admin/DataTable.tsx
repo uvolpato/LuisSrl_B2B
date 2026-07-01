@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 /** Definizione di una colonna: header e cella usano la stessa colonna,
  *  quindi l'incolonnamento header↔valori e' garantito. */
@@ -50,6 +50,10 @@ export interface DataTableProps<T> {
   sortKey?: string;
   sortDir?: "asc" | "desc";
   onSort?: (key: string, dir: "asc" | "desc") => void;
+  /** Selezione righe (checkbox). */
+  selectable?: boolean;
+  selectedKeys?: Set<string | number>;
+  onSelectionChange?: (keys: Set<string | number>) => void;
 }
 
 export default function DataTable<T>({
@@ -66,6 +70,9 @@ export default function DataTable<T>({
   sortKey: propSortKey,
   sortDir: propSortDir,
   onSort,
+  selectable = false,
+  selectedKeys,
+  onSelectionChange,
 }: DataTableProps<T>) {
   const [localSortKey, setLocalSortKey] = useState<string | null>(null);
   const [localSortDir, setLocalSortDir] = useState<"asc" | "desc">("asc");
@@ -100,16 +107,44 @@ export default function DataTable<T>({
     [isControlled, localSortKey, propSortKey, propSortDir, onSort],
   );
 
+  const handleSelectAll = useCallback(() => {
+    if (!onSelectionChange || !selectedKeys) return;
+    if (sortedRows.length === selectedKeys.size && sortedRows.every((r) => selectedKeys.has(rowKey(r)))) {
+      onSelectionChange(new Set());
+    } else {
+      onSelectionChange(new Set(sortedRows.map((r) => rowKey(r))));
+    }
+  }, [sortedRows, selectedKeys, onSelectionChange, rowKey]);
+
+  function toggleRow(key: string | number) {
+    if (!onSelectionChange || !selectedKeys) return;
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectionChange(next);
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
-  const colCount = columns.length + (actions.length ? 1 : 0);
+  const colCount = columns.length + (actions.length ? 1 : 0) + (selectable ? 1 : 0);
+
+  const allSelected = sortedRows.length > 0 && sortedRows.every((r) => selectedKeys?.has(rowKey(r)));
+  const someSelected = sortedRows.length > 0 && (selectedKeys?.size ?? 0) > 0 && !allSelected;
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
 
   return (
     <div className="data-table">
       <div className="data-table-scroll">
         <table>
           <colgroup>
+            {selectable && <col style={{ width: "44px" }} />}
             {columns.map((c) => (
               <col
                 key={c.key}
@@ -120,6 +155,17 @@ export default function DataTable<T>({
           </colgroup>
           <thead>
             <tr>
+              {selectable && (
+                <th>
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    style={{ accentColor: "var(--accent)" }}
+                  />
+                </th>
+              )}
               {columns.map((c) => (
                 <th
                   key={c.key}
@@ -154,37 +200,55 @@ export default function DataTable<T>({
               </tr>
             )}
             {!loading &&
-              sortedRows.map((row) => (
-                <tr key={rowKey(row)}>
-                  {columns.map((c) => (
-                    <td
-                      key={c.key}
-                      style={{ textAlign: c.align ?? "left" }}
-                      className={c.mono ? "mono" : undefined}
-                    >
-                      {c.cell(row)}
-                    </td>
-                  ))}
-                  {actions.length > 0 && (
-                    <td className="data-table-actions">
-                      {actions
-                        .filter((a) => !a.hidden?.(row))
-                        .map((a, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            className={`row-action${a.variant === "danger" ? " danger" : ""}`}
-                            data-tip={a.tooltip(row)}
-                            aria-label={a.tooltip(row)}
-                            onClick={() => a.onClick(row)}
-                          >
-                            {a.icon(row)}
-                          </button>
-                        ))}
-                    </td>
-                  )}
-                </tr>
-              ))}
+              sortedRows.map((row) => {
+                const key = rowKey(row);
+                return (
+                  <tr
+                    key={key}
+                    className={selectable && selectedKeys?.has(key) ? "selected" : undefined}
+                    onClick={selectable ? () => toggleRow(key) : undefined}
+                    style={selectable ? { cursor: "pointer" } : undefined}
+                  >
+                    {selectable && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedKeys?.has(key) ?? false}
+                          onChange={() => toggleRow(key)}
+                          style={{ accentColor: "var(--accent)" }}
+                        />
+                      </td>
+                    )}
+                    {columns.map((c) => (
+                      <td
+                        key={c.key}
+                        style={{ textAlign: c.align ?? "left" }}
+                        className={c.mono ? "mono" : undefined}
+                      >
+                        {c.cell(row)}
+                      </td>
+                    ))}
+                    {actions.length > 0 && (
+                      <td className="data-table-actions" onClick={(e) => e.stopPropagation()}>
+                        {actions
+                          .filter((a) => !a.hidden?.(row))
+                          .map((a, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className={`row-action${a.variant === "danger" ? " danger" : ""}`}
+                              data-tip={a.tooltip(row)}
+                              aria-label={a.tooltip(row)}
+                              onClick={() => a.onClick(row)}
+                            >
+                              {a.icon(row)}
+                            </button>
+                          ))}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>

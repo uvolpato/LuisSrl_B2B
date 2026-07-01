@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const p = new PrismaClient(); p.articolo.findUnique({ where: { codiceLinea: '21721' }, select: { descrizioneDettagliata: true } }).then(a => { console.log(a.descrizioneDettagliata); p['\'](); });

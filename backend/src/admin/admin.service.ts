@@ -1,14 +1,21 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
+import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
+import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
 import { toUserProfile } from '../common/auth-types';
 import type { UserProfile } from '../common/auth-types';
 import { buildStatoFilter } from '../common/filters';
 import type { UserFilter } from '../common/filters';
+import * as path from 'path';
+import * as fs from 'fs';
+
+const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
+const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
 
 @Injectable()
 export class AdminService {
@@ -176,5 +183,126 @@ export class AdminService {
       create: { key, value },
     });
     await this.audit.log({ actorId, azione: 'admin.config_update', entita: 'site_config', entitaId: key, ip });
+  }
+
+  // ── Raccolte ──
+
+  async listRaccolte() {
+    return this.prisma.raccolta.findMany({
+      orderBy: { nome: 'asc' },
+      include: {
+        _count: { select: { articoli: true } },
+      },
+    });
+  }
+
+  async getRaccolta(id: number) {
+    const raccolta = await this.prisma.raccolta.findUnique({
+      where: { id },
+      include: {
+        articoli: {
+          include: { articolo: { select: { id: true, codiceLinea: true, nome: true, stato: true } } },
+        },
+        _count: { select: { articoli: true } },
+      },
+    });
+    if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
+    return raccolta;
+  }
+
+  async createRaccolta(dto: CreateRaccoltaDto, actorId: number, ip?: string) {
+    const existing = await this.prisma.raccolta.findUnique({ where: { slug: dto.slug } });
+    if (existing) throw new ConflictException('admin.raccolta_slug_exists');
+
+    const raccolta = await this.prisma.raccolta.create({
+      data: {
+        nome: dto.nome,
+        slug: dto.slug,
+        immagine: dto.immagine,
+        descrizione: dto.descrizione,
+        sconto: dto.sconto,
+        stato: dto.stato ?? 'ATTIVO',
+        articoli: dto.articoliIds?.length
+          ? { create: dto.articoliIds.map((id) => ({ articoloId: id })) }
+          : undefined,
+      },
+      include: { _count: { select: { articoli: true } } },
+    });
+
+    await this.audit.log({ actorId, azione: 'admin.raccolta_create', entita: 'raccolte', entitaId: String(raccolta.id), ip });
+    return raccolta;
+  }
+
+  async updateRaccolta(id: number, dto: UpdateRaccoltaDto, actorId: number, ip?: string) {
+    const raccolta = await this.prisma.raccolta.findUnique({ where: { id } });
+    if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
+
+    if (dto.slug && dto.slug !== raccolta.slug) {
+      const slugExists = await this.prisma.raccolta.findUnique({ where: { slug: dto.slug } });
+      if (slugExists) throw new ConflictException('admin.raccolta_slug_exists');
+    }
+
+    const updated = await this.prisma.raccolta.update({
+      where: { id },
+      data: {
+        ...(dto.nome !== undefined && { nome: dto.nome }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+        ...(dto.immagine !== undefined && { immagine: dto.immagine }),
+        ...(dto.descrizione !== undefined && { descrizione: dto.descrizione }),
+        ...(dto.sconto !== undefined && { sconto: dto.sconto }),
+        ...(dto.stato !== undefined && { stato: dto.stato }),
+      },
+      include: { _count: { select: { articoli: true } } },
+    });
+
+    await this.audit.log({ actorId, azione: 'admin.raccolta_update', entita: 'raccolte', entitaId: String(id), ip });
+    return updated;
+  }
+
+  async deleteRaccolta(id: number, actorId: number, ip?: string) {
+    const raccolta = await this.prisma.raccolta.findUnique({ where: { id } });
+    if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
+
+    await this.prisma.raccolta.delete({ where: { id } });
+    await this.audit.log({ actorId, azione: 'admin.raccolta_delete', entita: 'raccolte', entitaId: String(id), ip });
+  }
+
+  async setRaccoltaArticoli(id: number, articoliIds: number[], actorId: number, ip?: string) {
+    const raccolta = await this.prisma.raccolta.findUnique({ where: { id } });
+    if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
+
+    await this.prisma.articoloRaccolta.deleteMany({ where: { raccoltaId: id } });
+
+    if (articoliIds.length > 0) {
+      await this.prisma.articoloRaccolta.createMany({
+        data: articoliIds.map((articoloId) => ({ articoloId, raccoltaId: id })),
+      });
+    }
+
+    await this.audit.log({ actorId, azione: 'admin.raccolta_articoli_update', entita: 'raccolte', entitaId: String(id), ip });
+
+    return this.getRaccolta(id);
+  }
+
+  async uploadRaccoltaImage(id: number, file: { buffer: Buffer; originalname: string }) {
+    const raccolta = await this.prisma.raccolta.findUnique({ where: { id } });
+    if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
+
+    const safeSlug = raccolta.slug.replace(/[^a-z0-9_-]/g, '_');
+    const dir = path.join(ASSETS_BASE_DIR, 'Raccolte');
+    fs.mkdirSync(dir, { recursive: true });
+
+    // calcola progressivo: conta i file esistenti con lo stesso prefisso slug
+    const existing = fs.readdirSync(dir).filter((f) => f.startsWith(`${safeSlug}_raccolta_`));
+    const prog = existing.length + 1;
+
+    const ext = path.extname(file.originalname) || '.jpg';
+    const filename = `${safeSlug}_raccolta_${String(prog).padStart(3, '0')}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+
+    const url = `${ASSETS_PUBLIC_URL}/Raccolte/${filename}`;
+    await this.prisma.raccolta.update({ where: { id }, data: { immagine: url } });
+
+    return { url };
   }
 }

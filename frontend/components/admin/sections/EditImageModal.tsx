@@ -128,7 +128,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   const confirm = useConfirm();
   // Stato generatore AI ("ambienta")
   const [aiPrompt, setAiPrompt] = useState("Genera in un ambiente lussuoso ma di classe");
-  const [aiN, setAiN] = useState(2);
+  const [aiN, setAiN] = useState(1);
   const [aiAspect, setAiAspect] = useState("1:1");
   const [aiTemp, setAiTemp] = useState(0.7);
   const [aiSeed, setAiSeed] = useState("");

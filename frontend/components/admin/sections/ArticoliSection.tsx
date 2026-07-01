@@ -155,7 +155,6 @@ export default function ArticoliSection() {
       <div className="admin-content">
         <div className="content-header">
           <div>
-            <h2>Tutti gli articoli</h2>
             <span className="meta">{artMeta}</span>
           </div>
           <div className="view-toggle">

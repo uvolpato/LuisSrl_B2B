@@ -11,8 +11,11 @@ import {
   Put,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminService } from './admin.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
@@ -21,6 +24,8 @@ import { RequirePermission } from '../auth/decorators/permission.decorator';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
+import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
+import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
@@ -131,5 +136,67 @@ export class AdminController {
   ) {
     await this.admin.updateConfig(key, value, req.user.id, req.ip);
     return { ok: true };
+  }
+
+  // ── Raccolte ──
+
+  @Get('raccolte')
+  @RequirePermission('catalog.raccolte.view')
+  listRaccolte() {
+    return this.admin.listRaccolte();
+  }
+
+  @Get('raccolte/:id')
+  @RequirePermission('catalog.raccolte.view')
+  getRaccolta(@Param('id', ParseIntPipe) id: number) {
+    return this.admin.getRaccolta(id);
+  }
+
+  @Post('raccolte')
+  @RequirePermission('catalog.raccolte.edit')
+  createRaccolta(@Body() dto: CreateRaccoltaDto, @Req() req: AuthenticatedRequest) {
+    return this.admin.createRaccolta(dto, req.user.id, req.ip);
+  }
+
+  @Put('raccolte/:id')
+  @RequirePermission('catalog.raccolte.edit')
+  updateRaccolta(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRaccoltaDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.admin.updateRaccolta(id, dto, req.user.id, req.ip);
+  }
+
+  @Delete('raccolte/:id')
+  @HttpCode(204)
+  @RequirePermission('catalog.raccolte.edit')
+  async deleteRaccolta(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.admin.deleteRaccolta(id, req.user.id, req.ip);
+  }
+
+  // ── Articoli in una Raccolta ──
+
+  @Put('raccolte/:id/articoli')
+  @RequirePermission('catalog.raccolte.edit')
+  setRaccoltaArticoli(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('articoliIds') articoliIds: number[],
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.admin.setRaccoltaArticoli(id, articoliIds, req.user.id, req.ip);
+  }
+
+  @Post('raccolte/:id/image')
+  @UseInterceptors(FileInterceptor('file'))
+  @RequirePermission('catalog.raccolte.edit')
+  uploadRaccoltaImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: any,
+  ) {
+    return this.admin.uploadRaccoltaImage(id, file);
   }
 }

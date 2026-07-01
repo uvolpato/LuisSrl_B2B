@@ -9,8 +9,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
 import ArticoliSection from "../../components/admin/sections/ArticoliSection";
 import ClientiSection from "../../components/admin/sections/ClientiSection";
-
-import { IconPlus } from "../../components/admin/icons";
+import RaccolteSection from "../../components/admin/sections/RaccolteSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -52,20 +51,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {section === "raccolte" && (
-        <div className="admin-content">
-          <div className="content-header">
-            <div>
-              <h2>Raccolte di portale</h2>
-              <span className="meta">Collezioni/etichette gestite e modificate dal portale. Ogni Articolo può appartenere a più Raccolte.</span>
-            </div>
-            <button className="admin-btn admin-btn-primary admin-btn-sm">
-              {IconPlus}
-              Nuova Raccolta
-            </button>
-          </div>
-        </div>
-      )}
+      {section === "raccolte" && <RaccolteSection />}
 
       {["ordini", "import", "ai"].includes(section) && (
         <div className="admin-content">
