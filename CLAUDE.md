@@ -8,6 +8,68 @@ Portale e-commerce **B2B** riservato ai rivenditori di Luis S.r.l. (grossista di
 articoli per fioristi e garden: vasi in ceramica, cotto portoghese, materiali).
 Prezzi sempre **IVA esclusa**. Lingua di UI e contenuti: **italiano**.
 
+## Setup iniziale (primo avvio, ~10 minuti)
+
+**Leggi PRIMA: `SETUP.md`** (guida rapida con comandi ready-to-copy).
+
+**Questi passi vanno fatti UNA SOLA VOLTA all'inizio:**
+
+1. **Backend — Installa dipendenze e genera Prisma Client**
+   ```bash
+   cd backend
+   npm install
+   npm run prisma:generate
+   ```
+
+2. **Database — Applica le migration e popola i dati di seed**
+   ```bash
+   # Assicurati che PostgreSQL 16 sia in esecuzione
+   npm run prisma:migrate
+   npm run seed
+   ```
+   Questo crea admin, permission groups, clienti di test.
+
+3. **Frontend — Installa dipendenze**
+   ```bash
+   cd ../frontend
+   npm install
+   ```
+
+4. **Variabili d'ambiente — Crea i file `.env`**
+   - **backend/.env** — Copia da `backend/.env.example` e compila:
+     ```
+     DATABASE_URL="postgresql://user:pass@localhost:5432/luis_db"
+     ADMIN_EMAIL=admin@luissrl.it
+     ADMIN_PASSWORD=LuisAdmin2026!
+     GEMINI_API_KEY=<tua-chiave-google>
+     GEMINI_MODEL=gemini-2.5-flash-image
+     ```
+   - **frontend/.env.local** — Se hai variabili (di solito vuoto)
+
+## Avviamento (ogni sessione, 2 terminali)
+
+**Terminal 1 — Backend (porta 3001)**
+```bash
+cd backend
+npm run start:dev
+```
+
+**Terminal 2 — Frontend (porta 3000, HTTP)**
+```bash
+cd frontend
+npm run dev
+```
+
+**Accedi**: http://localhost:3000
+- Email: `admin@luissrl.it`
+- Password: `LuisAdmin2026!`
+
+**Per testare da un altro PC sulla LAN** (es. `http://192.168.0.164:3000`):
+1. Apri Chrome → `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+2. Incolla: `http://192.168.0.164:3000`
+3. Setta a **Enabled** → **Relaunch**
+4. Adesso il dettato vocale funziona (Web Speech API ha secure context)
+
 ## Come lavorare
 - Procedi **un blocco della roadmap alla volta** (vedi `roadmap-b2b-luis.md`),
   in ordine. Alla fine di ogni blocco: fermati, mostra cosa hai fatto e come
