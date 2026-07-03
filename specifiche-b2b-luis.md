@@ -533,42 +533,39 @@ npm run prisma:migrate  # applica le migration
 npm run seed            # popola admin, permission groups, clienti di test
 ```
 
-#### Step 4: Avviamento in HTTPS (sviluppo)
-Il sito deve essere accessibile in **HTTPS** per abilitare:
-- **Microfono** (per il dettato vocale nel wizard Descrizione AI)
-- **Web Speech API** (ricerca vocale)
-- **Geolocalizzazione** (future feature)
+#### Step 4: Avviamento in sviluppo (HTTP con secure context per microfono)
+
+**SCELTA ADOTTATA: HTTP + flag Chrome per secure context**
+
+Il sito è accessibile in **HTTP** sulla LAN, ma con un'eccezione Chrome che lo tratta come **secure context** (abilita microfono, Web Speech API, geolocalizzazione). Questa è la soluzione più semplice per dev senza complicazioni di certificati.
 
 **Procedura:**
 
-1. **Genera certificati self-signed** (una sola volta):
+1. **Avvia il sito in HTTP** (default):
    ```bash
-   cd frontend
-   # Usa OpenSSL (disponibile in Git Bash, MinGW, oppure standalone)
-   openssl req -x509 -newkey rsa:2048 \
-     -keyout luis-dev-key.pem \
-     -out luis-dev-cert.pem \
-     -days 365 -nodes \
-     -subj "/CN=localhost"
+   npm run dev
    ```
-   Questo crea:
-   - `luis-dev-key.pem` — chiave privata (aggiunga nel `.gitignore`)
-   - `luis-dev-cert.pem` — certificato (aggiunga nel `.gitignore`)
+   Il server risponde su `http://localhost:3000` e `http://192.168.0.164:3000` (accessibile dalla LAN).
 
-2. **Avvia il sito in HTTPS**:
-   ```bash
-   npm run dev:https
-   ```
-   Il server risponde su `https://localhost:3000` (e `https://192.168.0.164:3000` se accessibile dalla LAN).
+2. **Sul PC/browser che testa da IP** — abilita Chrome per trattare l'origine come sicura:
+   - Apri `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+   - Nella casella di testo, incolla: `http://192.168.0.164:3000`
+   - Imposta il dropdown a **Enabled**
+   - Clicca **Relaunch** (riavvia Chrome)
+   - Adesso accedi a `http://192.168.0.164:3000` → **microfono abilitato**
 
-3. **Nel browser** (Chrome/Edge):
-   - Accedi a `https://localhost:3000`
-   - Ignora l'avviso di certificato self-signed ("non è sicuro" → "Procedi comunque")
-   - Il sito carica e il **microfono è abilitato**
+3. **Verifica che il microfono funziona**:
+   - Accedi al pannello admin
+   - Modifica un articolo → scheda "Ambienta AI" o "Descrizione" → wizard con dettato vocale
+   - Il pulsante microfono deve essere attivo (non disabilitato)
 
-**Alternative di avviamento:**
-- **HTTP semplice** (solo per testing senza microfono): `npm run dev`
-- **HTTPS con dev server HMR su IP della LAN**: i certificati generati coprono `localhost` di default; per usarli su un IP (es. `192.168.0.164`), rigenerare OpenSSL con `-subj "/CN=localhost,IP:192.168.0.164"` oppure usare **mkcert** per una CA locale fidata (§15.3).
+**Perché HTTP + flag instead di HTTPS?**
+- I certificati self-signed per IP non sono accettati da Chrome (nemmeno con workaround)
+- HTTPS richiederebbe **mkcert** per una CA locale fidata (vedi §15.3 sotto)
+- L'eccezione Chrome è sufficiente per dev e non richiede installazioni aggiuntive
+
+**Alternativa: HTTPS con mkcert fidato** (se serve vero HTTPS su IP):
+- Vedi §15.3 sotto per la procedura completa
 
 #### Step 5: Backend in sviluppo
 ```bash
@@ -582,9 +579,11 @@ Accedi con le credenziali di test:
 - **Admin**: email=`${ADMIN_EMAIL}` / password=`${ADMIN_PASSWORD}` (da `.env`)
 - **Cliente test**: `cliente1@fiorista.it` / `Cliente2026!` (creato dal seed)
 
-### 15.3 Certificati fidati per IP della LAN (mkcert)
+### 15.3 HTTPS con certificati fidati su IP della LAN (mkcert) — FACOLTATIVO
 
-Se devi testare da **un altro PC sulla LAN** (es. `https://192.168.0.164:3000`) con il **microfono**, il certificato self-signed non è fidato. Soluzione:
+**⚠️ Opzione avanzata — non richiesta per development normale.**
+
+Se preferisci vero HTTPS invece di HTTP + flag Chrome (§15.4), puoi usare **mkcert** per generare certificati fidati localmente. Questa procedura è utile se vuoi evitare il flag Chrome oppure testare su dispositivi dove il flag non è configurabile (es. smartphone sulla LAN).
 
 1. **Su Windows, installa mkcert**:
    ```powershell
@@ -609,6 +608,22 @@ Se devi testare da **un altro PC sulla LAN** (es. `https://192.168.0.164:3000`) 
 - **Clienti di test** nel seed: `cliente1@fiorista.it`, `verde.giardini@example.it` (password: `Cliente2026!`)
 - **Admin**: configurato da `.env` (default in template: `admin@luissrl.it` / `LuisAdmin2026!`)
 - **Articoli di test**: importare dal file Excel di test o creare manualmente nel pannello admin
+
+### 15.5 Recap per agente successivo
+
+**Setup minimo (5 minuti):**
+1. Installa dipendenze: `npm install` (backend + frontend)
+2. Configura `.env` (DATABASE_URL, ADMIN_EMAIL/PASSWORD, GEMINI_API_KEY)
+3. Setup DB: `npm run prisma:migrate && npm run seed` (backend)
+4. Avvia: `npm run dev` (frontend HTTP) + `npm run start:dev` (backend)
+5. Accedi a `http://localhost:3000` con credenziali admin
+6. **Per testare da IP sulla LAN**: accedi a `http://192.168.0.164:3000` dopo aver impostato il flag Chrome (vedi §15.4 step 2)
+
+**Troubleshooting**:
+- Microfono non funziona? Verifica il flag Chrome su `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+- Errore DB? Controlla `DATABASE_URL` in `.env`
+- CORS? Backend e frontend devono trovarsi entrambi in ascolto (porta 3001 e 3000)
+- HMR non funziona? Verifica che Next dev sia partito con `npm run dev` (non `next dev`)
 
 ---
 
