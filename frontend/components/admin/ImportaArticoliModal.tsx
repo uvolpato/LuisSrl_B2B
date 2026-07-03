@@ -78,6 +78,7 @@ export default function ImportaArticoliModal({
       );
       setImportResult(`Importati ${res.creati} articoli (${res.articoli.reduce((s, a) => s + a.varianti, 0)} varianti)`);
       setSelected(new Set());
+      fetchData(pageRef.current);
     } catch (err) {
       setError(err instanceof ApiError ? err.code : "Errore importazione");
     } finally {
@@ -163,7 +164,7 @@ export default function ImportaArticoliModal({
               <thead>
                 <tr>
                   <th style={{ textAlign: "center" }}>
-                    <input type="checkbox" ref={selectAllRef} checked={selected.size > 0} onChange={() => { if (selected.size === 0) { setSelected(new Set(result!.items.map(p => p.codice))); } else { setSelected(new Set()); } }} className="select-all-cb" />
+                    <input type="checkbox" ref={selectAllRef} checked={selected.size > 0} onChange={() => { if (selected.size === 0) { setSelected(new Set(sortedItems.map(p => p.codice))); } else { setSelected(new Set()); } }} className="select-all-cb" />
                   </th>
                   <th className="sortable" onClick={() => toggleSort("codice")}>Codice{sortArrow("codice")}</th>
                   <th className="sortable" onClick={() => toggleSort("descrizione")}>Descrizione{sortArrow("descrizione")}</th>
