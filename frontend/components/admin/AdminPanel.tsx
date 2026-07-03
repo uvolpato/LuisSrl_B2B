@@ -51,6 +51,7 @@ const ALL_PERMISSIONS = [
   { key: "catalog.articles.edit", label: "Modificare articoli" },
   { key: "catalog.articles.delete", label: "Eliminare articoli" },
   { key: "catalog.famiglie.view", label: "Visualizzare famiglie" },
+  { key: "catalog.famiglie.edit", label: "Modificare famiglie" },
   { key: "catalog.raccolte.view", label: "Visualizzare raccolte" },
   { key: "catalog.raccolte.edit", label: "Modificare raccolte" },
   { key: "vendite.clienti.view", label: "Visualizzare clienti" },

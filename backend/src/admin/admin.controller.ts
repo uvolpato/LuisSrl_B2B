@@ -7,6 +7,7 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -26,6 +27,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
@@ -136,6 +138,34 @@ export class AdminController {
   ) {
     await this.admin.updateConfig(key, value, req.user.id, req.ip);
     return { ok: true };
+  }
+
+  // ── Famiglie (read-only da Integra) ──
+
+  @Get('famiglie')
+  @RequirePermission('catalog.famiglie.view')
+  listFamiglie() {
+    return this.admin.listFamiglie();
+  }
+
+  @Patch('famiglie/:codice')
+  @RequirePermission('catalog.famiglie.edit')
+  updateFamiglia(
+    @Param('codice') codice: string,
+    @Body() dto: UpdateFamigliaDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.admin.updateFamiglia(codice, dto, req.user.id, req.ip);
+  }
+
+  @Post('famiglie/:codice/image')
+  @UseInterceptors(FileInterceptor('file'))
+  @RequirePermission('catalog.famiglie.edit')
+  uploadFamigliaImage(
+    @Param('codice') codice: string,
+    @UploadedFile() file: any,
+  ) {
+    return this.admin.uploadFamigliaImage(codice, file);
   }
 
   // ── Raccolte ──

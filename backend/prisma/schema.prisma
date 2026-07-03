@@ -119,8 +119,11 @@ model Session {
 model Famiglia {
   codice      String     @id
   nome        String
+  /// Titolo alternativo scelto sul portale: se presente vince sul nome Integra
+  nomePortale String?    @map("nome_portale")
   codicePadre String?    @map("codice_padre")
   immagine    String?
+  descrizione String?
   stato       String     @default("ATTIVO")
   updatedAt   DateTime   @updatedAt @map("updated_at")
   articoli    Articolo[]

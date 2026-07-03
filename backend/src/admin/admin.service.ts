@@ -7,6 +7,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 import { toUserProfile } from '../common/auth-types';
 import type { UserProfile } from '../common/auth-types';
 import { buildStatoFilter } from '../common/filters';
@@ -185,6 +186,60 @@ export class AdminService {
     await this.audit.log({ actorId, azione: 'admin.config_update', entita: 'site_config', entitaId: key, ip });
   }
 
+  // ── Famiglie (read-only da Integra) ──
+
+  async listFamiglie() {
+    return this.prisma.famiglia.findMany({
+      orderBy: { nome: 'asc' },
+      include: {
+        _count: { select: { articoli: true } },
+      },
+    });
+  }
+
+  async updateFamiglia(codice: string, dto: UpdateFamigliaDto, actorId: number, ip?: string) {
+    const famiglia = await this.prisma.famiglia.findUnique({ where: { codice } });
+    if (!famiglia) throw new NotFoundException('admin.famiglia_not_found');
+
+    const updated = await this.prisma.famiglia.update({
+      where: { codice },
+      data: {
+        ...(dto.nomePortale !== undefined && { nomePortale: dto.nomePortale || null }),
+        ...(dto.descrizione !== undefined && { descrizione: dto.descrizione }),
+        ...(dto.immagine !== undefined && { immagine: dto.immagine }),
+        ...(dto.stato !== undefined && { stato: dto.stato }),
+      },
+      include: { _count: { select: { articoli: true } } },
+    });
+
+    await this.audit.log({ actorId, azione: 'admin.famiglia_update', entita: 'famiglie', entitaId: codice, ip });
+    return updated;
+  }
+
+  /** Salva un'immagine caricata in ASSETS_BASE_DIR/<subdir> con nome progressivo e ritorna l'URL pubblico. */
+  private saveUploadedImage(subdir: string, prefix: string, file: { buffer: Buffer; originalname: string }) {
+    const dir = path.join(ASSETS_BASE_DIR, subdir);
+    fs.mkdirSync(dir, { recursive: true });
+
+    const existing = fs.readdirSync(dir).filter((f) => f.startsWith(`${prefix}_`));
+    const ext = path.extname(file.originalname) || '.jpg';
+    const filename = `${prefix}_${String(existing.length + 1).padStart(3, '0')}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), file.buffer);
+
+    return `${ASSETS_PUBLIC_URL}/${subdir}/${filename}`;
+  }
+
+  async uploadFamigliaImage(codice: string, file: { buffer: Buffer; originalname: string }) {
+    const famiglia = await this.prisma.famiglia.findUnique({ where: { codice } });
+    if (!famiglia) throw new NotFoundException('admin.famiglia_not_found');
+
+    const safeNome = famiglia.nome.replace(/[^a-z0-9_-]/g, '_').toLowerCase();
+    const url = this.saveUploadedImage('Famiglie', `${safeNome}_famiglia`, file);
+    await this.prisma.famiglia.update({ where: { codice }, data: { immagine: url } });
+
+    return { url };
+  }
+
   // ── Raccolte ──
 
   async listRaccolte() {
@@ -289,18 +344,7 @@ export class AdminService {
     if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
 
     const safeSlug = raccolta.slug.replace(/[^a-z0-9_-]/g, '_');
-    const dir = path.join(ASSETS_BASE_DIR, 'Raccolte');
-    fs.mkdirSync(dir, { recursive: true });
-
-    // calcola progressivo: conta i file esistenti con lo stesso prefisso slug
-    const existing = fs.readdirSync(dir).filter((f) => f.startsWith(`${safeSlug}_raccolta_`));
-    const prog = existing.length + 1;
-
-    const ext = path.extname(file.originalname) || '.jpg';
-    const filename = `${safeSlug}_raccolta_${String(prog).padStart(3, '0')}${ext}`;
-    fs.writeFileSync(path.join(dir, filename), file.buffer);
-
-    const url = `${ASSETS_PUBLIC_URL}/Raccolte/${filename}`;
+    const url = this.saveUploadedImage('Raccolte', `${safeSlug}_raccolta`, file);
     await this.prisma.raccolta.update({ where: { id }, data: { immagine: url } });
 
     return { url };

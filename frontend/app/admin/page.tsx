@@ -10,6 +10,7 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import ArticoliSection from "../../components/admin/sections/ArticoliSection";
 import ClientiSection from "../../components/admin/sections/ClientiSection";
 import RaccolteSection from "../../components/admin/sections/RaccolteSection";
+import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -40,16 +41,7 @@ export default function AdminPage() {
       {section === "clienti" && <ClientiSection />}
       {section === "admin-panel" && <AdminPanel />}
 
-      {section === "famiglie" && (
-        <div className="admin-content">
-          <div className="content-header">
-            <div>
-              <h2>Famiglie (da Integra)</h2>
-              <span className="meta">Raggruppamenti gerarchici importati dal gestionale. Non modificabili dal portale.</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {section === "famiglie" && <FamiglieSection />}
 
       {section === "raccolte" && <RaccolteSection />}
 

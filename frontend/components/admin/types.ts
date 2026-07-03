@@ -1,24 +1,17 @@
-export interface ArticleVariant {
-  codice: string;
-  descIntegra?: string;
-  dim1?: { nome: string; val: string } | null;
-  dim2?: { nome: string; val: string } | null;
-  multiplo?: number;
-  giacenza?: number;
-  prezzo?: number;
-  stato?: string;
-}
+/** Immagine di ripiego per articoli/famiglie/raccolte senza foto. */
+export const PLACEHOLDER_IMG = "/images/articoli/placeholder-vase.png";
 
 export interface Article {
+  articoloId?: number;
   id: string;
   name: string;
+  descrizione?: string | null;
   colore: string;
   coloreRgb?: string;
   famigliaPrincipale?: string;
   raccolte?: string[];
   stato: "attivo" | "nascosto";
   img?: string;
-  varianti?: ArticleVariant[];
   variantiCount?: number;
   configurato?: boolean;
 }

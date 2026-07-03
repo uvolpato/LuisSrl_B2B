@@ -18,6 +18,7 @@ const PERMISSION_KEYS = [
   'catalog.articles.edit',
   'catalog.articles.delete',
   'catalog.famiglie.view',
+  'catalog.famiglie.edit',
   'catalog.raccolte.view',
   'catalog.raccolte.edit',
   'vendite.clienti.view',
