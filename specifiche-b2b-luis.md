@@ -498,4 +498,118 @@ foto cliente ──→ AI (Gemini Vision) ──→ trascrizione
 
 ---
 
+## 15. Setup e avviamento in sviluppo
+
+### 15.1 Prerequisiti
+- **Node.js** 18+
+- **PostgreSQL** 16+ in esecuzione (per il backend)
+- **OpenSSL** (per generare certificati HTTPS)
+  - Su Windows: installare da https://slproweb.com/products/Win32OpenSSL.html oppure usare **Git Bash** (contiene OpenSSL)
+  - Su macOS/Linux: normalmente pre-installato
+
+### 15.2 Avviamento del progetto
+
+#### Step 1: Variabili d'ambiente
+Creare/verificare i file `.env` per frontend e backend:
+- **backend/.env** — include `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `GEMINI_API_KEY`, ecc.
+- **frontend/.env.local** — qualsiasi configurazione frontend necessaria
+
+#### Step 2: Installazione dipendenze
+```bash
+# backend
+cd backend
+npm install
+npm run prisma:generate  # genera Prisma Client
+
+# frontend
+cd ../frontend
+npm install
+```
+
+#### Step 3: Database (backend)
+```bash
+cd backend
+npm run prisma:migrate  # applica le migration
+npm run seed            # popola admin, permission groups, clienti di test
+```
+
+#### Step 4: Avviamento in HTTPS (sviluppo)
+Il sito deve essere accessibile in **HTTPS** per abilitare:
+- **Microfono** (per il dettato vocale nel wizard Descrizione AI)
+- **Web Speech API** (ricerca vocale)
+- **Geolocalizzazione** (future feature)
+
+**Procedura:**
+
+1. **Genera certificati self-signed** (una sola volta):
+   ```bash
+   cd frontend
+   # Usa OpenSSL (disponibile in Git Bash, MinGW, oppure standalone)
+   openssl req -x509 -newkey rsa:2048 \
+     -keyout luis-dev-key.pem \
+     -out luis-dev-cert.pem \
+     -days 365 -nodes \
+     -subj "/CN=localhost"
+   ```
+   Questo crea:
+   - `luis-dev-key.pem` — chiave privata (aggiunga nel `.gitignore`)
+   - `luis-dev-cert.pem` — certificato (aggiunga nel `.gitignore`)
+
+2. **Avvia il sito in HTTPS**:
+   ```bash
+   npm run dev:https
+   ```
+   Il server risponde su `https://localhost:3000` (e `https://192.168.0.164:3000` se accessibile dalla LAN).
+
+3. **Nel browser** (Chrome/Edge):
+   - Accedi a `https://localhost:3000`
+   - Ignora l'avviso di certificato self-signed ("non è sicuro" → "Procedi comunque")
+   - Il sito carica e il **microfono è abilitato**
+
+**Alternative di avviamento:**
+- **HTTP semplice** (solo per testing senza microfono): `npm run dev`
+- **HTTPS con dev server HMR su IP della LAN**: i certificati generati coprono `localhost` di default; per usarli su un IP (es. `192.168.0.164`), rigenerare OpenSSL con `-subj "/CN=localhost,IP:192.168.0.164"` oppure usare **mkcert** per una CA locale fidata (§15.3).
+
+#### Step 5: Backend in sviluppo
+```bash
+cd backend
+npm run start:dev
+```
+Il backend ascolta su `http://localhost:3001` e serve i dati al frontend via proxy.
+
+#### Step 6: Test setup
+Accedi con le credenziali di test:
+- **Admin**: email=`${ADMIN_EMAIL}` / password=`${ADMIN_PASSWORD}` (da `.env`)
+- **Cliente test**: `cliente1@fiorista.it` / `Cliente2026!` (creato dal seed)
+
+### 15.3 Certificati fidati per IP della LAN (mkcert)
+
+Se devi testare da **un altro PC sulla LAN** (es. `https://192.168.0.164:3000`) con il **microfono**, il certificato self-signed non è fidato. Soluzione:
+
+1. **Su Windows, installa mkcert**:
+   ```powershell
+   winget install FiloSottile.mkcert
+   mkcert -install  # installa una CA locale nel trust store (richiede UAC)
+   ```
+
+2. **Genera certificati fidati**:
+   ```bash
+   cd frontend
+   mkcert -key-file luis-dev-key.pem -cert-file luis-dev-cert.pem \
+     localhost 127.0.0.1 192.168.0.164
+   ```
+   Adesso `luis-dev-cert.pem` è firmato dalla CA locale e **fidato** sul PC.
+
+3. **Sull'altro PC (col microfono)**:
+   - Estrai il root CA di mkcert: `mkcert -CAROOT` (mostra il percorso)
+   - Importa il file `.pem` tra le "Autorità di certificazione radice attendibili" (su Windows: doppio-clic → Installa)
+   - Adesso `https://192.168.0.164:3000` è fidato anche su quel PC → **microfono abilitato**
+
+### 15.4 Dati e fixture di test
+- **Clienti di test** nel seed: `cliente1@fiorista.it`, `verde.giardini@example.it` (password: `Cliente2026!`)
+- **Admin**: configurato da `.env` (default in template: `admin@luissrl.it` / `LuisAdmin2026!`)
+- **Articoli di test**: importare dal file Excel di test o creare manualmente nel pannello admin
+
+---
+
 *Documento di lavoro: le sezioni marcate **[DA DEFINIRE]/[DA CONFERMARE]** richiedono validazione con Luis S.r.l. prima dello sviluppo.*
