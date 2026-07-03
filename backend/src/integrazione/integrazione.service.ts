@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import { randomUUID } from 'crypto';
 
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
@@ -108,101 +108,145 @@ export class IntegrazioneService {
       byFamiglia.get(famId)!.push(row);
     }
 
-    const created = [];
-
     // Legge prompt AI di default dalla configurazione sito
     let defaultPrompt: string | undefined;
     const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
     if (sc?.value?.trim()) defaultPrompt = sc.value.trim();
 
-    // Upsert Famiglia portale dalla vista famiglie; fallback su placeholder.
-    const upsertFamiglia = async (famId: number | null): Promise<string> => {
-      if (famId) {
-        const famRow = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-          `SELECT * FROM ${CONFIG.famiglie.view} WHERE fam_id = $1`,
-          famId,
-        );
-        if (famRow.length) {
-          const codice = String(famRow[0].fam_codice);
-          await this.prisma.$executeRawUnsafe(
-            `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
-            codice, String(famRow[0].fam_descrizione ?? codice),
+    // Pre-carica tutte le varianti esistenti per i codici richiesti
+    const existingVarianti = await this.prisma.variante.findMany({
+      where: { codice: { in: codici } },
+      select: { codice: true },
+    });
+    const existingSet = new Set(existingVarianti.map((v) => v.codice));
+
+    return await this.prisma.$transaction(async (tx) => {
+      const upsertFamigliaTx = async (famId: number | null): Promise<string> => {
+        if (famId) {
+          const famRow = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+            `SELECT * FROM ${CONFIG.famiglie.view} WHERE fam_id = $1`,
+            famId,
           );
-          return codice;
+          if (famRow.length) {
+            const codice = String(famRow[0].fam_codice);
+            await tx.$executeRawUnsafe(
+              `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
+              codice, String(famRow[0].fam_descrizione ?? codice),
+            );
+            return codice;
+          }
+        }
+        await tx.$executeRawUnsafe(
+          `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
+          'INTEGRA', 'Integra (senza famiglia)',
+        );
+        return 'INTEGRA';
+      };
+
+      const mapProdotto = (row: Record<string, unknown>) => this.mapRow(CONFIG.prodotti.cols, row);
+      const created = [];
+
+      for (const [parentId, variants] of byFamiglia) {
+        const lineaRow = parentId > 0
+          ? await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+              `SELECT * FROM ${CONFIG.linee.view} WHERE lin_id = $1`,
+              parentId,
+            )
+          : [];
+
+        if (lineaRow.length) {
+          const famCodice = await upsertFamigliaTx(Number(lineaRow[0].lin_famiglia_id) || null);
+          const codLinea = String(lineaRow[0].lin_codice).replace(/^linea_/i, '').replace(/[^A-Za-z0-9_]/g, '_');
+          const nome = String(lineaRow[0].lin_descrizione ?? codLinea);
+
+          const art = await tx.articolo.upsert({
+            where: { codiceLinea: codLinea },
+            create: { codiceLinea: codLinea, nome, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
+            update: { nome, famigliaCodice: famCodice },
+          });
+
+          let variantiCount = 0;
+          for (const row of variants) {
+            const mapRow = mapProdotto(row);
+            const codice = String(mapRow.codice);
+            if (existingSet.has(codice)) continue;
+            await tx.variante.create({
+              data: { codice, descrizione: String(mapRow.descrizione || ''), articoloId: art.id },
+            });
+            variantiCount++;
+          }
+
+          created.push({ articoloId: art.id, codiceLinea: codLinea, varianti: variantiCount });
+        } else {
+          const famCodice = await upsertFamigliaTx(parentId > 0 ? parentId : null);
+
+          for (const row of variants) {
+            const mapRow = mapProdotto(row);
+            const codice = String(mapRow.codice);
+            const descrizione = String(mapRow.descrizione || '');
+
+            const art = await tx.articolo.upsert({
+              where: { codiceLinea: codice },
+              create: { codiceLinea: codice, nome: descrizione, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
+              update: { nome: descrizione },
+            });
+
+            if (!existingSet.has(codice)) {
+              await tx.variante.create({
+                data: { codice, descrizione, articoloId: art.id },
+              });
+            }
+            created.push({ articoloId: art.id, codiceLinea: codice, varianti: 1 });
+          }
         }
       }
-      await this.prisma.$executeRawUnsafe(
-        `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
-        'INTEGRA', 'Integra (senza famiglia)',
-      );
-      return 'INTEGRA';
-    };
 
-    const mapProdotto = (row: Record<string, unknown>) => this.mapRow(CONFIG.prodotti.cols, row);
+      return { creati: created.length, articoli: created };
+    });
+  }
 
-    for (const [parentId, variants] of byFamiglia) {
-      // parentId (pro_famiglia_id) può essere l'id di una LINEA (aggregato
-      // articolo), di una FAMIGLIA (prodotti senza linea) o 0/assente.
-      const lineaRow = parentId > 0
-        ? await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-            `SELECT * FROM ${CONFIG.linee.view} WHERE lin_id = $1`,
-            parentId,
-          )
-        : [];
+  /** Catalogo lato cliente: solo articoli configurati e attivi, con filtri famiglia/raccolta. */
+  async getCatalogoCliente() {
+    const arts = await this.prisma.articolo.findMany({
+      where: { configurato: true, stato: 'ATTIVO' },
+      include: {
+        famiglia: true,
+        immagini: { where: { copertina: true }, take: 1 },
+        raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
+        _count: { select: { varianti: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      if (lineaRow.length) {
-        // ── Linea trovata: un Articolo per linea, prodotti come varianti ──
-        const famCodice = await upsertFamiglia(Number(lineaRow[0].lin_famiglia_id) || null);
-        const codLinea = String(lineaRow[0].lin_codice).replace(/^linea_/i, '').replace(/[^A-Za-z0-9_]/g, '_');
-        const nome = String(lineaRow[0].lin_descrizione ?? codLinea);
+    const articoli = arts.map((a) => ({
+      id: a.codiceLinea,
+      nome: a.nome,
+      colore: a.colore || null,
+      coloreRgb: a.coloreRgb || null,
+      famiglia: { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome },
+      raccolte: a.raccolte
+        .filter((r) => r.raccolta.stato === 'ATTIVO')
+        .map((r) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
+      img: a.immagini[0]?.url ?? null,
+      variantiCount: a._count.varianti,
+      createdAt: a.createdAt,
+    }));
 
-        const art = await this.prisma.articolo.upsert({
-          where: { codiceLinea: codLinea },
-          create: { codiceLinea: codLinea, nome, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
-          update: { nome, famigliaCodice: famCodice },
-        });
-
-        let variantiCount = 0;
-        for (const row of variants) {
-          const mapRow = mapProdotto(row);
-          const codice = String(mapRow.codice);
-          const existing = await this.prisma.variante.findUnique({ where: { codice } });
-          if (existing) continue;
-          await this.prisma.variante.create({
-            data: { codice, descrizione: String(mapRow.descrizione || ''), articoloId: art.id },
-          });
-          variantiCount++;
-        }
-
-        created.push({ articoloId: art.id, codiceLinea: codLinea, varianti: variantiCount });
-      } else {
-        // ── Nessuna linea (prodotti direttamente sotto famiglia, o senza
-        //    padre): "articoli senza linea" = un Articolo per prodotto. ──
-        const famCodice = await upsertFamiglia(parentId > 0 ? parentId : null);
-
-        for (const row of variants) {
-          const mapRow = mapProdotto(row);
-          const codice = String(mapRow.codice);
-          const descrizione = String(mapRow.descrizione || '');
-
-          const art = await this.prisma.articolo.upsert({
-            where: { codiceLinea: codice },
-            create: { codiceLinea: codice, nome: descrizione, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
-            update: { nome: descrizione },
-          });
-
-          const existing = await this.prisma.variante.findUnique({ where: { codice } });
-          if (!existing) {
-            await this.prisma.variante.create({
-              data: { codice, descrizione, articoloId: art.id },
-            });
-          }
-          created.push({ articoloId: art.id, codiceLinea: codice, varianti: 1 });
-        }
+    // Filtri con conteggi derivati dagli stessi articoli visibili
+    const famiglie = new Map<string, { codice: string; nome: string; count: number }>();
+    const raccolte = new Map<string, { slug: string; nome: string; count: number }>();
+    for (const a of articoli) {
+      const f = famiglie.get(a.famiglia.codice) ?? { ...a.famiglia, count: 0 };
+      f.count++;
+      famiglie.set(a.famiglia.codice, f);
+      for (const r of a.raccolte) {
+        const x = raccolte.get(r.slug) ?? { ...r, count: 0 };
+        x.count++;
+        raccolte.set(r.slug, x);
       }
     }
 
-    return { creati: created.length, articoli: created };
+    return { articoli, famiglie: [...famiglie.values()], raccolte: [...raccolte.values()] };
   }
 
   async getArticoli() {
@@ -285,7 +329,7 @@ export class IntegrazioneService {
         _count: { select: { varianti: true } },
       },
     });
-    if (!art) throw new Error('Articolo non trovato');
+    if (!art) throw new NotFoundException('Articolo non trovato');
     return {
       id: art.codiceLinea,
       codiceLinea: art.codiceLinea,
@@ -373,7 +417,7 @@ export class IntegrazioneService {
       const toDelete = await this.prisma.immagine.findMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
       for (const img of toDelete) {
         const filePath = path.join(ASSETS_BASE_DIR, img.url.replace(`${ASSETS_PUBLIC_URL}/`, ''));
-        try { fs.unlinkSync(filePath); } catch { /* file già assente */ }
+        try { await fsp.unlink(filePath); } catch { /* file già assente */ }
       }
       await this.prisma.immagine.deleteMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
     }
@@ -424,7 +468,7 @@ export class IntegrazioneService {
     const art = await this.prisma.articolo.findUnique({
       where: { codiceLinea },
     });
-    if (!art) throw new Error('Articolo non trovato');
+    if (!art) throw new NotFoundException('Articolo non trovato');
     // ponytail: check for orders when order model exists
     const refCount = await this.prisma.variante.count({ where: { articoloId: art.id } });
     if (refCount > 0) {
@@ -434,16 +478,14 @@ export class IntegrazioneService {
     return { deleted: true };
   }
 
-  async uploadImmagini(codiceLinea: string, files: any[], tipo = 'CARICATA') {
+  async uploadImmagini(codiceLinea: string, files: Express.Multer.File[], tipo = 'CARICATA') {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
-    if (!art) throw new Error('Articolo non trovato');
+    if (!art) throw new NotFoundException('Articolo non trovato');
     const existingCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo } });
     const baseDir = ASSETS_BASE_DIR;
-    // ponytail: neutralizza path traversal — codiceLinea finisce nel filesystem
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(baseDir, safeCod);
-    fs.mkdirSync(artDir, { recursive: true });
-    // infisso del nome file in base al tipo/tab: bianco / galleria / ai
+    await fsp.mkdir(artDir, { recursive: true });
     const infisso = ({ CARICATA: 'bianco', GALLERIA: 'galleria', AI: 'ai' } as Record<string, string>)[tipo] ?? tipo.toLowerCase();
     const uploaded: { url: string }[] = [];
     for (let i = 0; i < files.length; i++) {
@@ -451,7 +493,7 @@ export class IntegrazioneService {
       const ext = path.extname(f.originalname) || '.jpg';
       const n = String(existingCount + i + 1).padStart(3, '0');
       const filename = `${safeCod}_${infisso}_${n}${ext}`;
-      fs.writeFileSync(path.join(artDir, filename), f.buffer);
+      await fsp.writeFile(path.join(artDir, filename), f.buffer);
       const img = await this.prisma.immagine.create({
         data: { articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo },
       });
@@ -569,7 +611,7 @@ export class IntegrazioneService {
     const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
     const filePath = path.join(ASSETS_BASE_DIR, rel);
     let buf: Buffer;
-    try { buf = fs.readFileSync(filePath); } catch { throw new BadRequestException('File immagine sorgente non trovato sul disco.'); }
+    try { buf = await fsp.readFile(filePath); } catch { throw new BadRequestException('File immagine sorgente non trovato sul disco.'); }
     const ext = path.extname(filePath).toLowerCase();
     const srcMime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
     const src = { mime: srcMime, b64: buf.toString('base64') };
@@ -621,7 +663,7 @@ export class IntegrazioneService {
     if (!gen) throw new BadRequestException('Generazione scaduta: rigenera le immagini.');
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(ASSETS_BASE_DIR, safeCod);
-    fs.mkdirSync(artDir, { recursive: true });
+    await fsp.mkdir(artDir, { recursive: true });
     let aiCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo: 'AI' } });
     const saved: { url: string }[] = [];
     for (const idx of indices) {
@@ -630,7 +672,7 @@ export class IntegrazioneService {
       const fileExt = item.mime === 'image/jpeg' ? '.jpg' : item.mime === 'image/webp' ? '.webp' : '.png';
       aiCount += 1;
       const filename = `${safeCod}_ai_${String(aiCount).padStart(3, '0')}${fileExt}`;
-      fs.writeFileSync(path.join(artDir, filename), Buffer.from(item.b64, 'base64'));
+      await fsp.writeFile(path.join(artDir, filename), Buffer.from(item.b64, 'base64'));
       const ord = await this.prisma.immagine.count({ where: { articoloId: art.id } });
       const rec = await this.prisma.immagine.create({
         data: {
@@ -705,7 +747,7 @@ export class IntegrazioneService {
       const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
       const filePath = path.join(ASSETS_BASE_DIR, rel);
       let buf: Buffer;
-      try { buf = fs.readFileSync(filePath); } catch { continue; }
+      try { buf = await fsp.readFile(filePath); } catch { continue; }
       const ext = path.extname(filePath).toLowerCase();
       const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
       const prompt = 'Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti su forma, materiale, finitura, dimensioni percepite e colore. Sii concreto e preciso.';

@@ -16,9 +16,6 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, background: "oklch(30% 0.02 60)", color: "oklch(92% 0.01 80)", textAlign: "center", padding: "6px 16px", fontSize: 12, fontFamily: "var(--font-body)", letterSpacing: "0.02em" }}>
-        ⚠ Prototipo dimostrativo — non è un&apos;applicazione reale. Tutti i dati sono fittizi e qualcosa potrebbe non funzionare correttamente.
-      </div>
       <LandingNav onOpenLogin={() => setShowLogin(true)} />
       <main id="content">
         <HeroSection onOpenLogin={() => setShowLogin(true)} />

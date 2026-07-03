@@ -163,7 +163,7 @@ export class AdminController {
   @RequirePermission('catalog.famiglie.edit')
   uploadFamigliaImage(
     @Param('codice') codice: string,
-    @UploadedFile() file: any,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     return this.admin.uploadFamigliaImage(codice, file);
   }
@@ -225,7 +225,7 @@ export class AdminController {
   @RequirePermission('catalog.raccolte.edit')
   uploadRaccoltaImage(
     @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() file: any,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     return this.admin.uploadRaccoltaImage(id, file);
   }

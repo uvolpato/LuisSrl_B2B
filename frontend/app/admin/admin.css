@@ -895,9 +895,11 @@
   place-items: center;
   cursor: pointer;
   transition: background 0.12s ease;
+  padding: 0;
+  line-height: 0;
 }
 .modal-close:hover { background: var(--fg-soft); color: var(--fg); }
-.modal-close svg { width: 18px; height: 18px; }
+.modal-close svg { display: block; width: 18px; height: 18px; }
 
 /* Tabs */
 .modal-tabs {
@@ -1936,6 +1938,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   cursor: pointer;
   transition: background 0.12s ease;
   padding: 0;
+  line-height: 0;
 }
 .modal-root-close:hover { background: var(--fg-soft); color: var(--fg); }
 .modal-root-close svg { width: 18px; height: 18px; display: block; }

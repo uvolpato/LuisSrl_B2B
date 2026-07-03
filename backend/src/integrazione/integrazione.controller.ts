@@ -103,7 +103,7 @@ export class IntegrazioneController {
   @UseInterceptors(FilesInterceptor('files', 10))
   async uploadImmagini(
     @Param('codiceLinea') codiceLinea: string,
-    @UploadedFiles() files: any[],
+    @UploadedFiles() files: Express.Multer.File[],
     @Body('tipo') tipo?: string,
   ) {
     return this.integrazione.uploadImmagini(codiceLinea, files, tipo || 'CARICATA');

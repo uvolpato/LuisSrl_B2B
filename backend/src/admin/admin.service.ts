@@ -13,7 +13,7 @@ import type { UserProfile } from '../common/auth-types';
 import { buildStatoFilter } from '../common/filters';
 import type { UserFilter } from '../common/filters';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 
 const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
 const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
@@ -217,24 +217,29 @@ export class AdminService {
   }
 
   /** Salva un'immagine caricata in ASSETS_BASE_DIR/<subdir> con nome progressivo e ritorna l'URL pubblico. */
-  private saveUploadedImage(subdir: string, prefix: string, file: { buffer: Buffer; originalname: string }) {
-    const dir = path.join(ASSETS_BASE_DIR, subdir);
-    fs.mkdirSync(dir, { recursive: true });
+  private async saveUploadedImage(subdir: string, prefix: string, file: Express.Multer.File) {
+    if (!file.mimetype.startsWith('image/')) throw new BadRequestException('Solo file immagine sono permessi');
+    if (file.size > 10 * 1024 * 1024) throw new BadRequestException('File troppo grande (max 10MB)');
 
-    const existing = fs.readdirSync(dir).filter((f) => f.startsWith(`${prefix}_`));
+    const dir = path.join(ASSETS_BASE_DIR, subdir);
+    await fsp.mkdir(dir, { recursive: true });
+
+    let existing: string[];
+    try { existing = await fsp.readdir(dir); } catch { existing = []; }
+    const matching = existing.filter((f) => f.startsWith(`${prefix}_`));
     const ext = path.extname(file.originalname) || '.jpg';
-    const filename = `${prefix}_${String(existing.length + 1).padStart(3, '0')}${ext}`;
-    fs.writeFileSync(path.join(dir, filename), file.buffer);
+    const filename = `${prefix}_${String(matching.length + 1).padStart(3, '0')}${ext}`;
+    await fsp.writeFile(path.join(dir, filename), file.buffer);
 
     return `${ASSETS_PUBLIC_URL}/${subdir}/${filename}`;
   }
 
-  async uploadFamigliaImage(codice: string, file: { buffer: Buffer; originalname: string }) {
+  async uploadFamigliaImage(codice: string, file: Express.Multer.File) {
     const famiglia = await this.prisma.famiglia.findUnique({ where: { codice } });
     if (!famiglia) throw new NotFoundException('admin.famiglia_not_found');
 
     const safeNome = famiglia.nome.replace(/[^a-z0-9_-]/g, '_').toLowerCase();
-    const url = this.saveUploadedImage('Famiglie', `${safeNome}_famiglia`, file);
+    const url = await this.saveUploadedImage('Famiglie', `${safeNome}_famiglia`, file);
     await this.prisma.famiglia.update({ where: { codice }, data: { immagine: url } });
 
     return { url };
@@ -339,12 +344,14 @@ export class AdminService {
     return this.getRaccolta(id);
   }
 
-  async uploadRaccoltaImage(id: number, file: { buffer: Buffer; originalname: string }) {
+  async uploadRaccoltaImage(id: number, file: Express.Multer.File) {
+    if (!file.mimetype.startsWith('image/')) throw new BadRequestException('Solo file immagine sono permessi');
+    if (file.size > 10 * 1024 * 1024) throw new BadRequestException('File troppo grande (max 10MB)');
     const raccolta = await this.prisma.raccolta.findUnique({ where: { id } });
     if (!raccolta) throw new NotFoundException('admin.raccolta_not_found');
 
     const safeSlug = raccolta.slug.replace(/[^a-z0-9_-]/g, '_');
-    const url = this.saveUploadedImage('Raccolte', `${safeSlug}_raccolta`, file);
+    const url = await this.saveUploadedImage('Raccolte', `${safeSlug}_raccolta`, file);
     await this.prisma.raccolta.update({ where: { id }, data: { immagine: url } });
 
     return { url };

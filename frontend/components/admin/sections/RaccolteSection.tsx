@@ -152,7 +152,7 @@ export default function RaccolteSection() {
     }
   }
 
-  const columns: Column<Raccolta>[] = [
+  const columns = useMemo((): Column<Raccolta>[] => [
     {
       key: "nome",
       header: "Nome",
@@ -213,9 +213,9 @@ export default function RaccolteSection() {
       sortValue: (r) => r._count.articoli,
       cell: (r) => r._count.articoli,
     },
-  ];
+  ], []);
 
-  const actions: RowAction<Raccolta>[] = [
+  const actions = useMemo((): RowAction<Raccolta>[] => [
     {
       icon: () => IconEdit,
       tooltip: () => "Modifica",
@@ -232,7 +232,7 @@ export default function RaccolteSection() {
       variant: "danger",
       onClick: (r) => handleDelete(r.id, r.nome),
     },
-  ];
+  ], [toggleStatus, handleDelete]);
 
   const meta = `${items.length} raccolte · ${items.filter((r) => r.stato === "ATTIVO").length} attive · ${items.filter((r) => r.stato === "NASCOSTO").length} nascoste`;
 
@@ -264,10 +264,10 @@ export default function RaccolteSection() {
             <span className="meta">{meta}</span>
           </div>
           <div className="view-toggle">
-            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
+            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga" aria-pressed={view === "list"}>
               {IconList}
             </button>
-            <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia">
+            <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia" aria-pressed={view === "grid"}>
               {IconGrid}
             </button>
           </div>
@@ -313,7 +313,7 @@ export default function RaccolteSection() {
                     </div>
                     <div className="raccolte-card-actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(r.id)} title="Modifica">{IconEdit} Modifica</button>
-                      <button className={`btn btn-ghost btn-sm ${r.stato === "ATTIVO" ? "" : ""}`} onClick={() => toggleStatus(r)} title={r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => toggleStatus(r)} title={r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}>
                         {r.stato === "ATTIVO" ? IconEyeOff : IconEye} {r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}
                       </button>
                       <button className="btn btn-ghost btn-sm btn-danger" onClick={() => handleDelete(r.id, r.nome)} title="Elimina">{IconTrash} Elimina</button>
@@ -401,11 +401,12 @@ function RaccoltaEditModal({
 
   function handleImageFile(file: File) {
     if (!file.type.startsWith("image/")) return;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPendingImage(file);
     setPreviewUrl(URL.createObjectURL(file));
   }
 
-  const filteredArticles = allArticles.filter((a) => {
+  const filteredArticles = useMemo(() => allArticles.filter((a) => {
     if (articleFilter === "attivi" && a.stato !== "attivo") return false;
     if (articleFilter === "nascosti" && a.stato !== "nascosto") return false;
     if (articleFilter === "da-configurare" && a.configurato) return false;
@@ -413,8 +414,8 @@ function RaccoltaEditModal({
     if (articleFilter === "senza-raccolta" && (a.raccolte?.length ?? 0) > 0) return false;
     if (!articleSearch) return true;
     const q = articleSearch.toLowerCase();
-    return a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q);
-  });
+    return a.name.toLowerCase().includes(q) || String(a.id).toLowerCase().includes(q);
+  }), [allArticles, articleFilter, articleSearch]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -462,7 +463,7 @@ function RaccoltaEditModal({
                 id="raccolta-image-input"
                 url={previewUrl || immagineUrl}
                 onFile={handleImageFile}
-                onRemove={() => { setPendingImage(null); setPreviewUrl(null); setImmagineUrl(""); }}
+                onRemove={() => { if (previewUrl) URL.revokeObjectURL(previewUrl); setPendingImage(null); setPreviewUrl(null); setImmagineUrl(""); }}
               />
             </div>
             <div className="field" style={{ marginBottom: 10 }}>
@@ -500,9 +501,9 @@ function RaccoltaEditModal({
                     <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                   </svg>
                 </span>
-                <input type="text" placeholder="Cerca articolo, colore…" value={articleSearch} onChange={(e) => onArticleSearchChange(e.target.value)} />
+                <input type="text" placeholder="Cerca articolo, colore…" value={articleSearch} onChange={(e) => onArticleSearchChange(e.target.value)} aria-label="Cerca articoli" />
               </div>
-              <div className="filter-pills">
+              <div className="filter-pills" role="group" aria-label="Filtri articoli">
                 {[
                   { value: "tutti", label: "Tutti" },
                   { value: "attivi", label: "Attivi" },
@@ -510,7 +511,7 @@ function RaccoltaEditModal({
                   { value: "da-configurare", label: "Da config." },
                   { value: "senza-raccolta", label: "Senza racc." },
                 ].map((f) => (
-                  <button type="button" key={f.value} className={`filter-pill ${articleFilter === f.value ? "active" : ""}`} onClick={() => setArticleFilter(f.value)}>
+                  <button type="button" key={f.value} className={`filter-pill ${articleFilter === f.value ? "active" : ""}`} onClick={() => setArticleFilter(f.value)} aria-pressed={articleFilter === f.value}>
                     {f.label}
                   </button>
                 ))}
