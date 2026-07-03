@@ -6,7 +6,7 @@ import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
 import Tooltip from "../../common/Tooltip";
-import { IconInfo, IconSearch, IconPlus, IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from "../icons";
+import { IconPlus, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
 import DescrizioneAiWizard from "./DescrizioneAiWizard";
@@ -102,6 +102,11 @@ export default function ArticoloEditModal({
   const [pendingDeleteImages, setPendingDeleteImages] = useState<number[]>([]);
   const [editingImage, setEditingImage] = useState<number | null>(null);
 
+  const [allRaccolte, setAllRaccolte] = useState<RaccoltaSlim[]>([]);
+  const [selectedRaccoltaIds, setSelectedRaccoltaIds] = useState<Set<number>>(new Set());
+  const [raccolteSearch, setRaccolteSearch] = useState("");
+  const [dragRaccoltaId, setDragRaccoltaId] = useState<number | null>(null);
+
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
     setLoading(true);
@@ -125,14 +130,36 @@ export default function ArticoloEditModal({
       setImmaginiGalleria(null);
       setImmaginiDisplay({});
       setPendingDeleteImages([]);
-    } catch {
-      setError("Errore caricamento articolo");
+      setRaccolteSearch("");
+    } catch (e) {
+      console.error("[ArticoloEditModal fetch error]", e);
+      setError(e instanceof Error ? e.message : "Errore caricamento articolo");
     } finally {
       setLoading(false);
     }
   }, [codiceLinea]);
 
-  useEffect(() => { if (open && codiceLinea) fetch(); else setActiveTab("generale"); }, [open, codiceLinea, fetch]);
+  const fetchRaccolte = useCallback(async () => {
+    try {
+      const data = await api.get<RaccoltaSlim[]>("/api/admin/raccolte");
+      setAllRaccolte(data);
+    } catch { /* non bloccante */ }
+  }, []);
+
+  useEffect(() => {
+    if (open && codiceLinea) {
+      fetch();
+      fetchRaccolte();
+    } else {
+      setActiveTab("generale");
+    }
+  }, [open, codiceLinea, fetch, fetchRaccolte]);
+
+  useEffect(() => {
+    if (article && allRaccolte.length > 0) {
+      setSelectedRaccoltaIds(new Set(article.raccolte.map((r) => r.id)));
+    }
+  }, [article, allRaccolte]);
 
   const isDirty = useMemo(() => {
     if (!article) return false;
@@ -151,6 +178,9 @@ export default function ArticoloEditModal({
     if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
     if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
     if ((article.promptAi ?? null) !== initialPromptAiRef.current) return true;
+    const origIds = new Set(article.raccolte.map((r) => r.id));
+    if (origIds.size !== selectedRaccoltaIds.size) return true;
+    for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
   }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
@@ -185,6 +215,7 @@ export default function ArticoloEditModal({
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
       if (pendingDeleteImages.length > 0) payload.immaginiDaEliminare = pendingDeleteImages;
+      payload.raccolte = [...selectedRaccoltaIds];
       await api.put(`/api/integrazione/articoli/${article.codiceLinea}`, payload);
       onSaved?.();
       fetch();
@@ -522,31 +553,124 @@ export default function ArticoloEditModal({
             )}
 
             {activeTab === "raccolte" && (
-              <div>
-                <h3 style={{ fontSize: 16, margin: "0 0 16px" }}>Raccolte associate</h3>
-                {(!article?.raccolte || article.raccolte.length === 0) ? (
-                  <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>Nessuna raccolta associata. Gestisci le raccolte dalla sezione Raccolte del pannello admin.</p>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {article.raccolte.map((r) => (
-                      <div key={r.id} style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "10px 12px", borderRadius: "var(--radius)",
-                        background: "var(--accent-soft)", fontSize: 14,
-                      }}>
-                        <span style={{ flex: 1, fontWeight: 500 }}>{r.nome}</span>
-                        {r.sconto != null && (
-                          <span style={{ fontSize: 13, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>
-                            -{r.sconto}%
-                          </span>
-                        )}
-                        <span className={`user-status-dot ${r.stato === "ATTIVO" ? "attivo" : "bloccato"}`}>
-                          {r.stato === "ATTIVO" ? "attiva" : "nascosta"}
-                        </span>
-                      </div>
-                    ))}
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 12 }}>
+                <div className="admin-search" style={{ flexShrink: 0 }}>
+                  <input
+                    type="text"
+                    placeholder="Cerca raccolta…"
+                    value={raccolteSearch}
+                    onChange={(e) => setRaccolteSearch(e.target.value)}
+                    style={{ width: "100%" }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
+                  {/* Disponibili */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                    <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Disponibili</h4>
+                    <div
+                      style={{
+                        flex: 1, overflow: "auto", border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)", padding: 8, background: "var(--bg)",
+                      }}
+                      onDragOver={(e) => { e.preventDefault(); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragRaccoltaId === null) return;
+                        setSelectedRaccoltaIds((prev) => {
+                          const next = new Set(prev);
+                          next.delete(dragRaccoltaId);
+                          return next;
+                        });
+                        setDragRaccoltaId(null);
+                      }}
+                    >
+                      {(() => {
+                        const q = raccolteSearch.toLowerCase();
+                        const available = allRaccolte
+                          .filter((r) => !selectedRaccoltaIds.has(r.id))
+                          .filter((r) => !q || r.nome.toLowerCase().includes(q) || r.slug.toLowerCase().includes(q));
+                        if (available.length === 0) return <p style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: 20 }}>Nessuna raccolta disponibile</p>;
+                        return (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {available.map((r) => (
+                              <span
+                                key={r.id}
+                                draggable
+                                onDragStart={(e) => { setDragRaccoltaId(r.id); e.dataTransfer.effectAllowed = "move"; }}
+                                onDragEnd={() => setDragRaccoltaId(null)}
+                                onClick={() => setSelectedRaccoltaIds((prev) => new Set(prev).add(r.id))}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  padding: "4px 12px", borderRadius: 999,
+                                  background: "var(--fg-soft)", color: "var(--fg)",
+                                  fontSize: 13, cursor: "pointer", userSelect: "none",
+                                  border: "1px solid var(--border)",
+                                  transition: "background 0.15s",
+                                }}
+                                title="Clicca per aggiungere o trascina"
+                              >
+                                {r.nome}
+                                <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style={{ opacity: 0.4 }}><path d="M8 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
-                )}
+                  {/* Associate */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                    <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      Associate ({selectedRaccoltaIds.size})
+                    </h4>
+                    <div
+                      style={{
+                        flex: 1, overflow: "auto", border: "1px solid var(--accent)",
+                        borderRadius: "var(--radius)", padding: 8,
+                        background: selectedRaccoltaIds.size > 0 ? "var(--accent-soft)" : "var(--bg)",
+                        minHeight: 80,
+                      }}
+                      onDragOver={(e) => { e.preventDefault(); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragRaccoltaId === null) return;
+                        setSelectedRaccoltaIds((prev) => new Set(prev).add(dragRaccoltaId));
+                        setDragRaccoltaId(null);
+                      }}
+                    >
+                      {selectedRaccoltaIds.size === 0 ? (
+                        <p style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: 20 }}>
+                          Trascina qui le raccolte o clicca su quelle disponibili
+                        </p>
+                      ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {allRaccolte.filter((r) => selectedRaccoltaIds.has(r.id)).map((r) => (
+                            <span
+                              key={r.id}
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 6,
+                                padding: "4px 12px", borderRadius: 999,
+                                background: "var(--accent)", color: "#fff",
+                                fontSize: 13, cursor: "pointer", userSelect: "none",
+                                transition: "opacity 0.15s",
+                              }}
+                              onClick={() => setSelectedRaccoltaIds((prev) => {
+                                const next = new Set(prev);
+                                next.delete(r.id);
+                                return next;
+                              })}
+                              title="Clicca per rimuovere"
+                            >
+                              {r.nome}
+                              {r.sconto != null && <span style={{ fontSize: 11, opacity: 0.9 }}>-{r.sconto}%</span>}
+                              <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4 4l8 8M12 4l-8 8" stroke="#fff" strokeWidth="1.5"/></svg>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </>

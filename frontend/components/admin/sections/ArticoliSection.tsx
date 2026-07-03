@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import type { Article } from "../types";
-import { PAGE_SIZE } from "../types";
+import { PAGE_SIZE, PLACEHOLDER_IMG as PLACEHOLDER } from "../types";
 import AdminTopBar from "../AdminTopBar";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import ImportaArticoliModal from "../ImportaArticoliModal";
-import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList, IconPlus, IconUpload } from "../icons";
+import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList, IconPlus } from "../icons";
 import ArticoloEditModal from "./ArticoloEditModal";
 
 export default function ArticoliSection() {
@@ -21,7 +21,6 @@ export default function ArticoliSection() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [editCodiceLinea, setEditCodiceLinea] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const PLACEHOLDER = "/images/articoli/placeholder-vase.png";
 
   const filteredArticles = articles.filter((a) => {
     if (articleFilter === "attivi") return a.stato === "attivo";
@@ -35,7 +34,7 @@ export default function ArticoliSection() {
     return a.id.toLowerCase().includes(q) || a.name.toLowerCase().includes(q);
   });
   const artRows = filteredArticles.slice((artPage - 1) * PAGE_SIZE, artPage * PAGE_SIZE);
-  const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.variantiCount ?? a.varianti?.length ?? 0), 0)} varianti`;
+  const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.variantiCount ?? 0), 0)} varianti`;
 
   useEffect(() => {
     api.get<Article[]>("/api/integrazione/articoli")
@@ -83,6 +82,16 @@ export default function ArticoliSection() {
       ),
     },
     {
+      key: "descrizione",
+      header: "Descrizione",
+      width: "35%",
+      cell: (a) => (
+        <span style={{ color: "var(--muted)", fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {a.descrizione || "—"}
+        </span>
+      ),
+    },
+    {
       key: "stato",
       header: "Stato",
       width: "120px",
@@ -102,8 +111,8 @@ export default function ArticoliSection() {
       align: "center",
       mono: true,
       sortable: true,
-      sortValue: (a) => a.variantiCount ?? a.varianti?.length ?? 0,
-      cell: (a) => a.variantiCount ?? a.varianti?.length ?? 0,
+      sortValue: (a) => a.variantiCount ?? 0,
+      cell: (a) => a.variantiCount ?? 0,
     },
     {
       key: "raccolte",
@@ -142,10 +151,6 @@ export default function ArticoliSection() {
         ]}
       >
         <div className="action-buttons">
-          <button className="btn btn-secondary btn-sm">
-            {IconUpload}
-            Importa Excel
-          </button>
           <button className="btn btn-primary btn-sm" onClick={() => setImportModalOpen(true)}>
             {IconPlus}
             Nuovo Articolo
@@ -199,7 +204,7 @@ export default function ArticoliSection() {
                     <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
                       {a.stato}
                     </span>
-                    <div className="article-card-counts">{a.variantiCount ?? a.varianti?.length ?? 0} varianti</div>
+                    <div className="article-card-counts">{a.variantiCount ?? 0} varianti</div>
                     <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
                     <div className="article-card-actions">
                       <button className="btn btn-secondary btn-sm" onClick={() => setEditCodiceLinea(a.id)}>Modifica</button>
