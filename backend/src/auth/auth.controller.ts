@@ -46,6 +46,10 @@ export class AuthController {
     req.session.csrfToken = randomBytes(32).toString('hex');
     req.session.cookie.maxAge = dto.remember ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
+    await new Promise<void>((resolve, reject) =>
+      req.session.save((err) => (err ? reject(err) : resolve())),
+    );
+
     const profile = user.userType === 'admin'
       ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
       : toCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
