@@ -67,6 +67,34 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 **Da fare — Blocco 2:** HTTPS/tunnel per il go-live (differito); sezioni admin oltre Clienti (Articoli, Famiglie, Raccolte, Ordini) con dati mock — diventano reali dal Blocco 2.
 
+### Blocco 2 — Integrazione Integra — ✅ COMPLETATO (giugno–luglio 2026)
+- Tabella `integrazioni_raw` + viste `vista_integra_famiglie/linee/prodotti` dall'export reale
+  (`esportazioni.xlsx` → `backend/data/integra-prodotti.json`, script `seed-integra-from-export.js` con `--wipe`)
+- **Import per linea**: l'aggregato Articolo è la linea (prodotti come Varianti); prodotti senza
+  linea → un Articolo per prodotto. Mappa euristica id→linea (`integrazioni_linee_map`) in attesa
+  dell'id esplicito da AGOMIR
+- Schermata "Nuovo Articolo" con ricerca, selezione e import; lista aggiornata dopo l'import
+
+### Blocco 4 — Gestione articoli + AI (admin) — ✅ COMPLETATO (giugno–luglio 2026)
+- Sezioni admin Articoli / Famiglie / Raccolte complete (griglia+card, colonna descrizione,
+  immagini con placeholder, stato attivo/nascosto)
+- Famiglie: **titolo alternativo** (`nome_portale`, vince ovunque sul nome Integra), descrizione, immagine
+- Scheda articolo admin: tab Generale/Immagini/Varianti/Descrizione AI/Famiglia/Raccolte,
+  posizionamento immagini (EditImageModal: fit/posizione/zoom/rotazione), generazione immagini
+  ambientate (Gemini) e wizard descrizione AI
+- Flusso "configurato" irreversibile (foto+colore+varianti+descrizione AI; criterio listino nel Blocco 3)
+
+### Blocco 5 — Catalogo lato cliente — 🔨 IN CORSO (luglio 2026)
+- **Fase A fatta**: `/area/catalogo` fedele al prototipo 02-catalog (sidebar filtri, tab raccolte,
+  ricerca, griglia card, paginazione, modale AI "in arrivo", Carrello (0) inattivo).
+  API `GET /api/catalogo` — solo articoli configurati+attivi, guard customer
+- **Fase B fatta**: scheda articolo `/area/catalogo/[codice]` fedele a 03-product (galleria che
+  rispetta il posizionamento immagini impostato in admin, lightbox a vista completa, griglia
+  d'ordine varianti con multipli, buy-box) — **prezzi finti in attesa del Blocco 3 listini**
+- Dettaglio cliente blindato: 404 su articoli nascosti/non configurati, campi admin esclusi
+- **Ordine fasi rimanenti**: listini → carrello/ordini → giacenza+dashboard → export AGOMIR →
+  AI lato cliente → collaudo e go-live
+
 ### Credenziali admin
 - Email: `admin@luissrl.it`
 - Password: `LuisAdmin2026!`
