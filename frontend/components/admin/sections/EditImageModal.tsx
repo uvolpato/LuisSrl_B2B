@@ -5,6 +5,7 @@ import Modal from "../../common/Modal";
 import { useConfirm } from "../../common/ConfirmProvider";
 import Notice from "../../common/Notice";
 import { api, ApiError } from "../../../lib/api";
+import PositionedImage from "../../common/PositionedImage";
 
 const FIT_OPTIONS = [
   { value: "cover", label: "Copri" },
@@ -172,7 +173,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
     onChange(img.id, { css: "object-fit:cover;object-position:50% 50%" });
   }
 
-  function handlePositionClick(e: React.MouseEvent<HTMLDivElement>) {
+  function handlePositionClick(e: React.MouseEvent) {
     const rect = e.currentTarget.getBoundingClientRect();
     handleChange({ posX: ((e.clientX - rect.left) / rect.width) * 100, posY: ((e.clientY - rect.top) / rect.height) * 100 });
   }
@@ -227,10 +228,17 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
 
       <div className="modal-body-edit" style={{ padding: "12px 20px", display: "flex", gap: 20 }}>
         <div style={{ width: 320, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, alignSelf: "flex-start" }}>
-          <div className="edit-image-pos-map" onClick={handlePositionClick} style={{ width: 320, height: 320, margin: 0 }}>
-            <img src={image.url} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: objectFit as React.CSSProperties["objectFit"], objectPosition, transform: zoom !== 0 || rotation !== 0 ? `scale(${1 + zoom / 100}) rotate(${rotation}deg)` : undefined, pointerEvents: "none" }} />
+          {/* Stesso componente della card/galleria cliente → anteprima = risultato reale */}
+          <PositionedImage
+            className="edit-image-pos-map"
+            src={image.url}
+            css={buildCss(objectFit, objectPosition, zoom, rotation)}
+            aspect={4 / 3}
+            onClick={handlePositionClick}
+            style={{ width: 320, margin: 0 }}
+          >
             {tab === "posizionamento" && <div className="edit-image-pos-dot" style={{ left: `calc(${posX}% - 8px)`, top: `calc(${posY}% - 8px)` }} />}
-          </div>
+          </PositionedImage>
           <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-mono)", textAlign: "center", lineHeight: 1.6 }}>
             {image.css && <div style={{ opacity: 0.7, fontSize: 10 }}>{image.css}</div>}
           </div>

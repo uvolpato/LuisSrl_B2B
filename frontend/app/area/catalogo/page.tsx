@@ -6,7 +6,7 @@ import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import AreaHeader from "../../../components/area/AreaHeader";
-import { imgStyle } from "../../../lib/img-css";
+import PositionedImage from "../../../components/common/PositionedImage";
 import "../catalogo.css";
 
 interface CatalogoArticolo {
@@ -168,10 +168,7 @@ export default function CatalogoPage() {
               <div className="product-grid">
                 {rows.map((a) => (
                   <Link href={`/area/catalogo/${a.id}`} key={a.id} className="product-card">
-                    <div className="product-img">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {a.img && <img src={a.img} alt={a.nome} style={imgStyle(a.imgCss)} />}
-                    </div>
+                    <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} />
                     <div className="product-body">
                       <div className="product-famiglia">
                         <span className="color-dot" style={{ background: a.coloreRgb || a.colore || "var(--fg-soft)" }} />

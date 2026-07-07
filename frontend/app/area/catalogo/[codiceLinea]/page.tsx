@@ -6,6 +6,7 @@ import { useAuth } from "../../../../lib/use-auth";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
 import AreaHeader from "../../../../components/area/AreaHeader";
 import { imgStyle } from "../../../../lib/img-css";
+import PositionedImage from "../../../../components/common/PositionedImage";
 import "../../catalogo.css";
 
 interface Variante {
@@ -294,13 +295,14 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   <div className="gallery-share" title="Condividi">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                   </div>
-                  <div className="gallery-main" onClick={() => openLightbox()}>
-                    {galleryImages[selectedImgIdx] ? (
-                      <img src={galleryImages[selectedImgIdx].url} alt={articolo.nome} id="mainImage" style={imgStyle(galleryImages[selectedImgIdx].css)} />
-                    ) : (
-                      <div style={{ color: "var(--muted)", fontSize: 13 }}>Nessuna immagine</div>
-                    )}
-                  </div>
+                  <PositionedImage
+                    className="gallery-main"
+                    src={galleryImages[selectedImgIdx]?.url}
+                    css={galleryImages[selectedImgIdx]?.css}
+                    aspect={4 / 3}
+                    alt={articolo.nome}
+                    onClick={() => openLightbox()}
+                  />
                   <div className="gallery-hint" onClick={() => openLightbox()}>Fai clic per visualizzare la vista completa</div>
                   <div className="gallery-thumbs" id="galleryThumbs">
                     {galleryImages.slice(0, 5).map((img, i) => (

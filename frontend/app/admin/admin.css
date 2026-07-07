@@ -2286,7 +2286,8 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 
 /* ── Edit Image Modal layout ── */
 .edit-image-pos-map {
-  aspect-ratio: 1;
+  /* 4:3 come la galleria e le card cliente: si posiziona sulla forma reale */
+  aspect-ratio: 4 / 3;
   background: var(--fg-soft);
   border-radius: var(--radius);
   position: relative;

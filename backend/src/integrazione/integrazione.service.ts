@@ -211,28 +211,32 @@ export class IntegrazioneService {
       where: { configurato: true, stato: 'ATTIVO' },
       include: {
         famiglia: true,
-        immagini: { where: { copertina: true }, take: 1 },
+        // Copertina se marcata, altrimenti la prima immagine in galleria (fallback)
+        immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
         raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
         _count: { select: { varianti: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const articoli = arts.map((a) => ({
-      id: a.codiceLinea,
-      nome: a.nome,
-      colore: a.colore || null,
-      coloreRgb: a.coloreRgb || null,
-      famiglia: { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome },
-      raccolte: a.raccolte
-        .filter((r) => r.raccolta.stato === 'ATTIVO')
-        .map((r) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
-      img: a.immagini[0]?.url ?? null,
-      // posizionamento impostato nel dettaglio articolo (object-fit/position/transform)
-      imgCss: a.immagini[0]?.css ?? null,
-      variantiCount: a._count.varianti,
-      createdAt: a.createdAt,
-    }));
+    const articoli = arts.map((a) => {
+      const cover = a.immagini.find((i) => i.copertina) ?? a.immagini[0];
+      return {
+        id: a.codiceLinea,
+        nome: a.nome,
+        colore: a.colore || null,
+        coloreRgb: a.coloreRgb || null,
+        famiglia: { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome },
+        raccolte: a.raccolte
+          .filter((r) => r.raccolta.stato === 'ATTIVO')
+          .map((r) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
+        img: cover?.url ?? null,
+        // posizionamento impostato nel dettaglio articolo (object-fit/position/transform)
+        imgCss: cover?.css ?? null,
+        variantiCount: a._count.varianti,
+        createdAt: a.createdAt,
+      };
+    });
 
     // Filtri con conteggi derivati dagli stessi articoli visibili
     const famiglie = new Map<string, { codice: string; nome: string; count: number }>();
