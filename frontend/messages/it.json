@@ -72,7 +72,17 @@
     "mustChange": "Per sicurezza devi cambiare la password provvisoria prima di continuare.",
     "oldPassword": "Password attuale",
     "newPassword": "Nuova password",
-    "passwordChanged": "Password aggiornata correttamente."
+    "passwordChanged": "Password aggiornata correttamente.",
+    "profile": "Profilo",
+    "profileTitle": "Il tuo profilo",
+    "profileDatiAzienda": "Dati azienda",
+    "profileReferente": "Referente",
+    "profileTelefono": "Telefono",
+    "profileTelefonoFisso": "Telefono fisso",
+    "profileSitoWeb": "Sito web",
+    "profileSicurezza": "Sicurezza",
+    "profileLastAccess": "Ultimo accesso",
+    "profileLastAccessUnknown": "N/D"
   },
   "server": {
     "auth": {

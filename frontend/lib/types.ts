@@ -24,6 +24,8 @@ export interface CustomerProfile {
   ragioneSociale: string | null;
   partitaIva: string | null;
   telefono: string | null;
+  telefonoFisso: string | null;
+  sitoWeb: string | null;
   ruolo: string;
   stato: "ATTIVO" | "BLOCCATO";
   preferredLanguage: string;

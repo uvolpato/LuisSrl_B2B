@@ -36,6 +36,8 @@ export interface CustomerProfile {
   ragioneSociale: string | null;
   partitaIva: string | null;
   telefono: string | null;
+  telefonoFisso: string | null;
+  sitoWeb: string | null;
   ruolo: string;
   stato: Customer['stato'];
   preferredLanguage: string;
@@ -62,11 +64,13 @@ export function toCustomerProfile(u: {
   id: number; email: string; nome: string; ruolo: string; stato: Customer['stato'];
   preferredLanguage: string; mustChangePassword: boolean; avatarColor: string;
   ragioneSociale: string | null; partitaIva: string | null; telefono: string | null;
+  telefonoFisso: string | null; sitoWeb: string | null;
   createdAt: Date;
 }): CustomerProfile {
   return {
     id: u.id, email: u.email, nome: u.nome, userType: 'customer',
     ragioneSociale: u.ragioneSociale, partitaIva: u.partitaIva, telefono: u.telefono,
+    telefonoFisso: u.telefonoFisso, sitoWeb: u.sitoWeb,
     ruolo: u.ruolo, stato: u.stato, preferredLanguage: u.preferredLanguage,
     mustChangePassword: u.mustChangePassword, avatarColor: u.avatarColor, createdAt: u.createdAt,
   };

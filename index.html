@@ -128,13 +128,8 @@
       font-size: 14px;
       font-weight: 500;
     }
-    footer {
-      border-top: 1px solid var(--border);
-      padding-block: 24px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-    }
+    .pagefoot { padding-block: 20px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
   </style>
 </head>
 <body>
@@ -195,9 +190,11 @@
     </div>
   </div>
 
-  <footer>
-    <div class="container">
-      Luis S.r.l. — Portale B2B · Prototipo ad alta fedeltà · Realizzato da <strong>Ugo Volpato</strong> AI Consultant
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <span class="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
     </div>
   </footer>
 </body>

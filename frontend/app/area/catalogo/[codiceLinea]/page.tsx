@@ -156,12 +156,8 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   }, [varianti, dim1, dim2]);
 
   const filteredVarianti = useMemo(() => {
-    return varianti.filter((v) => {
-      const m1 = !filterDim1 || v.dimensioni?.["dim1"] === filterDim1;
-      const m2 = !filterDim2 || v.dimensioni?.["dim2"] === filterDim2;
-      return m1 && m2;
-    });
-  }, [varianti, filterDim1, filterDim2]);
+    return varianti;
+  }, [varianti]);
 
   const gridTotals = useMemo(() => {
     let count = 0, total = 0;
@@ -395,7 +391,6 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                     ))}
                   </select>
                 </div>
-
                 <div className="variant-section">
                   <label>Diametro</label>
                   <select className="variant-select" id="dim2" value={dim2} onChange={(e) => setDim2(e.target.value)} ref={dim2Ref}>
@@ -411,7 +406,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   <div className="qty-row">
                     <div className="qty-control">
                       <button type="button" onClick={() => changeBuyQty(-qtyStep)}>−</button>
-                      <input type="number" id="qty" value={buyQty} min={qtyStep} step={qtyStep}
+                      <input type="number" id="qty" value={buyQty} min={qtyStep} step={qtyStep} readOnly
                         onChange={(e) => setBuyQty(Math.max(qtyStep, parseInt(e.target.value) || qtyStep))} />
                       <button type="button" onClick={() => changeBuyQty(qtyStep)}>+</button>
                     </div>
@@ -508,7 +503,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                           <td>
                             <div className="qty-ctrl">
                               <button type="button" disabled={isOut} onClick={() => gridQty(v.codice, -v.multiplo)}>−</button>
-                              <input type="number" value={gridQtys[v.codice] || 0} min={0} step={v.multiplo} disabled={isOut}
+                              <input type="number" value={gridQtys[v.codice] || 0} min={0} step={v.multiplo} disabled={isOut} readOnly
                                 onChange={(e) => gridQtyDirect(v.codice, parseInt(e.target.value) || 0)} />
                               <button type="button" disabled={isOut} onClick={() => gridQty(v.codice, v.multiplo)}>+</button>
                             </div>
@@ -517,9 +512,6 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                         </tr>
                       );
                     })}
-                    {filteredVarianti.length === 0 && (
-                      <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--muted)" }}>Nessuna variante trovata</td></tr>
-                    )}
                   </tbody>
                 </table>
 
@@ -565,7 +557,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
       {galleryModalOpen && (
         <div className="gallery-modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setGalleryModalOpen(false); }}>
-          <button className="gallery-modal-close" onClick={() => setGalleryModalOpen(false)}>×</button>
+          <button className="gallery-modal-close" onClick={() => setGalleryModalOpen(false)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+          </button>
           <div className="gallery-modal-content">
             <div className="gallery-modal-img-area">
               <div className="gallery-modal-img-wrap">
@@ -599,7 +593,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
       {lightboxOpen && (
         <div className="lightbox-overlay open" onClick={() => setLightboxOpen(false)}>
-          <button className="lightbox-close" onClick={() => setLightboxOpen(false)}>×</button>
+          <button className="lightbox-close" onClick={() => setLightboxOpen(false)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
           <button className="lightbox-nav prev" onClick={(e) => { e.stopPropagation(); lbNav(-1); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M15 18l-6-6 6-6" /></svg>
           </button>

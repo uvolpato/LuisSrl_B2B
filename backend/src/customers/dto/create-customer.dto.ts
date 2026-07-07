@@ -2,7 +2,9 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  IsUrl,
   Length,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateCustomerDto {
@@ -27,6 +29,17 @@ export class CreateCustomerDto {
   @IsString()
   @Length(3, 30)
   telefono?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(3, 30)
+  telefonoFisso?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  @IsUrl({ require_protocol: false })
+  sitoWeb?: string;
 
   @IsOptional()
   @IsString()

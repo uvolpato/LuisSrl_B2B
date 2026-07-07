@@ -73,6 +73,8 @@ export class CustomersService {
         ragioneSociale: dto.ragioneSociale ?? null,
         partitaIva: dto.partitaIva ?? null,
         telefono: dto.telefono ?? null,
+        telefonoFisso: dto.telefonoFisso ?? null,
+        sitoWeb: dto.sitoWeb ?? null,
         preferredLanguage: dto.preferredLanguage ?? 'it',
       },
     });
@@ -97,6 +99,8 @@ export class CustomersService {
         ...(dto.ragioneSociale !== undefined && { ragioneSociale: dto.ragioneSociale }),
         ...(dto.partitaIva !== undefined && { partitaIva: dto.partitaIva }),
         ...(dto.telefono !== undefined && { telefono: dto.telefono }),
+        ...(dto.telefonoFisso !== undefined && { telefonoFisso: dto.telefonoFisso }),
+        ...(dto.sitoWeb !== undefined && { sitoWeb: dto.sitoWeb }),
         ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
       },
     });

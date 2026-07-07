@@ -54,6 +54,8 @@ model Customer {
   ragioneSociale    String?      @map("ragione_sociale")
   partitaIva        String?      @map("partita_iva")
   telefono          String?
+  telefonoFisso     String?      @map("telefono_fisso")
+  sitoWeb           String?      @map("sito_web")
   ruolo             CustomerRole @default(CLIENTE)
   stato             UserStatus   @default(ATTIVO)
   preferredLanguage String       @default("it") @map("preferred_language")

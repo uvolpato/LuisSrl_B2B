@@ -19,6 +19,10 @@
       --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
     }
+    .container { max-width: 1120px; margin-inline: auto; padding-inline: 32px; }
+    .meta { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+    .pagefoot { padding-block: 20px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
     *, *::before, *::after { box-sizing: border-box; }
     body {
       margin: 0;
@@ -171,21 +175,7 @@
     }
     a { color: var(--accent); }
     img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
-    .credits {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: color-mix(in oklch, var(--surface) 85%, transparent);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border);
-      padding: 8px 32px;
-      text-align: center;
-      font-size: 12px;
-      color: var(--muted);
-      z-index: 100;
-    }
-    .credits strong { color: var(--fg); }
+
     @media (max-width: 860px) {
       .toc { display: none; }
       .content { padding: 24px 20px 80px; }
@@ -205,7 +195,6 @@
     <nav class="toc" id="toc"></nav>
     <article class="content" id="content"></article>
   </div>
-  <div class="credits">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</div>
   <script>
     fetch('integrazione-api-integra.md')
       .then(r => r.text())
@@ -242,5 +231,13 @@
       document.querySelectorAll('#content h2, #content h3').forEach(h => observer.observe(h));
     }
   </script>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container row-between">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
+      <span class="meta">info@luisbg.it · +39 035 0521957</span>
+      <span class="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
+    </div>
+  </footer>
 </body>
 </html>
