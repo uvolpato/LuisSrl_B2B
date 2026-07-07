@@ -305,12 +305,6 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                     <input type="checkbox" checked={image.inGalleria ?? true} onChange={(e) => handleChange({ inGalleria: e.target.checked })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0 }} /> In galleria
                   </label>
                 </div>
-                {image.tipo === "AI" && (
-                  <div className="field" style={{ gridColumn: "1 / -1", marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Prompt AI</label>
-                    <textarea className="textarea" rows={2} value={editPrompt} onChange={(e) => { setEditPrompt(e.target.value); handleChange({ prompt: e.target.value }); }} style={{ fontSize: 13 }} />
-                  </div>
-                )}
               </div>
             )}
 

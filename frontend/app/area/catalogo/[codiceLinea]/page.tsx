@@ -306,15 +306,12 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   <div className="gallery-hint" onClick={() => openLightbox()}>Fai clic per visualizzare la vista completa</div>
                   <div className="gallery-thumbs" id="galleryThumbs">
                     {galleryImages.slice(0, 5).map((img, i) => (
-                      <div key={img.id} className={`thumb ${i === selectedImgIdx ? "active" : ""}`} onClick={() => selectThumb(i)}>
-                        <img src={img.url} alt={`Thumb ${i + 1}`} style={imgStyle(img.css)} />
-                      </div>
+                      <PositionedImage key={img.id} className={`thumb ${i === selectedImgIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => selectThumb(i)} />
                     ))}
                     {galleryImages.length > 5 && (
-                      <div className="thumb" style={{ position: "relative" }} onClick={() => openGalleryModal()}>
-                        <img src={galleryImages[5].url} alt={`Thumb 6`} style={imgStyle(galleryImages[5].css)} />
+                      <PositionedImage className="thumb" src={galleryImages[5].url} css={galleryImages[5].css} aspect={1} alt="Altri" onClick={() => openGalleryModal()}>
                         <div className="thumb-more">{galleryImages.length - 5}+</div>
-                      </div>
+                      </PositionedImage>
                     )}
                   </div>
                 </div>
@@ -544,9 +541,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                 <div className="related-grid">
                   {[1, 2, 3, 4].map((i) => (
                     <Link key={i} href={`/area/catalogo/${articolo.codiceLinea}`} className="related-card">
-                      <div className="rel-img">
-                        {galleryImages[0] ? <img src={galleryImages[0].url} alt="" style={imgStyle(galleryImages[0].css)} /> : null}
-                      </div>
+                      <PositionedImage className="rel-img" src={galleryImages[0]?.url} css={galleryImages[0]?.css} aspect={4/3} alt="" />
                       <div className="rel-body">
                         <p className="rel-name">{articolo.nome}</p>
                         <span className="rel-price">{formatPrice(10)}</span>
@@ -594,8 +589,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
               </div>
               <div className="gallery-modal-thumbs" id="galleryModalThumbs">
                 {allImages.map((img, i) => (
-                  <img key={img.id} src={img.url} className={i === galleryModalIdx ? "active" : ""}
-                    onClick={() => setGalleryModalIdx(i)} alt={`Thumb ${i + 1}`} style={imgStyle(img.css)} />
+                  <PositionedImage key={img.id} className={`thumb-wrap ${i === galleryModalIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => setGalleryModalIdx(i)} style={{ width: 52, flexShrink: 0 }} />
                 ))}
               </div>
             </div>

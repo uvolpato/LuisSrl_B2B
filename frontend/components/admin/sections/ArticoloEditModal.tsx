@@ -10,6 +10,7 @@ import { IconPlus, IconEye, IconEyeOff } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
 import DescrizioneAiWizard from "./DescrizioneAiWizard";
+import PositionedImage from "../../common/PositionedImage";
 interface VarianteDetail {
   codice: string;
   descrizione: string;
@@ -259,17 +260,6 @@ export default function ArticoloEditModal({
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-  function imgStyle(img: { id: number; css: string }): React.CSSProperties {
-    const css = immaginiDisplay[img.id]?.css || img.css;
-    const parts: Record<string, string> = {};
-    css.split(";").filter(Boolean).forEach((p) => { const [k, v] = p.split(":"); if (k && v) parts[k.trim()] = v.trim(); });
-    const s: React.CSSProperties = { width: "100%", height: "100%", display: "block" };
-    if (parts["object-fit"]) s.objectFit = parts["object-fit"] as any;
-    if (parts["object-position"]) s.objectPosition = parts["object-position"];
-    if (parts.transform) s.transform = parts.transform;
-    return s;
-  }
-
   if (!open) return null;
 
   return (
@@ -373,22 +363,25 @@ export default function ArticoloEditModal({
                         const galleriaVal = immaginiGalleria?.[img.id] ?? img.inGalleria;
                         const desaturate = img.tipo === 'GALLERIA' && !galleriaVal;
                         return (
-                          <div
+                          <PositionedImage
                             key={img.id}
                             className="gallery-item"
+                            src={img.url}
+                            css={immaginiDisplay[img.id]?.css || img.css}
+                            aspect={1}
                             draggable
                             onClick={() => setEditingImage(img.id)}
                             onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.setData('text/plain', ''); }}
                             onDragOver={(e) => { if (dragIdx === null) return; e.preventDefault(); if (dragIdx !== idx) { const list = immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id); const copy = [...list]; const [moved] = copy.splice(dragIdx, 1); copy.splice(idx, 0, moved); setImmaginiOrdine(copy); setDragIdx(idx); } }}
                             onDragEnd={() => setDragIdx(null)}
-                            style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab", position: "relative", display: "flex" }}
+                            style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab" }}
+                            imgStyle={desaturate ? { filter: "grayscale(1)" } : undefined}
                           >
-                             <img src={img.url} alt="" draggable={false} style={{ ...imgStyle(img), filter: desaturate ? "grayscale(1)" : "none" }} />
                             {idx === 0 && <span className="cover-badge">Copertina</span>}
                             <button type="button" onClick={() => setImmaginiGalleria((prev) => ({ ...prev ?? {}, [img.id]: !(prev?.[img.id] ?? img.inGalleria) }))} style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: "50%", border: `2px solid ${galleriaVal ? "var(--accent)" : "var(--muted)"}`, background: galleriaVal ? "var(--accent)" : "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: galleriaVal ? "#fff" : "var(--muted)", fontSize: 12, lineHeight: 1, padding: 0 }} title={galleriaVal ? "Visibile in galleria" : "Nascosto in galleria"}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 12, height: 12 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
-                          </div>
+                          </PositionedImage>
                         );
                       })}
                       {pendingExtra.map((f, i) => (
@@ -417,9 +410,15 @@ export default function ArticoloEditModal({
                       className="gallery-compact"
                     >
                       {article.immagini.filter((i) => i.tipo === 'CARICATA' && !pendingDeleteImages.includes(i.id)).map((img) => (
-                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex", cursor: "pointer" }} onClick={() => setEditingImage(img.id)}>
-                          <img src={img.url} alt="" draggable={false} style={imgStyle(img)} />
-                        </div>
+                        <PositionedImage
+                          key={img.id}
+                          className="gallery-item"
+                          src={img.url}
+                          css={immaginiDisplay[img.id]?.css || img.css}
+                          aspect={1}
+                          style={{ background: "var(--fg-soft)", cursor: "pointer" }}
+                          onClick={() => setEditingImage(img.id)}
+                        />
                       ))}
                       {pendingImages.map((f, i) => (
                         <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
@@ -443,9 +442,15 @@ export default function ArticoloEditModal({
                     <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI.</p>
                     <div className="gallery-compact">
                       {article.immagini.filter((i) => i.tipo === 'AI' && !pendingDeleteImages.includes(i.id)).map((img) => (
-                        <div key={img.id} className="gallery-item" style={{ background: "var(--fg-soft)", display: "flex", cursor: "pointer" }} onClick={() => setEditingImage(img.id)}>
-                          <img src={img.url} alt="" draggable={false} style={imgStyle(img)} />
-                        </div>
+                        <PositionedImage
+                          key={img.id}
+                          className="gallery-item"
+                          src={img.url}
+                          css={immaginiDisplay[img.id]?.css || img.css}
+                          aspect={1}
+                          style={{ background: "var(--fg-soft)", cursor: "pointer" }}
+                          onClick={() => setEditingImage(img.id)}
+                        />
                       ))}
                       <div className="gallery-upload" style={{ aspectRatio: 1 }}>
                         <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 18, height: 18 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
