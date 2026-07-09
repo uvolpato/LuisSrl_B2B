@@ -61,6 +61,7 @@ model Customer {
   preferredLanguage String       @default("it") @map("preferred_language")
   mustChangePassword Boolean     @default(true) @map("must_change_password")
   avatarColor       String       @default("oklch(55% 0.15 250)") @map("avatar_color")
+  carrello          Carrello?
   createdAt         DateTime     @default(now()) @map("created_at")
   updatedAt         DateTime     @updatedAt @map("updated_at")
 
@@ -204,6 +205,31 @@ model Immagine {
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("immagini")
+}
+
+model Carrello {
+  id        Int        @id @default(autoincrement())
+  clienteId Int        @unique @map("cliente_id")
+  cliente   Customer   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("creato_il")
+  updatedAt DateTime   @updatedAt @map("aggiornato_il")
+  items     CartItem[]
+
+  @@map("carrelli")
+}
+
+model CartItem {
+  id             Int      @id @default(autoincrement())
+  carrelloId     Int      @map("carrello_id")
+  carrello       Carrello @relation(fields: [carrelloId], references: [id], onDelete: Cascade)
+  varianteCodice String   @map("variante_codice")
+  quantita       Int      @default(1)
+  salvato        Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("creato_il")
+  updatedAt      DateTime @updatedAt @map("aggiornato_il")
+
+  @@unique([carrelloId, varianteCodice])
+  @@map("carrello_items")
 }
 
 model Raccolta {

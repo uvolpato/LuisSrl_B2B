@@ -189,12 +189,26 @@ export class AdminService {
   // ── Famiglie (read-only da Integra) ──
 
   async listFamiglie() {
-    return this.prisma.famiglia.findMany({
+    const rows = await this.prisma.famiglia.findMany({
       orderBy: { nome: 'asc' },
       include: {
         _count: { select: { articoli: true } },
       },
     });
+    // Articoli attivi per famiglia (stato articolo = ATTIVO, non varianti)
+    const attivi = await this.prisma.$queryRawUnsafe<{ famiglia_codice: string; cnt: bigint }[]>(
+      `SELECT "famiglia_codice", count(*) as cnt FROM "articoli" WHERE "stato" = 'ATTIVO' GROUP BY "famiglia_codice"`,
+    );
+    const attMap = new Map<string, number>();
+    for (const v of attivi) attMap.set(v.famiglia_codice, Number(v.cnt));
+
+    return rows.map((f) => ({
+      ...f,
+      _count: {
+        articoli: f._count.articoli,
+        articoliAttivi: attMap.get(f.codice) ?? 0,
+      },
+    }));
   }
 
   async updateFamiglia(codice: string, dto: UpdateFamigliaDto, actorId: number, ip?: string) {
@@ -243,6 +257,21 @@ export class AdminService {
     await this.prisma.famiglia.update({ where: { codice }, data: { immagine: url } });
 
     return { url };
+  }
+
+  async deleteFamiglia(codice: string, actorId: number, ip?: string) {
+    const famiglia = await this.prisma.famiglia.findUnique({
+      where: { codice },
+      include: { _count: { select: { articoli: true } } },
+    });
+    if (!famiglia) throw new NotFoundException('admin.famiglia_not_found');
+    if (famiglia._count.articoli > 0) {
+      throw new BadRequestException('admin.famiglia_has_articoli');
+    }
+
+    await this.prisma.famiglia.delete({ where: { codice } });
+    await this.audit.log({ actorId, azione: 'admin.famiglia_delete', entita: 'famiglie', entitaId: codice, ip });
+    return { deleted: true };
   }
 
   // ── Raccolte ──

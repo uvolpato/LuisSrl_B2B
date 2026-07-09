@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { IntegrazioneService } from './integrazione.service';
+import { SyncService, SyncResult } from './sync.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -9,7 +10,29 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 @UseGuards(AuthenticatedGuard, RolesGuard, PermissionsGuard)
 @Roles('admin')
 export class IntegrazioneController {
-  constructor(private readonly integrazione: IntegrazioneService) {}
+  constructor(
+    private readonly integrazione: IntegrazioneService,
+    private readonly syncService: SyncService,
+  ) {}
+
+  @Post('sync')
+  @HttpCode(202)
+  async syncIntegra(): Promise<{ status: string }> {
+    this.syncService.sync().catch((err) =>
+      this.syncService['logger'].error(`Sync async fallito: ${err instanceof Error ? err.message : err}`)
+    );
+    return { status: 'started' };
+  }
+
+  @Get('sync/progress')
+  async syncProgress() {
+    return this.syncService.getProgress();
+  }
+
+  @Get('sync/status')
+  async syncStatus() {
+    return this.syncService.getStatus();
+  }
 
   @Get('catalogo')
   async getCatalogo() {
@@ -24,13 +47,13 @@ export class IntegrazioneController {
   @Get('prodotti')
   async searchProdotti(
     @Query('search') search?: string,
-    @Query('famigliaId') famigliaId?: string,
+    @Query('famiglia') famiglia?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.integrazione.searchProdotti(
       search,
-      famigliaId ? Number(famigliaId) : undefined,
+      famiglia || undefined,
       Number(page) || 1,
       Math.min(Number(limit) || 50, 200),
     );
@@ -39,6 +62,18 @@ export class IntegrazioneController {
   @Post('importa')
   async importa(@Body() body: { codici: string[] }) {
     return this.integrazione.importaVarianti(body.codici || []);
+  }
+
+  @Post('migrate-split')
+  @HttpCode(200)
+  async migrateSplit() {
+    return this.integrazione.splitGroupedArticles();
+  }
+
+  @Post('undo-split')
+  @HttpCode(200)
+  async undoSplit() {
+    return this.integrazione.undoSplit();
   }
 
   @Get('articoli')

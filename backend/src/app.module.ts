@@ -10,6 +10,7 @@ import { CustomersModule } from './customers/customers.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
 import { IntegrazioneModule } from './integrazione/integrazione.module';
+import { CarrelloModule } from './carrello/carrello.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
@@ -26,6 +27,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     AdminModule,
     MailModule,
     IntegrazioneModule,
+    CarrelloModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -9,11 +9,11 @@ import { randomUUID } from 'crypto';
 const CONFIG = {
   famiglie: {
     view: 'vista_integra_famiglie',
-    cols: { fam_id: 'id', fam_codice: 'codice', fam_descrizione: 'nome', fam_parent_id: 'codicePadre' } as const,
+    cols: { pro_cod: 'codice', fam_descrizione: 'nome', fam_parent_id: 'codicePadre' } as const,
   },
   linee: {
     view: 'vista_integra_linee',
-    cols: { lin_id: 'id', lin_codice: 'codiceLinea', lin_descrizione: 'nome', lin_famiglia_id: 'famigliaCodice' } as const,
+    cols: { pro_cod: 'codiceLinea', lin_descrizione: 'nome', lin_famiglia_id: 'famigliaCodice' } as const,
   },
   prodotti: {
     view: 'vista_integra_prodotti',
@@ -58,36 +58,53 @@ export class IntegrazioneService {
   async getLinee() { return this.queryView('linee'); }
   async getProdotti() { return this.queryView('prodotti'); }
 
-  async searchProdotti(search?: string, famigliaId?: number, page = 1, limit = 50) {
-    const where = [];
+  async searchProdotti(search?: string, famiglia?: string, page = 1, limit = 50) {
     const params: unknown[] = [];
     let idx = 1;
+    const conds: string[] = [];
+
     if (search) {
-      where.push(`(pro_cod ILIKE $${idx} OR pro_descr ILIKE $${idx})`);
+      conds.push(
+        `(a.pro_cod ILIKE $${idx} OR a.pro_descr ILIKE $${idx})`,
+      );
       params.push(`%${search}%`);
       idx++;
     }
-    if (famigliaId) {
-      where.push(`pro_famiglia_id = $${idx}`);
-      params.push(famigliaId);
+    if (famiglia) {
+      conds.push(`a.famiglia_codice = $${idx}`);
+      params.push(famiglia);
       idx++;
     }
-    where.push(`NOT EXISTS (SELECT 1 FROM varianti WHERE codice = pro_cod)`);
-    const whereClause = `WHERE ${where.join(' AND ')}`;
+    conds.push(`NOT EXISTS (SELECT 1 FROM varianti WHERE codice = a.pro_cod)`);
+    const whereClause = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 
+    const fromClause = `FROM integra_articoli a
+      LEFT JOIN integra_famiglie f ON f.codice = a.famiglia_codice
+      LEFT JOIN integra_linee l ON l.codice = a.linea_codice`;
+
     const countResult = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
-      `SELECT count(*) FROM ${CONFIG.prodotti.view} ${whereClause}`,
+      `SELECT count(*) ${fromClause} ${whereClause}`,
       ...params,
     );
     const total = Number(countResult[0].count);
 
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM ${CONFIG.prodotti.view} ${whereClause} ORDER BY pro_cod LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT a.pro_cod, a.pro_descr, a.famiglia_codice, a.linea_codice,
+              f.nome AS famiglia_nome, l.nome AS linea_nome
+       ${fromClause} ${whereClause}
+       ORDER BY a.pro_cod LIMIT $${idx} OFFSET $${idx + 1}`,
       ...params, limit, offset,
     );
 
-    const items = rows.map((row) => this.mapRow(CONFIG.prodotti.cols, row));
+    const items = rows.map((row) => ({
+      codice: String(row.pro_cod ?? ''),
+      descrizione: String(row.pro_descr ?? ''),
+      famigliaCodice: row.famiglia_codice ? String(row.famiglia_codice) : null,
+      famigliaNome: row.famiglia_nome ? String(row.famiglia_nome) : null,
+      lineaCodice: row.linea_codice ? String(row.linea_codice) : null,
+      lineaNome: row.linea_nome ? String(row.linea_nome) : null,
+    }));
 
     return { items, total, page, limit };
   }
@@ -95,126 +112,249 @@ export class IntegrazioneService {
   async importaVarianti(codici: string[]) {
     const placeholders = codici.map((_, i) => `$${i + 1}`).join(',');
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM ${CONFIG.prodotti.view} WHERE pro_cod IN (${placeholders})`,
+      `SELECT a.*, f.nome AS famiglia_nome
+       FROM integra_articoli a
+       LEFT JOIN integra_famiglie f ON f.codice = a.famiglia_codice
+       WHERE a.pro_cod IN (${placeholders})`,
       ...codici,
     );
     if (!rows.length) return { creati: 0, articoli: [] };
 
-    // Group by famigliaId
-    const byFamiglia = new Map<number, Record<string, unknown>[]>();
-    for (const row of rows) {
-      const famId = typeof row.pro_famiglia_id === 'bigint' ? Number(row.pro_famiglia_id) : (Number(row.pro_famiglia_id) || 0);
-      if (!byFamiglia.has(famId)) byFamiglia.set(famId, []);
-      byFamiglia.get(famId)!.push(row);
-    }
-
-    // Legge prompt AI di default dalla configurazione sito
     let defaultPrompt: string | undefined;
     const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
     if (sc?.value?.trim()) defaultPrompt = sc.value.trim();
 
-    // Pre-carica tutte le varianti esistenti per i codici richiesti
     const existingVarianti = await this.prisma.variante.findMany({
       where: { codice: { in: codici } },
       select: { codice: true },
     });
     const existingSet = new Set(existingVarianti.map((v) => v.codice));
 
-    return await this.prisma.$transaction(async (tx) => {
-      const upsertFamigliaTx = async (famId: number | null): Promise<string> => {
-        if (famId) {
-          const famRow = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-            `SELECT * FROM ${CONFIG.famiglie.view} WHERE fam_id = $1`,
-            famId,
-          );
-          if (famRow.length) {
-            const codice = String(famRow[0].fam_codice);
-            await tx.$executeRawUnsafe(
-              `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
-              codice, String(famRow[0].fam_descrizione ?? codice),
-            );
-            return codice;
-          }
-        }
+    // Mappa cod_famiglia (numerico) → pro_cod FAM_ dalla FDW
+    const famMap = new Map<string, { proCod: string; nome: string }>();
+    try {
+      const famRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_famiglia: string; pro_descr: string }[]>(
+        `SELECT DISTINCT pro_cod, cod_famiglia, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'FAM_%' AND cod_famiglia IS NOT NULL`,
+      );
+      for (const r of famRows) famMap.set(r.cod_famiglia, { proCod: r.pro_cod, nome: r.pro_descr });
+    } catch { /* FDW non disponibile — usa il codice numerico */ }
+
+    // Mappa cod_linea (numerico) → pro_cod LINEA dalla FDW (per raggruppare varianti per linea)
+    const lineaMap = new Map<string, { proCod: string; nome: string }>();
+    try {
+      const lRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_linea: string; pro_descr: string }[]>(
+        `SELECT DISTINCT pro_cod, cod_linea, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'lin%' AND cod_linea IS NOT NULL`,
+      );
+      for (const r of lRows) lineaMap.set(r.cod_linea, { proCod: r.pro_cod, nome: r.pro_descr });
+    } catch { /* FDW non disponibile — salta linea */ }
+
+    const upsertFamiglia = async (tx: any, codice: string | null, nome: string | null): Promise<string> => {
+      if (!codice) {
         await tx.$executeRawUnsafe(
-          `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO NOTHING`,
-          'INTEGRA', 'Integra (senza famiglia)',
+          `INSERT INTO famiglie (codice, nome, updated_at) VALUES ('INTEGRA', 'Integra (senza famiglia)', now()) ON CONFLICT (codice) DO NOTHING`,
         );
         return 'INTEGRA';
-      };
+      }
+      const mapped = famMap.get(codice);
+      const famCodice = mapped?.proCod ?? codice;
+      const famNome = mapped?.nome ?? nome ?? codice;
+      await tx.$executeRawUnsafe(
+        `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO UPDATE SET nome = EXCLUDED.nome, updated_at = now()`,
+        famCodice, famNome,
+      );
+      return famCodice;
+    };
 
-      const mapProdotto = (row: Record<string, unknown>) => this.mapRow(CONFIG.prodotti.cols, row);
-      const created = [];
+    const result = await this.prisma.$transaction(async (tx) => {
+      const created: { articoloId: number; codiceLinea: string; varianti: number }[] = [];
+      for (const row of rows) {
+        const codice = String(row.pro_cod).trim();
+        const descrizione = row.pro_descr ? String(row.pro_descr).trim() : '';
+        const famigliaCodice = row.famiglia_codice ? String(row.famiglia_codice).trim() : null;
+        const famCodice = await upsertFamiglia(tx, famigliaCodice, row.famiglia_nome ? String(row.famiglia_nome) : null);
 
-      for (const [parentId, variants] of byFamiglia) {
-        const lineaRow = parentId > 0
-          ? await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-              `SELECT * FROM ${CONFIG.linee.view} WHERE lin_id = $1`,
-              parentId,
-            )
-          : [];
+        // Determina codiceLinea articolo: LINEA pro_cod se la variante ha linea_codice, altrimenti pro_cod variante
+        const lineaCodice = row.linea_codice ? String(row.linea_codice).trim() : null;
+        const lineaEntry = lineaCodice ? lineaMap.get(lineaCodice) : undefined;
+        const codiceLinea = lineaEntry?.proCod ?? codice;
+        const nomeArticolo = lineaEntry?.nome || descrizione;
 
-        if (lineaRow.length) {
-          const famCodice = await upsertFamigliaTx(Number(lineaRow[0].lin_famiglia_id) || null);
-          const codLinea = String(lineaRow[0].lin_codice).replace(/^linea_/i, '').replace(/[^A-Za-z0-9_]/g, '_');
-          const nome = String(lineaRow[0].lin_descrizione ?? codLinea);
+        const art = await tx.articolo.upsert({
+          where: { codiceLinea },
+          create: { codiceLinea, nome: nomeArticolo, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
+          update: { nome: nomeArticolo, famigliaCodice: famCodice },
+        });
 
-          const art = await tx.articolo.upsert({
-            where: { codiceLinea: codLinea },
-            create: { codiceLinea: codLinea, nome, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
-            update: { nome, famigliaCodice: famCodice },
-          });
-
-          let variantiCount = 0;
-          for (const row of variants) {
-            const mapRow = mapProdotto(row);
-            const codice = String(mapRow.codice);
-            if (existingSet.has(codice)) continue;
-            await tx.variante.create({
-              data: { codice, descrizione: String(mapRow.descrizione || ''), articoloId: art.id },
-            });
-            variantiCount++;
-          }
-
-          created.push({ articoloId: art.id, codiceLinea: codLinea, varianti: variantiCount });
+        const dim = row.dimensione_json || null;
+        if (existingSet.has(codice)) {
+          if (dim) await tx.variante.update({ where: { codice }, data: { dimensioni: dim as any } });
         } else {
-          const famCodice = await upsertFamigliaTx(parentId > 0 ? parentId : null);
+          await tx.variante.create({
+            data: { codice, descrizione, articoloId: art.id, ...(dim ? { dimensioni: dim as any } : {}) },
+          });
+        }
+        created.push({ articoloId: art.id, codiceLinea, varianti: 1 });
+      }
+      return created;
+    });
 
-          for (const row of variants) {
-            const mapRow = mapProdotto(row);
-            const codice = String(mapRow.codice);
-            const descrizione = String(mapRow.descrizione || '');
-
-            const art = await tx.articolo.upsert({
-              where: { codiceLinea: codice },
-              create: { codiceLinea: codice, nome: descrizione, famigliaCodice: famCodice, stato: 'NASCOSTO', promptAi: defaultPrompt },
-              update: { nome: descrizione },
-            });
-
-            if (!existingSet.has(codice)) {
-              await tx.variante.create({
-                data: { codice, descrizione, articoloId: art.id },
-              });
+    // AI: estrai colore per articoli senza colore
+    for (const codiceLinea of [...new Set(result.map((a) => a.codiceLinea))]) {
+      try {
+        const art = await this.prisma.articolo.findUnique({
+          where: { codiceLinea },
+          select: { colore: true, nome: true, descrizione: true, codiceLinea: true },
+        });
+        if (art && !art.colore) {
+          const text = [art.nome, art.descrizione].filter(Boolean).join(' — ');
+          if (text) {
+            const { colore, coloreRgb } = await this.estraiColoreDaTesto(art.nome, text);
+            const updateData: Record<string, string | null> = {};
+            if (colore) updateData.colore = colore;
+            if (coloreRgb) updateData.coloreRgb = coloreRgb;
+            if (Object.keys(updateData).length) {
+              await this.prisma.articolo.update({ where: { codiceLinea }, data: updateData as any });
             }
-            created.push({ articoloId: art.id, codiceLinea: codice, varianti: 1 });
           }
         }
+      } catch {
+        // Silenzioso: non blocca l'import se l'AI fallisce
       }
+    }
 
-      return { creati: created.length, articoli: created };
+    return { creati: result.length, articoli: result };
+  }
+
+  /** Undo split: riaccorpa varianti negli articoli originali e cancella articoli duplicati. */
+  async undoSplit() {
+    // Gruppi noti: LU3258/LU3259/LU3260 (ARGO NOCCIOLA), LU3261/LU3262/LU3263 (ARGO BLU)
+    const gruppi = [
+      { target: 'LU3258', orfani: ['LU3259', 'LU3260'], nome: 'ARGO NOCCIOLA' },
+      { target: 'LU3261', orfani: ['LU3262', 'LU3263'], nome: 'ARGO BLU' },
+    ];
+    const risultati: string[] = [];
+    for (const g of gruppi) {
+      await this.prisma.$transaction(async (tx) => {
+        const art = await tx.articolo.findUnique({ where: { codiceLinea: g.target } });
+        if (!art) return;
+        for (const orfano of g.orfani) {
+          const orfArt = await tx.articolo.findUnique({ where: { codiceLinea: orfano } });
+          if (!orfArt) continue;
+          await tx.variante.update({ where: { codice: orfano }, data: { articoloId: art.id } });
+          await tx.immagine.deleteMany({ where: { articoloId: orfArt.id } });
+          await tx.articoloRaccolta.deleteMany({ where: { articoloId: orfArt.id } });
+          await tx.articolo.delete({ where: { codiceLinea: orfano } });
+        }
+        await tx.articolo.update({ where: { codiceLinea: g.target }, data: { nome: g.nome } });
+        risultati.push(g.target);
+      });
+    }
+    return { ripristinati: risultati };
+  }
+
+  /** Una tantum: corregge famiglie (codice → pro_cod) e aggiorna codiceLinea articoli. */
+  async splitGroupedArticles() {
+    const fixed: string[] = [];
+    const splittati: { vecchioCodiceLinea: string; nuovoCodiceLinea: string }[] = [];
+    const errori: { articolo: string; errore: string }[] = [];
+
+    let famMap = new Map<string, { proCod: string; nome: string }>();
+    try {
+      const famRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_famiglia: string; pro_descr: string }[]>(
+        `SELECT DISTINCT pro_cod, cod_famiglia, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'FAM_%' AND cod_famiglia IS NOT NULL`,
+      );
+      for (const r of famRows) famMap.set(r.cod_famiglia, { proCod: r.pro_cod, nome: r.pro_descr });
+    } catch { /* FDW non disponibile — salta famiglia */ }
+
+    const famiglie = await this.prisma.famiglia.findMany({ where: { codice: { not: 'INTEGRA' } } });
+    for (const f of famiglie) {
+      const mapping = famMap.get(f.codice);
+      if (mapping && mapping.proCod !== f.codice) {
+        try {
+          await this.prisma.$transaction(async (tx) => {
+            await tx.$executeRawUnsafe(`UPDATE articoli SET famiglia_codice = $1 WHERE famiglia_codice = $2`, mapping.proCod, f.codice);
+            const existing = await tx.$queryRawUnsafe<{ cnt: bigint }[]>(`SELECT count(*) AS cnt FROM famiglie WHERE codice = $1`, mapping.proCod);
+            const targetExists = Number(existing[0]?.cnt ?? 0) > 0;
+            if (targetExists) {
+              await tx.$executeRawUnsafe(`DELETE FROM famiglie WHERE codice = $1`, f.codice);
+            } else {
+              await tx.$executeRawUnsafe(`UPDATE famiglie SET codice = $1, nome = $2 WHERE codice = $3`, mapping.proCod, mapping.nome, f.codice);
+            }
+          });
+          fixed.push(f.codice);
+        } catch (e: any) {
+          errori.push({ articolo: `famiglia:${f.codice}`, errore: e?.message ?? String(e) });
+        }
+      }
+    }
+
+    // Mappa FDW: cod_linea → pro_cod LINEA
+    let lineaMap = new Map<string, { proCod: string; nome: string }>();
+    try {
+      const lineaRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_linea: string; pro_descr: string }[]>(
+        `SELECT DISTINCT pro_cod, cod_linea, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'lin%' AND cod_linea IS NOT NULL`,
+      );
+      for (const r of lineaRows) lineaMap.set(r.cod_linea, { proCod: r.pro_cod, nome: r.pro_descr });
+    } catch { /* FDW non disponibile — salta linea */ }
+
+    // Cache integra_articoli: variante → linea_codice
+    let cacheLineaMap = new Map<string, string>();
+    try {
+      const allArts = await this.prisma.$queryRawUnsafe<{ pro_cod: string; linea_codice: string }[]>(
+        `SELECT pro_cod, linea_codice FROM integra_articoli WHERE linea_codice IS NOT NULL`,
+      );
+      for (const r of allArts) cacheLineaMap.set(r.pro_cod, r.linea_codice);
+    } catch { /* cache non disponibile — salta */ }
+
+    const grouped = await this.prisma.articolo.findMany({
+      where: { varianti: { some: {} } },
+      include: {
+        varianti: { orderBy: { codice: 'asc' } },
+        immagini: true,
+        raccolte: true,
+      },
     });
+    for (const art of grouped) {
+      try {
+        const [first, ...rest] = art.varianti;
+        const oldLineaCodice = cacheLineaMap.get(first.codice);
+        const lineaEntry = oldLineaCodice ? lineaMap.get(oldLineaCodice) : undefined;
+        const targetCodiceLinea = lineaEntry?.proCod || (art.varianti.length < 2 ? first.codice : first.codice);
+        if (!lineaEntry && art.varianti.length < 2 && art.codiceLinea === first.codice) continue;
+
+        await this.prisma.$transaction(async (tx) => {
+          if (lineaEntry && art.codiceLinea !== lineaEntry.proCod) {
+            await tx.articolo.update({ where: { id: art.id }, data: { codiceLinea: lineaEntry.proCod } });
+          } else if (!lineaEntry && art.codiceLinea !== first.codice) {
+            await tx.articolo.update({ where: { id: art.id }, data: { codiceLinea: first.codice } });
+          }
+          for (const v of rest) {
+            await tx.variante.update({ where: { codice: v.codice }, data: { articoloId: art.id } });
+          }
+        });
+        if (lineaEntry) splittati.push({ vecchioCodiceLinea: art.codiceLinea, nuovoCodiceLinea: lineaEntry.proCod });
+      } catch (e: any) {
+        errori.push({ articolo: art.codiceLinea, errore: e?.message ?? String(e) });
+      }
+    }
+    return { famiglieCorrette: fixed.length, articoliSplittati: splittati.length, errori };
   }
 
   /** Catalogo lato cliente: solo articoli configurati e attivi, con filtri famiglia/raccolta. */
   async getCatalogoCliente() {
     const arts = await this.prisma.articolo.findMany({
-      where: { configurato: true, stato: 'ATTIVO' },
+      where: {
+        configurato: true,
+        stato: 'ATTIVO',
+        // Esclude gli articoli di famiglie disattivate (nascoste)
+        famiglia: { stato: 'ATTIVO' },
+      },
       include: {
         famiglia: true,
         // Copertina se marcata, altrimenti la prima immagine in galleria (fallback)
         immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
         raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
-        _count: { select: { varianti: true } },
+        _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -263,6 +403,13 @@ export class IntegrazioneService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    // Calcola varianti visibili per ogni articolo
+    const variantiVisibili = await this.prisma.$queryRawUnsafe<{ articolo_id: number; cnt: bigint }[]>(
+      `SELECT "articolo_id", count(*) as cnt FROM "varianti" WHERE "stato" != 'NASCOSTO' GROUP BY "articolo_id"`
+    );
+    const visMap = new Map<number, number>();
+    for (const v of variantiVisibili) visMap.set(Number(v.articolo_id), Number(v.cnt));
+
     return Promise.all(rows.map(async (a) => {
       const raccolte = await this.prisma.raccolta.findMany({
         where: { articoli: { some: { articoloId: a.id } } },
@@ -280,6 +427,7 @@ export class IntegrazioneService {
         stato: (a.stato === 'NASCOSTO' ? 'nascosto' : 'attivo') as 'attivo' | 'nascosto',
         img: a.immagini[0]?.url ?? null,
         variantiCount: a._count.varianti,
+        variantiVisibiliCount: visMap.get(a.id) ?? 0,
         configurato: a.configurato ?? false,
       };
     }));
@@ -316,7 +464,7 @@ export class IntegrazioneService {
     if (art._count.immagini < 1) mancanti.push('almeno una foto');
     if (!art.colore || !art.colore.trim()) mancanti.push('un colore');
     if (art._count.varianti < 1) mancanti.push('almeno una variante');
-    if (!art.descrizioneAI || !art.descrizioneAI.trim()) mancanti.push('una descrizione AI');
+    if (!art.descrizione || !art.descrizione.trim()) mancanti.push('una descrizione');
     if (mancanti.length) {
       throw new BadRequestException(`Impossibile configurare: manca ${mancanti.join(', ')}.`);
     }
@@ -344,11 +492,12 @@ export class IntegrazioneService {
       coloreRgb: art.coloreRgb || null,
       stato: art.stato === 'NASCOSTO' ? 'nascosto' : 'attivo',
       configurato: art.configurato,
-      famiglia: { codice: art.famiglia.codice, nome: art.famiglia.nomePortale || art.famiglia.nome },
+      famiglia: { codice: art.famiglia.codice, nome: art.famiglia.nomePortale || art.famiglia.nome, stato: art.famiglia.stato },
       variantiCount: art._count.varianti,
       updatedAt: art.updatedAt,
       descrizione: art.descrizione ?? null,
       descrizioneDettagliata: art.descrizioneDettagliata ?? null,
+      descrizioneAI: art.descrizioneAI ?? null,
       promptAi: art.promptAi ?? null,
       wizardStepTesti: art.wizardStepTesti,
       raccolte: art.raccolte.map((ar) => ({
@@ -493,6 +642,7 @@ export class IntegrazioneService {
     const artDir = path.join(baseDir, safeCod);
     await fsp.mkdir(artDir, { recursive: true });
     const infisso = ({ CARICATA: 'bianco', GALLERIA: 'galleria', AI: 'ai' } as Record<string, string>)[tipo] ?? tipo.toLowerCase();
+    const hasCover = await this.prisma.immagine.findFirst({ where: { articoloId: art.id, copertina: true } });
     const uploaded: { url: string }[] = [];
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
@@ -501,7 +651,10 @@ export class IntegrazioneService {
       const filename = `${safeCod}_${infisso}_${n}${ext}`;
       await fsp.writeFile(path.join(artDir, filename), f.buffer);
       const img = await this.prisma.immagine.create({
-        data: { articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo },
+        data: {
+          articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo,
+          copertina: !hasCover && i === 0,
+        },
       });
       uploaded.push({ url: img.url });
     }
@@ -740,6 +893,46 @@ export class IntegrazioneService {
       console.warn(`Gemini finishReason=${finishReason} (atteso STOP). Testo ricevuto: ${text.slice(0, 200)}`);
     }
     return text;
+  }
+
+  /** Analizza nome+descrizione via AI per estrarre colore e RGB. Cache testuale in memoria. */
+  private colorExtractCache = new Map<string, { colore: string | null; coloreRgb: string | null }>();
+  private async estraiColoreDaTesto(nome: string, descrizione: string): Promise<{ colore: string | null; coloreRgb: string | null }> {
+    const cacheKey = `${nome}|${descrizione}`;
+    const cached = this.colorExtractCache.get(cacheKey);
+    if (cached) return cached;
+    const prompt = `Sei un esperto di colori per articoli di vasellame e garden. Analizza nome e descrizione e restituisci SOLO un JSON valido SENZA markdown:
+
+{
+  "colore": "nome colore in italiano (es. Nocciola, Terracotta, Salvia, Antracite, Crema, Tortora)" oppure null,
+  "coloreRgb": "codice esadecimale RGB #RRGGBB" oppure null
+}
+
+REGOLE IMPORTANTI:
+- NO colori primari saturi (rosso #FF0000, blu #0000FF, giallo #FFFF00, verde #00FF00, ecc.)
+- NO colori fluo o troppo vivaci
+- SÌ colori naturali, terrosi, pastello smorzati, neutri caldi/freddi
+- Il colore deve essere LEGGIBILE e NON FASTIDIOSO su sfondo BIANCO (contrasto adeguato, niente giallo chiaro, niente bianco sporco quasi invisibile)
+- Se non trovi un colore chiaro, restituisci null per entrambi i campi
+
+Nome: ${nome}
+Descrizione: ${descrizione}`;
+    try {
+      const raw = await this.callGeminiText(prompt);
+      const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/\s*```/g, '').trim();
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Nessun JSON nella risposta');
+      const parsed = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)) as { colore?: string | null; coloreRgb?: string | null };
+      const result = {
+        colore: typeof parsed.colore === 'string' && parsed.colore ? parsed.colore.trim() : null,
+        coloreRgb: typeof parsed.coloreRgb === 'string' && /^#[0-9a-fA-F]{6}$/.test(parsed.coloreRgb) ? parsed.coloreRgb.trim().toUpperCase() : null,
+      };
+      this.colorExtractCache.set(cacheKey, result);
+      return result;
+    } catch {
+      return { colore: null, coloreRgb: null };
+    }
   }
 
   private async describeWhiteImages(codiceLinea: string): Promise<string[]> {

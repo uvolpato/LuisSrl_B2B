@@ -168,6 +168,16 @@ export class AdminController {
     return this.admin.uploadFamigliaImage(codice, file);
   }
 
+  @Delete('famiglie/:codice')
+  @HttpCode(204)
+  @RequirePermission('catalog.famiglie.edit')
+  async deleteFamiglia(
+    @Param('codice') codice: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.admin.deleteFamiglia(codice, req.user.id, req.ip);
+  }
+
   // ── Raccolte ──
 
   @Get('raccolte')

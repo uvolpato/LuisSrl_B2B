@@ -22,8 +22,13 @@ export class CatalogoController {
     if (!art || art.stato !== 'attivo' || !art.configurato) {
       throw new NotFoundException('catalogo.articolo_non_trovato');
     }
+    // Esclude gli articoli di famiglie disattivate (nascoste)
+    if (art.famiglia?.stato && art.famiglia.stato !== 'ATTIVO') {
+      throw new NotFoundException('catalogo.articolo_non_trovato');
+    }
     const { promptAi, wizardStepTesti, ...pubblico } = art;
     void promptAi; void wizardStepTesti;
-    return pubblico;
+    const variantiAttive = pubblico.varianti.filter((v: any) => v.stato === 'attivo');
+    return { ...pubblico, varianti: variantiAttive, variantiCount: variantiAttive.length };
   }
 }

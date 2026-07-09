@@ -63,6 +63,7 @@ async function bootstrap() {
     const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
     if (safeMethods.includes(req.method)) return next();
     if (req.path === '/api/auth/login') return next();
+    if (req.path === '/api/integrazione/sync') return next();
     if (!req.session?.userId) return next();
     if (
       req.session.csrfToken &&
