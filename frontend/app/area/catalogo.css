@@ -1291,6 +1291,12 @@
 
 /* ── Carrello: mobile (telefono) — impila azioni sotto l'info, evita accavallamenti ── */
 @media (max-width: 640px) {
+  /* Contiene lo sforo orizzontale (nav nascosto absolute dell'header) e permette
+     alla colonna in griglia di restringersi dentro il container */
+  .catalogo-page.cart-page { overflow-x: hidden; }
+  .catalogo-page.cart-page .cart-items-col,
+  .catalogo-page.cart-page .cart-layout > * { min-width: 0; }
+
   .catalogo-page.cart-page .page-title { padding-block: 16px; }
   .catalogo-page.cart-page .page-title h1 { font-size: 26px; }
   .catalogo-page.cart-page .cart-layout { gap: 24px; padding-block: 4px 40px; }
@@ -1313,15 +1319,25 @@
   /* Gruppo (articolo con più varianti) */
   .catalogo-page.cart-page .cart-group-header { padding: 14px; gap: 12px; }
   .catalogo-page.cart-page .cart-group-info { flex-wrap: wrap; gap: 4px 12px; }
-  .catalogo-page.cart-page .cart-group-row { padding: 12px 14px; }
 
-  /* Riga variante: descrizione sopra, azioni (prezzo+qta+link) a tutta larghezza sotto */
+  /* Riga variante: descrizione sopra, azioni (prezzo+qta+link) a tutta larghezza
+     sotto — senza questo restano affiancate e sforano il bordo del telefono */
+  .catalogo-page.cart-page .cart-group-row {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
   .catalogo-page.cart-page .cart-group-row-actions {
     width: 100%;
     justify-content: space-between;
     align-items: center;
   }
   .catalogo-page.cart-page .cart-group-row-actions .cart-group-links { width: auto; }
+
+  /* Rete di sicurezza: nessuno sforo orizzontale sulla pagina */
+  .catalogo-page.cart-page .cart-item,
+  .catalogo-page.cart-page .cart-group { max-width: 100%; overflow: hidden; }
 
   /* Miniatura più piccola */
   .catalogo-page.cart-page .cart-item-img-wrap { width: 48px; height: 48px; }

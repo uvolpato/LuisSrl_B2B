@@ -148,9 +148,9 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           width: 100%;
         }
         .area-header nav { display: flex; gap: 20px; align-items: center; white-space: nowrap; }
-        .area-header nav.nav-hidden {
-          visibility: hidden; position: absolute; pointer-events: none;
-        }
+        /* display:none (non absolute) così il nav non sfora a destra su mobile.
+           isCompact deriva da matchMedia, non da misurazione: sicuro nasconderlo. */
+        .area-header nav.nav-hidden { display: none; }
         .area-header nav a { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.15s; }
         .area-header nav a:hover { color: var(--fg); }
         .area-header nav a.active { color: var(--fg); font-weight: 500; }
