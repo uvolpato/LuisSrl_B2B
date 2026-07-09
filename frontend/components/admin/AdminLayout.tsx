@@ -20,7 +20,7 @@ export default function AdminLayout({
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="admin-page" style={{ display: "flex", minHeight: "100vh" }}>
       {/* Mobile header: logo + hamburger per riaprire la sidebar */}
       <header className="admin-mobile-header">
         {/* eslint-disable-next-line @next/next/no-img-element */}

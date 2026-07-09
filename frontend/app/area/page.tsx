@@ -8,6 +8,7 @@ import { useAuth } from "../../lib/use-auth";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 import AreaHeader from "../../components/area/AreaHeader";
+import AreaFooter from "../../components/area/AreaFooter";
 import type { CustomerProfile } from "../../lib/types";
 
 function SparkleIcon({ size = 20 }: { size?: number }) {
@@ -564,20 +565,6 @@ export default function AreaClientePage() {
         }
         .ai-tag:hover { border-color: var(--accent); color: var(--accent); }
 
-        .pagefoot {
-          margin-top: auto;
-          padding-block: var(--gap-xl, 56px);
-          color: var(--muted);
-          font-size: 13px;
-          border-top: 1px solid var(--border);
-        }
-        .pagefoot .row-between {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: var(--gap-md, 20px);
-        }
 
 
         .user-menu-dropdown {
@@ -800,18 +787,7 @@ export default function AreaClientePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="pagefoot">
-        <div className="row-between" style={{ maxWidth: 960, marginInline: "auto", paddingInline: 32 }}>
-          <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
-          <span className="meta" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)" }}>
-            info@luisbg.it · +39 035 0521957
-          </span>
-          <span className="meta" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)" }}>
-            Realizzato da <strong>Ugo Volpato</strong> AI Consultant
-          </span>
-        </div>
-      </footer>
+      <AreaFooter />
     </>
   );
 }

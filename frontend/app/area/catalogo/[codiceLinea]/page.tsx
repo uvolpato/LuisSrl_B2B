@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../../lib/use-auth";
+import { api } from "../../../../lib/api";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
 import AreaHeader from "../../../../components/area/AreaHeader";
-import { imgStyle } from "../../../../lib/img-css";
+import AreaFooter from "../../../../components/area/AreaFooter";
 import PositionedImage from "../../../../components/common/PositionedImage";
-import "../../catalogo.css";
+import { parseImgCss } from "../../../../lib/img-css";
+
+interface DimEntry {
+  codice: string;
+  descrizione: string;
+  valore: number;
+}
 
 interface Variante {
   codice: string;
   descrizione: string;
-  dimensioni: Record<string, string> | null;
+  dimensioni: Record<string, DimEntry> | null;
   multiplo: number;
   giacenza: number;
   stato: string;
@@ -48,6 +55,7 @@ interface Articolo {
   variantiCount: number;
   updatedAt: string;
   descrizione: string | null;
+  descrizioneAI: string | null;
   descrizioneDettagliata: string | null;
   raccolte: Raccolta[];
   varianti: Variante[];
@@ -65,6 +73,16 @@ function getStock(giacenza: number): "ok" | "low" | "out" {
   if (giacenza <= 0) return "out";
   if (giacenza < 10) return "low";
   return "ok";
+}
+
+// Listini non ancora integrati: prezzi di esempio fissi e deterministici per variante.
+function variantExamplePrice(codice: string) {
+  let h = 0;
+  for (let i = 0; i < codice.length; i++) h = (h * 31 + codice.charCodeAt(i)) >>> 0;
+  const net = Math.round((8 + ((h % 50) / 2)) * 100) / 100; // 8,00 – 32,50
+  const disc = 15 + (h % 30); // 15% – 44%
+  const list = Math.round((net / (1 - disc / 100)) * 100) / 100;
+  return { net, list, disc };
 }
 
 export default function SchedaArticoloPage({ params }: { params: Promise<{ codiceLinea: string }> }) {
@@ -99,112 +117,101 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   }, [articolo]);
 
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
-  const [dim1, setDim1] = useState("");
-  const [dim2, setDim2] = useState("");
-  const [buyQty, setBuyQty] = useState(6);
-  const [filterDim1, setFilterDim1] = useState("");
-  const [filterDim2, setFilterDim2] = useState("");
+  const [selDim, setSelDim] = useState<Record<string, string>>({});
+  const [gridFilter, setGridFilter] = useState<Record<string, string>>({});
+  const [buyQty, setBuyQty] = useState<number | null>(null);
   const [gridQtys, setGridQtys] = useState<Record<string, number>>({});
+  const [addBtnText, setAddBtnText] = useState("Aggiungi al carrello");
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryModalIdx, setGalleryModalIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
-  const [addBtnText, setAddBtnText] = useState("Aggiungi al carrello");
-
-  const dim1Ref = useRef<HTMLSelectElement>(null);
-  const dim2Ref = useRef<HTMLSelectElement>(null);
 
   const varianti = useMemo(() => {
     if (!articolo) return [];
     return articolo.varianti.filter((v) => v.stato === "attivo");
   }, [articolo]);
 
-  const dim1Values = useMemo(() => {
-    const s = new Set<string>();
-    varianti.forEach((v) => {
-      if (v.dimensioni && v.dimensioni["dim1"]) s.add(v.dimensioni["dim1"]);
-    });
-    return [...s].sort();
+  const dimKeys = useMemo(() => {
+    const keys = new Set<string>();
+    varianti.forEach((v) => { if (v.dimensioni) Object.keys(v.dimensioni).forEach((k) => keys.add(k)); });
+    const order = ["diametro", "altezza", "larghezza", "profondita"];
+    return [...keys].sort((a, b) => order.indexOf(a) - order.indexOf(b));
   }, [varianti]);
 
-  const dim2Map = useMemo(() => {
-    const map: Record<string, string[]> = { "": [] };
-    const all = new Set<string>();
-    varianti.forEach((v) => {
-      const d1 = v.dimensioni?.["dim1"] ?? "";
-      const d2 = v.dimensioni?.["dim2"] ?? "";
-      if (d2) all.add(d2);
-      if (!d1) return;
-      if (!map[d1]) map[d1] = [];
-      if (d2 && !map[d1].includes(d2)) map[d1].push(d2);
+  function activeEntries(dimState: Record<string, string>) {
+    return Object.entries(dimState).filter(([, v]) => v);
+  }
+
+  function getAvailableValues(key: string, dimState: Record<string, string> = selDim): string[] {
+    if (dimKeys.indexOf(key) === -1) return [];
+    const other = activeEntries(dimState).filter(([k]) => k !== key);
+    if (!other.length) {
+      const all = new Set<string>();
+      varianti.forEach((v) => {
+        const e = v.dimensioni?.[key];
+        if (e?.valore != null) all.add(String(e.valore));
+      });
+      return [...all].sort((a, b) => Number(a) - Number(b));
+    }
+    const matching = varianti.filter((v) =>
+      other.every(([pk, val]) => String(v.dimensioni?.[pk]?.valore ?? "") === val)
+    );
+    const vals = new Set<string>();
+    matching.forEach((v) => {
+      const e = v.dimensioni?.[key];
+      if (e?.valore != null) vals.add(String(e.valore));
     });
-    map[""] = [...all];
-    return map;
-  }, [varianti]);
+    return [...vals].sort((a, b) => Number(a) - Number(b));
+  }
 
-  const dim2Values = useMemo(() => {
-    return (dim2Map[dim1] || dim2Map[""] || []).sort();
-  }, [dim1, dim2Map]);
-
-  const filterDim2Values = useMemo(() => {
-    return (dim2Map[filterDim1] || dim2Map[""] || []).sort();
-  }, [filterDim1, dim2Map]);
-
-  const selectedVariant = useMemo(() => {
-    if (!dim1 || !dim2) return null;
-    return varianti.find((v) => v.dimensioni?.["dim1"] === dim1 && v.dimensioni?.["dim2"] === dim2) || null;
-  }, [varianti, dim1, dim2]);
+  function cascadeSelect(dimState: Record<string, string>, key: string, value: string): Record<string, string> {
+    const next = { ...dimState, [key]: value };
+    if (!value) return next;
+    dimKeys.forEach((k) => {
+      if (k === key || !next[k]) return;
+      const compatibile = varianti.some((v) =>
+        String(v.dimensioni?.[key]?.valore ?? "") === value &&
+        String(v.dimensioni?.[k]?.valore ?? "") === next[k]
+      );
+      if (!compatibile) delete next[k];
+    });
+    return next;
+  }
 
   const filteredVarianti = useMemo(() => {
-    return varianti;
-  }, [varianti]);
+    const active = Object.entries(gridFilter).filter(([, v]) => v);
+    let list = varianti.filter((v) => v.giacenza > 0);
+    if (!active.length) return list;
+    return list.filter((v) =>
+      active.every(([key, val]) => String(v.dimensioni?.[key]?.valore ?? "") === val)
+    );
+  }, [varianti, gridFilter]);
 
-  const gridTotals = useMemo(() => {
-    let count = 0, total = 0;
-    filteredVarianti.forEach((v) => {
-      const qty = gridQtys[v.codice] || 0;
-      if (qty > 0) {
-        count++;
-        total += qty * 10;
-      }
-    });
-    return { count, total };
-  }, [filteredVarianti, gridQtys]);
+  const selectedVariant = useMemo(() => {
+    const active = Object.entries(selDim).filter(([, v]) => v);
+    if (active.length !== dimKeys.length) return null;
+    return varianti.find((v) =>
+      dimKeys.every((key) => String(v.dimensioni?.[key]?.valore ?? "") === (selDim[key] ?? ""))
+    ) ?? null;
+  }, [varianti, selDim, dimKeys]);
 
-  function handleDim1Change(val: string) {
-    setDim1(val);
-    const allowed = dim2Map[val] || dim2Map[""] || [];
-    if (dim2 && !allowed.includes(dim2)) setDim2("");
-  }
+  const singleVariant = varianti.length === 1 ? varianti[0] : null;
 
-  function handleFilterDim1Change(val: string) {
-    setFilterDim1(val);
-    const allowed = dim2Map[val] || dim2Map[""] || [];
-    if (filterDim2 && !allowed.includes(filterDim2)) setFilterDim2("");
-  }
-
-  function gridQty(codice: string, delta: number) {
-    setGridQtys((prev) => {
-      const v = varianti.find((x) => x.codice === codice);
-      const step = v?.multiplo || 6;
-      const cur = prev[codice] || 0;
-      const next = Math.max(0, Math.round((cur + delta) / step) * step);
-      return { ...prev, [codice]: next };
-    });
-  }
-
-  function gridQtyDirect(codice: string, val: number) {
-    setGridQtys((prev) => ({ ...prev, [codice]: Math.max(0, val) }));
-  }
-
-  function addAllToCart() {
-    const added = filteredVarianti.filter((v) => (gridQtys[v.codice] || 0) > 0).length;
-    if (added > 0) {
-      setGridQtys({});
-      setAddBtnText(`${added} articoli aggiunti ✓`);
-      setTimeout(() => setAddBtnText("Aggiungi al carrello"), 2000);
+  useEffect(() => {
+    if (singleVariant) {
+      const auto: Record<string, string> = {};
+      dimKeys.forEach((key) => {
+        const e = singleVariant.dimensioni?.[key];
+        if (e?.valore != null) auto[key] = String(e.valore);
+      });
+      setSelDim(auto);
+      setBuyQty(singleVariant.multiplo);
+    } else {
+      setSelDim({});
+      setBuyQty(null);
     }
-  }
+  }, [singleVariant, dimKeys]);
 
   function selectThumb(idx: number) {
     if (idx >= galleryImages.length) idx = 0;
@@ -230,21 +237,76 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
     setGalleryModalIdx((prev) => (prev + dir + allImages.length) % allImages.length);
   }
 
-  const qtyStep = selectedVariant?.multiplo || 6;
+  const qtyStep = selectedVariant?.multiplo || 1;
 
   function changeBuyQty(delta: number) {
     setBuyQty((prev) => {
-      const step = selectedVariant?.multiplo || 6;
-      const next = Math.max(step, Math.round((prev + delta) / step) * step);
+      const step = selectedVariant?.multiplo || 1;
+      const cur = prev ?? step;
+      const next = Math.max(step, Math.round((cur + delta) / step) * step);
       return next;
     });
   }
 
   useEffect(() => {
     if (selectedVariant) {
-      setBuyQty(selectedVariant.multiplo);
+      setBuyQty((prev) => prev ?? selectedVariant.multiplo);
     }
   }, [selectedVariant]);
+
+  const gridTotals = useMemo(() => {
+    let count = 0;
+    let total = 0;
+    filteredVarianti.forEach((v) => {
+      const q = gridQtys[v.codice] || 0;
+      if (q > 0) {
+        count++;
+        total += variantExamplePrice(v.codice).net * q;
+      }
+    });
+    return { count, total: Math.round(total * 100) / 100 };
+  }, [filteredVarianti, gridQtys]);
+
+  function gridQty(codice: string, delta: number) {
+    setGridQtys((prev) => {
+      const v = varianti.find((x) => x.codice === codice);
+      const step = v?.multiplo || 6;
+      const cur = prev[codice] || 0;
+      const next = Math.max(0, Math.round((cur + delta) / step) * step);
+      return { ...prev, [codice]: next };
+    });
+  }
+
+  function gridQtyDirect(codice: string, val: number) {
+    setGridQtys((prev) => ({ ...prev, [codice]: Math.max(0, val) }));
+  }
+
+  function notifyCart() { window.dispatchEvent(new CustomEvent("cart-updated")); }
+
+  async function addSingleToCart() {
+    const v = selectedVariant || singleVariant;
+    if (!v) return;
+    try {
+      await api.post("/api/carrello", { varianteCodice: v.codice, quantita: buyQty ?? v.multiplo });
+      notifyCart();
+      setBuyBtnText("Aggiunto ✓");
+      setTimeout(() => setBuyBtnText("Aggiungi al carrello"), 2000);
+    } catch { /* ignore */ }
+  }
+
+  const [buyBtnText, setBuyBtnText] = useState("Aggiungi al carrello");
+
+  async function addAllToCart() {
+    const toAdd = filteredVarianti.filter((v) => (gridQtys[v.codice] || 0) > 0);
+    if (toAdd.length === 0) return;
+    try {
+      await Promise.all(toAdd.map((v) => api.post("/api/carrello", { varianteCodice: v.codice, quantita: gridQtys[v.codice] })));
+      notifyCart();
+      setGridQtys({});
+      setAddBtnText(`${toAdd.length} articoli aggiunti ✓`);
+      setTimeout(() => setAddBtnText("Aggiungi al carrello"), 2000);
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -342,11 +404,11 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   </div>
                 </div>
 
-                {articolo.descrizioneDettagliata && (
+                {articolo.descrizioneAI && (
                   <div className="product-desc-block">
                     <h3>Punti chiave</h3>
                     <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>
-                      {articolo.descrizioneDettagliata.split("\n").filter(Boolean).map((line, i) => (
+                      {articolo.descrizioneAI.split("\n").filter(Boolean).map((line, i) => (
                         <p key={i} style={{ margin: "0 0 4px" }}>{line}</p>
                       ))}
                     </div>
@@ -358,11 +420,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                 {selectedVariant ? (
                   <>
                     <div className="price-block">
-                      <span className="price-net">{formatPrice(10)}</span>
-                      <span className="price-list">{formatPrice(12.5)}</span>
-                      <span className="price-discount">−20%</span>
+                      <span className="price-net">{selectedVariant.descrizione}</span>
                     </div>
-                    <p className="savings-line">Risparmi {formatPrice(2.5)} (20%)</p>
+                    <p className="savings-line">Cod. {selectedVariant.codice}</p>
                     <div className="divider" />
                     <div className={`stock-badge ${STOCK_CLASS[getStock(selectedVariant.giacenza)]}`} style={{ fontSize: 14 }}>
                       <span className="stock-dot" /> {STOCK_LABELS[getStock(selectedVariant.giacenza)]}
@@ -371,55 +431,62 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                 ) : (
                   <>
                     <div className="price-block">
-                      <span className="price-net">—</span>
+                      <span className="price-net">{singleVariant ? singleVariant.descrizione : "—"}</span>
                     </div>
+                    {singleVariant && <p className="savings-line">Cod. {singleVariant.codice}</p>}
                     <div className="divider" />
                     <div className="stock-badge">
-                      <span className="stock-dot" /> Seleziona una variante
+                      <span className="stock-dot" /> {singleVariant ? STOCK_LABELS[getStock(singleVariant.giacenza)] : "Seleziona una variante"}
                     </div>
                   </>
                 )}
 
                 <div className="divider" />
 
-                <div className="variant-section">
-                  <label>Altezza</label>
-                  <select className="variant-select" id="dim1" value={dim1} onChange={(e) => handleDim1Change(e.target.value)} ref={dim1Ref}>
-                    <option value="">Seleziona altezza</option>
-                    {dim1Values.map((v) => (
-                      <option key={v} value={v}>{v} cm</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="variant-section">
-                  <label>Diametro</label>
-                  <select className="variant-select" id="dim2" value={dim2} onChange={(e) => setDim2(e.target.value)} ref={dim2Ref}>
-                    <option value="">Seleziona diametro</option>
-                    {dim2Values.map((v) => (
-                      <option key={v} value={v}>Ø{v} cm</option>
-                    ))}
-                  </select>
-                </div>
+                {dimKeys.map((key) => {
+                  const label = key === "diametro" ? "Diametro" : key === "altezza" ? "Altezza" : key;
+                  const prefix = key === "diametro" ? "Ø" : "";
+                  const suffix = key === "diametro" || key === "altezza" ? " cm" : "";
+                  const available = getAvailableValues(key);
+                  return (
+                    <div key={key} className="variant-section">
+                      <label>{label}</label>
+                      <select className="variant-select" value={selDim[key] ?? ""} disabled={!!singleVariant}
+                        onChange={(e) => setSelDim((prev) => cascadeSelect(prev, key, e.target.value))}>
+                        <option value="">Seleziona {label.toLowerCase()}</option>
+                        {available.map((v) => (
+                          <option key={v} value={v}>{prefix}{v}{suffix}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
 
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)", display: "block", marginBottom: 8 }}>Quantità</label>
                   <div className="qty-row">
                     <div className="qty-control">
-                      <button type="button" onClick={() => changeBuyQty(-qtyStep)}>−</button>
-                      <input type="number" id="qty" value={buyQty} min={qtyStep} step={qtyStep} readOnly
+                      <button type="button" onClick={() => changeBuyQty(-qtyStep)} disabled={!selectedVariant && !singleVariant}>−</button>
+                      <input type="number" id="qty" value={buyQty ?? ""} min={qtyStep} step={qtyStep} readOnly
                         onChange={(e) => setBuyQty(Math.max(qtyStep, parseInt(e.target.value) || qtyStep))} />
-                      <button type="button" onClick={() => changeBuyQty(qtyStep)}>+</button>
+                      <button type="button" onClick={() => changeBuyQty(qtyStep)} disabled={!selectedVariant && !singleVariant}>+</button>
                     </div>
-                    <span className="qty-info">Multiplo: {qtyStep} pz</span>
+                    {selectedVariant?.multiplo && selectedVariant.multiplo > 1 && (
+                      <span className="qty-info">Multiplo: {selectedVariant.multiplo} pz</span>
+                    )}
+                    {singleVariant && singleVariant.multiplo > 1 && !selectedVariant && (
+                      <span className="qty-info">Multiplo: {singleVariant.multiplo} pz</span>
+                    )}
                   </div>
                 </div>
 
-                <button className="btn btn-primary add-to-cart" disabled={!selectedVariant}
-                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: selectedVariant ? 1 : 0.5 }}>
-                  Aggiungi al carrello
+                <button className="btn btn-primary add-to-cart" disabled={!selectedVariant && !singleVariant}
+                  onClick={addSingleToCart}
+                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: (selectedVariant || singleVariant) ? 1 : 0.5 }}>
+                  {buyBtnText}
                 </button>
-                <button className="btn btn-secondary" disabled={!selectedVariant}
-                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: selectedVariant ? 1 : 0.5 }}>
+                <button className="btn btn-secondary" disabled={!selectedVariant && !singleVariant}
+                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: (selectedVariant || singleVariant) ? 1 : 0.5 }}>
                   Acquista ora
                 </button>
 
@@ -445,41 +512,50 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
             <section className="variant-grid-section">
               <div className="container">
                 <h2>Griglia d'ordine varianti</h2>
+
                 <div className="cascade-filters">
-                  <select id="filterDim1" value={filterDim1} onChange={(e) => handleFilterDim1Change(e.target.value)}>
-                    <option value="">Tutte le altezze</option>
-                    {dim1Values.map((v) => (
-                      <option key={v} value={v}>{v} cm</option>
-                    ))}
-                  </select>
-                  <select id="filterDim2" value={filterDim2} onChange={(e) => setFilterDim2(e.target.value)}>
-                    <option value="">Tutti i diametri</option>
-                    {filterDim2Values.map((v) => (
-                      <option key={v} value={v}>Ø{v} cm</option>
-                    ))}
-                  </select>
+                  {dimKeys.map((key) => {
+                    const label = key === "diametro" ? "Diametro" : key === "altezza" ? "Altezza" : key;
+                    const prefix = key === "diametro" ? "Ø" : "";
+                    const suffix = key === "diametro" || key === "altezza" ? " cm" : "";
+                    const available = getAvailableValues(key, gridFilter);
+                    return (
+                      <select key={key} value={gridFilter[key] ?? ""}
+                        onChange={(e) => setGridFilter((prev) => cascadeSelect(prev, key, e.target.value))}>
+                        <option value="">Tutti {label.toLowerCase()}</option>
+                        {available.map((v) => (
+                          <option key={v} value={v}>{prefix}{v}{suffix}</option>
+                        ))}
+                      </select>
+                    );
+                  })}
                 </div>
 
                 <table className="variant-table">
+                  <colgroup>
+                    <col className="col-cod" />
+                    <col className="col-desc" />
+                    <col className="col-dim" />
+                    <col className="col-stock" />
+                    <col className="col-price" />
+                    <col className="col-qty" />
+                  </colgroup>
                   <thead>
                     <tr>
+                      <th>Cod.</th>
+                      <th>Descrizione</th>
                       <th>Dimensioni</th>
-                      <th>Cod. Integra</th>
-                      <th>Prezzo</th>
                       <th>Disponibilità</th>
+                      <th>Prezzo</th>
                       <th>Quantità</th>
                     </tr>
                   </thead>
-                  <tbody id="variantBody">
+                  <tbody>
                     {filteredVarianti.map((v) => {
                       const stock = getStock(v.giacenza);
                       const isOut = stock === "out";
                       return (
-                        <tr key={v.codice} data-codice={v.codice} className={isOut ? "disabled-row" : ""}>
-                          <td>
-                            {v.dimensioni?.["dim2"] ? `Ø${v.dimensioni["dim2"]} ` : ""}
-                            {v.dimensioni?.["dim1"] ? `H${v.dimensioni["dim1"]}` : ""}
-                          </td>
+                        <tr key={v.codice} className={isOut ? "disabled-row" : ""}>
                           <td>
                             <span className="code-cell">
                               {v.codice}
@@ -488,17 +564,31 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                               )}
                             </span>
                           </td>
+                          <td style={{ fontSize: 13, color: "var(--muted)" }}>{v.descrizione || "—"}</td>
                           <td>
-                            <div className="price-cell">
-                              <span className="price-net">{formatPrice(10)}</span>
-                              <span className="price-list">{formatPrice(12.5)}</span>
-                              <span className="price-disc">−20%</span>
-                            </div>
+                            {dimKeys.map((key) => {
+                              const e = v.dimensioni?.[key];
+                              if (!e) return "";
+                              const prefix = key === "diametro" ? "Ø" : key === "altezza" ? "H" : "";
+                              return `${prefix}${e.valore} `;
+                            }).join("").trim()}
                           </td>
                           <td>
                             <span className={`stock-badge-sm ${STOCK_CLASS[stock]}`}>
                               <span className="stock-dot" /> {STOCK_LABELS[stock]}
                             </span>
+                          </td>
+                          <td className="price-cell">
+                            {(() => {
+                              const p = variantExamplePrice(v.codice);
+                              return (
+                                <>
+                                  <span className="price-net">{formatPrice(p.net)} / pz</span>
+                                  <span className="price-list">{formatPrice(p.list)}</span>
+                                  <span className="price-disc">−{p.disc}%</span>
+                                </>
+                              );
+                            })()}
                           </td>
                           <td>
                             <div className="qty-ctrl">
@@ -507,7 +597,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                                 onChange={(e) => gridQtyDirect(v.codice, parseInt(e.target.value) || 0)} />
                               <button type="button" disabled={isOut} onClick={() => gridQty(v.codice, v.multiplo)}>+</button>
                             </div>
-                            <div className="multiplo-info">Multiplo: {v.multiplo} pz</div>
+                            {v.multiplo > 1 && <div className="multiplo-info">Multiplo: {v.multiplo} pz</div>}
                           </td>
                         </tr>
                       );
@@ -517,7 +607,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
                 <div className="variant-grid-footer">
                   <div className="total-info">
-                    Righe selezionate: <strong id="gridRowCount">{gridTotals.count}</strong> · Totale: <strong id="gridTotal">{formatPrice(gridTotals.total)}</strong>
+                    Righe selezionate: <strong>{gridTotals.count}</strong>
+                    <span className="total-sep">·</span>
+                    Totale: <strong>{formatPrice(gridTotals.total)}</strong>
                   </div>
                   <button className="btn btn-primary" onClick={addAllToCart}
                     style={addBtnText !== "Aggiungi al carrello" ? { background: "oklch(45% 0.12 145)" } : {}}>
@@ -547,13 +639,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
         )}
       </main>
 
-      <footer className="pagefoot">
-        <div className="container row-between">
-          <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
-          <span className="meta">info@luisbg.it · +39 035 0521957</span>
-          <span className="meta">Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
-        </div>
-      </footer>
+      <AreaFooter />
 
       {galleryModalOpen && (
         <div className="gallery-modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setGalleryModalOpen(false); }}>
@@ -563,9 +649,15 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
           <div className="gallery-modal-content">
             <div className="gallery-modal-img-area">
               <div className="gallery-modal-img-wrap">
-                <img id="galleryModalImg" src={allImages[galleryModalIdx]?.url} alt=""
-                  style={imgStyle(allImages[galleryModalIdx]?.css ?? "")}
-                  onClick={() => { setGalleryModalOpen(false); openLightbox(galleryModalIdx); }} />
+                {/* vista completa: stesso posizionamento (crop 4:3) di card/galleria/editor */}
+                <PositionedImage
+                  src={allImages[galleryModalIdx]?.url}
+                  css={allImages[galleryModalIdx]?.css}
+                  aspect={4 / 3}
+                  alt=""
+                  style={{ width: "100%", maxWidth: 900, borderRadius: 6, cursor: "zoom-in" }}
+                  onClick={() => { setGalleryModalOpen(false); openLightbox(galleryModalIdx); }}
+                />
               </div>
               <div className="gallery-modal-nav">
                 <button onClick={() => galleryModalNav(-1)}>
@@ -599,8 +691,12 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
           <button className="lightbox-nav prev" onClick={(e) => { e.stopPropagation(); lbNav(-1); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M15 18l-6-6 6-6" /></svg>
           </button>
-          {/* Vista completa: immagine intera, senza il ritaglio/posizionamento della galleria */}
-          <img id="lbImage" src={allImages[lightboxIdx]?.url} alt="Zoom" onClick={(e) => e.stopPropagation()} />
+          {/* Vista completa: immagine intera, senza ritaglio ma con la rotazione/zoom impostati */}
+          {(() => {
+            const p = parseImgCss(allImages[lightboxIdx]?.css);
+            const t = p.zoom !== 0 || p.rotation !== 0 ? `scale(${1 + p.zoom / 100}) rotate(${p.rotation}deg)` : undefined;
+            return <img id="lbImage" src={allImages[lightboxIdx]?.url} alt="Zoom" onClick={(e) => e.stopPropagation()} style={{ transform: t }} />;
+          })()}
           <button className="lightbox-nav next" onClick={(e) => { e.stopPropagation(); lbNav(1); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M9 18l6-6-6-6" /></svg>
           </button>

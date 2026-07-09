@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import ChangePasswordCard from "../auth/ChangePasswordCard";
-import Notice from "../common/Notice";
 import type { CustomerProfile } from "../../lib/types";
 
 function BuildingIcon() {
@@ -31,103 +29,77 @@ export default function ProfileSection({
 }) {
   const t = useTranslations("area");
   const c = customer;
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwOld, setPwOld] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwOk, setPwOk] = useState(false);
+
+  const handlePwSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError("");
+    if (pwNew.length < 8) { setPwError("Minimo 8 caratteri."); return; }
+    if (pwNew !== pwConfirm) { setPwError("Le password non coincidono."); return; }
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword: pwOld, newPassword: pwNew }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setPwError(err.message || "Errore");
+        return;
+      }
+      setPwOk(true);
+      onPasswordChanged();
+      setTimeout(() => { setPwOpen(false); setPwOk(false); setPwOld(""); setPwNew(""); setPwConfirm(""); }, 1500);
+    } catch {
+      setPwError("Errore di connessione.");
+    }
+  };
 
   return (
     <>
-      <style>{`
-        .profile-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-          width: 100%;
-          max-width: 900px;
-        }
-        @media (max-width: 720px) {
-          .profile-grid { grid-template-columns: 1fr; }
-        }
-
-        .profile-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius, 12px);
-          padding: 28px;
-        }
-        .profile-card h2 {
-          font-family: var(--font-display);
-          font-size: 18px;
-          margin: 0 0 20px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          letter-spacing: -0.01em;
-        }
-        .profile-card h2 svg { color: var(--accent); }
-
-        .profile-field {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          padding: 12px 0;
-          border-bottom: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
-        }
-        .profile-field:last-child { border-bottom: none; }
-        .profile-field-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--muted);
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .profile-field-value {
-          font-size: 15px;
-          color: var(--fg);
-        }
-
-        .profile-password-card {
-          margin-top: 32px;
-          width: 100%;
-          max-width: 900px;
-        }
-      `}</style>
-
-      <h1 style={{
-        fontFamily: "var(--font-display)",
-        fontSize: 28,
-        letterSpacing: "-0.02em",
-        margin: "0 0 32px",
-      }}>
-        {t("profileTitle")}
-      </h1>
+      <h1>{t("profileTitle")}</h1>
 
       <div className="profile-grid">
-        {/* Dati azienda */}
+
+        {/* Anagrafica */}
         <div className="profile-card">
-          <h2><BuildingIcon /> {t("profileDatiAzienda")}</h2>
+          <h2><BuildingIcon /> Anagrafica</h2>
+
           {c.ragioneSociale && (
             <div className="profile-field">
-              <span className="profile-field-label">{t("profileDatiAzienda")}</span>
-              <span className="profile-field-value">{c.ragioneSociale}</span>
+              <label>{t("profileDatiAzienda")}</label>
+              <div className="value">{c.ragioneSociale}</div>
             </div>
           )}
+
           <div className="profile-field">
-            <span className="profile-field-label">Email</span>
-            <span className="profile-field-value">{c.email}</span>
+            <label>Email</label>
+            <div className="value readonly">{c.email}</div>
           </div>
+
           <div className="profile-field">
-            <span className="profile-field-label">{t("profileReferente")}</span>
-            <span className="profile-field-value">{c.nome}</span>
+            <label>{t("profileReferente")}</label>
+            <div className="value">{c.nome}</div>
           </div>
+
           <div className="profile-field">
-            <span className="profile-field-label">{t("profileTelefono")}</span>
-            <span className="profile-field-value">{c.telefono || "—"}</span>
+            <label>{t("profileTelefono")}</label>
+            <div className="value">{c.telefono || "—"}</div>
           </div>
+
           <div className="profile-field">
-            <span className="profile-field-label">{t("profileTelefonoFisso")}</span>
-            <span className="profile-field-value">{c.telefonoFisso || "—"}</span>
+            <label>{t("profileTelefonoFisso")}</label>
+            <div className="value">{c.telefonoFisso || "—"}</div>
           </div>
+
           <div className="profile-field">
-            <span className="profile-field-label">{t("profileSitoWeb")}</span>
-            <span className="profile-field-value">
+            <label>{t("profileSitoWeb")}</label>
+            <div className="value">
               {c.sitoWeb ? (
                 <a href={c.sitoWeb.startsWith("http") ? c.sitoWeb : `https://${c.sitoWeb}`}
                    target="_blank" rel="noopener noreferrer"
@@ -135,23 +107,122 @@ export default function ProfileSection({
                   {c.sitoWeb}
                 </a>
               ) : "—"}
-            </span>
+            </div>
           </div>
-        </div>
 
-        {/* Sicurezza */}
-        <div className="profile-card">
-          <h2><ShieldIcon /> {t("profileSicurezza")}</h2>
           <div className="profile-field">
-            <span className="profile-field-label">{t("profileLastAccess")}</span>
-            <span className="profile-field-value">{t("profileLastAccessUnknown")}</span>
+            <label>Tipo listino</label>
+            <div className="value readonly">Listino extra — sconto 15%</div>
           </div>
         </div>
+
+        {/* Indirizzi */}
+        <div className="profile-card">
+          <h2>Indirizzi <span className="badge">2</span></h2>
+          <div className="addr-item">
+            <div>
+              <strong>Via Roma 42</strong><br />
+              <span className="meta">20121 Milano MI</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Principale</span>
+              <span className="tag">Spedizione</span>
+            </div>
+          </div>
+          <div className="addr-item">
+            <div>
+              <strong>Via Garibaldi 15</strong><br />
+              <span className="meta">20124 Milano MI</span>
+            </div>
+            <span className="tag">Fatturazione</span>
+          </div>
+        </div>
+
+        {/* Modalità di pagamento */}
+        <div className="profile-card">
+          <h2>Modalità di pagamento <span className="badge">1</span></h2>
+          <div className="pay-item">
+            <div className="icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/><path d="M2 10h20"/></svg>
+            </div>
+            <div className="info">
+              <div className="name">Bonifico bancario</div>
+              <div className="detail">IT60X0542811101000000123456 · Intesa Sanpaolo</div>
+            </div>
+            <span className="tag">Preferito</span>
+          </div>
+        </div>
+
+        {/* Sicurezza + password */}
+        <div className="profile-card">
+          <h2><ShieldIcon /> Sicurezza</h2>
+
+          <div className="sec-item">
+            <div>
+              <div style={{ fontWeight: 500 }}>Cambio password</div>
+              <div className="detail">Ultima modifica: 15/06/2026</div>
+            </div>
+            <button className="btn btn-ghost" style={{ padding: "6px 14px", fontSize: 13 }} onClick={() => setPwOpen(true)}>Modifica</button>
+          </div>
+
+          <div className="sec-item">
+            <div>
+              <div style={{ fontWeight: 500 }}>Ultimo accesso</div>
+              <div className="detail">N/D</div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <div className="profile-password-card">
-        <ChangePasswordCard onChanged={onPasswordChanged} />
-      </div>
+      {/* Change Password Modal */}
+      {pwOpen && (
+        <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) { setPwOpen(false); setPwError(""); } }}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Cambio password">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Cambio password</h2>
+              <button onClick={() => { setPwOpen(false); setPwError(""); }}
+                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--muted)", padding: 0, lineHeight: 1 }}
+                aria-label="Chiudi">&times;</button>
+            </div>
+            <p style={{ color: "var(--muted)", fontSize: 13, margin: "8px 0 16px" }}>Inserisci la password attuale e la nuova password.</p>
+
+            {pwError && (
+              <div style={{ background: "oklch(96% 0.03 25)", border: "1px solid var(--danger)", color: "var(--danger)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+                {pwError}
+              </div>
+            )}
+            {pwOk && (
+              <div style={{ background: "oklch(95% 0.06 150)", border: "1px solid var(--ok)", color: "var(--ok)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+                Password aggiornata correttamente.
+              </div>
+            )}
+
+            <form onSubmit={handlePwSubmit}>
+              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-old">Password attuale</label>
+              <input id="cp-old" type="password" required autoComplete="current-password"
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+                value={pwOld} onChange={(e) => setPwOld(e.target.value)} />
+
+              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-new">Nuova password</label>
+              <input id="cp-new" type="password" required autoComplete="new-password" minLength={8}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+                value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
+
+              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-confirm">Conferma nuova password</label>
+              <input id="cp-confirm" type="password" required autoComplete="new-password" minLength={8}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+                value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
+
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+                <button type="button" className="btn btn-ghost" onClick={() => { setPwOpen(false); setPwError(""); }}>Annulla</button>
+                <button type="submit" className="btn btn-primary">Cambia password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

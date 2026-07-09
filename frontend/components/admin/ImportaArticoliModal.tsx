@@ -54,7 +54,29 @@ export default function ImportaArticoliModal({
     }
   }, [debounced]);
 
-  useEffect(() => { if (open) fetchData(1); else setSelected(new Set()); }, [debounced, open, fetchData]);
+  useEffect(() => {
+    if (open) {
+      fetchData(1);
+    } else {
+      setSearch("");
+      setDebounced("");
+      setResult(null);
+      setImportResult(null);
+      setSelected(new Set());
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch quando cambia la ricerca
+  useEffect(() => {
+    if (open) fetchData(1);
+  }, [debounced, open, fetchData]);
+
+  // Auto-dismiss notice import dopo 5 secondi
+  useEffect(() => {
+    if (!importResult) return;
+    const t = setTimeout(() => setImportResult(null), 5000);
+    return () => clearTimeout(t);
+  }, [importResult]);
 
   useEffect(() => {
     if (!selectAllRef.current) return;
@@ -95,8 +117,8 @@ export default function ImportaArticoliModal({
     const getVal = (p: ProdottoView): string | number => {
       if (sortKey === "codice") return p.codice;
       if (sortKey === "descrizione") return p.descrizione;
-      if (sortKey === "famiglia") return p.famigliaId;
-      if (sortKey === "class") return p.cl3Val;
+      if (sortKey === "famiglia") return p.famigliaNome ?? "";
+      if (sortKey === "linea") return p.lineaNome ?? "";
       return "";
     };
     const va = getVal(a), vb = getVal(b);
@@ -151,15 +173,20 @@ export default function ImportaArticoliModal({
         {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
         {importResult && <Notice variant="success" onClose={() => setImportResult(null)} style={{ marginBottom: 12 }}>{importResult}</Notice>}
 
-        <div className="data-table" style={{ flex: 1, minHeight: 0 }}>
-          <div className="data-table-scroll">
+          <div className="data-table" style={{ flex: 1, minHeight: 0 }}>
+            {loading && (
+              <div className="data-table-loading-overlay">
+                <span>Caricamento…</span>
+              </div>
+            )}
+            <div className="data-table-scroll">
             <table>
               <colgroup>
                 <col style={{ width: 48 }} />
                 <col style={{ width: 120 }} />
                 <col />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 100 }} />
+                <col style={{ width: 130 }} />
+                <col style={{ width: 130 }} />
               </colgroup>
               <thead>
                 <tr>
@@ -169,13 +196,10 @@ export default function ImportaArticoliModal({
                   <th className="sortable" onClick={() => toggleSort("codice")}>Codice{sortArrow("codice")}</th>
                   <th className="sortable" onClick={() => toggleSort("descrizione")}>Descrizione{sortArrow("descrizione")}</th>
                   <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("famiglia")}>Famiglia{sortArrow("famiglia")}</th>
-                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("class")}>Class.{sortArrow("class")}</th>
+                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("linea")}>Linea{sortArrow("linea")}</th>
                 </tr>
               </thead>
               <tbody>
-                {loading && (
-                  <tr><td colSpan={5} className="data-table-empty">Caricamento…</td></tr>
-                )}
                 {!loading && !sortedItems.length && (
                   <tr><td colSpan={5} className="data-table-empty">Nessun risultato</td></tr>
                 )}
@@ -186,8 +210,8 @@ export default function ImportaArticoliModal({
                     </td>
                     <td className="mono">{p.codice}</td>
                     <td>{p.descrizione}</td>
-                    <td style={{ textAlign: "center" }}>{p.famigliaId > 0 ? p.famigliaId : "—"}</td>
-                    <td style={{ textAlign: "center" }}>{p.cl3Val || "—"}</td>
+                    <td style={{ textAlign: "center" }}>{p.famigliaNome ?? "—"}</td>
+                    <td style={{ textAlign: "center" }}>{p.lineaNome ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

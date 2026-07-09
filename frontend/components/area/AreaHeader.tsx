@@ -21,6 +21,19 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCompact, setCompact] = useState(false);
+  const [cartCount, setCartCount] = useState<number | null>(null);
+
+  const fetchCartCount = useCallback(() => {
+    api.get<{ count: number }>("/api/carrello/count").then((r) => setCartCount(r.count)).catch(() => setCartCount(0));
+  }, []);
+
+  useEffect(() => { fetchCartCount(); }, [fetchCartCount]);
+
+  useEffect(() => {
+    const handler = () => fetchCartCount();
+    window.addEventListener("cart-updated", handler);
+    return () => window.removeEventListener("cart-updated", handler);
+  }, [fetchCartCount]);
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
 
@@ -209,6 +222,10 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           transition: background 0.12s;
         }
         .area-header .hamburger-btn:hover { background: var(--accent-soft); }
+        .area-header .cart-btn-text { display: inline; }
+        @media (max-width: 768px) {
+          .area-header .cart-btn-text { display: none; }
+        }
 
         /* Mobile overlay */
         .mobile-overlay {
@@ -359,16 +376,18 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
             </nav>
 
             <Link
-              href="/area/catalogo"
-              className="btn btn-secondary"
+              href="/area/carrello"
+              className="btn btn-secondary cart-btn"
               style={{
-                padding: "8px 16px", fontSize: 13, textDecoration: "none",
+                padding: "8px 14px", fontSize: 13, textDecoration: "none",
                 borderRadius: 10, border: "1px solid var(--border)",
-                color: "var(--fg)", display: "inline-flex", alignItems: "center", gap: 8,
+                color: "var(--fg)", display: "inline-flex", alignItems: "center", gap: 6,
                 whiteSpace: "nowrap",
               }}
             >
-              Carrello (0)
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <span className="cart-btn-text">Carrello</span>
+              <span>({cartCount !== null ? cartCount : "…"})</span>
             </Link>
             {c && (
               <div
@@ -474,6 +493,10 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
                 <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
               </svg>
               Ordini
+            </Link>
+            <Link href="/area/carrello" className={pathname.startsWith("/area/carrello") ? "active" : ""} onClick={() => setMobileOpen(false)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              Carrello {cartCount !== null ? `(${cartCount})` : ""}
             </Link>
             <Link href="/area/profilo" className={pathname.startsWith("/area/profilo") ? "active" : ""} onClick={() => setMobileOpen(false)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -21,6 +21,7 @@ const SECTION_TITLES: Record<string, string> = {
   import: "Import / Export",
   ai: "AI / Ricerca",
   "admin-panel": "Pannello di Amministrazione",
+  accessi: "Accessi",
 };
 
 export default function AdminPage() {

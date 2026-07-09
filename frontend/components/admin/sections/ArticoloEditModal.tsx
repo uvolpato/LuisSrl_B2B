@@ -11,10 +11,15 @@ import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
 import DescrizioneAiWizard from "./DescrizioneAiWizard";
 import PositionedImage from "../../common/PositionedImage";
+interface DimensioneEntry {
+  codice?: string;
+  descrizione?: string;
+  valore?: string | number;
+}
 interface VarianteDetail {
   codice: string;
   descrizione: string;
-  dimensioni?: Record<string, string> | null;
+  dimensioni?: Record<string, DimensioneEntry> | null;
   multiplo: number;
   giacenza: number;
   stato: string;
@@ -107,6 +112,15 @@ export default function ArticoloEditModal({
   const [selectedRaccoltaIds, setSelectedRaccoltaIds] = useState<Set<number>>(new Set());
   const [raccolteSearch, setRaccolteSearch] = useState("");
   const [dragRaccoltaId, setDragRaccoltaId] = useState<number | null>(null);
+
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [copyStepTesti, setCopyStepTesti] = useState<{ step: number; label: string; testo: string }[]>([]);
+  const [copySearchQuery, setCopySearchQuery] = useState("");
+  const [copyArticleList, setCopyArticleList] = useState<{ articoloId: number; id: string; name: string; img: string | null }[]>([]);
+  const [copyTargets, setCopyTargets] = useState<Set<string>>(new Set());
+  const [copying, setCopying] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
@@ -480,7 +494,14 @@ export default function ArticoloEditModal({
                     { key: "descrizione", header: "Descrizione", cell: (v) => (
                       <span className="desc-col" data-tip={v.descrizione}>{v.descrizione}</span>
                     )},
-                    { key: "dim1", header: "Dim 1", width: "100px", cell: (v) => v.dimensioni ? Object.values(v.dimensioni).join(", ") : "—" },
+                    { key: "dim_diametro", header: "Diam. esterno", width: "90px", mono: true, align: "right", cell: (v) => {
+                      const d = v.dimensioni?.diametro;
+                      return d?.valore != null ? String(d.valore) : "—";
+                    }},
+                    { key: "dim_altezza", header: "Altezza", width: "80px", mono: true, align: "right", cell: (v) => {
+                      const d = v.dimensioni?.altezza;
+                      return d?.valore != null ? String(d.valore) : "—";
+                    }},
                     { key: "multiplo", header: "Multiplo", width: "90px", mono: true, align: "right", cell: (v) => String(v.multiplo) },
                     { key: "giacenza", header: "Giacenza", width: "100px", mono: true, align: "right", cell: (v) => `${v.giacenza} pz` },
                     { key: "stato", header: "Stato", width: "110px", align: "center", cell: (v) => {
@@ -538,6 +559,17 @@ export default function ArticoloEditModal({
                       ...(promptAi !== undefined ? { promptAi } : {}),
                       wizardStepTesti: stepTesti as ArticoloDetail["wizardStepTesti"],
                     }) : prev);
+                  }}
+                  onCopia={(stepTesti) => {
+                    setCopyStepTesti(stepTesti);
+                    setCopyTargets(new Set());
+                    setCopySearchQuery("");
+                    setCopySuccess(null);
+                    setCopyError(null);
+                    setCopyModalOpen(true);
+                    api.get<{ articoloId: number; id: string; name: string; img: string | null }[]>("/api/integrazione/articoli").then((list) => {
+                      setCopyArticleList(list.filter((a) => a.id !== article.codiceLinea));
+                    }).catch(() => {});
                   }}
                 />
               </div>
@@ -700,6 +732,135 @@ export default function ArticoloEditModal({
           {saving ? "Salvataggio…" : "Salva Modifiche"}
         </button>
       </div>
+      {copyModalOpen && (
+        <div className="modal-root-overlay" onPointerDown={(e) => { if (e.target === e.currentTarget && e.button === 0 && !copying) setCopyModalOpen(false); }}>
+          <div className="modal-root" style={{ inset: "48px 18%" }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-root-header">
+              <h2>Copia osservazioni sensoriali</h2>
+              <button className="modal-root-close" onClick={() => setCopyModalOpen(false)} disabled={copying} aria-label="Chiudi">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+            <div className="modal-body-edit">
+              {copySuccess ? (
+                <div style={{ padding: 24, textAlign: "center" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" style={{ width: 40, height: 40, margin: "0 auto 16px" }}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>Copiato con successo!</p>
+                  <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>Le osservazioni sono state copiate su <strong>{copySuccess}</strong> articolo{copySuccess !== "1" ? "i" : ""}.</p>
+                  <button className="btn btn-primary" onClick={() => setCopyModalOpen(false)}>Chiudi</button>
+                </div>
+              ) : (
+                <>
+                  <div className="notice notice-info" style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--muted)" }}>
+                      Le osservazioni sensoriali verranno copiate sull'articolo selezionato. L'AI rigenererà la descrizione in base alle caratteristiche specifiche dell'articolo di destinazione (colore, immagini, ecc.) — non verrà copiata la descrizione esistente.
+                    </p>
+                  </div>
+                  <div className="field" style={{ marginBottom: 16 }}>
+                    <label>Cerca articolo</label>
+                    <input
+                      className="input"
+                      type="text"
+                      placeholder="Digita nome o codice articolo…"
+                      value={copySearchQuery}
+                      onChange={(e) => { setCopySearchQuery(e.target.value); }}
+                      autoFocus
+                    />
+                  </div>
+                  <div style={{ maxHeight: 300, overflow: "auto", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                    {copyArticleList
+                      .filter((a) => !copySearchQuery || a.name.toLowerCase().includes(copySearchQuery.toLowerCase()) || a.id.toLowerCase().includes(copySearchQuery.toLowerCase()))
+                      .map((a) => {
+                        const selected = copyTargets.has(a.id);
+                        return (
+                        <div
+                          key={a.id}
+                          onClick={() => {
+                            const next = new Set(copyTargets);
+                            if (selected) next.delete(a.id); else next.add(a.id);
+                            setCopyTargets(next);
+                          }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer",
+                            background: selected ? "var(--accent-soft)" : "transparent",
+                            borderBottom: "1px solid var(--border)", transition: "background 0.15s",
+                          }}
+                        >
+                          <span style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${selected ? "var(--accent)" : "var(--muted)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: selected ? "var(--accent)" : "transparent" }}>
+                            {selected && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{ width: 12, height: 12 }}><polyline points="20 6 9 17 4 12"/></svg>}
+                          </span>
+                          {a.img ? (
+                            <img src={a.img} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 40, height: 40, borderRadius: 6, background: "var(--fg-soft)", flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
+                            <div style={{ fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--muted)" }}>{a.id}</div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    {copyArticleList.length === 0 && (
+                      <p style={{ padding: 24, textAlign: "center", color: "var(--muted)", fontSize: 13 }}>Caricamento articoli…</p>
+                    )}
+                  </div>
+                  {copyError && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{copyError}</p>}
+                </>
+              )}
+            </div>
+            {!copySuccess && (
+              <div className="modal-root-footer">
+                <button className="btn btn-secondary btn-sm" onClick={() => setCopyModalOpen(false)} disabled={copying}>Annulla</button>
+                <div style={{ flex: 1 }} />
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={copyTargets.size === 0 || copying}
+                  onClick={async () => {
+                    if (copyTargets.size === 0 || !article) return;
+                    setCopying(true);
+                    setCopyError(null);
+                    let ok = 0;
+                    let fail = 0;
+                    const targets = [...copyTargets];
+                    try {
+                      const savePayload: Record<string, unknown> = {
+                        descrizione: article.descrizione,
+                        descrizioneDettagliata: article.descrizioneDettagliata,
+                        wizardStepTesti: copyStepTesti,
+                        promptAi: article.promptAi,
+                      };
+                      await api.put(`/api/integrazione/articoli/${article.codiceLinea}`, savePayload);
+                      for (const target of targets) {
+                        try {
+                          await api.put(`/api/integrazione/articoli/${target}`, { wizardStepTesti: copyStepTesti });
+                          const wizardResult = await api.post<{ descrizioneDettagliata: string; descrizioneBreve: string }>(`/api/integrazione/articoli/${target}/descrizione/wizard`, { stepTesti: copyStepTesti, azione: "genera" });
+                          await api.put(`/api/integrazione/articoli/${target}`, {
+                            descrizione: wizardResult.descrizioneBreve,
+                            descrizioneDettagliata: wizardResult.descrizioneDettagliata,
+                          });
+                          ok++;
+                        } catch {
+                          fail++;
+                        }
+                      }
+                      setCopySuccess(String(ok));
+                      if (fail > 0) setCopyError(`${fail} articolo/i non riuscito/i.`);
+                    } catch (e) {
+                      setCopyError(String(e));
+                    } finally {
+                      setCopying(false);
+                    }
+                  }}
+                >
+                  {copying ? "Copia in corso…" : `Conferma copia (${copyTargets.size})`}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <EditImageModal
         open={editingImage !== null}
         image={editingImage !== null && article ? (() => {

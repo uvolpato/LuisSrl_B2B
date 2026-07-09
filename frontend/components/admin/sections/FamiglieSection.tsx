@@ -19,7 +19,7 @@ interface Famiglia {
   immagine: string | null;
   descrizione: string | null;
   stato: string;
-  _count: { articoli: number };
+  _count: { articoli: number; articoliAttivi?: number };
 }
 
 /** Titolo mostrato ovunque: quello alternativo del portale se presente, altrimenti il nome Integra */
@@ -100,6 +100,29 @@ export default function FamiglieSection() {
     }
   }
 
+async function handleDelete(codice: string) {
+    const ok = await confirm({
+      title: "Elimina famiglia",
+      message: "Sicuro di voler eliminare questa famiglia? L'operazione è irreversibile.",
+      confirmLabel: "Elimina",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      await api.del(`/api/admin/famiglie/${codice}`);
+      setModalOpen(false);
+      await reload();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.code === "admin.famiglia_has_articoli") {
+          throw new Error("Impossibile eliminare: la famiglia ha articoli associati.");
+        }
+        throw err;
+      }
+      throw new Error("Errore nell'eliminazione");
+    }
+  }
+
   const columns: Column<Famiglia>[] = [
     {
       key: "nome",
@@ -150,7 +173,11 @@ export default function FamiglieSection() {
       align: "center",
       sortable: true,
       sortValue: (r) => r._count.articoli,
-      cell: (r) => r._count.articoli,
+      cell: (r) => {
+        const tot = r._count.articoli;
+        const att = r._count.articoliAttivi ?? 0;
+        return att === tot ? String(tot) : `${att}/${tot}`;
+      },
     },
   ];
 
@@ -258,6 +285,7 @@ export default function FamiglieSection() {
           open={modalOpen}
           famiglia={editFamiglia}
           onSave={handleSave}
+          onDelete={handleDelete}
           onClose={() => setModalOpen(false)}
         />
       </div>
@@ -266,13 +294,14 @@ export default function FamiglieSection() {
 }
 
 function FamigliaEditModal({
-  open, famiglia, onSave, onClose,
+  open, famiglia, onSave, onDelete, onClose,
 }: {
   open: boolean;
   famiglia: Famiglia | null;
   onSave: (form: {
     nomePortale?: string; descrizione?: string; immagine?: string; stato: string;
   }, pendingFile?: File | null) => Promise<void>;
+  onDelete?: (codice: string) => Promise<void>;
   onClose: () => void;
 }) {
   const [nomePortale, setNomePortale] = useState("");
@@ -285,6 +314,19 @@ function FamigliaEditModal({
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isEditing = !!famiglia;
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteClick() {
+    if (!famiglia || !onDelete || deleting) return;
+    setDeleting(true);
+    try {
+      await onDelete(famiglia.codice);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Errore nell'eliminazione");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -380,6 +422,16 @@ function FamigliaEditModal({
         </div>
 
         <div className="modal-root-footer">
+          {isEditing && onDelete && (
+            <button
+              type="button"
+              className="btn btn-danger-outline btn-sm"
+              onClick={handleDeleteClick}
+              disabled={deleting || saving}
+            >
+              Elimina
+            </button>
+          )}
           <div style={{ flex: 1 }} />
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Annulla</button>
           <button type="submit" className="btn btn-primary btn-sm" form="famiglia-form" disabled={saving}>

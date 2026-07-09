@@ -40,9 +40,10 @@ interface Props {
   initialStepTesti?: StepTesto[] | null;
   promptAi?: string | null;
   onSave: (descrizione: string | null, descrizioneDettagliata: string | null, stepTesti?: StepTesto[], promptAi?: string | null) => void;
+  onCopia?: (stepTesti: StepTesto[]) => void;
 }
 
-export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, promptAi, onSave }: Props) {
+export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, promptAi, onSave, onCopia }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
   const hasExistingContent = !!(savedDettagliata && savedDettagliata.length > 0);
   const [stepTesti, setStepTesti] = useState<StepTesto[]>(
@@ -275,6 +276,12 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             <div className="wizard-result-footer">
               {hasGeneratedDesc && (
                 <button className="btn btn-primary btn-sm" onClick={handleGenerate} disabled={promptDirty} title={promptDirty ? "Salva prima il prompt modificato" : ""}>Rigenera</button>
+              )}
+              {hasGeneratedDesc && onCopia && (
+                <button className="btn btn-ghost btn-sm" onClick={() => onCopia(stepTesti)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, marginRight: 4 }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copia
+                </button>
               )}
               <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCurrentStep(0); }}>
                 {hasGeneratedDesc ? "Modifica" : "Continua modifica"}

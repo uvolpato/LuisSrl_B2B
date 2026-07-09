@@ -1,20 +1,3 @@
-/** Converte la stringa css salvata sull'immagine in stile inline React.
- *  object-fit, object-position e transform vanno tutti sull'img. */
-export function imgStyle(css: string | null | undefined): React.CSSProperties {
-  if (!css) return {};
-  const s: React.CSSProperties = {};
-  css.split(";").filter(Boolean).forEach((p) => {
-    const i = p.indexOf(":");
-    if (i < 0) return;
-    const k = p.slice(0, i).trim();
-    const v = p.slice(i + 1).trim();
-    if (k === "object-fit") s.objectFit = v as React.CSSProperties["objectFit"];
-    else if (k === "object-position") s.objectPosition = v;
-    else if (k === "transform") s.transform = v;
-  });
-  return s;
-}
-
 /** Parsing strutturato del css immagine per posizionamento via wrapper. */
 export function parseImgCss(css: string | null | undefined): {
   objectFit: string;

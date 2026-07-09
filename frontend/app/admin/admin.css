@@ -18,6 +18,7 @@
   --table-head-bg: oklch(92.5% 0.006 79);
 }
 
+@scope (.admin-page) {
 /* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-w);
@@ -234,6 +235,33 @@
   .action-buttons > .btn { width: auto; }
 }
 
+/* Loading overlay per la tabella "Nuovo Articolo" */
+.data-table-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(2px);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted, #888);
+}
+/* Sync progress bar */
+.btn .sync-icon { display: inline-flex; align-items: center; vertical-align: middle; }
+.sync-icon.spin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: sync-spin 1s linear infinite;
+}
+@keyframes sync-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Search */
 .admin-search {
   position: relative;
@@ -329,6 +357,7 @@
    footer di paginazione, azioni a icone con tooltip.
    ════════════════════════════════════════════════════════════════════════ */
 .data-table {
+  position: relative;
   flex: 1;
   min-height: 0;            /* riempie l'altezza disponibile e fa scrollare il corpo */
   display: flex;
@@ -2442,5 +2471,6 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .settings-mobile-backdrop { display: block; position: absolute; inset: 0; background: oklch(0% 0 0 / 0.15); z-index: 5; }
   .settings-content-header { padding: 16px 20px; position: relative; z-index: 6; }
   .settings-page { padding: 20px; }
+}
 }
 

@@ -6,8 +6,8 @@ import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import AreaHeader from "../../../components/area/AreaHeader";
+import AreaFooter from "../../../components/area/AreaFooter";
 import PositionedImage from "../../../components/common/PositionedImage";
-import "../catalogo.css";
 
 interface CatalogoArticolo {
   id: string;
@@ -208,12 +208,7 @@ export default function CatalogoPage() {
         </div>
       </main>
 
-      <footer className="pagefoot">
-        <div className="container row-between">
-          <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo</span>
-          <span>info@luisbg.it · +39 035 0521957</span>
-        </div>
-      </footer>
+      <AreaFooter />
 
       {/* ── Modale Ricerca AI (la ricerca vera arriva in Fase G) ── */}
       <div className={`modal-overlay ${aiOpen ? "open" : ""}`} onClick={(e) => { if (e.target === e.currentTarget) setAiOpen(false); }}>

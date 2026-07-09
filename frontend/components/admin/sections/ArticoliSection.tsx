@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import type { Article } from "../types";
@@ -8,8 +8,10 @@ import { PAGE_SIZE, PLACEHOLDER_IMG as PLACEHOLDER } from "../types";
 import AdminTopBar from "../AdminTopBar";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import ImportaArticoliModal from "../ImportaArticoliModal";
-import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList, IconPlus } from "../icons";
+import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList, IconPlus, IconRefresh } from "../icons";
 import ArticoloEditModal from "./ArticoloEditModal";
+
+type SyncProgress = { running: boolean; pct: number; phase: string; errorText?: string };
 
 export default function ArticoliSection() {
   const [view, setView] = useState<"list" | "grid">("list");
@@ -21,6 +23,12 @@ export default function ArticoliSection() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [editCodiceLinea, setEditCodiceLinea] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncFlash, setSyncFlash] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredArticles = articles.filter((a) => {
     if (articleFilter === "attivi") return a.stato === "attivo";
@@ -45,6 +53,13 @@ export default function ArticoliSection() {
 
   useEffect(() => setArtPage(1), [articleFilter]);
 
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (flashRef.current) clearTimeout(flashRef.current);
+    };
+  }, []);
+
   async function toggleArticleStatus(article: Article) {
     try {
       await api.patch(`/api/integrazione/articoli/${article.id}/stato`);
@@ -53,11 +68,46 @@ export default function ArticoliSection() {
     } catch { setError("Errore aggiornamento stato"); }
   }
 
+  async function doSync() {
+    setSyncing(true);
+    setSyncProgress(null);
+    setSyncFlash(null);
+    setSyncError(null);
+    try {
+      await api.post<{ status: string }>("/api/integrazione/sync");
+      pollRef.current = setInterval(async () => {
+        try {
+          const p = await api.get<SyncProgress>("/api/integrazione/sync/progress");
+          setSyncProgress(p);
+          if (!p.running) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            setSyncing(false);
+            if (p.phase.startsWith("Err") || p.phase.startsWith("Errore")) {
+              setSyncFlash("Errore");
+              setSyncError(p.errorText ?? "Errore sconosciuto");
+              flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
+            } else {
+              setSyncFlash("OK");
+              flashRef.current = setTimeout(() => setSyncFlash(null), 2000);
+            }
+          }
+        } catch { /* ignore polling errors */ }
+      }, 500);
+    } catch {
+      setSyncProgress({ running: false, pct: 0, phase: "Errore sincronizzazione" });
+      setSyncing(false);
+      setSyncFlash("Errore");
+      setSyncError("Impossibile avviare la sincronizzazione");
+      flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
+    }
+  }
+
   const articleColumns: Column<Article>[] = [
     {
       key: "articolo",
       header: "Articolo",
-      grow: true,
+      width: "300px",
       sortable: true,
       sortValue: (a) => a.name,
       cell: (a) => (
@@ -84,9 +134,9 @@ export default function ArticoliSection() {
     {
       key: "descrizione",
       header: "Descrizione",
-      width: "35%",
+      grow: true,
       cell: (a) => (
-        <span style={{ color: "var(--muted)", fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ color: "var(--muted)", fontSize: 13, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {a.descrizione || "—"}
         </span>
       ),
@@ -107,12 +157,16 @@ export default function ArticoliSection() {
     {
       key: "varianti",
       header: "Varianti",
-      width: "100px",
+      width: "110px",
       align: "center",
       mono: true,
       sortable: true,
       sortValue: (a) => a.variantiCount ?? 0,
-      cell: (a) => a.variantiCount ?? 0,
+      cell: (a) => {
+        const tot = a.variantiCount ?? 0;
+        const vis = a.variantiVisibiliCount ?? 0;
+        return vis === tot ? String(tot) : `${vis}/${tot}`;
+      },
     },
     {
       key: "raccolte",
@@ -151,6 +205,10 @@ export default function ArticoliSection() {
         ]}
       >
         <div className="action-buttons">
+          <button className="btn btn-secondary btn-sm" onClick={doSync} disabled={syncing} style={{ minWidth: 110 }}>
+            <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
+            {syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}
+          </button>
           <button className="btn btn-primary btn-sm" onClick={() => setImportModalOpen(true)}>
             {IconPlus}
             Nuovo Articolo
@@ -172,6 +230,7 @@ export default function ArticoliSection() {
           </div>
         </div>
         {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {syncError && <Notice variant="error" onClose={() => setSyncError(null)} style={{ marginBottom: 8 }}>{syncError}</Notice>}
         {view === "list" ? (
           <DataTable
             columns={articleColumns}
@@ -204,7 +263,12 @@ export default function ArticoliSection() {
                     <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
                       {a.stato}
                     </span>
-                    <div className="article-card-counts">{a.variantiCount ?? 0} varianti</div>
+                    <div className="article-card-counts">
+                      {a.variantiVisibiliCount !== undefined && a.variantiVisibiliCount !== (a.variantiCount ?? 0)
+                        ? `${a.variantiVisibiliCount ?? 0}/${a.variantiCount ?? 0}`
+                        : `${a.variantiCount ?? 0}`}
+                      varianti
+                    </div>
                     <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
                     <div className="article-card-actions">
                       <button className="btn btn-secondary btn-sm" onClick={() => setEditCodiceLinea(a.id)}>Modifica</button>

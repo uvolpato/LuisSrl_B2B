@@ -561,7 +561,9 @@ function RaccoltaEditModal({
                     width: "100px",
                     align: "center",
                     mono: true,
-                    cell: (a: Article) => a.variantiCount ?? 0,
+                    cell: (a: Article) => a.variantiVisibiliCount !== undefined && a.variantiVisibiliCount !== (a.variantiCount ?? 0)
+                      ? `${a.variantiVisibiliCount ?? 0}/${a.variantiCount ?? 0}`
+                      : `${a.variantiCount ?? 0}`,
                   },
                   {
                     key: "raccolte",

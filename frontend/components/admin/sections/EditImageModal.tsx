@@ -6,6 +6,7 @@ import { useConfirm } from "../../common/ConfirmProvider";
 import Notice from "../../common/Notice";
 import { api, ApiError } from "../../../lib/api";
 import PositionedImage from "../../common/PositionedImage";
+import { parseImgCss } from "../../../lib/img-css";
 
 const FIT_OPTIONS = [
   { value: "cover", label: "Copri" },
@@ -39,25 +40,6 @@ interface EditImageModalProps {
   onResetImage?: (id: number) => void;
   codiceLinea: string;
   onPersisted?: () => void;
-}
-
-type CssProps = { objectFit: string; objectPosition: string; zoom: number; rotation: number; posX: number; posY: number };
-
-function parseCss(css: string): CssProps {
-  const parts: Record<string, string> = {};
-  css.split(";").filter(Boolean).forEach((p) => {
-    const [k, v] = p.split(":");
-    if (k && v) parts[k.trim()] = v.trim();
-  });
-  const fit = parts["object-fit"] || "cover";
-  const pos = parts["object-position"] || "50% 50%";
-  const t = parts.transform || "";
-  const s = t.match(/scale\(([^)]+)\)/);
-  const r = t.match(/rotate\(([^)]+)\)/);
-  const zoom = s ? (parseFloat(s[1]) - 1) * 100 : 0;
-  const rotation = r ? parseFloat(r[1]) : 0;
-  const [posX, posY] = pos.split(/\s+/).map((v) => parseFloat(v));
-  return { objectFit: fit, objectPosition: pos, zoom, rotation, posX: posX || 50, posY: posY || 50 };
 }
 
 function buildCss(fit: string, pos: string, zoom: number, rotation: number): string {
@@ -149,20 +131,18 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   // il narrowing della guard non si propaga nelle funzioni annidate sotto: alias non-null
   const img = image;
 
-  const { objectFit, objectPosition, zoom, rotation, posX, posY } = parseCss(image.css);
+  const { objectFit, zoom, rotation, posX, posY } = parseImgCss(image.css);
 
   function handleChange(props: Record<string, unknown>) {
-    const next = { ...parseCss(img.css) };
+    const next = { ...parseImgCss(img.css) };
     if ("objectFit" in props) next.objectFit = props.objectFit as string;
-    if ("objectPosition" in props) next.objectPosition = props.objectPosition as string;
     if ("zoom" in props) next.zoom = props.zoom as number;
     if ("rotation" in props) next.rotation = props.rotation as number;
     if ("posX" in props) next.posX = props.posX as number;
     if ("posY" in props) next.posY = props.posY as number;
     // objectPosition deriva sempre da posX/posY: i controlli di posizione
-    // (slider X/Y, frecce, click sulla mappa) passano posX/posY, non objectPosition.
-    next.objectPosition = toPositionStr(next.posX, next.posY);
-    onChange(img.id, { css: buildCss(next.objectFit, next.objectPosition, next.zoom, next.rotation) });
+    // (slider X/Y, frecce, click sulla mappa) passano posX/posY.
+    onChange(img.id, { css: buildCss(next.objectFit, toPositionStr(next.posX, next.posY), next.zoom, next.rotation) });
   }
 
   function handleNudge(dx: number, dy: number) {
@@ -232,7 +212,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
           <PositionedImage
             className="edit-image-pos-map"
             src={image.url}
-            css={buildCss(objectFit, objectPosition, zoom, rotation)}
+            css={buildCss(objectFit, toPositionStr(posX, posY), zoom, rotation)}
             aspect={4 / 3}
             onClick={handlePositionClick}
             style={{ width: 320, margin: 0 }}

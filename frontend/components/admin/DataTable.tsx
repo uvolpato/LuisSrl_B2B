@@ -141,6 +141,11 @@ export default function DataTable<T>({
 
   return (
     <div className="data-table">
+      {loading && (
+        <div className="data-table-loading-overlay">
+          <span>Caricamento…</span>
+        </div>
+      )}
       <div className="data-table-scroll">
         <table>
           <colgroup>
@@ -185,13 +190,6 @@ export default function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={colCount} className="data-table-empty">
-                  Caricamento…
-                </td>
-              </tr>
-            )}
             {!loading && sortedRows.length === 0 && (
               <tr>
                 <td colSpan={colCount} className="data-table-empty">
