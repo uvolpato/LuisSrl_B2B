@@ -102,9 +102,11 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
     if (!codiceLinea) return;
     setLoading(true);
     fetch(`/api/catalogo/${encodeURIComponent(codiceLinea)}`)
-      .then((r) => r.json())
+      // Solo una risposta valida diventa l'articolo: un 404/errore NON deve
+      // finire in `articolo` (altrimenti immagini/varianti sono undefined → crash)
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => { setArticolo(d); setLoading(false); })
-      .catch(() => { setLoading(false); });
+      .catch(() => { setArticolo(null); setLoading(false); });
   }, [codiceLinea]);
 
   const galleryImages = useMemo(() => {
@@ -531,6 +533,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   })}
                 </div>
 
+                <div className="variant-table-scroll">
                 <table className="variant-table">
                   <colgroup>
                     <col className="col-cod" />
@@ -604,6 +607,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                     })}
                   </tbody>
                 </table>
+                </div>
 
                 <div className="variant-grid-footer">
                   <div className="total-info">
