@@ -48,3 +48,17 @@ _*.cjs
 *-dev-cert.pem
 *.pfx
 *.cer
+
+# --- artefatti temporanei / debug (non versionare) ---
+cookie.txt
+cookies.txt
+cookies2.txt
+cookie*.txt
+body.json
+tmp_res.json
+*-err.txt
+*-out.txt
+*.err
+backend/check-*.ts
+.opencode/
+-w

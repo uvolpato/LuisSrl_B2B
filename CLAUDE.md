@@ -46,7 +46,17 @@ Prezzi sempre **IVA esclusa**. Lingua di UI e contenuti: **italiano**.
      ```
    - **frontend/.env.local** — Se hai variabili (di solito vuoto)
 
-## Avviamento (ogni sessione, 2 terminali)
+## Avviamento (ogni sessione)
+
+Se frontend (3000) e/o backend (3001) sono giù, esegui `avvia.bat` dalla
+root del progetto — apre due finestre cmd con backend (NestJS) e frontend
+(Next.js) in watch mode:
+
+```bash
+.\avvia.bat
+```
+
+In alternativa, avvia manualmente in due terminali separati:
 
 **Terminal 1 — Backend (porta 3001)**
 ```bash
