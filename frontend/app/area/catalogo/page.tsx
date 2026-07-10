@@ -50,6 +50,7 @@ export default function CatalogoPage() {
   const [page, setPage] = useState(1);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiNotice, setAiNotice] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const aiInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -93,6 +94,41 @@ export default function CatalogoPage() {
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
+  // Contenuto filtri: reso sia nella sidebar (desktop) sia nel pannello (mobile)
+  const filtersContent = (
+    <>
+      <div className="filter-group">
+        <h3>Famiglia</h3>
+        {(data?.famiglie ?? []).map((f) => (
+          <label key={f.codice}>
+            <input type="checkbox" checked={famiglieSel.has(f.codice)} onChange={() => toggleSet(famiglieSel, f.codice, setFamiglieSel)} />
+            {f.nome} <span className="count">{f.count}</span>
+          </label>
+        ))}
+        {data && data.famiglie.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna famiglia</p>}
+      </div>
+      <hr className="filter-divider" />
+      <div className="filter-group">
+        <h3>Raccolte</h3>
+        {(data?.raccolte ?? []).map((r) => (
+          <label key={r.slug}>
+            <input type="checkbox" checked={raccolteSel.has(r.slug)} onChange={() => toggleSet(raccolteSel, r.slug, setRaccolteSel)} />
+            {r.nome} <span className="count">{r.count}</span>
+          </label>
+        ))}
+        {data && data.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
+      </div>
+      <hr className="filter-divider" />
+      <div className="filter-group">
+        <h3>Disponibilità</h3>
+        {/* Il dato giacenza arriva da Integra in Fase E: per ora tutto Disponibile */}
+        <label><input type="checkbox" checked readOnly /> Disponibile <span className="count">{data?.articoli.length ?? 0}</span></label>
+        <label><input type="checkbox" readOnly /> Scorte limitate <span className="count">0</span></label>
+        <label><input type="checkbox" readOnly /> Esaurito <span className="count">0</span></label>
+      </div>
+    </>
+  );
+
   return (
     <div className="catalogo-page">
       <AreaHeader>
@@ -114,35 +150,7 @@ export default function CatalogoPage() {
         <div className="container">
           <div className="catalog-layout">
             <aside className="sidebar">
-              <div className="filter-group">
-                <h3>Famiglia</h3>
-                {(data?.famiglie ?? []).map((f) => (
-                  <label key={f.codice}>
-                    <input type="checkbox" checked={famiglieSel.has(f.codice)} onChange={() => toggleSet(famiglieSel, f.codice, setFamiglieSel)} />
-                    {f.nome} <span className="count">{f.count}</span>
-                  </label>
-                ))}
-                {data && data.famiglie.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna famiglia</p>}
-              </div>
-              <hr className="filter-divider" />
-              <div className="filter-group">
-                <h3>Raccolte</h3>
-                {(data?.raccolte ?? []).map((r) => (
-                  <label key={r.slug}>
-                    <input type="checkbox" checked={raccolteSel.has(r.slug)} onChange={() => toggleSet(raccolteSel, r.slug, setRaccolteSel)} />
-                    {r.nome} <span className="count">{r.count}</span>
-                  </label>
-                ))}
-                {data && data.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
-              </div>
-              <hr className="filter-divider" />
-              <div className="filter-group">
-                <h3>Disponibilità</h3>
-                {/* Il dato giacenza arriva da Integra in Fase E: per ora tutto Disponibile */}
-                <label><input type="checkbox" checked readOnly /> Disponibile <span className="count">{data?.articoli.length ?? 0}</span></label>
-                <label><input type="checkbox" readOnly /> Scorte limitate <span className="count">0</span></label>
-                <label><input type="checkbox" readOnly /> Esaurito <span className="count">0</span></label>
-              </div>
+              {filtersContent}
             </aside>
 
             <div>
@@ -151,9 +159,15 @@ export default function CatalogoPage() {
                   <h2>{tabLabel ?? "Catalogo"}</h2>
                   <p className="meta">{filtered.length} articoli{tabLabel ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
                 </div>
-                <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
-                  {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <button type="button" className="filters-toggle" onClick={() => setFiltersOpen(true)}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+                    Filtri
+                  </button>
+                  <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+                    {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div className="raccolte-bar">
@@ -209,6 +223,26 @@ export default function CatalogoPage() {
       </main>
 
       <AreaFooter />
+
+      {/* ── Pannello filtri mobile (la sidebar è nascosta sotto i 920px) ── */}
+      <div className={`filters-drawer-overlay ${filtersOpen ? "open" : ""}`} onClick={(e) => { if (e.target === e.currentTarget) setFiltersOpen(false); }}>
+        <aside className={`filters-drawer ${filtersOpen ? "open" : ""}`}>
+          <div className="filters-drawer-head">
+            <h3>Filtri</h3>
+            <button className="filters-drawer-close" onClick={() => setFiltersOpen(false)} aria-label="Chiudi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div className="filters-drawer-body">
+            {filtersContent}
+          </div>
+          <div className="filters-drawer-foot">
+            <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => setFiltersOpen(false)}>
+              Mostra {filtered.length} articoli
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {/* ── Modale Ricerca AI (la ricerca vera arriva in Fase G) ── */}
       <div className={`modal-overlay ${aiOpen ? "open" : ""}`} onClick={(e) => { if (e.target === e.currentTarget) setAiOpen(false); }}>
