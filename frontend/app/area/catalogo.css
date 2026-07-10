@@ -808,15 +808,10 @@
   border-top-color: var(--fg);
 }
 .catalogo-page.scheda-prodotto .variant-table .info-trigger:hover .tooltip { display: block; }
-.catalogo-page.scheda-prodotto .variant-table .price-cell {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-}
-.catalogo-page.scheda-prodotto .variant-table .price-net { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--fg); }
+/* La cella prezzo resta un td normale (vertical-align:middle la centra nella riga).
+   Il prezzo/pz va sulla prima riga, listino barrato + sconto sulla seconda. */
+.catalogo-page.scheda-prodotto .variant-table .price-cell { text-align: center; white-space: nowrap; line-height: 1.5; }
+.catalogo-page.scheda-prodotto .variant-table .price-net { display: block; font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--fg); }
 .catalogo-page.scheda-prodotto .variant-table .price-list { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-decoration: line-through; }
 .catalogo-page.scheda-prodotto .variant-table .price-disc { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 999px; }
 .catalogo-page.scheda-prodotto .variant-table .stock-badge-sm {
@@ -1105,7 +1100,7 @@
 .catalogo-page.cart-page .cart-groups { display: flex; flex-direction: column; gap: 12px; }
 .catalogo-page.cart-page .cart-item {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, auto);
   gap: 16px;
   padding: 16px 20px;
   background: var(--surface);
@@ -1154,7 +1149,10 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px;
+  flex-wrap: wrap;
 }
+.catalogo-page.cart-page .cart-group-row .cart-item-variant { flex: 1 1 180px; min-width: 0; }
+.catalogo-page.cart-page .cart-group-row .cart-group-row-actions { flex: 0 1 auto; }
 .catalogo-page.cart-page .cart-group-row + .cart-group-row { border-top: 1px solid var(--border); }
 .catalogo-page.cart-page .cart-item-variant { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .catalogo-page.cart-page .cart-item-variant .badge {
