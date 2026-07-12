@@ -47,25 +47,142 @@ model User {
 }
 
 model Customer {
-  id                Int          @id @default(autoincrement())
-  email             String
-  passwordHash      String       @map("password_hash")
-  nome              String
-  ragioneSociale    String?      @map("ragione_sociale")
-  partitaIva        String?      @map("partita_iva")
-  telefono          String?
-  telefonoFisso     String?      @map("telefono_fisso")
-  sitoWeb           String?      @map("sito_web")
-  ruolo             CustomerRole @default(CLIENTE)
-  stato             UserStatus   @default(ATTIVO)
-  preferredLanguage String       @default("it") @map("preferred_language")
-  mustChangePassword Boolean     @default(true) @map("must_change_password")
-  avatarColor       String       @default("oklch(55% 0.15 250)") @map("avatar_color")
-  carrello          Carrello?
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
+  id                 Int          @id @default(autoincrement())
+  codiceCliente      String?      @unique @map("codice_cliente")
+  codiceListino      String?      @map("codice_listino")
+  email              String
+  passwordHash       String       @map("password_hash")
+  nome               String
+  ragioneSociale     String?      @map("ragione_sociale")
+  partitaIva         String?      @map("partita_iva")
+  telefono           String?
+  telefonoFisso      String?      @map("telefono_fisso")
+  sitoWeb            String?      @map("sito_web")
+  indirizzo          String?
+  cap                String?
+  citta              String?
+  provincia          String?
+  codicePagamento    String?      @map("codice_pagamento")
+  codicePorto        String?      @map("codice_porto")
+  codiceSpedizione   String?      @map("codice_spedizione")
+  codiceVettore      String?      @map("codice_vettore")
+  fido               Decimal?     @default(0)
+  descrizione        String?
+  descrizioneDettagliata String?  @map("descrizione_dettagliata")
+  promptAi           String?      @map("prompt_ai")
+  wizardStepTesti    Json?        @map("wizard_step_testi")
+  ruolo              CustomerRole @default(CLIENTE)
+  stato              UserStatus   @default(ATTIVO)
+  preferredLanguage  String       @default("it") @map("preferred_language")
+  mustChangePassword Boolean      @default(true) @map("must_change_password")
+  avatarColor        String       @default("oklch(55% 0.15 250)") @map("avatar_color")
+  /// Data invio invito B2B (null = da invitare)
+  invitatoAt         DateTime?    @map("invitato_at")
+  carrello           Carrello?
+  indirizzi          IndirizzoCliente[]
+  contatti           ContattoCliente[]
+  ordini             OrdineCliente[]
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
 
   @@map("customers")
+}
+
+model IndirizzoCliente {
+  id             Int     @id @default(autoincrement())
+  customerId     Int     @map("customer_id")
+  ragioneSociale String? @map("ragione_sociale")
+  indirizzo      String?
+  cap            String?
+  citta          String?
+  provincia      String?
+  flagSpedizione Boolean @default(false) @map("flag_spedizione")
+  codicePorto    String? @map("codice_porto")
+  codiceVettore  String? @map("codice_vettore")
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("indirizzi_clienti")
+}
+
+model ContattoCliente {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  tipo       String   // EMAIL | TELEFONO | NOTA
+  data       DateTime
+  contenuto  String
+  createdAt  DateTime @default(now()) @map("created_at")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("contatti_clienti")
+}
+
+model OrdineCliente {
+  id                Int      @id @default(autoincrement())
+  numeroOrdine      String   @map("numero_ordine")
+  dataOrdine        DateTime? @map("data_ordine")
+  customerId        Int      @map("customer_id")
+  importoTotale     Decimal? @map("importo_totale")
+  stato             String?
+  indirizzoSpedizioneId Int? @map("indirizzo_spedizione_id")
+  codicePorto       String?  @map("codice_porto")
+  codiceSpedizione  String?  @map("codice_spedizione")
+  codiceVettore     String?  @map("codice_vettore")
+  codicePagamento   String?  @map("codice_pagamento")
+  notaSpedizione    String?  @map("nota_spedizione")
+  notaOrdine        String?  @map("nota_ordine")
+  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  righe             RigaOrdine[]
+
+  @@map("ordini_clienti")
+}
+
+model RigaOrdine {
+  id             Int      @id @default(autoincrement())
+  ordineId       Int      @map("ordine_id")
+  numeroRiga     Int?     @map("numero_riga")
+  codiceProdotto String?  @map("codice_prodotto")
+  descrizione    String?
+  quantita       Decimal?
+  prezzo         Decimal?
+  ordine         OrdineCliente @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+
+  @@map("righe_ordini")
+}
+
+model ModalitaPagamento {
+  codice        String   @id @map("codice_pagamento")
+  descrizione   String   @map("descrizione_pagamento")
+  obsoleto      Boolean  @default(false)
+  updatedAt     DateTime @updatedAt @map("aggiornato_il")
+
+  @@map("integra_pagamenti_descr")
+}
+
+model ModalitaPorto {
+  codice      String   @id @map("codice_porto")
+  descrizione String   @map("descrizione_porto")
+  obsoleto    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @map("aggiornato_il")
+
+  @@map("integra_porti")
+}
+
+model ModalitaSpedizione {
+  codice      String   @id @map("codice_spedizione")
+  descrizione String   @map("descrizione_spedizione")
+  obsoleto    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @map("aggiornato_il")
+
+  @@map("integra_spedizioni")
+}
+
+model Vettore {
+  codice      String   @id @map("codice_vettore")
+  descrizione String
+  obsoleto    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt @map("aggiornato_il")
+
+  @@map("integra_vettori")
 }
 
 model PermissionGroup {
@@ -192,7 +309,12 @@ model Immagine {
   tipo            String    @default("CARICATA")
   inGalleria      Boolean   @default(true) @map("in_galleria")
   css             String    @default("")
-  prompt          String?
+  prompt                  String?
+  aggiungiColore          Boolean   @default(true) @map("aggiungi_colore")
+  aggiungiVariante        Boolean   @default(true) @map("aggiungi_variante")
+  // Prompt template usato per la generazione (nullable se prompt libero)
+  promptTemplateId        Int?       @map("prompt_template_id")
+  promptTemplate          PromptTemplate? @relation(fields: [promptTemplateId], references: [id], onDelete: SetNull)
   // Parametri di generazione AI (valorizzati solo per tipo='AI', sola lettura in UI)
   aiModel         String?    @map("ai_model")
   aiAspect        String?    @map("ai_aspect")
@@ -254,4 +376,34 @@ model ArticoloRaccolta {
 
   @@unique([articoloId, raccoltaId])
   @@map("articoli_raccolte")
+}
+
+model SyncConfig {
+  tipo            String    @id // "articoli" | "listini" | "giacenze" | "ordini"
+  label           String
+  cronExpression  String    @map("cron_expression")
+  attivo          Boolean   @default(true)
+  soloManuale     Boolean   @default(false) @map("solo_manuale")
+  ultimaEsecuzione DateTime? @map("ultima_esecuzione")
+  ultimoEsito     String?   @map("ultimo_esito") // "ok" | "errore"
+  ultimoErrore    String?   @map("ultimo_errore")
+  prossimaEsecuzione DateTime? @map("prossima_esecuzione")
+  createdAt       DateTime  @default(now()) @map("creato_il")
+  updatedAt       DateTime  @updatedAt @map("aggiornato_il")
+
+  @@map("sync_config")
+}
+
+model PromptTemplate {
+  id          Int      @id @default(autoincrement())
+  tipo        String   // "AMBIENTA" | "DESCRIZIONE"
+  titolo      String
+  prompt      String
+  tags        String   @default("") // separati da virgola
+  ordinamento Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  immagini    Immagine[]
+
+  @@map("prompt_templates")
 }

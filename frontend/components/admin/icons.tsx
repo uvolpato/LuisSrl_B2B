@@ -25,3 +25,4 @@ export const IconChevronRight = s(<><path d="M9 18l6-6-6-6" /></>, { strokeWidth
 export const IconSearch = s(<><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></>, { strokeWidth: 1.6 });
 export const IconInfo = s(<><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></>, { strokeWidth: 1.8 });
 export const IconTrash = s(<><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>);
+export const IconMail = s(<><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 6L2 7" /></>, { strokeWidth: 1.8 });

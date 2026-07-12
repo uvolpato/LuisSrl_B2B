@@ -32,6 +32,70 @@ export interface CustomerProfile {
   mustChangePassword: boolean;
   avatarColor: string;
   createdAt: string;
+  codiceCliente?: string | null;
+  codiceListino?: string | null;
+  indirizzo?: string | null;
+  cap?: string | null;
+  citta?: string | null;
+  provincia?: string | null;
+  codicePagamento?: string | null;
+  codicePagamentoDescrizione?: string | null;
+  fido?: number | null;
+  numOrdini?: number;
+  numOrdiniAnno?: number;
+  invitatoAt?: string | null;
+}
+
+export interface IndirizzoCliente {
+  id: number;
+  customerId: number;
+  ragioneSociale: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  flagSpedizione: boolean;
+}
+
+export interface ContattoCliente {
+  id: number;
+  customerId: number;
+  tipo: "EMAIL" | "TELEFONO" | "NOTA";
+  data: string;
+  contenuto: string;
+}
+
+export interface RigaOrdine {
+  id: number;
+  ordineId: number;
+  numeroRiga?: number | null;
+  codiceProdotto: string | null;
+  descrizione: string | null;
+  quantita: string | null;
+  prezzo: string | null;
+}
+
+export interface OrdineCliente {
+  id: number;
+  numeroOrdine: string;
+  dataOrdine: string | null;
+  customerId: number;
+  importoTotale: string | null;
+  stato: string | null;
+  indirizzoSpedizioneId?: number | null;
+  codicePorto?: string | null;
+  codiceSpedizione?: string | null;
+  codiceVettore?: string | null;
+  codicePagamento?: string | null;
+  notaSpedizione?: string | null;
+  notaOrdine?: string | null;
+  righe: RigaOrdine[];
+}
+
+export interface OrdiniResponse {
+  items: OrdineCliente[];
+  total: number;
+  years: number[];
 }
 
 export interface MeResponse {

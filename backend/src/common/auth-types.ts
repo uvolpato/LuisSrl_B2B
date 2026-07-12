@@ -44,6 +44,18 @@ export interface CustomerProfile {
   mustChangePassword: boolean;
   avatarColor: string;
   createdAt: Date;
+  codiceCliente?: string | null;
+  codiceListino?: string | null;
+  indirizzo?: string | null;
+  cap?: string | null;
+  citta?: string | null;
+  provincia?: string | null;
+  codicePagamento?: string | null;
+  codicePagamentoDescrizione?: string | null;
+  invitatoAt?: Date | null;
+  fido?: number | null;
+  numOrdini?: number;
+  numOrdiniAnno?: number;
 }
 
 export function toUserProfile(u: {
@@ -65,6 +77,9 @@ export function toCustomerProfile(u: {
   preferredLanguage: string; mustChangePassword: boolean; avatarColor: string;
   ragioneSociale: string | null; partitaIva: string | null; telefono: string | null;
   telefonoFisso: string | null; sitoWeb: string | null;
+  codiceCliente?: string | null; codiceListino?: string | null;
+  indirizzo?: string | null; cap?: string | null; citta?: string | null; provincia?: string | null;
+  codicePagamento?: string | null; fido?: unknown; invitatoAt?: Date | null;
   createdAt: Date;
 }): CustomerProfile {
   return {
@@ -73,5 +88,14 @@ export function toCustomerProfile(u: {
     telefonoFisso: u.telefonoFisso, sitoWeb: u.sitoWeb,
     ruolo: u.ruolo, stato: u.stato, preferredLanguage: u.preferredLanguage,
     mustChangePassword: u.mustChangePassword, avatarColor: u.avatarColor, createdAt: u.createdAt,
+    codiceCliente: u.codiceCliente ?? null,
+    codiceListino: u.codiceListino ?? null,
+    indirizzo: u.indirizzo ?? null,
+    cap: u.cap ?? null,
+    citta: u.citta ?? null,
+    provincia: u.provincia ?? null,
+    codicePagamento: u.codicePagamento ?? null,
+    fido: u.fido != null ? Number(u.fido) : null,
+    invitatoAt: u.invitatoAt ?? null,
   };
 }
