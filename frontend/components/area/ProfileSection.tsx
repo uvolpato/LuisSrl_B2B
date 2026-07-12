@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { CustomerProfile } from "../../lib/types";
+import { api, ApiError } from "../../lib/api";
 
 function BuildingIcon() {
   return (
@@ -42,21 +43,12 @@ export default function ProfileSection({
     if (pwNew.length < 8) { setPwError("Minimo 8 caratteri."); return; }
     if (pwNew !== pwConfirm) { setPwError("Le password non coincidono."); return; }
     try {
-      const res = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oldPassword: pwOld, newPassword: pwNew }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        setPwError(err.message || "Errore");
-        return;
-      }
+      await api.post("/api/auth/change-password", { oldPassword: pwOld, newPassword: pwNew });
       setPwOk(true);
       onPasswordChanged();
       setTimeout(() => { setPwOpen(false); setPwOk(false); setPwOld(""); setPwNew(""); setPwConfirm(""); }, 1500);
-    } catch {
-      setPwError("Errore di connessione.");
+    } catch (err) {
+      setPwError(err instanceof ApiError ? err.code : "errors.generic");
     }
   };
 
