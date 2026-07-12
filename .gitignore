@@ -62,4 +62,5 @@ tmp_res.json
 backend/check-*.ts
 .opencode/*
 !.opencode/agent/
+!.opencode/opencode.json
 -w
