@@ -16,6 +16,12 @@ interface DimEntry {
   valore: number;
 }
 
+interface PrezzoInfo {
+  prezzoNetto: number;
+  prezzoListino: number;
+  sconto: number;
+}
+
 interface Variante {
   codice: string;
   descrizione: string;
@@ -23,6 +29,7 @@ interface Variante {
   multiplo: number;
   giacenza: number;
   stato: string;
+  prezzo: PrezzoInfo | null;
 }
 
 interface Immagine {
@@ -183,7 +190,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
   const filteredVarianti = useMemo(() => {
     const active = Object.entries(gridFilter).filter(([, v]) => v);
-    let list = varianti.filter((v) => v.giacenza > 0);
+    let list = varianti;
     if (!active.length) return list;
     return list.filter((v) =>
       active.every(([key, val]) => String(v.dimensioni?.[key]?.valore ?? "") === val)
@@ -199,6 +206,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   }, [varianti, selDim, dimKeys]);
 
   const singleVariant = varianti.length === 1 ? varianti[0] : null;
+
+  const buyVariant = selectedVariant || singleVariant;
+  const buyOut = buyVariant ? getStock(buyVariant.giacenza) === "out" : false;
 
   useEffect(() => {
     if (singleVariant) {
@@ -263,7 +273,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
       const q = gridQtys[v.codice] || 0;
       if (q > 0) {
         count++;
-        total += variantExamplePrice(v.codice).net * q;
+        total += (v.prezzo?.prezzoNetto ?? 0) * q;
       }
     });
     return { count, total: Math.round(total * 100) / 100 };
@@ -421,10 +431,17 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
               <div className="buy-box">
                 {selectedVariant ? (
                   <>
-                    <div className="price-block">
-                      <span className="price-net">{selectedVariant.descrizione}</span>
-                    </div>
                     <p className="savings-line">Cod. {selectedVariant.codice}</p>
+                    {selectedVariant.prezzo && (
+                      <>
+                        <div className="price-block">
+                          <span className="price-net">{formatPrice(selectedVariant.prezzo.prezzoNetto)}</span>
+                          {selectedVariant.prezzo.sconto > 0 && <span className="price-list">{formatPrice(selectedVariant.prezzo.prezzoListino)}</span>}
+                          {selectedVariant.prezzo.sconto > 0 && <span className="price-discount">−{selectedVariant.prezzo.sconto}%</span>}
+                        </div>
+                        {selectedVariant.prezzo.sconto > 0 && <p className="savings-line">{`Risparmi ${formatPrice(selectedVariant.prezzo.prezzoListino - selectedVariant.prezzo.prezzoNetto)} (${selectedVariant.prezzo.sconto}%)`}</p>}
+                      </>
+                    )}
                     <div className="divider" />
                     <div className={`stock-badge ${STOCK_CLASS[getStock(selectedVariant.giacenza)]}`} style={{ fontSize: 14 }}>
                       <span className="stock-dot" /> {STOCK_LABELS[getStock(selectedVariant.giacenza)]}
@@ -432,10 +449,20 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   </>
                 ) : (
                   <>
-                    <div className="price-block">
-                      <span className="price-net">{singleVariant ? singleVariant.descrizione : "—"}</span>
-                    </div>
-                    {singleVariant && <p className="savings-line">Cod. {singleVariant.codice}</p>}
+                    <p className="savings-line">Cod. {singleVariant?.codice ?? "—"}</p>
+                    {(() => {
+                      const p = singleVariant?.prezzo;
+                      return (
+                        <>
+                          <div className="price-block">
+                            <span className="price-net">{formatPrice(p?.prezzoNetto ?? 0)}</span>
+                            {(p?.sconto ?? 0) > 0 && <span className="price-list">{formatPrice(p?.prezzoListino ?? 0)}</span>}
+                            {(p?.sconto ?? 0) > 0 && <span className="price-discount">−{p?.sconto ?? 0}%</span>}
+                          </div>
+                          {(p?.sconto ?? 0) > 0 && <p className="savings-line">{`Risparmi ${formatPrice((p?.prezzoListino ?? 0) - (p?.prezzoNetto ?? 0))} (${p?.sconto ?? 0}%)`}</p>}
+                        </>
+                      );
+                    })()}
                     <div className="divider" />
                     <div className="stock-badge">
                       <span className="stock-dot" /> {singleVariant ? STOCK_LABELS[getStock(singleVariant.giacenza)] : "Seleziona una variante"}
@@ -468,10 +495,10 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   <label style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)", display: "block", marginBottom: 8 }}>Quantità</label>
                   <div className="qty-row">
                     <div className="qty-control">
-                      <button type="button" onClick={() => changeBuyQty(-qtyStep)} disabled={!selectedVariant && !singleVariant}>−</button>
+                      <button type="button" onClick={() => changeBuyQty(-qtyStep)} disabled={(!selectedVariant && !singleVariant) || buyOut}>−</button>
                       <input type="number" id="qty" value={buyQty ?? ""} min={qtyStep} step={qtyStep} readOnly
                         onChange={(e) => setBuyQty(Math.max(qtyStep, parseInt(e.target.value) || qtyStep))} />
-                      <button type="button" onClick={() => changeBuyQty(qtyStep)} disabled={!selectedVariant && !singleVariant}>+</button>
+                      <button type="button" onClick={() => changeBuyQty(qtyStep)} disabled={(!selectedVariant && !singleVariant) || buyOut}>+</button>
                     </div>
                     {selectedVariant?.multiplo && selectedVariant.multiplo > 1 && (
                       <span className="qty-info">Multiplo: {selectedVariant.multiplo} pz</span>
@@ -482,13 +509,13 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   </div>
                 </div>
 
-                <button className="btn btn-primary add-to-cart" disabled={!selectedVariant && !singleVariant}
+                <button className="btn btn-primary add-to-cart" disabled={(!selectedVariant && !singleVariant) || buyOut}
                   onClick={addSingleToCart}
-                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: (selectedVariant || singleVariant) ? 1 : 0.5 }}>
-                  {buyBtnText}
+                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: ((!selectedVariant && !singleVariant) || buyOut) ? 0.5 : 1 }}>
+                  {buyOut ? "Esaurito" : buyBtnText}
                 </button>
-                <button className="btn btn-secondary" disabled={!selectedVariant && !singleVariant}
-                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: (selectedVariant || singleVariant) ? 1 : 0.5 }}>
+                <button className="btn btn-secondary" disabled={(!selectedVariant && !singleVariant) || buyOut}
+                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: ((!selectedVariant && !singleVariant) || buyOut) ? 0.5 : 1 }}>
                   Acquista ora
                 </button>
 
@@ -582,16 +609,15 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                             </span>
                           </td>
                           <td className="price-cell">
-                            {(() => {
-                              const p = variantExamplePrice(v.codice);
-                              return (
-                                <>
-                                  <span className="price-net">{formatPrice(p.net)} / pz</span>
-                                  <span className="price-list">{formatPrice(p.list)}</span>
-                                  <span className="price-disc">−{p.disc}%</span>
-                                </>
-                              );
-                            })()}
+                            {v.prezzo ? (
+                              <>
+                                <span className="price-net">{formatPrice(v.prezzo.prezzoNetto)} / pz</span>
+                                {v.prezzo.sconto > 0 && <span className="price-list">{formatPrice(v.prezzo.prezzoListino)}</span>}
+                                {v.prezzo.sconto > 0 && <span className="price-disc">−{v.prezzo.sconto}%</span>}
+                              </>
+                            ) : (
+                              <span className="price-net" style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
+                            )}
                           </td>
                           <td>
                             <div className="qty-ctrl">

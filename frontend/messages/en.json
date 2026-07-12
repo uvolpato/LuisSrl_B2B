@@ -62,7 +62,10 @@
     "fieldPhone": "Phone",
     "fieldLanguage": "Preferred language",
     "confirmBlock": "Block this customer's access? Their history is preserved.",
-    "confirmReset": "Generate a new provisional password for this customer?"
+    "confirmReset": "Generate a new provisional password for this customer?",
+    "confirmDelete": "Permanently delete this customer and all linked data (addresses, contacts, orders)? This cannot be undone.",
+    "confirmDiscard": "You have unsaved changes. Close without saving?",
+    "delete": "Delete"
   },
   "area": {
     "title": "Your reserved area",

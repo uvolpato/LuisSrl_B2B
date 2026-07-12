@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fsp from 'fs/promises';
 import { randomUUID } from 'crypto';
+import { hashPassword } from '../common/password';
 
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
@@ -80,8 +81,8 @@ export class IntegrazioneService {
     const offset = (page - 1) * limit;
 
     const fromClause = `FROM integra_articoli a
-      LEFT JOIN integra_famiglie f ON f.codice = a.famiglia_codice
-      LEFT JOIN integra_linee l ON l.codice = a.linea_codice`;
+      LEFT JOIN integra_famiglie f ON f.codice_numerico = a.famiglia_codice
+      LEFT JOIN integra_linee l ON l.codice_numerico = a.linea_codice`;
 
     const countResult = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
       `SELECT count(*) ${fromClause} ${whereClause}`,
@@ -114,7 +115,7 @@ export class IntegrazioneService {
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
       `SELECT a.*, f.nome AS famiglia_nome
        FROM integra_articoli a
-       LEFT JOIN integra_famiglie f ON f.codice = a.famiglia_codice
+       LEFT JOIN integra_famiglie f ON f.codice_numerico = a.famiglia_codice
        WHERE a.pro_cod IN (${placeholders})`,
       ...codici,
     );
@@ -130,23 +131,23 @@ export class IntegrazioneService {
     });
     const existingSet = new Set(existingVarianti.map((v) => v.codice));
 
-    // Mappa cod_famiglia (numerico) → pro_cod FAM_ dalla FDW
+    // Mappa codice famiglia (numerico) → codice (FAM_* da FDW)
     const famMap = new Map<string, { proCod: string; nome: string }>();
     try {
-      const famRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_famiglia: string; pro_descr: string }[]>(
-        `SELECT DISTINCT pro_cod, cod_famiglia, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'FAM_%' AND cod_famiglia IS NOT NULL`,
+      const famRows = await this.prisma.$queryRawUnsafe<{ codice: string; codice_numerico: string; nome: string }[]>(
+        `SELECT codice, codice_numerico, nome FROM integra_famiglie WHERE codice_numerico IS NOT NULL`,
       );
-      for (const r of famRows) famMap.set(r.cod_famiglia, { proCod: r.pro_cod, nome: r.pro_descr });
-    } catch { /* FDW non disponibile — usa il codice numerico */ }
+      for (const r of famRows) famMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
+    } catch { /* fallback */ }
 
-    // Mappa cod_linea (numerico) → pro_cod LINEA dalla FDW (per raggruppare varianti per linea)
+    // Mappa codice linea (numerico) → codice (LINEA_* da FDW)
     const lineaMap = new Map<string, { proCod: string; nome: string }>();
     try {
-      const lRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_linea: string; pro_descr: string }[]>(
-        `SELECT DISTINCT pro_cod, cod_linea, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'lin%' AND cod_linea IS NOT NULL`,
+      const lRows = await this.prisma.$queryRawUnsafe<{ codice: string; codice_numerico: string; nome: string }[]>(
+        `SELECT codice, codice_numerico, nome FROM integra_linee WHERE codice_numerico IS NOT NULL`,
       );
-      for (const r of lRows) lineaMap.set(r.cod_linea, { proCod: r.pro_cod, nome: r.pro_descr });
-    } catch { /* FDW non disponibile — salta linea */ }
+      for (const r of lRows) lineaMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
+    } catch { /* fallback */ }
 
     const upsertFamiglia = async (tx: any, codice: string | null, nome: string | null): Promise<string> => {
       if (!codice) {
@@ -158,6 +159,17 @@ export class IntegrazioneService {
       const mapped = famMap.get(codice);
       const famCodice = mapped?.proCod ?? codice;
       const famNome = mapped?.nome ?? nome ?? codice;
+
+      // Cerca famiglia già esistente: per codice FAM_*, per nome, o per codice numerico
+      const existingRows = await tx.$queryRawUnsafe(
+        `SELECT codice FROM famiglie WHERE codice = $1
+         UNION SELECT codice FROM famiglie WHERE LOWER(nome) = LOWER($2) AND codice != $1
+         UNION SELECT codice FROM famiglie WHERE codice = $3 AND codice != $1
+         LIMIT 1`,
+        famCodice, famNome, codice,
+      ) as { codice: string }[];
+      if (existingRows.length > 0) return existingRows[0].codice;
+
       await tx.$executeRawUnsafe(
         `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now()) ON CONFLICT (codice) DO UPDATE SET nome = EXCLUDED.nome, updated_at = now()`,
         famCodice, famNome,
@@ -260,11 +272,11 @@ export class IntegrazioneService {
 
     let famMap = new Map<string, { proCod: string; nome: string }>();
     try {
-      const famRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_famiglia: string; pro_descr: string }[]>(
-        `SELECT DISTINCT pro_cod, cod_famiglia, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'FAM_%' AND cod_famiglia IS NOT NULL`,
+      const famRows = await this.prisma.$queryRawUnsafe<{ codice: string; codice_numerico: string; nome: string }[]>(
+        `SELECT codice, codice_numerico, nome FROM integra_famiglie WHERE codice_numerico IS NOT NULL`,
       );
-      for (const r of famRows) famMap.set(r.cod_famiglia, { proCod: r.pro_cod, nome: r.pro_descr });
-    } catch { /* FDW non disponibile — salta famiglia */ }
+      for (const r of famRows) famMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
+    } catch { /* fallback */ }
 
     const famiglie = await this.prisma.famiglia.findMany({ where: { codice: { not: 'INTEGRA' } } });
     for (const f of famiglie) {
@@ -288,14 +300,14 @@ export class IntegrazioneService {
       }
     }
 
-    // Mappa FDW: cod_linea → pro_cod LINEA
+    // Mappa linea (numerico) → codice (LINEA_* da FDW)
     let lineaMap = new Map<string, { proCod: string; nome: string }>();
     try {
-      const lineaRows = await this.prisma.$queryRawUnsafe<{ pro_cod: string; cod_linea: string; pro_descr: string }[]>(
-        `SELECT DISTINCT pro_cod, cod_linea, pro_descr FROM integra.itgprodotti WHERE pro_cod ILIKE 'lin%' AND cod_linea IS NOT NULL`,
+      const lineaRows = await this.prisma.$queryRawUnsafe<{ codice: string; codice_numerico: string; nome: string }[]>(
+        `SELECT codice, codice_numerico, nome FROM integra_linee WHERE codice_numerico IS NOT NULL`,
       );
-      for (const r of lineaRows) lineaMap.set(r.cod_linea, { proCod: r.pro_cod, nome: r.pro_descr });
-    } catch { /* FDW non disponibile — salta linea */ }
+      for (const r of lineaRows) lineaMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
+    } catch { /* fallback */ }
 
     // Cache integra_articoli: variante → linea_codice
     let cacheLineaMap = new Map<string, string>();
@@ -521,7 +533,7 @@ export class IntegrazioneService {
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -565,6 +577,14 @@ export class IntegrazioneService {
         await this.prisma.variante.updateMany({
           where: { codice, articoloId: art.id },
           data: { stato: newStato },
+        });
+      }
+    }
+    if (data.variantiMultipli) {
+      for (const [codice, multiplo] of Object.entries(data.variantiMultipli)) {
+        await this.prisma.variante.updateMany({
+          where: { codice, articoloId: art.id },
+          data: { multiplo },
         });
       }
     }
@@ -671,6 +691,9 @@ export class IntegrazioneService {
       items: { mime: string; b64: string }[];
       params: { prompt: string; model: string; aspect?: string; temperature?: number; seed?: number };
       parentImageId: number;
+      aggiungiColore: boolean;
+      aggiungiVariante: boolean;
+      promptTemplateId?: number | null;
       ts: number;
     }
   >();
@@ -759,7 +782,7 @@ export class IntegrazioneService {
   async ambientaImmagine(
     codiceLinea: string,
     imageId: number,
-    opts: { prompt: string; n?: number; aspectRatio?: string; temperature?: number; seed?: number },
+    opts: { prompt: string; n?: number; aspectRatio?: string; temperature?: number; seed?: number; aggiungiColore?: boolean; aggiungiVariante?: boolean; promptTemplateId?: number | null },
   ) {
     if (!opts.prompt?.trim()) throw new BadRequestException('Inserisci un prompt.');
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
@@ -779,10 +802,12 @@ export class IntegrazioneService {
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true, dimensioni: true } });
     const caricate = await this.prisma.immagine.findMany({ where: { articoloId: art.id, tipo: 'CARICATA' }, select: { url: true, css: true, ordinamento: true }, orderBy: { ordinamento: 'asc' } });
     const ctx: string[] = [];
+    const aggColore = opts.aggiungiColore !== false;
+    const aggVariante = opts.aggiungiVariante !== false;
     if (art.descrizioneDettagliata) ctx.push(`Descrizione dettagliata: ${art.descrizioneDettagliata}`);
     if (art.descrizione) ctx.push(`Descrizione breve: ${art.descrizione}`);
-    if (art.colore) ctx.push(`Colore: ${art.colore}${art.coloreRgb ? ` (RGB ${art.coloreRgb})` : ''}`);
-    if (varianti.length) ctx.push(`Varianti disponibili: ${varianti.map(v => `${v.descrizione} (${v.codice})${v.dimensioni ? ' dim:' + JSON.stringify(v.dimensioni) : ''}`).join('; ')}`);
+    if (aggColore && art.colore) ctx.push(`Colore: ${art.colore}${art.coloreRgb ? ` (RGB ${art.coloreRgb})` : ''}`);
+    if (aggVariante && varianti.length) ctx.push(`Varianti disponibili: ${varianti.map(v => `${v.descrizione} (${v.codice})${v.dimensioni ? ' dim:' + JSON.stringify(v.dimensioni) : ''}`).join('; ')}`);
     if (caricate.length) ctx.push(`Immagini a sfondo bianco disponibili: ${caricate.length} (posizioni ${caricate.map(c => c.ordinamento).join(', ')})`);
     const contestoProdotto = ctx.join('\n');
     const promptFinale = contestoProdotto ? `Contesto prodotto:\n${contestoProdotto}\n\nRichiesta utente:\n${opts.prompt}` : opts.prompt;
@@ -809,6 +834,9 @@ export class IntegrazioneService {
         seed: opts.seed,
       },
       parentImageId: imageId,
+      aggiungiColore: aggColore,
+      aggiungiVariante: aggVariante,
+      promptTemplateId: opts.promptTemplateId ?? null,
       ts: Date.now(),
     });
     return { generationId, images: results };
@@ -845,6 +873,9 @@ export class IntegrazioneService {
           aiTemperature: gen.params.temperature ?? null,
           aiSeed: gen.params.seed ?? null,
           immaginePadreId: gen.parentImageId,
+          aggiungiColore: gen.aggiungiColore,
+          aggiungiVariante: gen.aggiungiVariante,
+          promptTemplateId: gen.promptTemplateId ?? null,
         },
       });
       saved.push({ url: rec.url });
@@ -861,8 +892,12 @@ export class IntegrazioneService {
     const aiCfg = await this.getAiConfig('testi');
     const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [{ text: prompt }];
     if (image) parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
-    const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${aiCfg.model}:generateContent`;
-    const res = await fetch(url, {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    try {
+      const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${aiCfg.model}:generateContent`;
+      const res = await fetch(url, {
+        signal: controller.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
@@ -875,24 +910,26 @@ export class IntegrazioneService {
             { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
           ],
         }),
-      },
-    );
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '');
-      let detail = txt.slice(0, 300);
-      try { detail = (JSON.parse(txt) as { error?: { message?: string } })?.error?.message ?? detail; } catch { /* */ }
-      throw new BadRequestException(`Errore AI testo (${res.status}): ${detail.slice(0, 200)}`);
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        let detail = txt.slice(0, 300);
+        try { detail = (JSON.parse(txt) as { error?: { message?: string } })?.error?.message ?? detail; } catch { /* */ }
+        throw new BadRequestException(`Errore AI testo (${res.status}): ${detail.slice(0, 200)}`);
+      }
+      const data = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      };
+      const candidate = data.candidates?.[0];
+      const text = candidate?.content?.parts?.map((p) => p.text).join('\n') || '';
+      const finishReason = candidate?.finishReason ?? 'UNKNOWN';
+      if (finishReason !== 'STOP') {
+        console.warn(`Gemini finishReason=${finishReason} (atteso STOP). Testo ricevuto: ${text.slice(0, 200)}`);
+      }
+      return text;
+    } finally {
+      clearTimeout(timeout);
     }
-    const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-    };
-    const candidate = data.candidates?.[0];
-    const text = candidate?.content?.parts?.map((p) => p.text).join('\n') || '';
-    const finishReason = candidate?.finishReason ?? 'UNKNOWN';
-    if (finishReason !== 'STOP') {
-      console.warn(`Gemini finishReason=${finishReason} (atteso STOP). Testo ricevuto: ${text.slice(0, 200)}`);
-    }
-    return text;
   }
 
   /** Analizza nome+descrizione via AI per estrarre colore e RGB. Cache testuale in memoria. */
@@ -1119,5 +1156,515 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
   /** Restituisce il mapping corrente (utile per debug) */
   getConfig() {
     return CONFIG;
+  }
+
+  // ── PromptTemplate CRUD ──
+
+  async getPromptTemplates() {
+    return this.prisma.promptTemplate.findMany({ orderBy: { ordinamento: 'asc' } });
+  }
+
+  async getPromptTemplate(id: number) {
+    const t = await this.prisma.promptTemplate.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Prompt template non trovato');
+    return t;
+  }
+
+  async createPromptTemplate(data: { tipo: string; titolo: string; prompt: string; tags?: string; ordinamento?: number }) {
+    return this.prisma.promptTemplate.create({ data });
+  }
+
+  async updatePromptTemplate(id: number, data: { tipo?: string; titolo?: string; prompt?: string; tags?: string; ordinamento?: number }) {
+    const t = await this.prisma.promptTemplate.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Prompt template non trovato');
+    return this.prisma.promptTemplate.update({ where: { id }, data });
+  }
+
+  async deletePromptTemplate(id: number) {
+    const t = await this.prisma.promptTemplate.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Prompt template non trovato');
+    return this.prisma.promptTemplate.delete({ where: { id } });
+  }
+
+  // ── Clienti (import da Integra) ──
+
+  async searchClienti(search?: string, page = 1, limit = 50, sort?: string, dir?: 'asc' | 'desc') {
+    const params: unknown[] = [];
+    let idx = 1;
+    const conds: string[] = [];
+
+    if (search) {
+      conds.push(`(c.codice_cliente ILIKE $${idx} OR c.ragione_sociale ILIKE $${idx} OR c.partita_iva ILIKE $${idx} OR c.email ILIKE $${idx})`);
+      params.push(`%${search}%`);
+      idx++;
+    }
+    // Esclude già importati (per codice_cliente)
+    conds.push(`NOT EXISTS (SELECT 1 FROM customers cu WHERE cu.codice_cliente = c.codice_cliente)`);
+    const whereClause = `WHERE ${conds.join(' AND ')}`;
+    const offset = (page - 1) * limit;
+
+    const SORT_MAP: Record<string, string> = {
+      codice: 'c.codice_cliente',
+      ragioneSociale: 'c.ragione_sociale',
+      citta: 'c.citta',
+      listino: 'c.codice_listino',
+      ordini: 'COALESCE(o.n, 0)',
+    };
+    const dirSql = dir === 'desc' ? 'desc' : 'asc';
+    const orderBySql = sort && SORT_MAP[sort] ? SORT_MAP[sort] : 'c.ragione_sociale';
+    const joinOrdini = sort === 'ordini'
+      ? ` LEFT JOIN (SELECT codice_cliente, count(*) n FROM integra_ordini GROUP BY codice_cliente) o ON o.codice_cliente = c.codice_cliente`
+      : '';
+
+    try {
+      const countResult = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
+        `SELECT count(*) FROM integra_clienti c ${whereClause}`,
+        ...params,
+      );
+      const total = Number(countResult[0].count);
+
+      const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT c.codice_cliente, c.ragione_sociale, c.email, c.citta, c.provincia, c.codice_listino
+         FROM integra_clienti c${joinOrdini} ${whereClause}
+         ORDER BY ${orderBySql} ${dirSql} LIMIT $${idx} OFFSET $${idx + 1}`,
+        ...params, limit, offset,
+      );
+
+      const codici = rows
+        .map((r) => (r.codice_cliente ? String(r.codice_cliente) : null))
+        .filter((c): c is string => !!c);
+
+      const ordiniMap = new Map<string, number>();
+      const ordiniAnnoMap = new Map<string, number>();
+      const annoCorrente = new Date().getFullYear();
+      if (codici.length) {
+        try {
+          const oc = await this.prisma.$queryRawUnsafe<{ codice_cliente: string; n: bigint; n_anno: bigint }[]>(
+            `SELECT codice_cliente, count(*) as n, count(*) FILTER (WHERE anno_ordine = $2) as n_anno FROM integra_ordini WHERE codice_cliente = ANY($1) GROUP BY codice_cliente`,
+            codici,
+            annoCorrente,
+          );
+          for (const o of oc) {
+            ordiniMap.set(String(o.codice_cliente), Number(o.n));
+            ordiniAnnoMap.set(String(o.codice_cliente), Number(o.n_anno));
+          }
+        } catch {
+          // Arricchimento best-effort: se integra_ordini non esiste (sync ordini
+          // mai eseguita) o fallisce, numOrdini resta 0.
+        }
+      }
+
+      const items = rows.map((r) => {
+        const codice = r.codice_cliente ? String(r.codice_cliente) : '';
+        return {
+          codiceCliente: codice || null,
+          ragioneSociale: r.ragione_sociale ? String(r.ragione_sociale) : '',
+          email: r.email ? String(r.email) : '',
+          citta: r.citta ? String(r.citta) : null,
+          provincia: r.provincia ? String(r.provincia) : null,
+          codiceListino: r.codice_listino ? String(r.codice_listino) : null,
+          numOrdini: ordiniMap.get(codice) ?? 0,
+          numOrdiniAnno: ordiniAnnoMap.get(codice) ?? 0,
+        };
+      });
+
+      return { items, total, page, limit };
+    } catch (err: unknown) {
+      // Tabella di sync non ancora creata (sync clienti mai eseguita): niente 500
+      const code = (err as { code?: string })?.code;
+      const metaCode = (err as { meta?: { code?: string } })?.meta?.code;
+      if (code === 'P2021' || metaCode === '42P01') {
+        return { items: [], total: 0, page, limit };
+      }
+      throw err;
+    }
+  }
+
+  async importaClienti(codici: string[]) {
+    if (!codici.length) return { creati: 0, clienti: [] };
+
+    const phs = codici.map((_, i) => `$${i + 1}`).join(',');
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM integra_clienti WHERE codice_cliente IN (${phs})`,
+      ...codici,
+    );
+    if (!rows.length) return { creati: 0, clienti: [] };
+
+    const pls = codici.map((_, i) => `$${i + 1}`).join(',');
+    const pagRows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM integra_pagamenti WHERE codice_cliente IN (${pls})`,
+      ...codici,
+    );
+    const pagMap = new Map<string, Record<string, unknown>>();
+    for (const p of pagRows) {
+      const cod = p.codice_cliente ? String(p.codice_cliente) : null;
+      if (cod) pagMap.set(cod, p);
+    }
+
+    const created: { id: number; codiceCliente: string }[] = [];
+    for (const r of rows) {
+      const codice = r.codice_cliente ? String(r.codice_cliente).trim() : null;
+      if (!codice) continue;
+
+      const ragioneSociale = r.ragione_sociale ? String(r.ragione_sociale).trim() : '';
+      const email = r.email ? String(r.email).trim() : '';
+      const nome = ragioneSociale || (email ? email.split('@')[0] : codice);
+
+      const existing = await this.prisma.customer.findUnique({ where: { codiceCliente: codice } });
+      if (existing) continue;
+
+      // Password temporanea casuale: l'admin la cambierà al primo accesso / la comunicherà
+      const tmpPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const passwordHash = await hashPassword(tmpPassword);
+
+      const pag = pagMap.get(codice);
+      const fido = pag?.fido_totale != null ? Number(pag.fido_totale) : null;
+
+      // Risolve il listino: se null o '--' usa il default LIS1
+      const rawListino = r.codice_listino ? String(r.codice_listino) : null;
+      const listinoEffettivo = (!rawListino || rawListino === '--') ? 'LIS1' : rawListino;
+
+      const cust = await this.prisma.customer.create({
+        data: {
+          codiceCliente: codice,
+          codiceListino: listinoEffettivo,
+          email: email || `${codice.toLowerCase()}@noemail.local`,
+          passwordHash,
+          nome,
+          ragioneSociale,
+          partitaIva: r.partita_iva ? String(r.partita_iva) : null,
+          telefono: r.telefono ? String(r.telefono) : null,
+          sitoWeb: r.web ? String(r.web) : null,
+          indirizzo: r.indirizzo ? String(r.indirizzo) : null,
+          cap: r.cap ? String(r.cap) : null,
+          citta: r.citta ? String(r.citta) : null,
+          provincia: r.provincia ? String(r.provincia) : null,
+          codicePagamento: pag?.codice_pagamento ? String(pag.codice_pagamento) : (r.codice_pagamento ? String(r.codice_pagamento) : null),
+          fido,
+          stato: 'BLOCCATO',
+          mustChangePassword: true,
+        },
+      });
+
+      // Indirizzi di spedizione
+      const indRows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT * FROM integra_indirizzi WHERE codice_cliente = $1 AND flag_spedizione = true`,
+        codice,
+      );
+      for (const ir of indRows) {
+        await this.prisma.indirizzoCliente.create({
+          data: {
+            customerId: cust.id,
+            ragioneSociale: ir.ragione_sociale ? String(ir.ragione_sociale) : ragioneSociale,
+            indirizzo: ir.indirizzo ? String(ir.indirizzo) : null,
+            cap: ir.cap ? String(ir.cap) : null,
+            citta: ir.citta ? String(ir.citta) : null,
+            provincia: ir.provincia ? String(ir.provincia) : null,
+            flagSpedizione: true,
+          },
+        });
+      }
+
+      // Assicura che il listino del cliente sia sincronizzato in cache
+      try {
+        const esiste = await this.prisma.$queryRawUnsafe<{ c: number }[]>(
+          `SELECT 1::int AS c FROM integra_listini WHERE codice_listino = $1 LIMIT 1`,
+          listinoEffettivo,
+        );
+        if (!esiste.length) {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO integra_listini (codice_listino, descrizione_listino, listino_obsoleto, data_modifica)
+             SELECT codice_listino, descrizione_listino, 0, data_modifica
+             FROM b2b_listini_testata WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)
+             ON CONFLICT (codice_listino) DO NOTHING`,
+            listinoEffettivo,
+          );
+          await this.prisma.$executeRawUnsafe(
+            `DELETE FROM integra_listini_righe WHERE codice_listino = $1`,
+            listinoEffettivo,
+          );
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO integra_listini_righe (id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, listino_obsoleto, data_modifica)
+             SELECT id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, 0, data_modifica
+             FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
+            listinoEffettivo,
+          );
+        }
+      } catch {
+        // silenzioso — il sync periodico riallineerà
+      }
+
+      // Importa ordini da integra_ordini (locale, non FDW)
+      try {
+        const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+          `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
+          codice,
+        );
+        for (const o of ordini) {
+          const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
+          if (!ordineId) continue;
+          const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+            `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1`,
+            ordineId,
+          );
+          const totaleOrdine = righe.reduce(
+            (s, r) => s + (r.quantita ? Number(r.quantita) : 0) * (r.prezzo_netto ? Number(r.prezzo_netto) : 0),
+            0,
+          );
+          const newOrd = await this.prisma.ordineCliente.create({
+            data: {
+              numeroOrdine: o.numero_ordine ? String(o.numero_ordine) : `ORD-${ordineId}`,
+              dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
+              customerId: cust.id,
+              importoTotale: totaleOrdine > 0 ? totaleOrdine : null,
+              stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
+            },
+          });
+          for (const r of righe) {
+            await this.prisma.rigaOrdine.create({
+              data: {
+                ordineId: newOrd.id,
+                numeroRiga: r.id_riga ? Number(r.id_riga) : null,
+                codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
+                descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
+                quantita: r.quantita ? Number(r.quantita) : null,
+                prezzo: r.prezzo_netto ? Number(r.prezzo_netto) : null,
+              },
+            });
+          }
+        }
+      } catch {
+        // integra_ordini assente o vuoto (sync non eseguito, VPN giù): gli ordini arriveranno dopo
+      }
+
+      created.push({ id: cust.id, codiceCliente: codice });
+    }
+
+    // AI: genera descrizione cliente (mix anagrafica + corrispondenza vuota al momento)
+    for (const c of created) {
+      try {
+        const cust = await this.prisma.customer.findUnique({ where: { id: c.id } });
+        if (cust && !cust.descrizione) {
+          const descrizione = await this.generaDescrizioneCliente(cust.id);
+          if (descrizione) {
+            await this.prisma.customer.update({
+              where: { id: c.id },
+              data: { descrizioneDettagliata: descrizione },
+            });
+          }
+        }
+      } catch {
+        // silenzioso
+      }
+    }
+
+    return { creati: created.length, clienti: created };
+  }
+
+  async syncOrdiniCliente(codiceCliente: string): Promise<{ importati: number }> {
+    const customer = await this.prisma.customer.findUnique({ where: { codiceCliente: codiceCliente } });
+    if (!customer) throw new Error('Cliente non trovato');
+
+    let importati = 0;
+    try {
+      const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
+        codiceCliente,
+      );
+      const esistenti = new Set(
+        (await this.prisma.ordineCliente.findMany({
+          where: { customerId: customer.id },
+          select: { numeroOrdine: true },
+        })).map((o) => o.numeroOrdine),
+      );
+
+      for (const o of ordini) {
+        const numOrd = o.numero_ordine ? String(o.numero_ordine) : null;
+        if (!numOrd || esistenti.has(numOrd)) continue;
+
+        const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
+        if (!ordineId) continue;
+
+        const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+          `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1`,
+          ordineId,
+        );
+        const totaleOrdine = righe.reduce(
+          (s, r) => s + (r.quantita ? Number(r.quantita) : 0) * (r.prezzo_netto ? Number(r.prezzo_netto) : 0),
+          0,
+        );
+
+        const newOrd = await this.prisma.ordineCliente.create({
+          data: {
+            numeroOrdine: numOrd,
+            dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
+            customerId: customer.id,
+            importoTotale: totaleOrdine > 0 ? totaleOrdine : null,
+            stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
+          },
+        });
+
+        for (const r of righe) {
+          await this.prisma.rigaOrdine.create({
+            data: {
+              ordineId: newOrd.id,
+              numeroRiga: r.id_riga ? Number(r.id_riga) : null,
+              codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
+              descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
+              quantita: r.quantita ? Number(r.quantita) : null,
+              prezzo: r.prezzo_netto ? Number(r.prezzo_netto) : null,
+            },
+          });
+        }
+        importati++;
+      }
+    } catch {
+      // integra_ordini non disponibile
+    }
+
+    return { importati };
+  }
+
+  /** Genera descrizione AI del cliente (mix anagrafica + corrispondenza + web). */
+  async getListini() {
+    return this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT codice_listino, descrizione_listino, listino_obsoleto, data_modifica
+       FROM integra_listini WHERE listino_obsoleto IS NULL OR listino_obsoleto = 0
+       ORDER BY codice_listino`,
+    ).then((rows) => rows.map((r) => ({
+      codice: String(r.codice_listino),
+      descrizione: r.descrizione_listino ? String(r.descrizione_listino) : '',
+      obsoleto: r.listino_obsoleto ? Number(r.listino_obsoleto) : 0,
+      dataModifica: r.data_modifica ? String(r.data_modifica) : null,
+    })));
+  }
+
+  async searchListiniRighe(codiceListino: string, search?: string, page = 1, limit = 50, sort?: string, dir?: 'asc' | 'desc') {
+    const params: unknown[] = [codiceListino];
+    let idx = 2;
+    const conds: string[] = [`r.codice_listino = $1`];
+
+    const joinDesc = ` LEFT JOIN vista_integra_prodotti p ON p.pro_cod = r.codice_prodotto`;
+
+    if (search) {
+      conds.push(`(r.codice_prodotto ILIKE $${idx} OR CAST(r.id_variante AS TEXT) ILIKE $${idx} OR COALESCE(p.pro_descr, '') ILIKE $${idx})`);
+      params.push(`%${search}%`);
+      idx++;
+    }
+
+    const whereClause = `WHERE ${conds.join(' AND ')}`;
+    const offset = (page - 1) * limit;
+
+    const SORT_MAP: Record<string, string> = {
+      codiceProdotto: 'r.codice_prodotto',
+      idVariante: 'r.id_variante',
+      descrizione: 'p.pro_descr',
+      prezzo: 'r.prezzo_listino',
+      sconto1: 'r.sconto_1',
+      sconto2: 'r.sconto_2',
+      sconto3: 'r.sconto_3',
+      sconto4: 'r.sconto_4',
+    };
+    const dirSql = dir === 'desc' ? 'desc' : 'asc';
+    const orderBySql = sort && SORT_MAP[sort] ? SORT_MAP[sort] : 'r.codice_prodotto';
+
+    const countResult = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT count(*) FROM integra_listini_righe r${joinDesc} ${whereClause}`,
+      ...params,
+    );
+    const total = Number(countResult[0].count);
+
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT r.id_riga_listino, r.codice_listino, r.codice_prodotto, r.id_variante,
+              r.prezzo_listino, r.sconto_1, r.sconto_2, r.sconto_3, r.sconto_4,
+              p.pro_descr AS descrizione
+       FROM integra_listini_righe r${joinDesc} ${whereClause}
+       ORDER BY ${orderBySql} ${dirSql} LIMIT $${idx} OFFSET $${idx + 1}`,
+      ...params, limit, offset,
+    );
+
+    const items = rows.map((r) => ({
+      idRiga: Number(r.id_riga_listino),
+      codiceListino: String(r.codice_listino),
+      codiceProdotto: String(r.codice_prodotto),
+      idVariante: r.id_variante ? String(r.id_variante) : null,
+      descrizione: r.descrizione ? String(r.descrizione) : null,
+      prezzo: r.prezzo_listino ? Number(r.prezzo_listino) : null,
+      sconto1: r.sconto_1 ? Number(r.sconto_1) : null,
+      sconto2: r.sconto_2 ? Number(r.sconto_2) : null,
+      sconto3: r.sconto_3 ? Number(r.sconto_3) : null,
+      sconto4: r.sconto_4 ? Number(r.sconto_4) : null,
+    }));
+
+    return { items, total, page, limit };
+  }
+
+  async generaDescrizioneCliente(customerId: number): Promise<string | null> {
+    const cust = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      include: { contatti: { orderBy: { data: 'desc' }, take: 10 } },
+    });
+    if (!cust) return null;
+
+    const fatti: string[] = [];
+    if (cust.ragioneSociale) fatti.push(`Ragione sociale: ${cust.ragioneSociale}`);
+    if (cust.citta) fatti.push(`Sede: ${cust.citta}${cust.provincia ? ' (' + cust.provincia + ')' : ''}`);
+    if (cust.partitaIva) fatti.push(`P.IVA: ${cust.partitaIva}`);
+    if (cust.codiceListino) fatti.push(`Listino: ${cust.codiceListino}`);
+    if (cust.fido != null) fatti.push(`Fido: ${cust.fido}`);
+    for (const ct of cust.contatti) {
+      const label = ct.tipo === 'EMAIL' ? 'Email' : ct.tipo === 'TELEFONO' ? 'Telefono' : 'Nota';
+      fatti.push(`${label} (${ct.data.toISOString().slice(0, 10)}): ${ct.contenuto}`);
+    }
+
+    const contesto = fatti.join('\n');
+    if (!contesto.trim()) return null;
+
+    const prompt = `Sei un assistente che profila i clienti B2B di un grossista di arredamento per fioristi e garden.
+Scrivi una breve descrizione professionale del cliente (2-3 paragrafi) combinando i dati anagrafici forniti e le note di corrispondenza.
+Non inventare fatti non presenti. Stile: neutro, utile per il commerciale.
+
+Dati cliente:
+${contesto}`;
+    try {
+      const text = await this.callGeminiText(prompt);
+      return text.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async getFirstListino() {
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ codice_listino: string }>>(
+      `SELECT codice_listino FROM integra_listini LIMIT 1`,
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
+
+  async getPrezzo(codiceListino: string, codiceProdotto: string, maxExtraSconto?: number) {
+    const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      `SELECT prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4
+       FROM integra_listini_righe
+       WHERE codice_listino = $1 AND codice_prodotto = $2
+       LIMIT 1`,
+      codiceListino,
+      codiceProdotto,
+    );
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    const prezzoListino = Number(r.prezzo_listino) || 0;
+    const s1 = Number(r.sconto_1) || 0;
+    const s2 = Number(r.sconto_2) || 0;
+    const s3 = Number(r.sconto_3) || 0;
+    const s4 = Number(r.sconto_4) || 0;
+    const prezzoNettoListino = prezzoListino * (1 - s1 / 100) * (1 - s2 / 100) * (1 - s3 / 100) * (1 - s4 / 100);
+    const scontoListino = prezzoListino > 0 ? Math.round((1 - prezzoNettoListino / prezzoListino) * 100) : 0;
+    const scontoFinale = maxExtraSconto != null && maxExtraSconto > scontoListino ? maxExtraSconto : scontoListino;
+    const prezzoNetto = scontoFinale > 0 ? Math.round(prezzoListino * (1 - scontoFinale / 100) * 100) / 100 : prezzoListino;
+    return {
+      prezzoNetto,
+      prezzoListino,
+      sconto: scontoFinale,
+    };
   }
 }

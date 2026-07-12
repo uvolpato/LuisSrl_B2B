@@ -306,6 +306,11 @@
 .filter-pill:hover { border-color: var(--fg); color: var(--fg); }
 .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* Filter dropdown — usa la caret standard globale (globals.css:
+   select:not(.account-select)) come "Stato Pubblicazione" (ArticoloEditModal).
+   Nessun ::after custom per evitare la doppia freccia. */
+.filter-select { width: auto; min-width: 170px; }
+
 /* View toggle */
 .view-toggle { display: flex; gap: 8px; }
 .view-toggle button {
@@ -602,6 +607,10 @@
 .admin-btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
 .btn-secondary:hover,
 .admin-btn-secondary:hover { border-color: var(--fg); }
+.btn-danger,
+.admin-btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover,
+.admin-btn-danger:hover { background: color-mix(in oklch, var(--red) 88%, black); }
 .btn-ghost,
 .admin-btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
 .btn-ghost:hover,
@@ -970,6 +979,19 @@
 
 /* Form fields */
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.field-section { margin-bottom: 18px; }
+.field-section:last-child { margin-bottom: 0; }
+.field-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.field-grid > .field { margin-bottom: 0; }
+.field-col-2 { grid-column: span 2; }
 .color-picker-row { display: flex; align-items: center; gap: 8px; }
 .color-input {
   width: 40px; height: 36px; border: 1px solid var(--border); border-radius: 8px;
@@ -2473,4 +2495,43 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .settings-page { padding: 20px; }
 }
 }
+
+/* Customer edit modal — ordini */
+.ordini-list { display: flex; flex-direction: column; gap: 16px; }
+.ordine-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+.ordine-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.ordine-head .ordine-tot { margin-left: auto; font-weight: 600; }
+.ordine-card .data-table { border: none; border-radius: 0; }
+
+/* Ordini tab: scroll dentro data-table, non sul modal-body */
+.ordini-tab { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ordini-tab .data-table { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ordini-tab .data-table-scroll { overflow: auto; flex: 1; min-height: 0; }
+
+/* Ordine detail modal */
+.ordine-detail-body { display: flex; flex-direction: column; overflow: hidden; }
+.ordine-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 0; }
+.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; margin-bottom: 12px; flex-shrink: 0; }
+.detail-grid-2 { grid-template-columns: 1fr 1fr; }
+.detail-grid-compact { gap: 8px 18px; }
+.detail-row { display: flex; flex-direction: column; gap: 2px; }
+.detail-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.detail-value { font-size: 14px; }
+.detail-value-strong { font-size: 15px; font-weight: 600; color: var(--fg); }
+.detail-note { margin-bottom: 12px; flex-shrink: 0; }
+.detail-note p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.detail-section-title { margin: 16px 0 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+@media (max-width: 560px) { .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 

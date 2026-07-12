@@ -20,6 +20,7 @@ export default function Modal({
   children,
   footer,
   noHeader,
+  bodyClassName,
   onClose,
 }: {
   open?: boolean;
@@ -28,6 +29,7 @@ export default function Modal({
   children: ReactNode;
   footer?: ReactNode;
   noHeader?: boolean;
+  bodyClassName?: string;
   onClose: () => void;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,7 @@ export default function Modal({
             </button>
           </div>
         )}
-        {noHeader ? children : <div className="modal-root-body">{children}</div>}
+        {noHeader ? children : <div className={`modal-root-body${bodyClassName ? ` ${bodyClassName}` : ""}`}>{children}</div>}
         {footer && <div className="modal-root-footer">{footer}</div>}
       </div>
     </div>

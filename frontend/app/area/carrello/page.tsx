@@ -12,6 +12,12 @@ function formatPrice(n: number) {
   return "€ " + n.toFixed(2).replace(".", ",");
 }
 
+interface PrezzoInfo {
+  prezzoNetto: number;
+  prezzoListino: number;
+  sconto: number;
+}
+
 interface CartItem {
   id: number;
   varianteCodice: string;
@@ -23,6 +29,7 @@ interface CartItem {
   dimensioni: string;
   immagineUrl: string | null;
   multiplo: number;
+  prezzo: PrezzoInfo | null;
 }
 
 function groupBy<T>(items: T[], key: (t: T) => string): [string, T[]][] {
@@ -58,13 +65,15 @@ export default function CarrelloPage() {
   async function changeQty(codice: string, delta: number) {
     const item = items.find((i) => i.varianteCodice === codice);
     if (!item) return;
-    const qty = Math.max(1, item.quantita + delta);
-    setBusy(codice);
+    const step = item.multiplo > 1 ? item.multiplo : 1;
+    const min = item.multiplo > 1 ? item.multiplo : 1;
+    const qty = Math.max(min, item.quantita + delta * step);
+    setItems((prev) => prev.map((i) => i.varianteCodice === codice ? { ...i, quantita: qty } : i));
     try {
       await api.patch(`/api/carrello/${encodeURIComponent(codice)}/qty`, { quantita: qty });
-      setItems((prev) => prev.map((i) => i.varianteCodice === codice ? { ...i, quantita: qty } : i));
-    } catch { /* ignore */ }
-    setBusy(null);
+    } catch {
+      setItems((prev) => prev.map((i) => i.varianteCodice === codice ? { ...i, quantita: item.quantita } : i));
+    }
   }
 
   async function toggleSave(codice: string) {
@@ -92,7 +101,7 @@ export default function CarrelloPage() {
   const activeGroups = useMemo(() => groupBy(activeItems, (i) => i.articoloCodiceLinea ?? i.varianteCodice), [activeItems]);
   const savedGroups = useMemo(() => groupBy(savedItems, (i) => i.articoloCodiceLinea ?? i.varianteCodice), [savedItems]);
   const subtotalQty = activeItems.reduce((s, i) => s + i.quantita, 0);
-  const subtotalAmount = activeItems.reduce((s, i) => s + i.quantita * 12.5, 0);
+  const subtotalAmount = activeItems.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
@@ -123,18 +132,18 @@ export default function CarrelloPage() {
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
               {first.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {first.multiplo} pz</span>}
               {first.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(12.5)} / pz</strong> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>€ 18,00</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−31%</span></span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(first.prezzo?.prezzoNetto ?? 0)} / pz</strong>{(first.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(first.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{first.prezzo?.sconto ?? 0}%</span></>}</span>
             </div>
           </div>
           <div className="cart-item-actions">
-            <span className="cart-item-price">{formatPrice(first.quantita * 12.5)}</span>
+            <span className="cart-item-price">{formatPrice(first.quantita * (first.prezzo?.prezzoNetto ?? 0))}</span>
             {salvato ? (
               <span className="cart-item-qty-label">{first.quantita} pz</span>
             ) : (
               <div className="qty-control">
-                <button type="button" disabled={busy === first.varianteCodice} onClick={() => changeQty(first.varianteCodice, -1)}>−</button>
+                <button type="button" onClick={() => changeQty(first.varianteCodice, -1)}>−</button>
                 <input type="number" value={first.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-                <button type="button" disabled={busy === first.varianteCodice} onClick={() => changeQty(first.varianteCodice, 1)}>+</button>
+                <button type="button" onClick={() => changeQty(first.varianteCodice, 1)}>+</button>
               </div>
             )}
             <div className="cart-item-links">
@@ -167,19 +176,19 @@ export default function CarrelloPage() {
                 {v.varianteDescrizione && <span className="cart-item-desc">{v.varianteDescrizione}</span>}
                 {v.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {v.multiplo} pz</span>}
                 {v.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(12.5)} / pz</strong> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>€ 18,00</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−31%</span></span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(v.prezzo?.prezzoNetto ?? 0)} / pz</strong>{(v.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(v.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{v.prezzo?.sconto ?? 0}%</span></>}</span>
               </span>
               <div className="cart-group-row-actions">
                 <div className="cart-item-prices-col">
-                  <span className="cart-item-price">{formatPrice(v.quantita * 12.5)}</span>
+                  <span className="cart-item-price">{formatPrice(v.quantita * (v.prezzo?.prezzoNetto ?? 0))}</span>
                 </div>
                 {salvato ? (
                   <span className="cart-item-qty-label">{v.quantita} pz</span>
                 ) : (
                   <div className="qty-control">
-                    <button type="button" disabled={busy === v.varianteCodice} onClick={() => changeQty(v.varianteCodice, -1)}>−</button>
+                    <button type="button" onClick={() => changeQty(v.varianteCodice, -1)}>−</button>
                     <input type="number" value={v.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-                    <button type="button" disabled={busy === v.varianteCodice} onClick={() => changeQty(v.varianteCodice, 1)}>+</button>
+                    <button type="button" onClick={() => changeQty(v.varianteCodice, 1)}>+</button>
                   </div>
                 )}
                 <div className="cart-group-links">
@@ -246,9 +255,9 @@ export default function CarrelloPage() {
                 <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>
                   IVA non inclusa · Spese di trasporto calcolate al checkout
                 </p>
-                <button className="btn btn-primary checkout-btn" disabled>
+                <Link href="/area/checkout" className="btn btn-primary checkout-btn">
                   Procedi al checkout
-                </button>
+                </Link>
                 <Link href="/area/catalogo" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>
                   Continua lo shopping
                 </Link>

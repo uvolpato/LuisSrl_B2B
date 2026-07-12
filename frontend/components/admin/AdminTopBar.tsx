@@ -44,17 +44,17 @@ export default function AdminTopBar({
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
-        <div className="filter-pills">
+        <select
+          className="input filter-select"
+          style={{ width: "auto", minWidth: 170 }}
+          value={filter}
+          onChange={(e) => onFilterChange(e.target.value)}
+          aria-label="Filtra per stato"
+        >
           {pills.map((f) => (
-            <button
-              key={f.value}
-              className={`filter-pill ${filter === f.value ? "active" : ""}`}
-              onClick={() => onFilterChange(f.value)}
-            >
-              {f.label}
-            </button>
+            <option key={f.value} value={f.value}>{f.label}</option>
           ))}
-        </div>
+        </select>
         {children}
       </div>
     </header>

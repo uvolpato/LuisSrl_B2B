@@ -8,6 +8,15 @@ import { api, ApiError } from "../../../lib/api";
 import PositionedImage from "../../common/PositionedImage";
 import { parseImgCss } from "../../../lib/img-css";
 
+interface PromptTemplate {
+  id: number;
+  tipo: string;
+  titolo: string;
+  prompt: string;
+  tags: string;
+  ordinamento: number;
+}
+
 const FIT_OPTIONS = [
   { value: "cover", label: "Copri" },
   { value: "contain", label: "Contieni" },
@@ -33,6 +42,9 @@ interface EditImageModalProps {
     aiSeed?: number | null;
     immaginePadreId?: number | null;
     immaginePadreUrl?: string | null;
+    aggiungiColore?: boolean;
+    aggiungiVariante?: boolean;
+    promptTemplateId?: number | null;
   } | null;
   onClose: () => void;
   onChange: (id: number, props: Record<string, unknown>) => void;
@@ -124,7 +136,16 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   const [aiSaved, setAiSaved] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
+  const [aiAggiungiColore, setAiAggiungiColore] = useState(true);
+  const [aiAggiungiVariante, setAiAggiungiVariante] = useState(true);
+  const [aiPromptTemplateId, setAiPromptTemplateId] = useState<number | null>(null);
+  const [promptTemplates, setPromptTemplates] = useState<PromptTemplate[]>([]);
+  const [promptTemplatesFilter, setPromptTemplatesFilter] = useState("AMBIENTA");
   useEffect(() => { setEditPrompt(image?.prompt || ""); }, [image?.id, image?.prompt]);
+  useEffect(() => {
+    if (!open) return;
+    api.get<PromptTemplate[]>("/api/integrazione/prompt-templates").then(setPromptTemplates).catch(() => {});
+  }, [open]);
   // tab di default in base al tipo (evita tab "morto" cambiando immagine)
   useEffect(() => { if (image) setTab(image.tipo === "AI" ? "ai-params" : "dettagli"); }, [image?.id, image?.tipo]);
   if (!image) return null;
@@ -134,6 +155,10 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   const { objectFit, zoom, rotation, posX, posY } = parseImgCss(image.css);
 
   function handleChange(props: Record<string, unknown>) {
+    if ("inGalleria" in props || "copertina" in props) {
+      onChange(img.id, { inGalleria: props.inGalleria, copertina: props.copertina });
+      return;
+    }
     const next = { ...parseImgCss(img.css) };
     if ("objectFit" in props) next.objectFit = props.objectFit as string;
     if ("zoom" in props) next.zoom = props.zoom as number;
@@ -164,7 +189,16 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
     try {
       const res = await api.post<{ generationId: string; images: { mime: string; b64: string }[] }>(
         `/api/integrazione/articoli/${codiceLinea}/immagini/${img.id}/ambienta`,
-        { prompt: aiPrompt, n: aiN, aspectRatio: aiAspect, temperature: aiTemp, seed: aiSeed.trim() === "" ? undefined : Number(aiSeed) },
+        {
+          prompt: aiPrompt,
+          n: aiN,
+          aspectRatio: aiAspect,
+          temperature: aiTemp,
+          seed: aiSeed.trim() === "" ? undefined : Number(aiSeed),
+          aggiungiColore: aiAggiungiColore,
+          aggiungiVariante: aiAggiungiVariante,
+          promptTemplateId: aiPromptTemplateId,
+        },
       );
       setAiGenId(res.generationId);
       setAiResults(res.images);
@@ -347,6 +381,41 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label style={{ fontSize: 12 }}>Prompt di ambientazione</label>
                   <textarea className="textarea" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Es. Vaso su un tavolo in legno di una veranda mediterranea, luce calda del tramonto…" rows={3} />
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <select className="input" style={{ flex: 1, minWidth: 140, padding: "5px 8px", fontSize: 12 }} value={promptTemplatesFilter} onChange={(e) => { setPromptTemplatesFilter(e.target.value); setAiPromptTemplateId(null); }}>
+                    <option value="AMBIENTA">Template ambientazione</option>
+                    <option value="DESCRIZIONE">Template descrizione</option>
+                    <option value="AMBIENTA,DESCRIZIONE">Tutti</option>
+                  </select>
+                  <select
+                    className="input"
+                    style={{ flex: 2, minWidth: 200, padding: "5px 8px", fontSize: 12 }}
+                    value={aiPromptTemplateId ?? ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      if (!id) { setAiPromptTemplateId(null); return; }
+                      setAiPromptTemplateId(id);
+                      const tpl = promptTemplates.find((t) => t.id === id);
+                      if (tpl) setAiPrompt(tpl.prompt);
+                    }}
+                  >
+                    <option value="">— Prompt libero —</option>
+                    {promptTemplates
+                      .filter((t) => promptTemplatesFilter.split(",").includes(t.tipo))
+                      .sort((a, b) => a.ordinamento - b.ordinamento)
+                      .map((t) => <option key={t.id} value={t.id}>{t.titolo}{t.tags ? ` (${t.tags})` : ""}</option>)}
+                  </select>
+                </div>
+
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ margin: 0, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6, color: "var(--fg)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={aiAggiungiColore} onChange={(e) => setAiAggiungiColore(e.target.checked)} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0 }} /> Includi colore nel contesto
+                  </label>
+                  <label style={{ margin: 0, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6, color: "var(--fg)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={aiAggiungiVariante} onChange={(e) => setAiAggiungiVariante(e.target.checked)} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0 }} /> Includi varianti nel contesto
+                  </label>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px 16px" }}>

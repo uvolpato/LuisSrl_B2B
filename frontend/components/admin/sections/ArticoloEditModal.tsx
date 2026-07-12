@@ -48,7 +48,7 @@ interface ArticoloDetail {
   updatedAt: string;
   raccolte: RaccoltaSlim[];
   varianti: VarianteDetail[];
-  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null }[];
+  immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null; aggiungiColore?: boolean; aggiungiVariante?: boolean; promptTemplateId?: number | null }[];
   wizardStepTesti?: { step: number; label: string; testo: string }[] | null;
   promptAi?: string | null;
 }
@@ -95,6 +95,7 @@ export default function ArticoloEditModal({
   const [editColoreRgb, setEditColoreRgb] = useState("");
   const [editStato, setEditStato] = useState<"attivo" | "nascosto">("attivo");
   const [editVarianti, setEditVarianti] = useState<Record<string, string>>({});
+  const [editMultipli, setEditMultipli] = useState<Record<string, number>>({});
   const [vPage, setVPage] = useState(1);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -137,6 +138,7 @@ export default function ArticoloEditModal({
       setEditColoreRgb(a.coloreRgb || "");
       setEditStato(a.stato);
       setEditVarianti(Object.fromEntries(a.varianti.map((v) => [v.codice, v.stato])));
+      setEditMultipli(Object.fromEntries(a.varianti.map((v) => [v.codice, v.multiplo])));
       setVPage(1);
       setPendingImages([]);
       setImmaginiOrdine(null);
@@ -188,6 +190,7 @@ export default function ArticoloEditModal({
     if (Object.keys(immaginiDisplay).length > 0) return true;
     for (const v of article.varianti) {
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
+      if ((editMultipli[v.codice] ?? v.multiplo) !== v.multiplo) return true;
     }
     if ((article.descrizione ?? "") !== initialDescRef.current.descrizione) return true;
     if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
@@ -197,7 +200,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -224,7 +227,7 @@ export default function ArticoloEditModal({
         form.append('tipo', 'GALLERIA');
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
-      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
+      const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, variantiMultipli: editMultipli, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
@@ -502,7 +505,18 @@ export default function ArticoloEditModal({
                       const d = v.dimensioni?.altezza;
                       return d?.valore != null ? String(d.valore) : "—";
                     }},
-                    { key: "multiplo", header: "Multiplo", width: "90px", mono: true, align: "right", cell: (v) => String(v.multiplo) },
+                    { key: "multiplo", header: "Multiplo", width: "90px", mono: true, align: "right", cell: (v) => (
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="input"
+                        value={String(editMultipli[v.codice] ?? v.multiplo)}
+                        onChange={(e) => setEditMultipli((prev) => ({ ...prev, [v.codice]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: "70px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 13, padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg)", color: "var(--fg)" }}
+                      />
+                    ) },
                     { key: "giacenza", header: "Giacenza", width: "100px", mono: true, align: "right", cell: (v) => `${v.giacenza} pz` },
                     { key: "stato", header: "Stato", width: "110px", align: "center", cell: (v) => {
                       const s = editVarianti[v.codice] || v.stato;
@@ -883,6 +897,9 @@ export default function ArticoloEditModal({
             aiSeed: img.aiSeed ?? null,
             immaginePadreId: img.immaginePadreId ?? null,
             immaginePadreUrl: padre?.url ?? null,
+            aggiungiColore: img.aggiungiColore,
+            aggiungiVariante: img.aggiungiVariante,
+            promptTemplateId: img.promptTemplateId ?? null,
           };
         })() : null}
         onClose={() => setEditingImage(null)}

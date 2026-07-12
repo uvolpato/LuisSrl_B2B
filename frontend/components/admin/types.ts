@@ -33,4 +33,22 @@ export interface SearchResult {
   limit: number;
 }
 
+export interface ClienteView {
+  codiceCliente: string | null;
+  ragioneSociale: string;
+  email: string;
+  citta: string | null;
+  provincia: string | null;
+  codiceListino: string | null;
+  numOrdini?: number;
+  numOrdiniAnno?: number;
+}
+
+export interface ClienteSearchResult {
+  items: ClienteView[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const PAGE_SIZE = 20;

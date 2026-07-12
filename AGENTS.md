@@ -18,7 +18,17 @@ npx eslint components/ app/            # lint
 
 # Avvio completo: avvia.bat | avvia-http.bat | avvia-https.bat (radice)
 ```
-Credenziali test: admin `admin@luissrl.it`/`LuisAdmin2026!` · cliente `cliente1@fiorista.it`/`Cliente2026!`
+Credenziali test: admin `admin@luissrl.it`/`LuisAdmin2026!` · cliente `uvolpato+cliente1@gmail.com`/`Cliente2026!` (idDB 1)
+
+## Sync Manager (dinamico via DB)
+Le schedulazioni sono in `sync_config` (avviate da `SyncManagerService.onModuleInit`).
+Tipi: articoli (15min), listini (15min), giacenze (10min), ordini (disabilitato default).
+**Admin UI**: tab "Sync" nel pannello admin → attiva/disattiva, modifica cron, esegui manuale, log storici.
+
+- Nuovo sync richiede: aggiungere riga in `sync_config` + case in `SyncManagerService.runSync()`.
+- `cron-parser` installato con `--legacy-peer-deps`.
+- `syncOrdini()` (FDW→integra_ordini) NON ha cron automatico di default (attivo=false). Va attivato dalla UI o via trigger manuale. Dopo sync ordini, `SyncManagerService` propaga in `ordini_clienti` per tutti i clienti con `codice_cliente` valorizzato.
+- All'import di un cliente (`importaClienti()`), gli ordini vengono importati in `ordini_clienti` da `integra_ordini` (se popolata).
 
 ## Barra di qualità (non negoziabile)
 - **Type-check pulito** su backend e frontend prima di dichiarare finito.

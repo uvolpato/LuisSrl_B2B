@@ -300,7 +300,6 @@ export default function ClientiSection() {
       <div className="admin-content">
         <div className="content-header">
           <div>
-            <h2>Tutti i clienti</h2>
             <span className="meta">{t("total", { count: total })}</span>
           </div>
           {selectedIds.size > 0 && (

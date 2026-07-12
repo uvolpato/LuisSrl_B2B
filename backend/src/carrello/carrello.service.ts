@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { IntegrazioneService } from '../integrazione/integrazione.service';
 
 @Injectable()
 export class CarrelloService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private integrazione: IntegrazioneService,
+  ) {}
 
   private async getOrCreate(clienteId: number) {
     let carrello = await this.prisma.carrello.findUnique({ where: { clienteId } });
@@ -19,9 +23,15 @@ export class CarrelloService {
       where: { carrelloId: carrello.id },
       orderBy: { createdAt: 'asc' },
     });
-    const enriched = await Promise.all(
+    const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+    let codiceListino = customer?.codiceListino;
+    if (!codiceListino) {
+      const fallback = await this.integrazione.getFirstListino();
+      codiceListino = fallback?.codice_listino ?? null;
+    }
+    const varianti = await Promise.all(
       items.map(async (item) => {
-        const variante = await this.prisma.variante.findUnique({
+        const v = await this.prisma.variante.findUnique({
           where: { codice: item.varianteCodice },
           include: {
             articolo: {
@@ -33,12 +43,34 @@ export class CarrelloService {
             },
           },
         });
+        return { item, variante: v };
+      }),
+    );
+    const codiceLinee = [...new Set(varianti.map((v) => v.variante?.articolo.codiceLinea).filter(Boolean) as string[])];
+    const raccolteMap = new Map<string, number>();
+    if (codiceLinee.length > 0) {
+      const articoli = await this.prisma.articolo.findMany({
+        where: { codiceLinea: { in: codiceLinee } },
+        select: { codiceLinea: true, raccolte: { include: { raccolta: { select: { sconto: true } } } } },
+      });
+      for (const a of articoli) {
+        const maxSconto = Math.max(0, ...a.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
+        if (maxSconto > 0) raccolteMap.set(a.codiceLinea, maxSconto);
+      }
+    }
+    const enriched = await Promise.all(
+      varianti.map(async ({ item, variante }) => {
         const dims: string[] = [];
         if (variante?.dimensioni && typeof variante.dimensioni === 'object') {
           for (const [k, v] of Object.entries(variante.dimensioni as Record<string, any>)) {
             const prefix = k === 'diametro' ? 'Ø' : k === 'altezza' ? 'H' : '';
             dims.push(`${prefix}${v.valore}${(k === 'diametro' || k === 'altezza') ? ' cm' : ''}`);
           }
+        }
+        let prezzo: any = null;
+        if (codiceListino) {
+          const maxRaccSconto = variante?.articolo.codiceLinea ? raccolteMap.get(variante.articolo.codiceLinea) : undefined;
+          prezzo = await this.integrazione.getPrezzo(codiceListino, item.varianteCodice, maxRaccSconto);
         }
         return {
           ...item,
@@ -48,6 +80,7 @@ export class CarrelloService {
           dimensioni: dims.join(' · '),
           immagineUrl: variante?.articolo.immagini[0]?.url ?? null,
           multiplo: variante?.multiplo ?? 1,
+          prezzo,
         };
       }),
     );
@@ -55,17 +88,23 @@ export class CarrelloService {
   }
 
   async addItem(clienteId: number, varianteCodice: string, quantita: number) {
-    if (quantita < 1) throw new BadRequestException('Quantità minima: 1');
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    const multiplo = v?.multiplo ?? 1;
+    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
+    const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
     return this.prisma.cartItem.upsert({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
-      create: { carrelloId: carrello.id, varianteCodice, quantita },
-      update: { quantita: { increment: quantita } },
+      create: { carrelloId: carrello.id, varianteCodice, quantita: qty },
+      update: { quantita: { increment: qty } },
     });
   }
 
   async updateQty(clienteId: number, varianteCodice: string, quantita: number) {
-    if (quantita < 1) throw new BadRequestException('Quantità minima: 1');
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    const multiplo = v?.multiplo ?? 1;
+    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
+    const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
     const item = await this.prisma.cartItem.findUnique({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
@@ -73,7 +112,7 @@ export class CarrelloService {
     if (!item) throw new NotFoundException('Item non trovato nel carrello');
     return this.prisma.cartItem.update({
       where: { id: item.id },
-      data: { quantita },
+      data: { quantita: qty },
     });
   }
 

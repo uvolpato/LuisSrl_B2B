@@ -271,17 +271,26 @@ Indicare ai clienti se una variante è **disponibile o meno** a magazzino e impe
 
 > Sul portale **non esiste l'entità Linea**: "linea" è solo la **chiave per aggregare le varianti in Articoli**. La **Famiglia principale** arriva da Integra ed è read‑only; le **Raccolte** (Novità, Natale 2026…) sono invece **create e gestite sul portale**, non da Integra. Un codice con "linea" assente/unica genera un Articolo con una sola Variante.
 
-Dati tipicamente letti (tutti via vista):
-- **Anagrafiche clienti** (con listino assegnato, sconti, stato attivo/bloccato).
-- **Listini** (prezzi **per variante / codice articolo**).
-- **Catalogo**: per ogni codice articolo (Variante) i campi **"linea"** (→ Articolo) e **"famiglia"** (→ Famiglia principale), con dimensioni e multipli d'ordine.
-- **Giacenze** per variante / codice articolo (§9).
-- **Stato ordini / spedizioni** (giro di ritorno informativo, §8).
+Dati tipicamente letti (tutti via vista locale `b2b_*`):
+
+**Viste disponibili** (schema `public` sul database del portale — non più FDW remoto):
+- `b2b_prodotti` — catalogo (codice, descrizione, famiglia, linea, dimensioni, flag B2B, obsoleto)
+- `b2b_clienti` — anagrafiche clienti (codice, ragione sociale, email, P.IVA, indirizzo, codice listino, codice pagamento, fido, flag obsoleto)
+- `b2b_indirizzi_clienti` — indirizzi (sede/spedizione/fatturazione) per cliente
+- `b2b_pagamenti_clienti` — condizioni pagamento e fido per cliente
+- `b2b_ordini_clienti` — testate ordini (storico)
+- `b2b_righe_ordini` — righe ordini (storico)
+
+**Anagrafiche clienti** (con listino assegnato, condizioni di pagamento, fido, stato attivo/bloccato).
+**Listini** (prezzi **per variante / codice articolo** — da definire, vedi §11.10).
+**Catalogo**: per ogni codice articolo (Variante) i campi **"linea"** (→ Articolo) e **"famiglia"** (→ Famiglia principale), con dimensioni e multipli d'ordine.
+**Giacenze** per variante / codice articolo (§9).
+**Stato ordini / spedizioni** (giro di ritorno informativo, §8).
 
 Requisiti della lettura:
-- **Viste stabili** con struttura concordata; **[DA DEFINIRE]** i nomi/formati dei campi "linea" e "famiglia" usati per costruire Articoli e Famiglia principale.
-- **Chiavi**: il **codice articolo** identifica la Variante; il campo **"linea"** identifica l'**Articolo**; il campo **"famiglia"** identifica la **Famiglia principale**; servono inoltre chiavi per cliente e listino, per fare match in *upsert* senza duplicare.
-- Ogni vista espone **`updated_at`** e un **flag stato/attivo** (vedi §11.5).
+- **Viste stabili** con struttura concordata (vedi §11.8 e §11.9 per i nomi reali dei campi).
+- **Chiavi**: il **codice articolo** identifica la Variante; il campo **"linea"** identifica l'**Articolo**; il campo **"famiglia"** identifica la **Famiglia principale**; il **codice cliente** (`codice_cliente`) identifica il Customer. Match sempre sulle chive per *upsert* senza duplicare.
+- Le viste prodotti espongono `data_ultmod`; i clienti espongono `data_modifica`. Gli ordini espongono `data_modifica`.
 - **Immagini e descrizione AI** non arrivano da Integra: sono **gestite sul portale**. Il **colore** e la descrizione possono invece arrivare da Integra. **[DA CONFERMARE]** quali campi sono affidabili in Integra (§6, §12).
 - Le **Raccolte** non esistono in Integra: l'associazione Articolo↔Raccolta è gestita sul portale e indipendente dalla lettura.
 
@@ -328,6 +337,101 @@ Elenco di alto livello (campi di dettaglio nel documento "Richiesta dati a Integ
 9. **Freschezza visibile.** Usare `updated_at` (in particolare delle giacenze) per tracciare/mostrare "dato aggiornato al…" (§10).
 10. **Gestione file di ritorno (Excel AGOMIR).** Cartella "processati", checksum anti‑rielaborazione, log conteggi (letti/aggiornati/scartati/errori), **alert** sui fallimenti; tracciati concordati con AGOMIR.
 11. **Round‑trip ordini.** Portale crea l'ordine → file Excel verso Integra (automazione AGOMIR) con marcatura "esportato" (anti‑doppione) → Integra lavora → stato/spedizione rientrano via **vista**.
+
+### 11.8 Architettura implementata (sync + import)
+
+Il portale implementa un **livello di caching intermedio** tra la vista FDW di Integra e le tabelle del portale, per garantire resilienza, performance e atomicità.
+
+```
+Integra DB (192.168.1.41:5432)
+    │
+    │ FDW: postgres_fdw → b2b_prodotti
+    │
+    ▼
+[SyncService] — sync ogni 15 min (cron) o su richiesta
+    │
+    │ parseRows(): separa righe FAM_* → famiglie, linea_* → linee, resto → articoli
+    │ atomicReplace(): crea _new, popola, swap atomico (DROP _old)
+    │
+    ▼
+Tabelle cache locali (public):
+    integra_famiglie   ← { codice (FAM_*), codice_numerico (es. "90"), nome }
+    integra_linee      ← { codice (LINEA_*), codice_numerico, nome, famiglia_codice }
+    integra_articoli   ← { pro_cod, pro_descr, famiglia_codice (numerico), linea_codice (numerico), … }
+    │
+    ▼
+[IntegrazioneService.searchProdotti()] ← JOIN integra_articoli → famiglie/linee via codice_numerico
+    │
+    ▼
+[Frontend: ImportaArticoliModal] — ricerca, selezione, POST /integrazione/importa
+    │
+    ▼
+[IntegrazioneService.importaVarianti()] — upsert su famiglie, articoli, varianti del portale
+```
+
+**Vista FDW.** La vista remota `b2b_prodotti` espone le seguenti colonne (nomi reali dal gestionale):
+
+| Colonna | Descrizione |
+|---------|-------------|
+| `pro_cod` | Codice articolo / FAM_* / linea_* |
+| `pro_descr` | Descrizione |
+| `cod_famiglia` | Codice numerico famiglia (es. "90") |
+| `cod_linea` | Codice numerico linea |
+| `cod_diametro_esterno`, `descr_diametro_esterno` | Diametro |
+| `cod_altezza`, `descr_altezza` | Altezza |
+| `codice_alternativo` | Codice alternativo / fornitore |
+| `codice_esterno` | Codice esterno / EAN |
+| `incluso_b2b` | Flag visibilità B2B |
+| `prodotto_obsoleto` | Flag articolo dismesso |
+| `data_ultmod` | Data ultima modifica |
+
+**Parsing (SyncService.parseRows).** Le righe con `pro_cod` che inizia per `FAM_` sono registrate come famiglie (chiave = `cod_famiglia` numerico). Quelle che iniziano per `linea_` (minuscolo) sono registrate come linee (chiave = `cod_linea` numerico). Tutte le altre sono articoli prodotto. Se dopo il parse mancano famiglie o linee, vengono create con codice sintetico `FAM_<codice_numerico>` / `LIN_<codice_numerico>`.
+
+**Codice numerico.** Sia famiglie che linee hanno un campo `codice_numerico` (es. "90") che corrisponde a `cod_famiglia` / `cod_linea` sulle righe articolo. Le JOIN tra `integra_articoli` e `integra_famiglie`/`linee` usano sempre `ON f.codice_numerico = a.famiglia_codice` (mai `ON f.codice = a.famiglia_codice`).
+
+**Swap atomico.** Le tabelle cache sono ricostruite ex-novo a ogni sync: si creano tabelle `*_new`, si popolano in batch, poi un blocco `DO $$ ... END $$` rinomina le tabelle (swap atomico). Le vecchie tabelle vengono droppate. Gli indici GIN trigram (`pro_descr`, `pro_cod`) sono ricreati dopo lo swap.
+
+**Ricerca e import.** L'admin cerca per codice o descrizione su `integra_articoli` (con paginazione, 50 per pagina), escludendo i codici già importati (`NOT EXISTS varianti WHERE codice = a.pro_cod`). Seleziona uno o più codici e avvia l'import, che per ogni codice:
+1. Legge il record da `integra_articoli` con JOIN a `integra_famiglie` per il nome famiglia.
+2. Mappa famiglia/linea numerica → codice `FAM_*`/`LINEA_*` tramite `codice_numerico`.
+3. Cerca famiglia esistente per codice FAM_*, per nome, o per codice numerico (fallback), altrimenti la crea.
+4. Upsert dell'`Articolo` (codiceLinea = LINEA_* o pro_cod).
+5. Crea o aggiorna la `Variante`.
+6. Dopo l'import, se l'articolo è senza colore, estrae colore e RGB via AI (Gemini).
+
+Il frontend gestisce un timeout di 5 minuti con conferma utente prima di abbandonare.
+
+### 11.9 Clienti: import e profilo AI
+
+I clienti seguono la **stessa architettura a due livelli** dei prodotti: vista locale `b2b_*` → sync in tabelle cache `integra_*` → ricerca/import nel portale.
+
+```
+b2b_clienti            → integra_clienti        (anagrafica)
+b2b_indirizzi_clienti → integra_indirizzi      (solo flag_spedizione = 'S')
+b2b_pagamenti_clienti → integra_pagamenti       (codice pagamento, fido)
+b2b_ordini_clienti    → integra_ordini          (storico, solo per AI + visualizzazione cliente)
+b2b_righe_ordini      → integra_righe_ordini    (storico righe)
+```
+
+**Sync** (`SyncService.syncClienti()` / `syncOrdini()`): lettura diretta dalle viste `b2b_*`, swap atomico nelle tabelle cache (stessa logica di §11.8). Le tabelle cache sono ricreate a ogni sync con blocco `DO $$ … END $$`.
+
+**Ricerca e import clienti.** L'admin cerca su `integra_clienti` (codice, ragione sociale, P.IVA, email) con paginazione, escludendo i clienti già importati (`NOT EXISTS customers WHERE codice_cliente = c.codice_cliente`). Seleziona uno o più clienti e avvia l'import, che per ogni cliente:
+
+1. Crea il `Customer` con `codiceCliente` (chiave Integra, univoca), `codiceListino`, `ragioneSociale`, `partitaIva`, `telefono`, `sitoWeb`, sede (`indirizzo`/`cap`/`citta`/`provincia`), `codicePagamento` e `fido` da `integra_pagamenti`.
+2. Genera una **password temporanea casuale** (hash argon2) e imposta `stato = BLOCCATO` + `mustChangePassword = true`: l'account è creato ma l'accesso resta bloccato finché l'admin non comunica le credenziali e non sblocca il cliente.
+3. Crea gli `IndirizzoCliente` di spedizione (`flag_spedizione = true`) da `integra_indirizzi`.
+4. Dopo l'import, genera la **descrizione AI del cliente** (vedi sotto).
+
+**Profilo AI del cliente.** Come per gli Articoli, ogni Customer può avere una descrizione generata da un agente AI che combina:
+- i dati anagrafici (ragione sociale, sede, listino, fido);
+- la **corrispondenza** registrata (email, telefonate, note) — modello `ContattoCliente` con tipo `EMAIL | TELEFONO | NOTA`;
+- eventuali fonti web (DA DEFINIRE).
+
+La descrizione alimenta il profilo commerciale e, in futuro, suggerimenti e statistiche. Il metodo `generaDescrizioneCliente()` usa `callGeminiText` su un prompt che fonde anagrafica + corrispondenza; il risultato è salvato in `descrizioneDettagliata`. La UI di editing del profilo (wizard descrizione, upload corrispondenza) è prevista in un blocco successivo.
+
+**Ordini.** La sincronizzazione degli ordini è **silenziosa** (nessuna UI di import): popola `integra_ordini` / `integra_righe_ordini`. Servono a: (a) dare all'AI uno **storico delle transazioni** per statistiche e profilazione; (b) mostrare al cliente il proprio **storico ordini** (UI da definire in §8).
+
+**Campi NON importati** (scelta deliberata): dettagli bancari (IBAN, BIC, ABI, CAB, mandato SDD), `fax`, codici contabili interni (conto, vettore, porto, zona, agente), `tipo_fatturazione`. Sono dati sensibili o irrilevanti per il portale B2B.
 
 ---
 

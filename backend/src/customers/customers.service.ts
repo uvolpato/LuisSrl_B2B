@@ -241,7 +241,6 @@ export class CustomersService {
   ): Promise<CustomerProfile> {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
-    if (existing.stato !== 'ATTIVO') throw new ConflictException('customers.non_attivo');
     if (!existing.email || !existing.email.includes('@')) throw new ConflictException('customers.email_non_valida');
 
     const provisionalPassword = generateProvisionalPassword();
@@ -254,6 +253,7 @@ export class CustomersService {
         passwordHash: await hashPassword(provisionalPassword),
         mustChangePassword: true,
         invitatoAt: new Date(),
+        stato: 'ATTIVO',
       },
     });
     await this.audit.log({ actorId, azione: 'customer.invita', entita: 'customers', entitaId: String(customerId), ip });

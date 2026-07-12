@@ -9,6 +9,7 @@ const PERMISSION_KEYS = [
   'admin.users.create',
   'admin.users.edit',
   'admin.users.block',
+  'admin.users.delete',
   'admin.permissions.view',
   'admin.permissions.edit',
   'admin.settings.view',
@@ -57,7 +58,11 @@ function randomAvatarColor() {
     });
     console.log(`Gruppo "Amministratore" creato (id ${groupAdmin.id})`);
   } else {
-    console.log(`Gruppo "Amministratore" gia' presente (id ${groupAdmin.id})`);
+    groupAdmin = await prisma.permissionGroup.update({
+      where: { id: groupAdmin.id },
+      data: { permissions: PERMISSION_KEYS },
+    });
+    console.log(`Gruppo "Amministratore" aggiornato (id ${groupAdmin.id})`);
   }
 
   // ── Gruppo Visualizzatore ──
@@ -68,7 +73,11 @@ function randomAvatarColor() {
     });
     console.log(`Gruppo "Visualizzatore" creato (id ${groupViewer.id})`);
   } else {
-    console.log(`Gruppo "Visualizzatore" gia' presente (id ${groupViewer.id})`);
+    groupViewer = await prisma.permissionGroup.update({
+      where: { id: groupViewer.id },
+      data: { permissions: READ_ONLY_KEYS },
+    });
+    console.log(`Gruppo "Visualizzatore" aggiornato (id ${groupViewer.id})`);
   }
 
   // ── Utente admin SUPERUSER ──
@@ -111,8 +120,8 @@ function randomAvatarColor() {
 
   // ── Clienti seed ──
   const customerSeeds = [
-    { email: 'cliente1@fiorista.it', password: 'Cliente2026!', nome: 'Marco', ragioneSociale: 'Fiorista Rossi SNC', partitaIva: '01234567890', telefono: '0351234567' },
-    { email: 'verde.giardini@example.it', password: 'Cliente2026!', nome: 'Luigi', ragioneSociale: 'Verde Giardini SRL', partitaIva: '09876543210', telefono: '0359876543' },
+    { email: 'uvolpato+cliente1@gmail.com', password: 'Cliente2026!', nome: 'Marco', ragioneSociale: 'Fiorista Rossi SNC', partitaIva: '01234567890', telefono: '0351234567' },
+    { email: 'uvolpato+verdegiardini@gmail.com', password: 'Cliente2026!', nome: 'Luigi', ragioneSociale: 'Verde Giardini SRL', partitaIva: '09876543210', telefono: '0359876543' },
   ];
 
   for (const c of customerSeeds) {
