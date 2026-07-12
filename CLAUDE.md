@@ -3,6 +3,10 @@
 Istruzioni permanenti di progetto. Leggere questo file e i file di contesto
 all'inizio di ogni sessione, prima di scrivere o modificare codice.
 
+> **Regole operative generali**: `CLAUDE-GENERICO.md` (metodo, guard rail, multi-agente).
+> **Competenze tecniche di dettaglio**: `SKILLS.md` (frontend, backend, sicurezza OWASP 2025, test).
+> In conflitto, vince questo file (regole di progetto).
+
 ## Cos'è il progetto
 Portale e-commerce **B2B** riservato ai rivenditori di Luis S.r.l. (grossista di
 articoli per fioristi e garden: vasi in ceramica, cotto portoghese, materiali).
