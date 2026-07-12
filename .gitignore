@@ -60,5 +60,6 @@ tmp_res.json
 *-out.txt
 *.err
 backend/check-*.ts
-.opencode/
+.opencode/*
+!.opencode/agent/
 -w
