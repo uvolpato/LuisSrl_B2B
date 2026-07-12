@@ -1,4 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["C:\\Users\\uvolp\\AppData\\Local\\Temp\\opencode\\ponytail\\.opencode\\plugins\\ponytail.mjs"]
+  "plugin": ["C:\\Users\\uvolp\\AppData\\Local\\Temp\\opencode\\ponytail\\.opencode\\plugins\\ponytail.mjs"],
+  "instructions": ["CLAUDE.md", "CLAUDE-GENERICO.md", "SKILLS.md"]
 }
