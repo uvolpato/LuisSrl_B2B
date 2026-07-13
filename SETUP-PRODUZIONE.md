@@ -124,6 +124,7 @@ i servizi non esistono).
 | `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` / `LuisCaddy` (nssm) |
 | `deploy-prod.cmd` | Aggiornamento sicuro (backup + stop servizi + pull + ci + migrate + build + restart) |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
+| `backend/prisma/manual-fixups.sql` | Oggetti non coperti dalle migration (tabella `site_config`, colonne `raccolte`, chiavi AI) — idempotente |
 
 ## Versioni bloccate
 
