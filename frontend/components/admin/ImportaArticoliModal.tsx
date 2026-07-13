@@ -163,7 +163,7 @@ export default function ImportaArticoliModal({
         <div className="new-art-search">
           <span className="search-icon">{IconSearch}</span>
           <input
-            placeholder="Cerca articolo, codice, famiglia..."
+            placeholder="Cerca articolo, codice, famiglia, linea..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             disabled={importing}

@@ -66,7 +66,7 @@ export class IntegrazioneService {
 
     if (search) {
       conds.push(
-        `(a.pro_cod ILIKE $${idx} OR a.pro_descr ILIKE $${idx})`,
+        `(a.pro_cod ILIKE $${idx} OR a.pro_descr ILIKE $${idx} OR f.nome ILIKE $${idx} OR l.nome ILIKE $${idx})`,
       );
       params.push(`%${search}%`);
       idx++;
