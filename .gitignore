@@ -1,72 +1,76 @@
-# Skills & artifacts
-.od-skills/
-*.artifact.json
+# ============================================================
+#  .gitignore — Portale B2B Luis
+# ============================================================
 
-# Python installation & scripts
-Python/
-*.py
-
-# Temp images (screenshots, diagrams)
-mq*.png
-mq*.jpg
-architettura.png
-
-# Generated files
-*.pptx
-*.pdf
-
-# Legacy portal versions
-luis-b2b-portal.html
-luis-b2b-portal-2.html
-luis-b2b-portal-3.html
-
-# Old reference files
-03-product-alt.html
-email-presentazione.md
-
-# Node / app
+# --- Dipendenze e build ---
 node_modules/
 dist/
 .next/
 *.tsbuildinfo
-npm-debug.log*
+
+# --- Log ---
 *.log
+npm-debug.log*
 
-# Immagini caricate/generate a runtime (non sorgenti)
-frontend/public/images/
-
-# Segreti: mai versionare i .env reali (tenere i .env.example)
+# --- Segreti: mai versionare i .env reali (tenere i .env.example) ---
 .env
 .env.local
 .env.*.local
 
-# Script scratch/debug usa-e-getta (es. backend/_check_db.cjs)
-_*.cjs
-
-# Certificati SSL dev generati localmente
+# --- Certificati SSL generati localmente ---
 *-dev-key.pem
 *-dev-cert.pem
 *.pfx
 *.cer
 
-# --- artefatti temporanei / debug (non versionare) ---
-cookie.txt
-cookies.txt
-cookies2.txt
+# --- Immagini caricate/generate a runtime (non sorgenti) ---
+frontend/public/images/
+
+# --- Script/artefatti temporanei di debug (usa-e-getta) ---
+_*.cjs
+backend/check-*.ts
+backend/tmp_insp.ts
+backend/gap.sql
 cookie*.txt
 body.json
 tmp_res.json
 *-err.txt
 *-out.txt
 *.err
-backend/check-*.ts
-backend/tmp_insp.ts
-backend/gap.sql
 
-# --- kit di sviluppo generico (riutilizzabile, non specifico del progetto) ---
+# --- Kit di sviluppo generico (riutilizzabile, non specifico del progetto) ---
 CLAUDE-GENERICO.md
 SKILLS.md
 AGENTS.md
 opencode.json
 .opencode/
 .claude/agents/
+
+# --- Skills & artifacts ---
+.od-skills/
+*.artifact.json
+
+# --- Python (tooling locale) ---
+Python/
+*.py
+
+# --- File generati (documenti) ---
+*.pptx
+*.pdf
+
+# --- Immagini temporanee (screenshot, diagrammi) ---
+mq*.png
+mq*.jpg
+architettura.png
+
+# --- File legacy / vecchie versioni prototipo ---
+luis-b2b-portal.html
+luis-b2b-portal-2.html
+luis-b2b-portal-3.html
+03-product-alt.html
+email-presentazione.md
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.suo
