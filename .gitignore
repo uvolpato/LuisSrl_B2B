@@ -60,7 +60,13 @@ tmp_res.json
 *-out.txt
 *.err
 backend/check-*.ts
-.opencode/*
-!.opencode/agent/
-!.opencode/opencode.json
--w
+backend/tmp_insp.ts
+backend/gap.sql
+
+# --- kit di sviluppo generico (riutilizzabile, non specifico del progetto) ---
+CLAUDE-GENERICO.md
+SKILLS.md
+AGENTS.md
+opencode.json
+.opencode/
+.claude/agents/
