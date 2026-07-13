@@ -9,6 +9,7 @@ setlocal enabledelayedexpansion
 
 set SVC_BE=LuisBackend
 set SVC_FE=LuisFrontend
+set SVC_CADDY=LuisCaddy
 set FE_PORT=3000
 
 cd /d "%~dp0"
@@ -65,12 +66,68 @@ echo === Avvio i servizi ===
 "!NSSM!" start %SVC_FE% || goto err
 
 echo.
+echo === Reverse proxy HTTP/HTTPS (Caddy) ===
+set DOMAIN=
+set /p DOMAIN=Dominio pubblico per HTTPS automatico (es. portale.tuazienda.it) - invio per solo LAN (http + https self-signed):
+
+REM Trovo/scarico caddy
+set CADDY=
+for /f "delims=" %%n in ('where caddy 2^>nul') do if not defined CADDY set CADDY=%%n
+if not defined CADDY if exist "%ROOT%\caddy.exe" set CADDY=%ROOT%\caddy.exe
+if defined CADDY goto have_caddy
+echo caddy non trovato: lo scarico...
+powershell -NoProfile -Command "try { Invoke-WebRequest 'https://caddyserver.com/api/download?os=windows&arch=amd64' -OutFile \"%ROOT%\caddy.exe\" } catch { exit 1 }"
+if errorlevel 1 echo [avviso] download caddy fallito: salto il reverse proxy. Scaricalo da https://caddyserver.com/download & goto caddy_skip
+set CADDY=%ROOT%\caddy.exe
+
+:have_caddy
+echo caddy: !CADDY!
+if "!DOMAIN!"=="" goto caddy_lan
+
+REM --- Con dominio: HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443) ---
+(
+  echo !DOMAIN! {
+  echo     reverse_proxy localhost:%FE_PORT%
+  echo }
+)>"%ROOT%\Caddyfile"
+goto caddy_svc
+
+:caddy_lan
+REM --- Solo LAN: HTTP su 80 e HTTPS self-signed su 443 ---
+(
+  echo :80 {
+  echo     reverse_proxy localhost:%FE_PORT%
+  echo }
+  echo :443 {
+  echo     tls internal
+  echo     reverse_proxy localhost:%FE_PORT%
+  echo }
+)>"%ROOT%\Caddyfile"
+
+:caddy_svc
+echo Caddyfile scritto in %ROOT%\Caddyfile
+"!NSSM!" stop %SVC_CADDY% >nul 2>nul
+"!NSSM!" remove %SVC_CADDY% confirm >nul 2>nul
+"!NSSM!" install %SVC_CADDY% "!CADDY!" run --config "%ROOT%\Caddyfile" --adapter caddyfile || goto err
+"!NSSM!" set %SVC_CADDY% AppDirectory "%ROOT%" || goto err
+"!NSSM!" set %SVC_CADDY% Start SERVICE_AUTO_START
+"!NSSM!" set %SVC_CADDY% AppStdout "%ROOT%\caddy-out.log"
+"!NSSM!" set %SVC_CADDY% AppStderr "%ROOT%\caddy-err.log"
+"!NSSM!" start %SVC_CADDY% || goto err
+echo Ricorda: apri sul firewall le porte 80 e 443 (ingresso).
+goto caddy_done
+
+:caddy_skip
+echo Reverse proxy saltato: configura Caddy/IIS a mano (vedi DEPLOY.md).
+
+:caddy_done
+echo.
 echo === FATTO ===
-echo Servizi creati e avviati: %SVC_BE% (API) e %SVC_FE% (porta %FE_PORT%).
+echo Servizi creati e avviati: %SVC_BE% (API), %SVC_FE% (porta %FE_PORT%), %SVC_CADDY% (80/443).
 echo Partono da soli al riavvio del server.
 echo Comandi utili:
-echo   nssm restart %SVC_BE%    ^| nssm stop %SVC_BE%    ^| nssm status %SVC_BE%
-echo   log: backend\service-*.log  frontend\service-*.log
+echo   nssm restart %SVC_BE%   ^| nssm status %SVC_FE%   ^| nssm restart %SVC_CADDY%
+echo   log: backend\service-*.log  frontend\service-*.log  caddy-*.log
 echo.
 pause
 goto :eof

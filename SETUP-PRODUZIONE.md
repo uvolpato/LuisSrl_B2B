@@ -78,10 +78,16 @@ Dalla root, come Administrator:
 setup-services.cmd
 ```
 
-Scarica `nssm` se manca e crea due servizi **auto-start al boot**:
-`LuisBackend` (API) e `LuisFrontend` (porta 3000). Comandi utili:
-`nssm restart LuisBackend`, `nssm stop LuisFrontend`, `nssm status LuisBackend`.
-Log in `backend\service-*.log` e `frontend\service-*.log`.
+Scarica `nssm`/`caddy` se mancano e crea tre servizi **auto-start al boot**:
+`LuisBackend` (API), `LuisFrontend` (porta 3000) e `LuisCaddy` (reverse proxy
+HTTP/HTTPS su 80/443). Lo script **chiede il dominio**:
+
+- **dominio pubblico** → HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443);
+- **invio (vuoto)** → solo LAN: HTTP su 80 + HTTPS self-signed su 443.
+
+Ricorda di aprire sul firewall le porte **80 e 443**. Comandi utili:
+`nssm restart LuisBackend`, `nssm status LuisFrontend`, `nssm restart LuisCaddy`.
+Log in `backend\service-*.log`, `frontend\service-*.log`, `caddy-*.log`.
 
 ### In alternativa: finestre manuali
 
