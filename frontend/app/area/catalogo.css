@@ -2,6 +2,7 @@
 .catalogo-page {
   --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
   --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
   --fs-h2: clamp(28px, 3.5vw, 40px);
   --fs-body: 15px;
   --gap-lg: 32px;
@@ -1522,6 +1523,38 @@
   color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 999px; flex-shrink: 0;
 }
 
+/* Modalità di consegna — radio cards */
+.catalogo-page.cart-page.checkout-page .opt-list { display: flex; flex-direction: column; gap: 12px; }
+.catalogo-page.cart-page.checkout-page .opt-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.catalogo-page.cart-page.checkout-page .opt-card:hover { border-color: var(--accent); }
+.catalogo-page.cart-page.checkout-page .opt-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+.catalogo-page.cart-page.checkout-page .opt-card input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
+.catalogo-page.cart-page.checkout-page .opt-main { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.catalogo-page.cart-page.checkout-page .opt-name { font-weight: 500; font-size: 15px; color: var(--fg); }
+.catalogo-page.cart-page.checkout-page .opt-desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+/* Nuovo indirizzo */
+.catalogo-page.cart-page.checkout-page .addr-add-btn { margin-top: 14px; }
+.catalogo-page.cart-page.checkout-page .addr-new {
+  margin-top: 14px; padding: 16px 18px;
+  background: var(--fg-soft); border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.catalogo-page.cart-page.checkout-page .addr-new .checkout-grid { margin-bottom: 12px; }
+.catalogo-page.cart-page.checkout-page .addr-cancel { background: none; border: none; color: var(--muted); cursor: pointer; font: inherit; font-size: 13px; padding: 0; text-decoration: underline; }
+.form-input {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font: inherit; font-size: 14px; color: var(--fg);
+}
+.form-input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
 /* Riepilogo */
 .catalogo-page.cart-page.checkout-page .checkout-summary { position: sticky; top: 80px; }
 .catalogo-page.cart-page.checkout-page .summary-ship {
@@ -1569,3 +1602,233 @@
 .catalogo-page.cart-page.checkout-page .checkout-confirm-total strong { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
 .catalogo-page.cart-page.checkout-page .checkout-confirm-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .catalogo-page.cart-page.checkout-page .checkout-confirm-actions .btn { min-width: 160px; justify-content: center; }
+
+/* ── I miei ordini ── */
+.ordini-page { height: 100vh; overflow: hidden; --radius-lg: 16px; }
+.ordini-page .ordini-toolbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 24px;
+}
+.ordini-page .ordini-search {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 250px;
+}
+.ordini-page .ordini-search .search-input { flex: 1; }
+.ordini-page .ordini-filters {
+  display: flex; align-items: center; gap: 8px;
+}
+.ordini-page .ordini-filters .form-select { width: auto; min-width: 140px; }
+.ordini-page .loading-state,
+.ordini-page .error-state,
+.ordini-page .empty-state {
+  padding: 48px 0; text-align: center; color: var(--muted); font-size: 15px;
+}
+.ordini-page .error-state p { margin-bottom: 16px; }
+.ordini-page .empty-state .meta { font-size: 13px; margin-top: 8px; }
+
+/* Ordini page: fill viewport and scroll body */
+.ordini-page main#content {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+}
+.ordini-page .container {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+}
+.ordini-page .page-title,
+.ordini-page .ordini-toolbar {
+  flex-shrink: 0;
+}
+
+/* Data table — regole identiche a admin.css (unscoped) per coerenza visiva */
+.data-table {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 1px solid var(--table-head-bg);
+  border-right: 1px solid var(--table-head-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  container-type: inline-size;
+}
+@container (max-width: 550px) {
+  .data-table thead th:nth-child(2),
+  .data-table tbody td:nth-child(2) { display: none; }
+}
+.data-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--table-head-bg);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 12px 16px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.data-table thead th.sortable { cursor: pointer; user-select: none; }
+.data-table thead th.sortable:hover { color: var(--fg); }
+.sort-arrow { font-size: 10px; margin-left: 2px; }
+.data-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--fg);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table tbody tr.selected { background: var(--accent-soft); }
+.data-table tbody tr.selected:hover { background: color-mix(in oklch, var(--accent-soft) 80%, var(--fg-soft)); }
+.data-table td.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.data-table-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.data-table-footer .pager { display: flex; align-items: center; gap: 8px; }
+.data-table-footer .pager-current { min-width: 56px; text-align: center; }
+.data-table-footer .pager button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.data-table-footer .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.data-table-footer .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.data-table-footer .pager button svg { width: 16px; height: 16px; display: block; }
+
+.ordini-page .data-table tbody tr { cursor: pointer; }
+
+.ordini-page .row-eye {
+  display: block; color: var(--muted);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Modal root — componente generico edge-to-edge (sm/md/lg)
+   ════════════════════════════════════════════════════════════════════════ */
+.modal-root-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(0% 0 0 / 0.3);
+}
+.modal-root {
+  position: fixed;
+  background: var(--surface);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px oklch(0% 0 0 / 0.25);
+}
+.modal-root-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-root-header h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.modal-root-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  padding: 0;
+  line-height: 0;
+}
+.modal-root-close:hover { background: var(--fg-soft); color: var(--fg); }
+.modal-root-close svg { width: 18px; height: 18px; display: block; }
+.modal-root-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+.modal-root-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Ordine detail modal */
+.ordine-detail-body { display: flex; flex-direction: column; overflow: hidden; }
+.ordine-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 0; }
+.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; margin-bottom: 12px; flex-shrink: 0; }
+.detail-grid-2 { grid-template-columns: 1fr 1fr; }
+.detail-grid-compact { gap: 8px 18px; }
+.detail-row { display: flex; flex-direction: column; gap: 2px; }
+.detail-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.detail-value { font-size: 14px; }
+.detail-value-strong { font-size: 15px; font-weight: 600; color: var(--fg); }
+.detail-note { margin-bottom: 12px; flex-shrink: 0; }
+.detail-note p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.detail-section-title { margin: 16px 0 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+
+@media (max-width: 560px) {
+  .modal-root { inset: 16px !important; }
+  .modal-root-header { padding: 16px 20px; }
+  .modal-root-body { padding: 20px; }
+  .modal-root-footer { padding: 12px 20px; }
+  .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* DataTable — regole mancanti allineate ad admin.css (empty / loading / actions) */
+.catalogo-page .data-table-empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+.catalogo-page .data-table-loading-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; z-index: 10;
+  background: rgba(255,255,255,0.5); backdrop-filter: blur(2px);
+  font-size: 14px; font-weight: 600; color: var(--muted);
+}
+.catalogo-page .data-table-actions { text-align: right; white-space: nowrap; }
