@@ -68,7 +68,7 @@ echo === Avvio i servizi ===
 echo.
 echo === Reverse proxy HTTP/HTTPS (Caddy) ===
 set DOMAIN=
-set /p DOMAIN=Dominio pubblico per HTTPS automatico (es. portale.tuazienda.it) - invio per solo LAN (http + https self-signed):
+set /p DOMAIN=Dominio pubblico per HTTPS automatico (es. portale.tuazienda.it) - invio per LAN (HTTPS self-signed su porta alta):
 
 REM Trovo/scarico caddy
 set CADDY=
@@ -93,16 +93,17 @@ REM --- Con dominio: HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443)
 goto caddy_svc
 
 :caddy_lan
-REM --- Solo LAN: HTTP su 80 e HTTPS self-signed su 443 ---
+REM --- Solo LAN: HTTPS self-signed su una porta alta (niente bisogno di 80/443) ---
+set HTTPS_PORT=
+set /p HTTPS_PORT=Porta HTTPS (invio = 8443):
+if "!HTTPS_PORT!"=="" set HTTPS_PORT=8443
 (
-  echo :80 {
-  echo     reverse_proxy localhost:%FE_PORT%
-  echo }
-  echo :443 {
+  echo :!HTTPS_PORT! {
   echo     tls internal
   echo     reverse_proxy localhost:%FE_PORT%
   echo }
 )>"%ROOT%\Caddyfile"
+echo Accederai da: https://IP-DEL-SERVER:!HTTPS_PORT!  (certificato self-signed: accetta l'avviso)
 
 :caddy_svc
 echo Caddyfile scritto in %ROOT%\Caddyfile
@@ -115,7 +116,9 @@ REM Config relativo (AppDirectory = root): evita gli spazi nel percorso che romp
 "!NSSM!" set %SVC_CADDY% AppStdout "%ROOT%\caddy-out.log"
 "!NSSM!" set %SVC_CADDY% AppStderr "%ROOT%\caddy-err.log"
 "!NSSM!" start %SVC_CADDY% || goto err
-echo Ricorda: apri sul firewall le porte 80 e 443 (ingresso).
+if defined DOMAIN echo Ricorda: apri sul firewall le porte 80 e 443 (ingresso).
+if not defined HTTPS_PORT goto caddy_done
+echo Ricorda: assicurati che la porta !HTTPS_PORT! sia raggiungibile (firewall).
 goto caddy_done
 
 :caddy_skip
@@ -124,7 +127,7 @@ echo Reverse proxy saltato: configura Caddy/IIS a mano (vedi DEPLOY.md).
 :caddy_done
 echo.
 echo === FATTO ===
-echo Servizi creati e avviati: %SVC_BE% (API), %SVC_FE% (porta %FE_PORT%), %SVC_CADDY% (80/443).
+echo Servizi creati e avviati: %SVC_BE% (API), %SVC_FE% (porta %FE_PORT%), %SVC_CADDY% (reverse proxy HTTPS).
 echo Partono da soli al riavvio del server.
 echo Comandi utili:
 echo   nssm restart %SVC_BE%   ^| nssm status %SVC_FE%   ^| nssm restart %SVC_CADDY%
