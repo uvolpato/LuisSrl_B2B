@@ -4,6 +4,8 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { auditExtension } from '../common/audit.extension';
 
 @Injectable()
@@ -11,10 +13,13 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private pool: Pool;
+
   constructor() {
-    super();
-    // ponytail: applica l'audit extension all'unica istanza iniettata ovunque.
-    // Il client esteso inoltra $connect/onModuleInit al client base.
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const adapter = new PrismaPg(pool);
+    super({ adapter });
+    this.pool = pool;
     return this.$extends(auditExtension) as unknown as PrismaService;
   }
 
@@ -23,6 +28,7 @@ export class PrismaService
   }
 
   async onModuleDestroy() {
+    await this.pool.end();
     await this.$disconnect();
   }
 }
