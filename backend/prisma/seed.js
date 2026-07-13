@@ -1,8 +1,10 @@
 require('dotenv').config();
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 const argon2 = require('argon2');
 
-const prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const PERMISSION_KEYS = [
   'admin.users.view',

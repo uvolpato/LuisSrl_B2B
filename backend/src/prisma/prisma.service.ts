@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import {
   Injectable,
   OnModuleDestroy,
@@ -12,7 +13,8 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    super({ datasourceUrl: process.env.DATABASE_URL });
+    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+    super({ adapter });
     return this.$extends(auditExtension) as unknown as PrismaService;
   }
 
