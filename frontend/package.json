@@ -2,6 +2,10 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "dev:https": "next dev -H 0.0.0.0 --experimental-https --experimental-https-key ./luis-dev-key.pem --experimental-https-cert ./luis-dev-cert.pem",

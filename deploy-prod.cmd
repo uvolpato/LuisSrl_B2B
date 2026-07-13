@@ -2,11 +2,18 @@
 REM ============================================================
 REM  Deploy produzione Portale B2B Luis
 REM  Eseguire dalla root del repo (es. C:\Program Files\Git\www\portale)
+REM
+REM  IMPORTANTE: prima di lanciare questo script CHIUDI la finestra
+REM  in cui gira il backend (tiene bloccati i file nativi come argon2).
 REM ============================================================
 setlocal
 
 REM Vai nella cartella dello script (root del repo)
 cd /d "%~dp0"
+
+echo.
+echo *** Assicurati di aver CHIUSO la finestra del backend prima di continuare ***
+pause
 
 echo.
 echo === [1/5] Aggiorno il codice (git pull) ===
@@ -30,18 +37,17 @@ echo === [5/5] Build backend ===
 call npm run build || goto :err
 
 echo.
-echo === Riavvio servizio (pm2) ===
-where pm2 >nul 2>nul && (
-  call pm2 restart portale-backend || echo [avviso] pm2 restart fallito, riavvia il backend manualmente
-) || echo [avviso] pm2 non trovato: riavvia il backend manualmente
+echo === Avvio il backend in una nuova finestra ===
+start "Portale B2B Backend" cmd /k "npm run start:prod"
 
 echo.
-echo === DEPLOY COMPLETATO ===
+echo === DEPLOY COMPLETATO (backend avviato nella nuova finestra) ===
 pause
 goto :eof
 
 :err
 echo.
 echo *** ERRORE durante il deploy (codice %errorlevel%). Interrotto. ***
+echo *** Il backend NON e' stato riavviato: avvialo con "npm run start:prod" ***
 pause
 exit /b %errorlevel%
