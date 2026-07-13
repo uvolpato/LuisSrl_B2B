@@ -54,6 +54,9 @@ export interface DataTableProps<T> {
   selectable?: boolean;
   selectedKeys?: Set<string | number>;
   onSelectionChange?: (keys: Set<string | number>) => void;
+  /** Blocca la selezione (es. durante un'importazione): checkbox disabilitate,
+   *  righe non toggle-abili. Le righe restano comunque visibili. */
+  disabled?: boolean;
 }
 
 export default function DataTable<T>({
@@ -73,7 +76,10 @@ export default function DataTable<T>({
   selectable = false,
   selectedKeys,
   onSelectionChange,
+  disabled = false,
 }: DataTableProps<T>) {
+  // Selezione bloccata durante caricamento o operazione (import)
+  const locked = loading || disabled;
   const [localSortKey, setLocalSortKey] = useState<string | null>(null);
   const [localSortDir, setLocalSortDir] = useState<"asc" | "desc">("asc");
 
@@ -108,16 +114,16 @@ export default function DataTable<T>({
   );
 
   const handleSelectAll = useCallback(() => {
-    if (!onSelectionChange || !selectedKeys) return;
+    if (locked || !onSelectionChange || !selectedKeys) return;
     if (sortedRows.length === selectedKeys.size && sortedRows.every((r) => selectedKeys.has(rowKey(r)))) {
       onSelectionChange(new Set());
     } else {
       onSelectionChange(new Set(sortedRows.map((r) => rowKey(r))));
     }
-  }, [sortedRows, selectedKeys, onSelectionChange, rowKey]);
+  }, [locked, sortedRows, selectedKeys, onSelectionChange, rowKey]);
 
   function toggleRow(key: string | number) {
-    if (!onSelectionChange || !selectedKeys) return;
+    if (locked || !onSelectionChange || !selectedKeys) return;
     const next = new Set(selectedKeys);
     if (next.has(key)) next.delete(key);
     else next.add(key);
@@ -167,6 +173,7 @@ export default function DataTable<T>({
                     type="checkbox"
                     checked={allSelected}
                     onChange={handleSelectAll}
+                    disabled={locked}
                     style={{ accentColor: "var(--accent)" }}
                   />
                 </th>
@@ -197,15 +204,15 @@ export default function DataTable<T>({
                 </td>
               </tr>
             )}
-            {!loading &&
-              sortedRows.map((row) => {
+            {/* Le righe restano renderizzate anche in loading: l'overlay le offusca */}
+            {sortedRows.map((row) => {
                 const key = rowKey(row);
                 return (
                   <tr
                     key={key}
                     className={selectable && selectedKeys?.has(key) ? "selected" : undefined}
-                    onClick={selectable ? () => toggleRow(key) : undefined}
-                    style={selectable ? { cursor: "pointer" } : undefined}
+                    onClick={selectable && !locked ? () => toggleRow(key) : undefined}
+                    style={selectable && !locked ? { cursor: "pointer" } : undefined}
                   >
                     {selectable && (
                       <td onClick={(e) => e.stopPropagation()}>
@@ -213,6 +220,7 @@ export default function DataTable<T>({
                           type="checkbox"
                           checked={selectedKeys?.has(key) ?? false}
                           onChange={() => toggleRow(key)}
+                          disabled={locked}
                           style={{ accentColor: "var(--accent)" }}
                         />
                       </td>

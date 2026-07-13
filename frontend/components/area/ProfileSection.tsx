@@ -64,13 +64,27 @@ export default function ProfileSection({
 
           {c.ragioneSociale && (
             <div className="profile-field">
-              <label>{t("profileDatiAzienda")}</label>
+              <label>{t("profileRagioneSociale")}</label>
               <div className="value">{c.ragioneSociale}</div>
             </div>
           )}
 
+          {c.partitaIva && (
+            <div className="profile-field">
+              <label>{t("profilePiva")}</label>
+              <div className="value">{c.partitaIva}</div>
+            </div>
+          )}
+
+          {c.codiceCliente && (
+            <div className="profile-field">
+              <label>{t("profileCodiceCliente")}</label>
+              <div className="value">{c.codiceCliente}</div>
+            </div>
+          )}
+
           <div className="profile-field">
-            <label>Email</label>
+            <label>{t("profileEmail")}</label>
             <div className="value readonly">{c.email}</div>
           </div>
 
@@ -102,46 +116,40 @@ export default function ProfileSection({
             </div>
           </div>
 
-          <div className="profile-field">
-            <label>Tipo listino</label>
-            <div className="value readonly">Listino extra — sconto 15%</div>
-          </div>
+          {c.codiceListino && (
+            <div className="profile-field">
+              <label>{t("profileListino")}</label>
+              <div className="value readonly">{c.codiceListino}</div>
+            </div>
+          )}
         </div>
 
         {/* Indirizzi */}
         <div className="profile-card">
-          <h2>Indirizzi <span className="badge">2</span></h2>
+          <h2>{t("profileIndirizzi")} <span className="badge">1</span></h2>
           <div className="addr-item">
             <div>
-              <strong>Via Roma 42</strong><br />
-              <span className="meta">20121 Milano MI</span>
+              <strong>{c.indirizzo || "—"}</strong><br />
+              <span className="meta">{[c.cap, c.citta, c.provincia].filter(Boolean).join(" ")}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Principale</span>
-              <span className="tag">Spedizione</span>
-            </div>
-          </div>
-          <div className="addr-item">
-            <div>
-              <strong>Via Garibaldi 15</strong><br />
-              <span className="meta">20124 Milano MI</span>
-            </div>
-            <span className="tag">Fatturazione</span>
+            <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>{t("profileIndirizzoPrincipale")}</span>
           </div>
         </div>
 
         {/* Modalità di pagamento */}
         <div className="profile-card">
-          <h2>Modalità di pagamento <span className="badge">1</span></h2>
+          <h2>{t("profilePagamento")} <span className="badge">1</span></h2>
           <div className="pay-item">
             <div className="icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/><path d="M2 10h20"/></svg>
             </div>
             <div className="info">
-              <div className="name">Bonifico bancario</div>
-              <div className="detail">IT60X0542811101000000123456 · Intesa Sanpaolo</div>
+              <div className="name">{c.codicePagamentoDescrizione || c.codicePagamento || "—"}</div>
+              {c.codicePagamento && (
+                <div className="detail">Codice: {c.codicePagamento}</div>
+              )}
             </div>
-            <span className="tag">Preferito</span>
+            {c.codicePagamento && <span className="tag">Attivo</span>}
           </div>
         </div>
 

@@ -5,7 +5,8 @@ import { api, ApiError } from "../../lib/api";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import type { ProdottoView, SearchResult } from "./types";
-import { IconSearch, IconInfo, IconChevronLeft, IconChevronRight } from "./icons";
+import { IconSearch, IconInfo } from "./icons";
+import DataTable, { type Column } from "./DataTable";
 
 export default function ImportaArticoliModal({
   open,
@@ -24,7 +25,6 @@ export default function ImportaArticoliModal({
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pageRef = useRef(1);
-  const selectAllRef = useRef<HTMLInputElement>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -44,6 +44,10 @@ export default function ImportaArticoliModal({
       if (debounced) params.set("search", debounced);
       params.set("page", String(p));
       params.set("limit", "50");
+      if (sortKey) {
+        params.set("sort", sortKey);
+        params.set("dir", sortDir);
+      }
       const res = await api.get<SearchResult>(`/api/integrazione/prodotti?${params}`);
       setResult(res);
       pageRef.current = p;
@@ -52,7 +56,7 @@ export default function ImportaArticoliModal({
     } finally {
       setLoading(false);
     }
-  }, [debounced]);
+  }, [debounced, sortKey, sortDir]);
 
   useEffect(() => {
     if (open) {
@@ -77,16 +81,6 @@ export default function ImportaArticoliModal({
     const t = setTimeout(() => setImportResult(null), 5000);
     return () => clearTimeout(t);
   }, [importResult]);
-
-  useEffect(() => {
-    if (!selectAllRef.current) return;
-    const n = sortedItems.length;
-    selectAllRef.current.indeterminate = selected.size > 0 && selected.size < n;
-  }, [selected, result]);
-
-  function toggle(codice: string) {
-    setSelected((prev) => { const n = new Set(prev); if (n.has(codice)) n.delete(codice); else n.add(codice); return n; });
-  }
 
   async function doImport() {
     if (!selected.size) return;
@@ -133,33 +127,14 @@ export default function ImportaArticoliModal({
     }
   }
 
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 0;
-  const from = result?.total ? (result.page - 1) * result.limit + 1 : 0;
-  const to = result ? Math.min(result.page * result.limit, result.total) : 0;
+  const sortedItems = result?.items ?? [];
 
-  const sortedItems = result?.items ? [...result.items].sort((a, b) => {
-    if (!sortKey) return 0;
-    const getVal = (p: ProdottoView): string | number => {
-      if (sortKey === "codice") return p.codice;
-      if (sortKey === "descrizione") return p.descrizione;
-      if (sortKey === "famiglia") return p.famigliaNome ?? "";
-      if (sortKey === "linea") return p.lineaNome ?? "";
-      return "";
-    };
-    const va = getVal(a), vb = getVal(b);
-    const cmp = va < vb ? -1 : va > vb ? 1 : 0;
-    return sortDir === "desc" ? -cmp : cmp;
-  }) : [];
-
-  function toggleSort(key: string) {
-    if (sortKey === key) { setSortDir(d => d === "asc" ? "desc" : "asc"); }
-    else { setSortKey(key); setSortDir("asc"); }
-  }
-
-  function sortArrow(key: string) {
-    if (sortKey !== key) return "";
-    return sortDir === "asc" ? " ▲" : " ▼";
-  }
+  const columns: Column<ProdottoView>[] = [
+    { key: "codice", header: "Codice", width: "120px", mono: true, sortable: true, cell: (p) => p.codice },
+    { key: "descrizione", header: "Descrizione", grow: true, sortable: true, cell: (p) => p.descrizione },
+    { key: "famiglia", header: "Famiglia", width: "130px", align: "center", sortable: true, sortValue: (p) => p.famigliaNome ?? "", cell: (p) => p.famigliaNome ?? "—" },
+    { key: "linea", header: "Linea", width: "130px", align: "center", sortable: true, sortValue: (p) => p.lineaNome ?? "", cell: (p) => p.lineaNome ?? "—" },
+  ];
 
   return (
     <Modal
@@ -199,65 +174,24 @@ export default function ImportaArticoliModal({
         {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
         {importResult && <Notice variant="success" onClose={() => setImportResult(null)} style={{ marginBottom: 12 }}>{importResult}</Notice>}
 
-          <div className="data-table" style={{ flex: 1, minHeight: 0 }}>
-            {loading && (
-              <div className="data-table-loading-overlay">
-                <span>Caricamento…</span>
-              </div>
-            )}
-            <div className="data-table-scroll">
-            <table>
-              <colgroup>
-                <col style={{ width: 48 }} />
-                <col style={{ width: 120 }} />
-                <col />
-                <col style={{ width: 130 }} />
-                <col style={{ width: 130 }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "center" }}>
-                    <input type="checkbox" ref={selectAllRef} checked={selected.size > 0} disabled={importing} onChange={() => { if (selected.size === 0) { setSelected(new Set(sortedItems.map(p => p.codice))); } else { setSelected(new Set()); } }} className="select-all-cb" />
-                  </th>
-                  <th className="sortable" onClick={() => toggleSort("codice")}>Codice{sortArrow("codice")}</th>
-                  <th className="sortable" onClick={() => toggleSort("descrizione")}>Descrizione{sortArrow("descrizione")}</th>
-                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("famiglia")}>Famiglia{sortArrow("famiglia")}</th>
-                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("linea")}>Linea{sortArrow("linea")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!loading && !sortedItems.length && (
-                  <tr><td colSpan={5} className="data-table-empty">Nessun risultato</td></tr>
-                )}
-                {sortedItems.map((p) => (
-                  <tr key={p.codice}>
-                    <td style={{ textAlign: "center" }}>
-                      <input type="checkbox" checked={selected.has(p.codice)} disabled={importing} onChange={() => toggle(p.codice)} />
-                    </td>
-                    <td className="mono">{p.codice}</td>
-                    <td>{p.descrizione}</td>
-                    <td style={{ textAlign: "center" }}>{p.famigliaNome ?? "—"}</td>
-                    <td style={{ textAlign: "center" }}>{p.lineaNome ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="data-table-footer">
-            <span>{from}–{to} di {result?.total ?? 0}</span>
-            {totalPages > 1 && (
-              <div className="pager">
-                <button type="button" disabled={result!.page <= 1 || importing} onClick={() => fetchData(result!.page - 1)} aria-label="Pagina precedente">
-                  {IconChevronLeft}
-                </button>
-                <span className="pager-current">{result!.page} / {totalPages}</span>
-                <button type="button" disabled={result!.page * result!.limit >= result!.total || importing} onClick={() => fetchData(result!.page + 1)} aria-label="Pagina successiva">
-                  {IconChevronRight}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={sortedItems}
+          rowKey={(p) => p.codice}
+          emptyText="Nessun risultato"
+          loading={loading}
+          disabled={importing}
+          selectable
+          selectedKeys={selected as Set<string | number>}
+          onSelectionChange={(k) => setSelected(k as Set<string>)}
+          page={result?.page ?? 1}
+          pageSize={result?.limit ?? 50}
+          total={result?.total ?? 0}
+          onPageChange={(pg) => fetchData(pg)}
+          sortKey={sortKey ?? undefined}
+          sortDir={sortDir}
+          onSort={(key, dir) => { setSortKey(key); setSortDir(dir); }}
+        />
       </div>
     </Modal>
   );

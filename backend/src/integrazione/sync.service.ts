@@ -757,9 +757,8 @@ export class SyncService {
         },
         {
           dst: 'integra_vettori', src: 'b2b_vettori',
-          // b2b_vettori non ha descrizione: uso il codice come descrizione
           cols: 'codice_vettore, descrizione, obsoleto, aggiornato_il',
-          sel: "codice_vettore, codice_vettore, COALESCE(obsoleto, 0)::bool, now()",
+          sel: "codice_vettore, COALESCE(NULLIF(descrizione_vettore, ''), codice_vettore), COALESCE(obsoleto, 0)::bool, now()",
         },
       ];
       let total = 0;

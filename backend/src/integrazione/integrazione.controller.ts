@@ -97,12 +97,16 @@ export class IntegrazioneController {
     @Query('famiglia') famiglia?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: 'asc' | 'desc',
   ) {
     return this.integrazione.searchProdotti(
       search,
       famiglia || undefined,
       Number(page) || 1,
       Math.min(Number(limit) || 50, 200),
+      sort,
+      dir,
     );
   }
 

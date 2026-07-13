@@ -59,7 +59,7 @@ export class IntegrazioneService {
   async getLinee() { return this.queryView('linee'); }
   async getProdotti() { return this.queryView('prodotti'); }
 
-  async searchProdotti(search?: string, famiglia?: string, page = 1, limit = 50) {
+  async searchProdotti(search?: string, famiglia?: string, page = 1, limit = 50, sort?: string, dir?: 'asc' | 'desc') {
     const params: unknown[] = [];
     let idx = 1;
     const conds: string[] = [];
@@ -84,6 +84,15 @@ export class IntegrazioneService {
       LEFT JOIN integra_famiglie f ON f.codice_numerico = a.famiglia_codice
       LEFT JOIN integra_linee l ON l.codice_numerico = a.linea_codice`;
 
+    const SORT_MAP: Record<string, string> = {
+      codice: 'a.pro_cod',
+      descrizione: 'a.pro_descr',
+      famiglia: 'f.nome',
+      linea: 'l.nome',
+    };
+    const dirSql = dir === 'desc' ? 'desc' : 'asc';
+    const orderBySql = sort && SORT_MAP[sort] ? SORT_MAP[sort] : 'a.pro_cod';
+
     const countResult = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
       `SELECT count(*) ${fromClause} ${whereClause}`,
       ...params,
@@ -94,7 +103,7 @@ export class IntegrazioneService {
       `SELECT a.pro_cod, a.pro_descr, a.famiglia_codice, a.linea_codice,
               f.nome AS famiglia_nome, l.nome AS linea_nome
        ${fromClause} ${whereClause}
-       ORDER BY a.pro_cod LIMIT $${idx} OFFSET $${idx + 1}`,
+       ORDER BY ${orderBySql} ${dirSql} LIMIT $${idx} OFFSET $${idx + 1}`,
       ...params, limit, offset,
     );
 
@@ -1346,25 +1355,6 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
         },
       });
 
-      // Indirizzi di spedizione
-      const indRows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-        `SELECT * FROM integra_indirizzi WHERE codice_cliente = $1 AND flag_spedizione = true`,
-        codice,
-      );
-      for (const ir of indRows) {
-        await this.prisma.indirizzoCliente.create({
-          data: {
-            customerId: cust.id,
-            ragioneSociale: ir.ragione_sociale ? String(ir.ragione_sociale) : ragioneSociale,
-            indirizzo: ir.indirizzo ? String(ir.indirizzo) : null,
-            cap: ir.cap ? String(ir.cap) : null,
-            citta: ir.citta ? String(ir.citta) : null,
-            provincia: ir.provincia ? String(ir.provincia) : null,
-            flagSpedizione: true,
-          },
-        });
-      }
-
       // Assicura che il listino del cliente sia sincronizzato in cache
       try {
         const esiste = await this.prisma.$queryRawUnsafe<{ c: number }[]>(
@@ -1458,7 +1448,84 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       }
     }
 
+    // Importa gli indirizzi di spedizione (idempotente) dopo aver creato/aggiornato i clienti
+    try {
+      await this.importaIndirizziClienti(codici);
+    } catch {
+      // silenzioso — il sync periodico riallineerà
+    }
+
     return { creati: created.length, clienti: created };
+  }
+
+  async importaIndirizziClienti(codici?: string[]): Promise<{ importati: number }> {
+    const where =
+      codici && codici.length
+        ? { codiceCliente: { in: codici } }
+        : { codiceCliente: { not: null } };
+    const clienti = await this.prisma.customer.findMany({
+      where,
+      select: { id: true, codiceCliente: true },
+    });
+
+    let importati = 0;
+    for (const c of clienti) {
+      if (!c.codiceCliente) continue;
+      const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT * FROM b2b_indirizzi_clienti
+         WHERE codice_cliente = $1
+           AND indirizzo IS NOT NULL AND indirizzo NOT IN ('IDEM', 'IDEM COME SOPRA')
+           AND cap IS NOT NULL AND cap <> '00000'`,
+        c.codiceCliente,
+      );
+      for (const r of rows) {
+        const idDest = r.id_destinazione != null ? String(r.id_destinazione) : null;
+        if (!idDest) continue;
+        const ragioneSociale = r.ragione_sociale ? String(r.ragione_sociale) : null;
+        const indirizzo = r.indirizzo ? String(r.indirizzo) : null;
+        const cap = r.cap ? String(r.cap) : null;
+        const citta = r.citta ? String(r.citta) : null;
+        const provincia = r.provincia ? String(r.provincia) : null;
+        const codicePorto = r.codice_porto ? String(r.codice_porto) : null;
+        const codiceVettore = r.codice_vettore ? String(r.codice_vettore) : null;
+        const tipoDestinazione = r.codice_tipo_destinazione
+          ? String(r.codice_tipo_destinazione)
+          : null;
+        const flagSpedizione = String(r.codice_tipo_destinazione ?? '') === 'SP';
+        const flagAbituale = String(r.flag_abituale ?? '') === 'S';
+        await this.prisma.indirizzoCliente.upsert({
+          where: { customerId_codiceDestinazione: { customerId: c.id, codiceDestinazione: idDest } },
+          update: {
+            ragioneSociale,
+            indirizzo,
+            cap,
+            citta,
+            provincia,
+            flagSpedizione,
+            flagAbituale,
+            codicePorto,
+            codiceVettore,
+            tipoDestinazione,
+          },
+          create: {
+            customerId: c.id,
+            codiceDestinazione: idDest,
+            ragioneSociale,
+            indirizzo,
+            cap,
+            citta,
+            provincia,
+            flagSpedizione,
+            flagAbituale,
+            codicePorto,
+            codiceVettore,
+            tipoDestinazione,
+          },
+        });
+        importati++;
+      }
+    }
+    return { importati };
   }
 
   async syncOrdiniCliente(codiceCliente: string): Promise<{ importati: number }> {

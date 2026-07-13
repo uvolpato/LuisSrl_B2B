@@ -5,7 +5,8 @@ import { api, ApiError } from "../../lib/api";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import type { ClienteView, ClienteSearchResult } from "./types";
-import { IconSearch, IconInfo, IconChevronLeft, IconChevronRight } from "./icons";
+import { IconSearch, IconInfo } from "./icons";
+import DataTable, { type Column } from "./DataTable";
 
 export default function ImportaClientiModal({
   open,
@@ -26,7 +27,6 @@ export default function ImportaClientiModal({
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pageRef = useRef(1);
-  const selectAllRef = useRef<HTMLInputElement>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -80,16 +80,6 @@ export default function ImportaClientiModal({
     return () => clearTimeout(t);
   }, [importResult]);
 
-  useEffect(() => {
-    if (!selectAllRef.current) return;
-    const n = sortedItems.length;
-    selectAllRef.current.indeterminate = selected.size > 0 && selected.size < n;
-  }, [selected, result]);
-
-  function toggle(codice: string) {
-    setSelected((prev) => { const n = new Set(prev); if (n.has(codice)) n.delete(codice); else n.add(codice); return n; });
-  }
-
   async function doImport() {
     if (!selected.size) return;
     setImporting(true);
@@ -136,21 +126,17 @@ export default function ImportaClientiModal({
     }
   }
 
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 0;
-  const from = result?.total ? (result.page - 1) * result.limit + 1 : 0;
-  const to = result ? Math.min(result.page * result.limit, result.total) : 0;
-
   const sortedItems = result?.items ?? [];
 
-  function toggleSort(key: string) {
-    if (sortKey === key) { setSortDir(d => d === "asc" ? "desc" : "asc"); }
-    else { setSortKey(key); setSortDir("asc"); }
-  }
-
-  function sortArrow(key: string) {
-    if (sortKey !== key) return "";
-    return sortDir === "asc" ? " ▲" : " ▼";
-  }
+  const columns: Column<ClienteView>[] = [
+    { key: "codice", header: "Codice", width: "120px", mono: true, sortable: true, cell: (p) => p.codiceCliente ?? "—" },
+    { key: "ragioneSociale", header: "Ragione sociale", grow: true, sortable: true, cell: (p) => p.ragioneSociale },
+    { key: "citta", header: "Città", width: "120px", sortable: true, cell: (p) => p.citta ?? "—" },
+    { key: "listino", header: "Listino", width: "90px", align: "center", sortable: true, cell: (p) => p.codiceListino ?? "—" },
+    { key: "ordini", header: "Ordini", width: "90px", align: "center", sortable: true, cell: (p) => (
+        <>{p.numOrdini ?? 0}{p.numOrdiniAnno ? <span style={{ color: "var(--muted)", fontSize: 12 }}> ({p.numOrdiniAnno})</span> : null}</>
+    )},
+  ];
 
   return (
     <Modal
@@ -190,74 +176,24 @@ export default function ImportaClientiModal({
         {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
         {importResult && <Notice variant="success" onClose={() => setImportResult(null)} style={{ marginBottom: 12 }}>{importResult}</Notice>}
 
-        <div className="data-table" style={{ flex: 1, minHeight: 0 }}>
-          {loading && (
-            <div className="data-table-loading-overlay">
-              <span>Caricamento…</span>
-            </div>
-          )}
-          <div className="data-table-scroll">
-            <table>
-              <colgroup>
-                <col style={{ width: 48 }} />
-                <col style={{ width: 120 }} />
-                <col />
-                <col style={{ width: 120 }} />
-                <col style={{ width: 90 }} />
-                <col style={{ width: 80 }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "center" }}>
-                    <input type="checkbox" ref={selectAllRef} checked={selected.size > 0} disabled={importing} onChange={() => { if (selected.size === 0) { setSelected(new Set(sortedItems.map(p => p.codiceCliente ?? ""))); } else { setSelected(new Set()); } }} className="select-all-cb" />
-                  </th>
-                  <th className="sortable" onClick={() => toggleSort("codice")}>Codice{sortArrow("codice")}</th>
-                  <th className="sortable" onClick={() => toggleSort("ragioneSociale")}>Ragione sociale{sortArrow("ragioneSociale")}</th>
-                  <th className="sortable" onClick={() => toggleSort("citta")}>Città{sortArrow("citta")}</th>
-                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("listino")}>Listino{sortArrow("listino")}</th>
-                  <th className="sortable" style={{ textAlign: "center" }} onClick={() => toggleSort("ordini")}>Ordini{sortArrow("ordini")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!loading && !sortedItems.length && (
-                  <tr><td colSpan={6} className="data-table-empty">Nessun risultato</td></tr>
-                )}
-                {sortedItems.map((p) => {
-                  const key = p.codiceCliente ?? "";
-                  return (
-                    <tr key={key}>
-                      <td style={{ textAlign: "center" }}>
-                        <input type="checkbox" checked={selected.has(key)} disabled={importing} onChange={() => toggle(key)} />
-                      </td>
-                      <td className="mono">{p.codiceCliente ?? "—"}</td>
-                      <td>{p.ragioneSociale}</td>
-                      <td>{p.citta ?? "—"}</td>
-                      <td style={{ textAlign: "center" }}>{p.codiceListino ?? "—"}</td>
-                      <td style={{ textAlign: "center" }}>
-                        {p.numOrdini ?? 0}
-                        {p.numOrdiniAnno ? <span style={{ color: "var(--muted)", fontSize: 12 }}> ({p.numOrdiniAnno})</span> : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="data-table-footer">
-            <span>{from}–{to} di {result?.total ?? 0}</span>
-            {totalPages > 1 && (
-              <div className="pager">
-                <button type="button" disabled={result!.page <= 1 || importing} onClick={() => fetchData(result!.page - 1)} aria-label="Pagina precedente">
-                  {IconChevronLeft}
-                </button>
-                <span className="pager-current">{result!.page} / {totalPages}</span>
-                <button type="button" disabled={result!.page * result!.limit >= result!.total || importing} onClick={() => fetchData(result!.page + 1)} aria-label="Pagina successiva">
-                  {IconChevronRight}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={sortedItems}
+          rowKey={(p) => p.codiceCliente ?? ""}
+          emptyText="Nessun risultato"
+          loading={loading}
+          disabled={importing}
+          selectable
+          selectedKeys={selected as Set<string | number>}
+          onSelectionChange={(k) => setSelected(k as Set<string>)}
+          page={result?.page ?? 1}
+          pageSize={result?.limit ?? 50}
+          total={result?.total ?? 0}
+          onPageChange={(pg) => fetchData(pg)}
+          sortKey={sortKey ?? undefined}
+          sortDir={sortDir}
+          onSort={(key, dir) => { setSortKey(key); setSortDir(dir); }}
+        />
       </div>
     </Modal>
   );

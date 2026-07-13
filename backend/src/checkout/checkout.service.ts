@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 
+export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE' | 'MEZZI_PROPRI';
+
 export interface DatiCheckout {
   cliente: {
     id: number;
@@ -13,15 +15,19 @@ export interface DatiCheckout {
   };
   indirizzi: Array<{
     id: number;
+    codiceDestinazione: string | null;
     ragioneSociale: string | null;
     indirizzo: string | null;
     cap: string | null;
     citta: string | null;
     provincia: string | null;
     flagSpedizione: boolean;
+    flagAbituale: boolean;
+    tipoDestinazione: string | null;
     codicePorto: string | null;
     codiceVettore: string | null;
   }>;
+  allowNewAddress: boolean;
   pagamenti: Array<{ codice: string; descrizione: string }>;
   porti: Array<{ codice: string; descrizione: string }>;
   spedizioni: Array<{ codice: string; descrizione: string }>;
@@ -47,8 +53,10 @@ export class CheckoutService {
 
     const indirizzi = await this.prisma.indirizzoCliente.findMany({
       where: { customerId: clienteId },
-      orderBy: [{ flagSpedizione: 'desc' }, { id: 'asc' } ],
+      orderBy: [{ flagSpedizione: 'desc' }, { flagAbituale: 'desc' }, { id: 'asc' } ],
     });
+
+    const allowNewAddress = (await this.getConfigFlag('checkout_allow_new_address')) === true;
 
     const [pagamenti, porti, spedizioni, vettori] = await Promise.all([
       this.prisma.modalitaPagamento.findMany({ where: { obsoleto: false }, orderBy: { codice: 'asc' } }),
@@ -75,15 +83,19 @@ export class CheckoutService {
       },
       indirizzi: indirizzi.map((i) => ({
         id: i.id,
+        codiceDestinazione: i.codiceDestinazione,
         ragioneSociale: i.ragioneSociale,
         indirizzo: i.indirizzo,
         cap: i.cap,
         citta: i.citta,
         provincia: i.provincia,
         flagSpedizione: i.flagSpedizione,
+        flagAbituale: i.flagAbituale,
+        tipoDestinazione: i.tipoDestinazione,
         codicePorto: i.codicePorto,
         codiceVettore: i.codiceVettore,
       })),
+      allowNewAddress,
       pagamenti: pagamenti.map((p) => ({ codice: p.codice, descrizione: p.descrizione })),
       porti: porti.map((p) => ({ codice: p.codice, descrizione: p.descrizione })),
       spedizioni: spedizioni.map((s) => ({ codice: s.codice, descrizione: s.descrizione })),
@@ -95,7 +107,18 @@ export class CheckoutService {
   async confermaOrdine(
     clienteId: number,
     dto: {
+      modalitaConsegna?: ModalitaConsegna;
       indirizzoSpedizioneId?: number;
+      nuovoIndirizzo?: {
+        ragioneSociale?: string;
+        indirizzo: string;
+        cap: string;
+        citta: string;
+        provincia?: string;
+        codicePorto?: string;
+        codiceVettore?: string;
+        nota?: string;
+      };
       codicePorto?: string;
       codiceSpedizione?: string;
       codiceVettore?: string;
@@ -112,6 +135,60 @@ export class CheckoutService {
     if (items.length === 0) throw new BadRequestException('Nessun articolo nel carrello');
 
     const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+    const allowNewAddress = (await this.getConfigFlag('checkout_allow_new_address')) === true;
+    const modalita = dto.modalitaConsegna ?? 'SPEDIZIONE';
+
+    // ── Validazione e risoluzione indirizzo in base alla modalità di consegna ──
+    let indirizzoSpedizioneId: number | null = dto.indirizzoSpedizioneId ?? null;
+
+    if (modalita === 'RITIRO') {
+      // Nessun indirizzo richiesto: serve data/ora di ritiro
+      indirizzoSpedizioneId = null;
+      if (!dto.notaSpedizione || dto.notaSpedizione.trim().length === 0) {
+        throw new BadRequestException('Indicare data e ora di ritiro in sede');
+      }
+    } else {
+      // SPEDIZIONE o MEZZI_PROPRI: serve un indirizzo di consegna
+      if (dto.nuovoIndirizzo) {
+        if (!allowNewAddress) {
+          throw new BadRequestException('Inserimento di un nuovo indirizzo non abilitato');
+        }
+        if (
+          !dto.nuovoIndirizzo.indirizzo?.trim() ||
+          !dto.nuovoIndirizzo.cap?.trim() ||
+          !dto.nuovoIndirizzo.citta?.trim()
+        ) {
+          throw new BadRequestException('Nuovo indirizzo: indirizzo, cap e città sono obbligatori');
+        }
+        const creato = await this.prisma.indirizzoCliente.create({
+          data: {
+            customerId: clienteId,
+            codiceDestinazione: `MANUALE-${Date.now()}`,
+            ragioneSociale: dto.nuovoIndirizzo.ragioneSociale?.trim() || null,
+            indirizzo: dto.nuovoIndirizzo.indirizzo.trim(),
+            cap: dto.nuovoIndirizzo.cap.trim(),
+            citta: dto.nuovoIndirizzo.citta.trim(),
+            provincia: dto.nuovoIndirizzo.provincia?.trim() || null,
+            flagSpedizione: true,
+            flagAbituale: false,
+            tipoDestinazione: 'MAN',
+            codicePorto: dto.nuovoIndirizzo.codicePorto ?? null,
+            codiceVettore: dto.nuovoIndirizzo.codiceVettore ?? null,
+          },
+        });
+        indirizzoSpedizioneId = creato.id;
+      } else if (!indirizzoSpedizioneId) {
+        throw new BadRequestException('Selezionare un indirizzo di spedizione');
+      }
+    }
+
+    // Mappa la modalità sul codice "modalità di spedizione" (tabella portale)
+    const codiceSpedizione = this.mappaModalita(modalita, dto.codiceSpedizione, customer?.codiceSpedizione);
+    const codiceVettore =
+      modalita === 'SPEDIZIONE'
+        ? (dto.codiceVettore ?? customer?.codiceVettore ?? null)
+        : null;
+
     let codiceListino = customer?.codiceListino;
     if (!codiceListino) {
       const fallback = await this.integrazione.getFirstListino();
@@ -145,10 +222,10 @@ export class CheckoutService {
         customerId: clienteId,
         importoTotale,
         stato: 'BOZZA',
-        indirizzoSpedizioneId: dto.indirizzoSpedizioneId ?? null,
+        indirizzoSpedizioneId,
         codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,
-        codiceSpedizione: dto.codiceSpedizione ?? customer?.codiceSpedizione ?? null,
-        codiceVettore: dto.codiceVettore ?? customer?.codiceVettore ?? null,
+        codiceSpedizione,
+        codiceVettore,
         codicePagamento: dto.codicePagamento ?? customer?.codicePagamento ?? null,
         notaSpedizione: dto.notaSpedizione ?? null,
         notaOrdine: dto.notaOrdine ?? null,
@@ -163,6 +240,22 @@ export class CheckoutService {
     await this.prisma.cartItem.deleteMany({ where: { carrelloId: carrello.id } });
 
     return ordine;
+  }
+
+  private mappaModalita(
+    modalita: ModalitaConsegna,
+    dtoSpedizione: string | undefined,
+    defaultSpedizione: string | null | undefined,
+  ): string {
+    if (modalita === 'RITIRO') return '001'; // A MEZZO MITTENTE (ritiro in sede)
+    if (modalita === 'MEZZI_PROPRI') return '002'; // A MEZZO DESTINATARIO (mezzi propri)
+    return dtoSpedizione ?? defaultSpedizione ?? '003'; // A MEZZO VETTORE (corriere)
+  }
+
+  private async getConfigFlag(key: string): Promise<boolean> {
+    const cfg = await this.prisma.siteConfig.findUnique({ where: { key } });
+    if (!cfg) return false;
+    return cfg.value === 'true' || cfg.value === '1';
   }
 
   private async getMaxRaccSconto(codiceVariante: string): Promise<number | undefined> {

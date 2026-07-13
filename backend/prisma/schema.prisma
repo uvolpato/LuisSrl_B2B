@@ -89,18 +89,22 @@ model Customer {
 }
 
 model IndirizzoCliente {
-  id             Int     @id @default(autoincrement())
-  customerId     Int     @map("customer_id")
-  ragioneSociale String? @map("ragione_sociale")
-  indirizzo      String?
-  cap            String?
-  citta          String?
-  provincia      String?
-  flagSpedizione Boolean @default(false) @map("flag_spedizione")
-  codicePorto    String? @map("codice_porto")
-  codiceVettore  String? @map("codice_vettore")
-  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                Int     @id @default(autoincrement())
+  customerId        Int     @map("customer_id")
+  codiceDestinazione String? @map("codice_destinazione")
+  ragioneSociale    String? @map("ragione_sociale")
+  indirizzo         String?
+  cap               String?
+  citta             String?
+  provincia         String?
+  flagSpedizione    Boolean @default(false) @map("flag_spedizione")
+  flagAbituale      Boolean @default(false) @map("flag_abituale")
+  codicePorto       String? @map("codice_porto")
+  codiceVettore     String? @map("codice_vettore")
+  tipoDestinazione  String? @map("tipo_destinazione")
+  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
+  @@unique([customerId, codiceDestinazione])
   @@map("indirizzi_clienti")
 }
 

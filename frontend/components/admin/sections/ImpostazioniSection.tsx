@@ -36,6 +36,15 @@ export default function ImpostazioniSection() {
 
   if (loading) return <div className="admin-content"><p>Caricamento...</p></div>;
 
+  const configMap = new Map(configs.map((c) => [c.key, c.value]));
+  const FLAGS: Array<{ key: string; label: string; desc: string }> = [
+    {
+      key: "checkout_allow_new_address",
+      label: "Consenti nuovo indirizzo di spedizione al checkout",
+      desc: "Se attivo, il cliente può indicare un indirizzo di consegna non presente in anagrafica.",
+    },
+  ];
+
   return (
     <div className="admin-content">
       <div className="content-header">
@@ -45,15 +54,48 @@ export default function ImpostazioniSection() {
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 800 }}>
-        {configs.map((cfg) => (
-          <ConfigField
-            key={cfg.key}
-            config={cfg}
-            saving={saving === cfg.key}
+        {FLAGS.map((f) => (
+          <ConfigToggle
+            key={f.key}
+            flagKey={f.key}
+            label={f.label}
+            desc={f.desc}
+            value={configMap.get(f.key) === "true" || configMap.get(f.key) === "1"}
+            saving={saving === f.key}
             onSave={handleSave}
           />
         ))}
+        {configs
+          .filter((c) => !FLAGS.some((f) => f.key === c.key))
+          .map((cfg) => (
+            <ConfigField
+              key={cfg.key}
+              config={cfg}
+              saving={saving === cfg.key}
+              onSave={handleSave}
+            />
+          ))}
       </div>
+    </div>
+  );
+}
+
+function ConfigToggle({ flagKey, label, desc, value, saving, onSave }: { flagKey: string; label: string; desc: string; value: boolean; saving: boolean; onSave: (key: string, value: string) => void }) {
+  return (
+    <div className="readonly-field" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className="label">{label}</div>
+        <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.45 }}>{desc}</span>
+      </div>
+      <label className="switch" style={{ flexShrink: 0 }}>
+        <input
+          type="checkbox"
+          checked={value}
+          disabled={saving}
+          onChange={(e) => onSave(flagKey, e.target.checked ? "true" : "false")}
+        />
+        <span className="switch-slider" />
+      </label>
     </div>
   );
 }

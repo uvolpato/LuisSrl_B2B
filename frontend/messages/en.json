@@ -75,7 +75,25 @@
     "mustChange": "For security, you must change your provisional password before continuing.",
     "oldPassword": "Current password",
     "newPassword": "New password",
-    "passwordChanged": "Password updated successfully."
+    "passwordChanged": "Password updated successfully.",
+    "profile": "Profile",
+    "profileTitle": "Your profile",
+    "profileDatiAzienda": "Company data",
+    "profileRagioneSociale": "Company name",
+    "profilePiva": "VAT number",
+    "profileCodiceCliente": "Customer code",
+    "profileEmail": "Email",
+    "profileReferente": "Contact",
+    "profileTelefono": "Phone",
+    "profileTelefonoFisso": "Landline",
+    "profileSitoWeb": "Website",
+    "profileListino": "Price list",
+    "profileIndirizzi": "Addresses",
+    "profileIndirizzoPrincipale": "Primary",
+    "profilePagamento": "Payment method",
+    "profileSicurezza": "Security",
+    "profileLastAccess": "Last access",
+    "profileLastAccessUnknown": "N/A"
   },
   "server": {
     "auth": {

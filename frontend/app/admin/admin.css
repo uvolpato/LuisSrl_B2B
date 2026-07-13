@@ -237,18 +237,24 @@
 
 /* Loading overlay per la tabella "Nuovo Articolo" */
 .data-table-loading-overlay {
+  /* Copre e offusca le righe; centrato nello spazio delle righe (tra header e
+     footer) qualunque sia la posizione della scrollbar. Il footer resta sopra
+     e nitido grazie allo z-index piu' alto. */
   position: absolute;
   inset: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
   background: rgba(255,255,255,0.5);
   backdrop-filter: blur(2px);
+}
+.data-table-loading-overlay > * {
   font-size: 14px;
   font-weight: 600;
   color: var(--muted, #888);
 }
+.data-table-footer { position: relative; z-index: 11; }
 /* Sync progress bar */
 .btn .sync-icon { display: inline-flex; align-items: center; vertical-align: middle; }
 .sync-icon.spin {
@@ -1298,6 +1304,21 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 }
 .readonly-field .value.muted { color: var(--muted); font-style: italic; }
 
+/* Toggle switch */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--border); border-radius: 999px; transition: background 0.15s ease;
+}
+.switch-slider::before {
+  content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%; transition: transform 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.switch input:checked + .switch-slider { background: var(--accent); }
+.switch input:checked + .switch-slider::before { transform: translateX(20px); }
+.switch input:disabled + .switch-slider { opacity: 0.6; cursor: not-allowed; }
+
 /* Modal footer */
 .modal-footer {
   display: flex;
@@ -1944,69 +1965,9 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Modal root — componente generico edge-to-edge (sm/md/lg)
+   Modal root — NOTA: le classi .modal-root-* .ordine-detail-* .detail-*
+   sono in catalogo.css (condivise con area clienti)
    ════════════════════════════════════════════════════════════════════════ */
-.modal-root-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: oklch(0% 0 0 / 0.3);
-}
-.modal-root {
-  position: fixed;
-  background: var(--surface);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px oklch(0% 0 0 / 0.25);
-}
-.modal-root-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 28px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.modal-root-header h2 {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-.modal-root-close {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: background 0.12s ease;
-  padding: 0;
-  line-height: 0;
-}
-.modal-root-close:hover { background: var(--fg-soft); color: var(--fg); }
-.modal-root-close svg { width: 18px; height: 18px; display: block; }
-.modal-root-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 28px;
-}
-.modal-root-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 28px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
 
 /* ── Mobile header (logo + hamburger) ── */
 .admin-mobile-header {
@@ -2480,10 +2441,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .field-row { grid-template-columns: 1fr; }
   .modal { width: 95vw; max-height: 95vh; }
   .modal-body { padding: 20px; }
-  .modal-root { inset: 16px !important; }
-  .modal-root-header { padding: 16px 20px; }
-  .modal-root-body { padding: 20px; }
-  .modal-root-footer { padding: 12px 20px; }
+  /* .modal-root-* responsives in catalogo.css */
   #raccolta-form { grid-template-columns: 1fr !important; }
 
   .settings-modal { position: relative; }
@@ -2520,18 +2478,5 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .ordini-tab .data-table { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .ordini-tab .data-table-scroll { overflow: auto; flex: 1; min-height: 0; }
 
-/* Ordine detail modal */
-.ordine-detail-body { display: flex; flex-direction: column; overflow: hidden; }
-.ordine-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 0; }
-.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; margin-bottom: 12px; flex-shrink: 0; }
-.detail-grid-2 { grid-template-columns: 1fr 1fr; }
-.detail-grid-compact { gap: 8px 18px; }
-.detail-row { display: flex; flex-direction: column; gap: 2px; }
-.detail-label { font-size: 12px; font-weight: 500; color: var(--muted); }
-.detail-value { font-size: 14px; }
-.detail-value-strong { font-size: 15px; font-weight: 600; color: var(--fg); }
-.detail-note { margin-bottom: 12px; flex-shrink: 0; }
-.detail-note p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
-.detail-section-title { margin: 16px 0 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-@media (max-width: 560px) { .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Ordine detail modal — classi in catalogo.css */
 

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import type { Customer } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -27,6 +28,17 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly prisma: PrismaService,
   ) {}
+
+  private async buildCustomerProfile(customer: Customer) {
+    const profile = toCustomerProfile(customer);
+    if (customer.codicePagamento) {
+      const pag = await this.prisma.modalitaPagamento.findUnique({
+        where: { codice: customer.codicePagamento },
+      });
+      profile.codicePagamentoDescrizione = pag?.descrizione ?? null;
+    }
+    return profile;
+  }
 
   /** Login: max 5 tentativi al minuto per IP. */
   @Post('login')
@@ -52,7 +64,7 @@ export class AuthController {
 
     const profile = user.userType === 'admin'
       ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
-      : toCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
+      : await this.buildCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
 
     return { user: profile, csrfToken: req.session.csrfToken };
   }
@@ -78,7 +90,7 @@ export class AuthController {
   async me(@Req() req: AuthenticatedRequest) {
     const profile = req.user.userType === 'admin'
       ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: req.user.id } }))
-      : toCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: req.user.id } }));
+      : await this.buildCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: req.user.id } }));
     return {
       user: profile,
       csrfToken: req.session.csrfToken,
