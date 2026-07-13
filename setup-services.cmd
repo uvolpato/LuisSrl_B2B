@@ -108,7 +108,8 @@ REM --- Solo LAN: HTTP su 80 e HTTPS self-signed su 443 ---
 echo Caddyfile scritto in %ROOT%\Caddyfile
 "!NSSM!" stop %SVC_CADDY% >nul 2>nul
 "!NSSM!" remove %SVC_CADDY% confirm >nul 2>nul
-"!NSSM!" install %SVC_CADDY% "!CADDY!" run --config "%ROOT%\Caddyfile" --adapter caddyfile || goto err
+REM Config relativo (AppDirectory = root): evita gli spazi nel percorso che rompono i parametri
+"!NSSM!" install %SVC_CADDY% "!CADDY!" run --config Caddyfile --adapter caddyfile || goto err
 "!NSSM!" set %SVC_CADDY% AppDirectory "%ROOT%" || goto err
 "!NSSM!" set %SVC_CADDY% Start SERVICE_AUTO_START
 "!NSSM!" set %SVC_CADDY% AppStdout "%ROOT%\caddy-out.log"
