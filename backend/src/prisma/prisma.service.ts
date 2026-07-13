@@ -16,8 +16,11 @@ export class PrismaService
   private pool: Pool;
 
   constructor() {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    const adapter = new PrismaPg(pool);
+    const url = new URL(process.env.DATABASE_URL!);
+    const schema = url.searchParams.get('schema') || 'public';
+    url.searchParams.delete('schema');
+    const pool = new Pool({ connectionString: url.toString() });
+    const adapter = new PrismaPg(pool, { schema });
     super({ adapter });
     this.pool = pool;
     return this.$extends(auditExtension) as unknown as PrismaService;
