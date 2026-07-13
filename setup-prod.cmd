@@ -13,6 +13,17 @@ setlocal enabledelayedexpansion
 REM Major Node richiesta (vincolo package.json: >=24.15.0 <25). Va bene qualsiasi v24.x.
 set NODE_MAJOR=v24.
 
+REM --- Connessione DB locale del portale (adatta se serve) ---
+set PG_HOST=localhost
+set PG_PORT=5432
+set PG_USER=postgres
+set PG_DB=LuisSrlDb
+REM --- Connessione al DB Integra (per le viste dblink) ---
+set INTEGRA_HOST=192.168.1.41
+set INTEGRA_PORT=5432
+set INTEGRA_DB=integra
+set INTEGRA_USER=postgres
+
 cd /d "%~dp0"
 
 echo.
@@ -52,13 +63,15 @@ cd backend || goto :err
 call npm ci || goto :err
 
 echo.
-echo === [4/6] Backend: Prisma generate + migrate + build ===
+echo === [4/7] Backend: Prisma generate + migrate + seed + build ===
 call npx prisma generate || goto :err
 call npx prisma migrate deploy || goto :err
+REM Seed idempotente: crea l'admin (ADMIN_EMAIL/ADMIN_PASSWORD dal .env) solo se manca
+call npm run db:seed || goto :err
 call npm run build || goto :err
 
 echo.
-echo === [5/6] Frontend: dipendenze bloccate (npm ci) + build ===
+echo === [5/7] Frontend: dipendenze bloccate (npm ci) + build ===
 cd ..\frontend || goto :err
 call npm ci || goto :err
 call npm run build || goto :err
@@ -66,10 +79,32 @@ call npm run build || goto :err
 cd ..
 
 echo.
-echo === [6/6] FATTO ===
-echo Restano da fare a mano (una tantum):
-echo   - Viste Integra:  psql ... -v conn=... -f backend\prisma\restore-b2b-views.sql
-echo   - Configurare i file .env di backend e frontend
+echo === [6/7] Viste Integra (dblink) ===
+echo Localizzo psql...
+set PSQL=
+for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\*\bin\psql.exe" 2^>nul') do set PSQL=%%p
+if not defined PSQL goto no_psql
+echo Trovato: !PSQL!
+set INTEGRA_PWD=
+set /p INTEGRA_PWD=Password dblink Integra (utente %INTEGRA_USER%@%INTEGRA_HOST%) - invio per SALTARE:
+if "!INTEGRA_PWD!"=="" goto skip_views
+echo Verra' chiesta la password del Postgres locale (utente %PG_USER%)...
+"!PSQL!" -h %PG_HOST% -p %PG_PORT% -U %PG_USER% -d %PG_DB% -v conn="host=%INTEGRA_HOST% port=%INTEGRA_PORT% dbname=%INTEGRA_DB% user=%INTEGRA_USER% password=!INTEGRA_PWD!" -f "%~dp0backend\prisma\restore-b2b-views.sql" || goto :err
+goto done
+
+:no_psql
+echo [avviso] psql.exe non trovato: salto la creazione delle viste.
+echo   Poi lancia a mano: psql ... -v conn=... -f backend\prisma\restore-b2b-views.sql
+goto done
+
+:skip_views
+echo Saltata la creazione delle viste.
+
+:done
+echo.
+echo === [7/7] FATTO ===
+echo Restano da fare a mano:
+echo   - Configurare i file .env di backend e frontend (se non gia' fatto)
 echo   - Avviare backend (npm run start:prod) e frontend (npm run start)
 echo.
 pause
