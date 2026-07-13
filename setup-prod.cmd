@@ -26,8 +26,12 @@ set INTEGRA_USER=postgres
 
 cd /d "%~dp0"
 
+REM Localizzo psql una volta (per fixup DB e viste Integra)
+set PSQL=
+for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\psql.exe" 2^>nul') do set PSQL=%%p
+
 echo.
-echo === [1/6] Verifico Node.js (major %NODE_MAJOR%x) ===
+echo === [1/8] Verifico Node.js (major %NODE_MAJOR%x) ===
 set NODE_CUR=
 for /f "delims=" %%v in ('node -v 2^>nul') do set NODE_CUR=%%v
 echo Node installato: "!NODE_CUR!"  richiesto: "%NODE_MAJOR%x (>=v24.15.0)"
@@ -53,25 +57,35 @@ goto err
 echo Node OK (major v24).
 
 echo.
-echo === [2/6] Verifico npm ===
+echo === [2/8] Verifico npm ===
 for /f "delims=" %%v in ('npm -v 2^>nul') do set NPM_CUR=%%v
 echo npm: !NPM_CUR!
 
 echo.
-echo === [3/6] Backend: dipendenze bloccate (npm ci) ===
+echo === [3/8] Backend: dipendenze bloccate (npm ci) ===
 cd backend || goto :err
 call npm ci || goto :err
 
 echo.
-echo === [4/7] Backend: Prisma generate + migrate + seed + build ===
+echo === [4/8] Backend: Prisma generate + migrate + seed ===
 call npx prisma generate || goto :err
 call npx prisma migrate deploy || goto :err
 REM Seed idempotente: crea l'admin (ADMIN_EMAIL/ADMIN_PASSWORD dal .env) solo se manca
 call npm run db:seed || goto :err
+
+echo.
+echo === [5/8] Fixup DB non coperti dalle migration (idempotente) ===
+if not defined PSQL echo [avviso] psql non trovato: applica a mano backend\prisma\manual-fixups.sql & goto after_fixups
+echo Applico backend\prisma\manual-fixups.sql (chiede la password postgres locale)...
+"!PSQL!" -h %PG_HOST% -p %PG_PORT% -U %PG_USER% -d %PG_DB% -f "%~dp0backend\prisma\manual-fixups.sql" || goto :err
+:after_fixups
+
+echo.
+echo === [6/8] Backend: build ===
 call npm run build || goto :err
 
 echo.
-echo === [5/7] Frontend: dipendenze bloccate (npm ci) + build ===
+echo === [7/8] Frontend: dipendenze bloccate (npm ci) + build ===
 cd ..\frontend || goto :err
 call npm ci || goto :err
 call npm run build || goto :err
@@ -79,12 +93,9 @@ call npm run build || goto :err
 cd ..
 
 echo.
-echo === [6/7] Viste Integra (dblink) ===
-echo Localizzo psql...
-set PSQL=
-for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\psql.exe" 2^>nul') do set PSQL=%%p
+echo === [8/8] Viste Integra (dblink) ===
 if not defined PSQL goto no_psql
-echo Trovato: !PSQL!
+echo psql: !PSQL!
 set INTEGRA_PWD=
 set /p INTEGRA_PWD=Password dblink Integra (utente %INTEGRA_USER%@%INTEGRA_HOST%) - invio per SALTARE:
 if "!INTEGRA_PWD!"=="" goto skip_views
@@ -102,7 +113,7 @@ echo Saltata la creazione delle viste.
 
 :done
 echo.
-echo === [7/7] FATTO ===
+echo === FATTO ===
 echo Restano da fare a mano:
 echo   - Configurare i file .env di backend e frontend (se non gia' fatto)
 echo   - Creare i servizi Windows: setup-services.cmd (consigliato)
