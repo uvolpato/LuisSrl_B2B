@@ -8,7 +8,6 @@ if (!databaseUrl) {
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-  engine: "classic",
   migrations: {
     seed: "node prisma/seed.js",
   },
