@@ -21,21 +21,25 @@ set NODE_CUR=
 for /f "delims=" %%v in ('node -v 2^>nul') do set NODE_CUR=%%v
 echo Node installato: "!NODE_CUR!"  richiesto: "%NODE_REQ%"
 
-if /i "!NODE_CUR!"=="%NODE_REQ%" (
-  echo Node gia' alla versione corretta.
-) else (
-  echo Installo Node %NODE_REQ% via winget...
-  where winget >nul 2>nul || (
-    echo [ERRORE] winget non disponibile.
-    echo Installa manualmente Node %NODE_REQ% da https://nodejs.org/dist/%NODE_REQ%/
-    goto :err
-  )
-  winget install --id OpenJS.NodeJS --version 24.15.0 --exact --silent --accept-source-agreements --accept-package-agreements || goto :err
-  echo.
-  echo *** Node installato. CHIUDI e RIAPRI questo terminale (per aggiornare il PATH), poi rilancia setup-prod.cmd ***
-  pause
-  goto :eof
-)
+if /i "!NODE_CUR!"=="%NODE_REQ%" goto node_ok
+
+echo Installo Node %NODE_REQ% via winget...
+where winget >nul 2>nul
+if errorlevel 1 goto no_winget
+winget install --id OpenJS.NodeJS --version 24.15.0 --exact --silent --accept-source-agreements --accept-package-agreements
+if errorlevel 1 goto err
+echo.
+echo *** Node installato. CHIUDI e RIAPRI questo terminale (per aggiornare il PATH), poi rilancia setup-prod.cmd ***
+pause
+goto :eof
+
+:no_winget
+echo [ERRORE] winget non disponibile.
+echo Installa manualmente Node %NODE_REQ% da https://nodejs.org/dist/%NODE_REQ%/
+goto err
+
+:node_ok
+echo Node gia' alla versione corretta.
 
 echo.
 echo === [2/6] Verifico npm ===
