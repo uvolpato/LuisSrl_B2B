@@ -10,20 +10,20 @@ REM  (es. il salto Prisma 6 -> 7 successo con npm install).
 REM ============================================================
 setlocal enabledelayedexpansion
 
-REM Versione Node richiesta (deve combaciare con .nvmrc)
-set NODE_REQ=v24.15.0
+REM Major Node richiesta (vincolo package.json: >=24.15.0 <25). Va bene qualsiasi v24.x.
+set NODE_MAJOR=v24.
 
 cd /d "%~dp0"
 
 echo.
-echo === [1/6] Verifico Node.js (%NODE_REQ%) ===
+echo === [1/6] Verifico Node.js (major %NODE_MAJOR%x) ===
 set NODE_CUR=
 for /f "delims=" %%v in ('node -v 2^>nul') do set NODE_CUR=%%v
-echo Node installato: "!NODE_CUR!"  richiesto: "%NODE_REQ%"
+echo Node installato: "!NODE_CUR!"  richiesto: "%NODE_MAJOR%x (>=v24.15.0)"
 
-if /i "!NODE_CUR!"=="%NODE_REQ%" goto node_ok
+echo !NODE_CUR! | findstr /b /c:"%NODE_MAJOR%" >nul && goto node_ok
 
-echo Installo Node %NODE_REQ% via winget...
+echo Installo Node LTS via winget...
 where winget >nul 2>nul
 if errorlevel 1 goto no_winget
 winget install --id OpenJS.NodeJS --version 24.15.0 --exact --silent --accept-source-agreements --accept-package-agreements
@@ -34,12 +34,12 @@ pause
 goto :eof
 
 :no_winget
-echo [ERRORE] winget non disponibile.
-echo Installa manualmente Node %NODE_REQ% da https://nodejs.org/dist/%NODE_REQ%/
+echo [ERRORE] winget non disponibile e Node major diversa da v24.
+echo Installa Node v24.x da https://nodejs.org/dist/latest-v24.x/ e rilancia.
 goto err
 
 :node_ok
-echo Node gia' alla versione corretta.
+echo Node OK (major v24).
 
 echo.
 echo === [2/6] Verifico npm ===
