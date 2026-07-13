@@ -94,16 +94,20 @@ goto caddy_svc
 
 :caddy_lan
 REM --- Solo LAN: HTTPS self-signed su una porta alta (niente bisogno di 80/443) ---
+set LAN_HOST=
+set /p LAN_HOST=IP o nome del server (es. 192.168.1.41):
+if "!LAN_HOST!"=="" echo [ERRORE] serve l'IP/host del server per il certificato. & goto err
 set HTTPS_PORT=
 set /p HTTPS_PORT=Porta HTTPS (invio = 8443):
 if "!HTTPS_PORT!"=="" set HTTPS_PORT=8443
+REM Schema https:// esplicito: senza, Caddy servirebbe la porta in HTTP
 (
-  echo :!HTTPS_PORT! {
+  echo https://!LAN_HOST!:!HTTPS_PORT! {
   echo     tls internal
   echo     reverse_proxy localhost:%FE_PORT%
   echo }
 )>"%ROOT%\Caddyfile"
-echo Accederai da: https://IP-DEL-SERVER:!HTTPS_PORT!  (certificato self-signed: accetta l'avviso)
+echo Accederai da: https://!LAN_HOST!:!HTTPS_PORT!  (certificato self-signed: accetta l'avviso)
 
 :caddy_svc
 echo Caddyfile scritto in %ROOT%\Caddyfile
