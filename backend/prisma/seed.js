@@ -1,15 +1,8 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { Pool } = require('pg');
 const argon2 = require('argon2');
 
-const url = new URL(process.env.DATABASE_URL);
-const schema = url.searchParams.get('schema') || 'public';
-url.searchParams.delete('schema');
-const pool = new Pool({ connectionString: url.toString() });
-const adapter = new PrismaPg(pool, { schema });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 const PERMISSION_KEYS = [
   'admin.users.view',
