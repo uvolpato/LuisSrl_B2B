@@ -82,7 +82,7 @@ echo.
 echo === [6/7] Viste Integra (dblink) ===
 echo Localizzo psql...
 set PSQL=
-for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\*\bin\psql.exe" 2^>nul') do set PSQL=%%p
+for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\psql.exe" 2^>nul') do set PSQL=%%p
 if not defined PSQL goto no_psql
 echo Trovato: !PSQL!
 set INTEGRA_PWD=
