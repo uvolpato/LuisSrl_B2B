@@ -32,7 +32,7 @@ set DOBK=
 set /p DOBK=Faccio un backup del DB prima di aggiornare? [S/n]:
 if /i "!DOBK!"=="n" goto after_backup
 set PGDUMP=
-for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\*\bin\pg_dump.exe" 2^>nul') do set PGDUMP=%%p
+for /f "delims=" %%p in ('dir /b /s "C:\Program Files\PostgreSQL\pg_dump.exe" 2^>nul') do set PGDUMP=%%p
 if not defined PGDUMP echo [avviso] pg_dump non trovato: salto il backup. & goto after_backup
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 set STAMP=%date:~-4%%date:~3,2%%date:~0,2%_%time:~0,2%%time:~3,2%
