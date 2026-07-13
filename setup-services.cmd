@@ -31,7 +31,7 @@ if not defined NSSM if exist "%ROOT%\nssm.exe" set NSSM=%ROOT%\nssm.exe
 if defined NSSM goto have_nssm
 
 echo nssm non trovato: lo scarico da nssm.cc...
-powershell -NoProfile -Command "try { Invoke-WebRequest 'https://nssm.cc/release/nssm-2.24.zip' -OutFile \"$env:TEMP\nssm.zip\"; Expand-Archive -Force \"$env:TEMP\nssm.zip\" \"$env:TEMP\nssm\"; Copy-Item \"$env:TEMP\nssm\nssm-2.24\win64\nssm.exe\" \"%ROOT%\nssm.exe\" -Force } catch { exit 1 }"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { Invoke-WebRequest 'https://nssm.cc/release/nssm-2.24.zip' -OutFile \"$env:TEMP\nssm.zip\"; Expand-Archive -Force \"$env:TEMP\nssm.zip\" \"$env:TEMP\nssm\"; Copy-Item \"$env:TEMP\nssm\nssm-2.24\win64\nssm.exe\" \"%ROOT%\nssm.exe\" -Force } catch { Write-Host $_.Exception.Message; exit 1 }"
 if errorlevel 1 echo [ERRORE] download nssm fallito. Scaricalo a mano da https://nssm.cc e metti nssm.exe nella root. & goto err
 set NSSM=%ROOT%\nssm.exe
 
@@ -76,7 +76,7 @@ for /f "delims=" %%n in ('where caddy 2^>nul') do if not defined CADDY set CADDY
 if not defined CADDY if exist "%ROOT%\caddy.exe" set CADDY=%ROOT%\caddy.exe
 if defined CADDY goto have_caddy
 echo caddy non trovato: lo scarico...
-powershell -NoProfile -Command "try { Invoke-WebRequest 'https://caddyserver.com/api/download?os=windows&arch=amd64' -OutFile \"%ROOT%\caddy.exe\" } catch { exit 1 }"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { Invoke-WebRequest 'https://caddyserver.com/api/download?os=windows&arch=amd64' -OutFile \"%ROOT%\caddy.exe\" } catch { Write-Host $_.Exception.Message; exit 1 }"
 if errorlevel 1 echo [avviso] download caddy fallito: salto il reverse proxy. Scaricalo da https://caddyserver.com/download & goto caddy_skip
 set CADDY=%ROOT%\caddy.exe
 
