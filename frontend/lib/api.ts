@@ -39,6 +39,9 @@ async function request<T>(
       (Array.isArray(body?.message) ? body?.message[0] : body?.message) ??
       "errors.generic";
     if (res.status === 429) code = "errors.too_many_requests";
+    // se il codice è uno status text HTTP (es. "Internal server error"),
+    // non è una chiave di traduzione valida
+    if (/^[A-Z]/.test(code)) code = "errors.generic";
     throw new ApiError(res.status, code);
   }
   return data as T;
