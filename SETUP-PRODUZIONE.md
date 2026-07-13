@@ -122,9 +122,24 @@ in una nuova finestra.
 - **Prisma**: `7.8.0` esatto (no `^`) su `prisma`, `@prisma/client`, `@prisma/adapter-pg`
 - Tutte le altre dipendenze: dal `package-lock.json` via `npm ci`
 
-## Da definire in base alla macchina
+## 7. Reverse proxy + HTTPS (Caddy)
 
-- Come esporre le porte 3000 (frontend) / 3001 (backend) verso l'esterno
-  (reverse proxy IIS? porta diretta?).
-- Se far girare backend/frontend come **servizio Windows** (es. `nssm`) invece
-  che in finestre aperte, così ripartono da soli al reboot.
+L'esposizione verso l'esterno è affidata a **Caddy**: termina il TLS sulla 443
+(certificato Let's Encrypt automatico) e inoltra al frontend su `localhost:3000`.
+
+`Caddyfile`:
+
+```
+portale.tuodominio.it {
+    reverse_proxy localhost:3000
+}
+```
+
+- **DNS:** record A `portale.tuodominio.it` → IP pubblico del server.
+- **Firewall (ingresso):** aprire **solo** TCP 80 e 443. Le porte 3000/3001/5432
+  restano raggiungibili **solo da localhost**.
+- Il backend è già predisposto dietro proxy (`trust proxy`, cookie `Secure`,
+  Helmet): nessuna modifica al codice.
+
+Dettagli completi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
+[`DEPLOY.md`](DEPLOY.md) §7-9.

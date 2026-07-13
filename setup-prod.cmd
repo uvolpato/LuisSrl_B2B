@@ -105,7 +105,13 @@ echo.
 echo === [7/7] FATTO ===
 echo Restano da fare a mano:
 echo   - Configurare i file .env di backend e frontend (se non gia' fatto)
-echo   - Avviare backend (npm run start:prod) e frontend (npm run start)
+echo   - Creare i servizi Windows: setup-services.cmd (consigliato)
+echo     oppure avviare a mano: backend "npm run start:prod", frontend "npm run start"
+echo.
+echo Comandi utili servizi:
+echo   nssm restart LuisBackend   ^| nssm status LuisFrontend
+echo   nssm stop LuisBackend      ^| nssm start LuisFrontend
+echo   Log: backend\service-*.log   frontend\service-*.log
 echo.
 pause
 goto :eof
