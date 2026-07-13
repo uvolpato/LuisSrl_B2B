@@ -70,17 +70,25 @@ Le viste `vista_integra_*` usano anche le tabelle
 `integrazioni_raw` / `integrazioni_linee_map` (seed Integra): se mancano,
 vanno popolate a parte.
 
-## 6. Avvio
+## 6. Avvio come servizi Windows (consigliato)
 
-Backend (finestra persistente):
+Dalla root, come Administrator:
+
+```cmd
+setup-services.cmd
+```
+
+Scarica `nssm` se manca e crea due servizi **auto-start al boot**:
+`LuisBackend` (API) e `LuisFrontend` (porta 3000). Comandi utili:
+`nssm restart LuisBackend`, `nssm stop LuisFrontend`, `nssm status LuisBackend`.
+Log in `backend\service-*.log` e `frontend\service-*.log`.
+
+### In alternativa: finestre manuali
 
 ```cmd
 cd backend
 npm run start:prod
 ```
-
-Frontend (altra finestra):
-
 ```cmd
 cd frontend
 npm run start
@@ -103,8 +111,9 @@ in una nuova finestra.
 
 | File | Scopo |
 |------|-------|
-| `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + build) |
-| `deploy-prod.cmd` | Aggiornamento (pull + ci + migrate + build + restart) |
+| `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + migrate + seed + build + viste) |
+| `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` (nssm) |
+| `deploy-prod.cmd` | Aggiornamento (stop servizi + pull + ci + migrate + build + restart) |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
 
 ## Versioni bloccate
