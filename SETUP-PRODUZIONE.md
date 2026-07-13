@@ -13,9 +13,9 @@ aggiornamenti successivi.
 ## 1. Prendere il codice
 
 ```cmd
-cd "C:\Program Files\Git\www"
-git clone https://github.com/uvolpato/LuisSrl_B2B.git portale
-cd portale
+cd "C:\Progetti"
+git clone https://github.com/uvolpato/LuisSrl_B2B.git "Luis Srl - B2B"
+cd "Luis Srl - B2B"
 ```
 
 ## 2. Creare il database (se non esiste)

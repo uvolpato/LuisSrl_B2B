@@ -1,7 +1,7 @@
 @echo off
 REM ============================================================
 REM  Deploy produzione Portale B2B Luis
-REM  Eseguire dalla root del repo (es. C:\Program Files\Git\www\portale)
+REM  Eseguire dalla root del repo (es. C:\Progetti\Luis Srl - B2B)
 REM
 REM  IMPORTANTE: prima di lanciare questo script CHIUDI la finestra
 REM  in cui gira il backend (tiene bloccati i file nativi come argon2).
