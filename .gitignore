@@ -29,6 +29,7 @@ frontend/public/images/
 # --- Script/artefatti temporanei di debug (usa-e-getta) ---
 _*.cjs
 backend/check-*.ts
+backend/check-*.js
 backend/tmp_insp.ts
 backend/gap.sql
 cookie*.txt
