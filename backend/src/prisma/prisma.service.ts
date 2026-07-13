@@ -12,7 +12,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    super();
+    super({ datasourceUrl: process.env.DATABASE_URL });
     return this.$extends(auditExtension) as unknown as PrismaService;
   }
 
