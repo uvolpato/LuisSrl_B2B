@@ -85,9 +85,11 @@ HTTP/HTTPS su 80/443). Lo script **chiede il dominio**:
 - **dominio pubblico** → HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443);
 - **invio (vuoto)** → solo LAN: HTTP su 80 + HTTPS self-signed su 443.
 
-Ricorda di aprire sul firewall le porte **80 e 443**. Comandi utili:
-`nssm restart LuisBackend`, `nssm status LuisFrontend`, `nssm restart LuisCaddy`.
-Log in `backend\service-*.log`, `frontend\service-*.log`, `caddy-*.log`.
+Porte da rendere raggiungibili in base allo scenario HTTPS (vedi §7): **80+443**
+con dominio pubblico, oppure la **porta alta** (es. 8443) in modalità LAN.
+Comandi utili: `nssm restart LuisBackend`, `nssm status LuisFrontend`,
+`nssm restart LuisCaddy`. Log in `backend\service-*.log`,
+`frontend\service-*.log`, `caddy-*.log`.
 
 ### In alternativa: finestre manuali
 
@@ -104,22 +106,23 @@ npm run start
 
 ## Aggiornamenti successivi (non da zero)
 
-Chiudi la finestra del backend, poi dalla root:
+Dalla root, come Administrator:
 
 ```cmd
 deploy-prod.cmd
 ```
 
-Fa: git pull → npm ci → prisma generate/migrate → build → riavvia il backend
-in una nuova finestra.
+Fa: backup DB (opzionale) → stop servizi → git pull (stash se servono) →
+npm ci → prisma generate/migrate → build BE+FE → restart servizi (o finestre se
+i servizi non esistono).
 
 ## Script del repo
 
 | File | Scopo |
 |------|-------|
 | `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + migrate + seed + build + viste) |
-| `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` (nssm) |
-| `deploy-prod.cmd` | Aggiornamento (stop servizi + pull + ci + migrate + build + restart) |
+| `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` / `LuisCaddy` (nssm) |
+| `deploy-prod.cmd` | Aggiornamento sicuro (backup + stop servizi + pull + ci + migrate + build + restart) |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
 
 ## Versioni bloccate
@@ -130,22 +133,80 @@ in una nuova finestra.
 
 ## 7. Reverse proxy + HTTPS (Caddy)
 
-L'esposizione verso l'esterno è affidata a **Caddy**: termina il TLS sulla 443
-(certificato Let's Encrypt automatico) e inoltra al frontend su `localhost:3000`.
+L'esposizione avviene tramite **Caddy** (servizio `LuisCaddy` creato da
+`setup-services.cmd`): termina il TLS e inoltra al frontend su `localhost:3000`.
+Le porte 3000/3001/5432 restano raggiungibili **solo da localhost**.
 
-`Caddyfile`:
+> **Perché serve HTTPS:** il cookie di sessione è `Secure` in produzione
+> ([backend/src/main.ts](backend/src/main.ts) `secure: isProd`). Su HTTP il
+> browser lo scarta e **il login non aggancia** (torni sempre alla schermata di
+> login anche con credenziali corrette). Va quindi usato **sempre HTTPS**.
+
+Il frontend chiama l'API tramite il **proxy interno di Next** (`/api` → backend),
+quindi è tutto **same-origin**: Caddy deve proxare solo il frontend (3000).
+
+### Come funziona il certificato
+
+Per un certificato **valido** (Let's Encrypt), l'emissione richiede la
+validazione del dominio, che avviene **solo su**:
+
+- **porta 80** (challenge HTTP-01), oppure
+- **porta 443** (challenge TLS-ALPN-01).
+
+Una **porta alta** (es. 8443) **non** è sufficiente per un certificato valido:
+Let's Encrypt valida esclusivamente su 80/443.
+
+### Scenari
+
+**A) Dominio pubblico con 80/443 aperte (consigliata)**
+Dominio (es. `b2b.luisbg.it`) che risolve all'IP pubblico del server, con 80 e
+443 raggiungibili da internet.
 
 ```
-portale.tuodominio.it {
+b2b.luisbg.it {
     reverse_proxy localhost:3000
 }
 ```
+Caddy fa tutto: certificato valido, rinnovo automatico, la 80 reindirizza alla 443.
+Firewall: aprire **solo** 80 e 443 in ingresso.
 
-- **DNS:** record A `portale.tuodominio.it` → IP pubblico del server.
-- **Firewall (ingresso):** aprire **solo** TCP 80 e 443. Le porte 3000/3001/5432
-  restano raggiungibili **solo da localhost**.
-- Il backend è già predisposto dietro proxy (`trust proxy`, cookie `Secure`,
-  Helmet): nessuna modifica al codice.
+**B) Dominio senza 80/443 aperte → challenge DNS-01**
+Il certificato viene emesso creando un record TXT via le API del DNS (nessuna
+porta pubblica), e si può servire anche su porta alta:
 
-Dettagli completi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
+```
+b2b.luisbg.it:8443 {
+    reverse_proxy localhost:3000
+    tls {
+        dns <provider> <token_api>
+    }
+}
+```
+Richiede un `caddy.exe` **compilato con il plugin DNS** del provider (Cloudflare,
+Aruba, ecc.) tramite `xcaddy` — il caddy standard non include i plugin DNS.
+È l'unica via per un certificato **valido** dietro tunnel/senza porte pubbliche.
+
+**C) LAN, HTTPS self-signed su porta alta (nessuna porta pubblica)**
+È la modalità che `setup-services.cmd` propone premendo invio al dominio:
+chiede la porta (default **8443**) e genera:
+
+```
+:8443 {
+    tls internal
+    reverse_proxy localhost:3000
+}
+```
+Accesso: `https://IP-DEL-SERVER:8443`. Funziona subito senza 80/443, ma il
+certificato è **self-signed** → il browser mostra l'avviso "non sicuro".
+Ok per uso interno, **non** ideale per i clienti B2B.
+
+### In sintesi
+
+| Vuoi… | Serve |
+|-------|-------|
+| Lucchetto verde, dominio pubblico | **80 + 443 aperte** (scenario A) |
+| Lucchetto verde, senza aprire porte | **DNS-01** + caddy con plugin DNS (scenario B) |
+| Subito, solo LAN, avviso accettabile | **porta alta + `tls internal`** (scenario C) |
+
+Dettagli aggiuntivi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
 [`DEPLOY.md`](DEPLOY.md) §7-9.
