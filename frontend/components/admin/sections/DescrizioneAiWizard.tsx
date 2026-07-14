@@ -80,6 +80,25 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const confirm = useConfirm();
   const copertina = immagini.find((i) => i.copertina) || immagini.find((i) => i.tipo === "CARICATA") || immagini[0];
 
+  // Galleria wizard: foto grande + navigazione tra tutte le immagini
+  const [currentImg, setCurrentImg] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const imgCorrente = immagini[currentImg] || copertina;
+  const prevImg = () => setCurrentImg((i) => (i - 1 + immagini.length) % immagini.length);
+  const nextImg = () => setCurrentImg((i) => (i + 1) % immagini.length);
+
+  // Allo step corrente evidenzia la foto più adatta: Contesto/Emozione -> ambientata (AI),
+  // gli altri -> foto prodotto (copertina/CARICATA). Restano navigabili a mano.
+  useEffect(() => {
+    if (!immagini.length) return;
+    const preferAI = currentStep === 2 || currentStep === 3;
+    let idx = -1;
+    if (preferAI) idx = immagini.findIndex((f) => f.tipo === "AI");
+    if (idx < 0) idx = immagini.findIndex((f) => f.copertina);
+    if (idx < 0) idx = immagini.findIndex((f) => f.tipo === "CARICATA");
+    setCurrentImg(idx < 0 ? 0 : idx);
+  }, [currentStep, immagini]);
+
   const startListening = useCallback(() => {
     const SpeechRecognition: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) { confirm({ message: "Il riconoscimento vocale non è supportato da questo browser. Usa Chrome o Edge.", title: "Microfono non disponibile" }); return; }
@@ -354,11 +373,40 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       )}
 
       <div className="wizard-body">
-        {copertina && (
-          <div className="wizard-image">
-            <img src={copertina.url} alt="Prodotto" />
-          </div>
-        )}
+        <div className="wizard-gallery">
+          {imgCorrente ? (
+            <>
+              <div className="wizard-gallery-main">
+                <img src={imgCorrente.url} alt="Prodotto" onClick={() => setLightbox(true)} />
+                <button type="button" className="wizard-gallery-zoom" onClick={() => setLightbox(true)} aria-label="Ingrandisci foto">⛶</button>
+                {immagini.length > 1 && (
+                  <>
+                    <button type="button" className="wizard-gallery-arrow prev" onClick={prevImg} aria-label="Foto precedente">‹</button>
+                    <button type="button" className="wizard-gallery-arrow next" onClick={nextImg} aria-label="Foto successiva">›</button>
+                    <span className="wizard-gallery-count">{currentImg + 1} / {immagini.length}</span>
+                  </>
+                )}
+              </div>
+              {immagini.length > 1 && (
+                <div className="wizard-gallery-thumbs">
+                  {immagini.map((f, i) => (
+                    <button
+                      type="button"
+                      key={f.id}
+                      className={`wizard-thumb ${i === currentImg ? "active" : ""}`}
+                      onClick={() => setCurrentImg(i)}
+                      aria-label={`Foto ${i + 1}`}
+                    >
+                      <img src={f.url} alt="" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="wizard-gallery-empty">Nessuna foto</div>
+          )}
+        </div>
         <div className="wizard-content">
           <div className="wizard-prompt">
             <span className="wizard-prompt-icon">{STEPS[currentStep]?.icon}</span>
@@ -413,6 +461,19 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           </div>
         </div>
       </div>
+
+      {lightbox && imgCorrente && (
+        <div className="wizard-lightbox" onClick={() => setLightbox(false)}>
+          <img src={imgCorrente.url} alt="Prodotto" onClick={(e) => e.stopPropagation()} />
+          <button type="button" className="wizard-lightbox-close" onClick={() => setLightbox(false)} aria-label="Chiudi">✕</button>
+          {immagini.length > 1 && (
+            <>
+              <button type="button" className="wizard-lightbox-arrow prev" onClick={(e) => { e.stopPropagation(); prevImg(); }} aria-label="Foto precedente">‹</button>
+              <button type="button" className="wizard-lightbox-arrow next" onClick={(e) => { e.stopPropagation(); nextImg(); }} aria-label="Foto successiva">›</button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
