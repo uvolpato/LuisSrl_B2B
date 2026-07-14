@@ -17,9 +17,17 @@ export default function ArticoliSection() {
   const [view, setView] = useState<"list" | "grid">("list");
 
   // Su mobile la tabella scorre orizzontalmente e le colonne restano tagliate:
-  // di default parte in vista griglia (card). Resta cambiabile a mano.
+  // sotto i 640px si passa automaticamente a griglia (card), sopra a tabella.
+  // Se l'utente sceglie a mano una vista, l'automatismo si disattiva.
+  const viewChosenByUser = useRef(false);
   useEffect(() => {
-    if (window.matchMedia("(max-width: 640px)").matches) setView("grid");
+    const mq = window.matchMedia("(max-width: 640px)");
+    const apply = () => {
+      if (!viewChosenByUser.current) setView(mq.matches ? "grid" : "list");
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   const [articleFilter, setArticleFilter] = useState("tutti");
@@ -229,10 +237,10 @@ export default function ArticoliSection() {
             <span className="meta">{artMeta}</span>
           </div>
           <div className="view-toggle">
-            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
+            <button className={view === "list" ? "active" : ""} onClick={() => { viewChosenByUser.current = true; setView("list"); }} title="Vista riga">
               {IconList}
             </button>
-            <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia">
+            <button className={view === "grid" ? "active" : ""} onClick={() => { viewChosenByUser.current = true; setView("grid"); }} title="Vista griglia">
               {IconGrid}
             </button>
           </div>
