@@ -2555,8 +2555,10 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
     cursor: pointer;
     padding: 0;
   }
-  .top-actions { display: none; }
-  .top-actions.open { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+  /* Solo la barra di pagina (.admin-top) e' a scomparsa: le toolbar interne
+     che riusano .top-actions (es. Raccolte) restano sempre visibili. */
+  .admin-top .top-actions { display: none; }
+  .admin-top .top-actions.open { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
   .top-actions .admin-search { flex: 1 1 100%; min-width: 0; }
   .top-actions .filter-select { flex: 1 1 auto; min-width: 0; }
   .top-actions .action-buttons { flex: 1 1 100%; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; }
