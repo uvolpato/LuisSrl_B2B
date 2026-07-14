@@ -2344,7 +2344,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 }
 
 /* Descrizione AI Wizard */
-.wizard { display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; flex: 1; }
+.wizard { display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; flex: 1; position: relative; }
 .wizard-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .wizard-steps { display: flex; align-items: center; gap: 0; flex: 1; }
 .wizard-step-dot { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: var(--radius); color: var(--muted); font-size: 13px; transition: all 0.15s ease; }
@@ -2355,7 +2355,21 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .wizard-step-dot:disabled { opacity: 0.4; cursor: default; }
 .wizard-dot-icon { font-size: 16px; line-height: 1; }
 .wizard-dot-label { font-size: 12px; white-space: nowrap; }
-.wizard-guida { background: var(--fg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 13px; max-height: 200px; overflow: auto; }
+.wizard-guida {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  padding: 16px;
+  font-size: 13px;
+  max-height: 60vh;
+  overflow: auto;
+}
 .wizard-guida table { width: 100%; border-collapse: collapse; }
 .wizard-guida th { text-align: left; padding: 6px 10px; font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .wizard-guida td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
