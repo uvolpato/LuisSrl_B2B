@@ -377,10 +377,14 @@ export default function ArticoloEditModal({
                     onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragGalleriaOver(false); }}
                     onDrop={(e) => { e.preventDefault(); setDragGalleriaOver(false); if (dragIdx !== null) return; setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingExtra((prev) => [...prev, ...images]); }}
                   >
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini. Attiva/disattiva la visibilità in galleria. La prima è la copertina.</p>
+                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini. Attiva/disattiva la visibilità in galleria. La prima immagine attiva è la copertina.</p>
                     {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
                     <div className="gallery-compact">
-                      {(immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id)).map((id, idx) => {
+                      {(() => {
+                      const displayIds = (immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id));
+                      // Copertina = prima immagine attiva (visibile in galleria)
+                      const coverId = displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) : false; });
+                      return displayIds.map((id, idx) => {
                         const img = article.immagini.find((i) => i.id === id);
                         if (!img) return null;
                         const isDrag = dragIdx === idx;
@@ -401,13 +405,14 @@ export default function ArticoloEditModal({
                             style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab" }}
                             imgStyle={desaturate ? { filter: "grayscale(1)" } : undefined}
                           >
-                            {idx === 0 && <span className="cover-badge">Copertina</span>}
+                            {img.id === coverId && <span className="cover-badge">Copertina</span>}
                             <button type="button" onClick={() => setImmaginiGalleria((prev) => ({ ...prev ?? {}, [img.id]: !(prev?.[img.id] ?? img.inGalleria) }))} style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: "50%", border: `2px solid ${galleriaVal ? "var(--accent)" : "var(--muted)"}`, background: galleriaVal ? "var(--accent)" : "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: galleriaVal ? "#fff" : "var(--muted)", fontSize: 12, lineHeight: 1, padding: 0, flexShrink: 0 }} title={galleriaVal ? "Visibile in galleria" : "Nascosto in galleria"}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 12, height: 12 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                           </PositionedImage>
                         );
-                      })}
+                      });
+                      })()}
                       {pendingExtra.map((f, i) => (
                         <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
                           <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />

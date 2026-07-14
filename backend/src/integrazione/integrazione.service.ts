@@ -644,6 +644,28 @@ export class IntegrazioneService {
           ),
       );
     }
+    // Invariante copertina: se esiste almeno un'immagine attiva (inGalleria),
+    // deve esserci esattamente una copertina, ed è la prima attiva per ordinamento.
+    // Copre: eliminazione/disattivazione della copertina (passa alla successiva) e
+    // riattivazione quando non c'erano immagini attive (quella diventa copertina).
+    {
+      const imgs = await this.prisma.immagine.findMany({
+        where: { articoloId: art.id },
+        orderBy: { ordinamento: 'asc' },
+        select: { id: true, inGalleria: true, copertina: true },
+      });
+      const cover = imgs.find((i) => i.inGalleria);
+      if (cover) {
+        if (!cover.copertina || imgs.some((i) => i.copertina && i.id !== cover.id)) {
+          await this.prisma.$transaction([
+            this.prisma.immagine.updateMany({ where: { articoloId: art.id, id: { not: cover.id } }, data: { copertina: false } }),
+            this.prisma.immagine.update({ where: { id: cover.id }, data: { copertina: true } }),
+          ]);
+        }
+      } else if (imgs.some((i) => i.copertina)) {
+        await this.prisma.immagine.updateMany({ where: { articoloId: art.id }, data: { copertina: false } });
+      }
+    }
     if (data.raccolte !== undefined) {
       await this.prisma.articoloRaccolta.deleteMany({ where: { articoloId: art.id } });
       if (data.raccolte.length > 0) {
