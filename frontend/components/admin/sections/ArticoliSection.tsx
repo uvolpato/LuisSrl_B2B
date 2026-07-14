@@ -201,6 +201,7 @@ export default function ArticoliSection() {
         title="Gestione Articoli"
         searchValue={articleSearch}
         onSearchChange={setArticleSearch}
+        searchPlaceholder="Cerca articolo, colore, famiglia…"
         filter={articleFilter}
         onFilterChange={setArticleFilter}
         filterOptions={[
