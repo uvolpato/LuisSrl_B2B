@@ -15,6 +15,13 @@ type SyncProgress = { running: boolean; pct: number; phase: string; errorText?: 
 
 export default function ArticoliSection() {
   const [view, setView] = useState<"list" | "grid">("list");
+
+  // Su mobile la tabella scorre orizzontalmente e le colonne restano tagliate:
+  // di default parte in vista griglia (card). Resta cambiabile a mano.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 640px)").matches) setView("grid");
+  }, []);
+
   const [articleFilter, setArticleFilter] = useState("tutti");
   const [articleSearch, setArticleSearch] = useState("");
   const [artPage, setArtPage] = useState(1);
@@ -266,7 +273,7 @@ export default function ArticoliSection() {
                     <div className="article-card-counts">
                       {a.variantiVisibiliCount !== undefined && a.variantiVisibiliCount !== (a.variantiCount ?? 0)
                         ? `${a.variantiVisibiliCount ?? 0}/${a.variantiCount ?? 0}`
-                        : `${a.variantiCount ?? 0}`}
+                        : `${a.variantiCount ?? 0}`}{" "}
                       varianti
                     </div>
                     <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
