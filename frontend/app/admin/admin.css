@@ -2524,6 +2524,15 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .account-main { gap: 14px; }
   .account-avatar { width: 56px; height: 56px; font-size: 20px; }
   .admin-content { padding: 20px 16px; }
+
+  /* Barra in alto: titolo su una riga, ricerca+filtro sotto, azioni a piena larghezza */
+  .admin-top { flex-wrap: wrap; padding: 12px 16px; gap: 10px; }
+  .admin-top h1 { font-size: 20px; flex: 1 1 100%; }
+  .top-actions { flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+  .top-actions .admin-search { flex: 1 1 100%; min-width: 0; }
+  .top-actions .filter-select { flex: 1 1 auto; min-width: 0; }
+  .top-actions .action-buttons { flex: 1 1 100%; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; }
+  .top-actions .action-buttons > * { flex: 1 1 0; min-width: 0; justify-content: center; white-space: nowrap; }
   .article-grid { grid-template-columns: 1fr; }
   .raccolte-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
