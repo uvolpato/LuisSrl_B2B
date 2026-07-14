@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Verdepiù — Dashboard Agenti</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    :root {
+      --bg: oklch(96% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 60);
+      --muted: oklch(50% 0.015 60);
+      --muted-lighter: oklch(62% 0.01 60);
+      --border: oklch(87% 0.01 70);
+      --accent: oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --green: oklch(46% 0.14 145);
+      --green-soft: oklch(92% 0.06 145);
+      --red: oklch(52% 0.16 28);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; padding-bottom: 72px;
+      background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    input { font: inherit; }
+
+    .app-header {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; gap: 12px;
+    }
+    .header-row .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid; place-items: center;
+      color: var(--fg);
+    }
+    .header-row .logo img { height: 28px; width: auto; }
+    .cart-badge {
+      position: relative; width: 36px; height: 36px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid; place-items: center;
+    }
+    .cart-badge .count {
+      position: absolute; top: -4px; right: -4px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent); color: var(--surface);
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      display: grid; place-items: center;
+    }
+
+    /* ── Client Context Bar ── */
+    .client-context {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      background: var(--accent-soft);
+      border-bottom: 1px solid color-mix(in oklch, var(--accent) 20%, transparent);
+    }
+    .client-context .avatar {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: var(--surface);
+      display: grid; place-items: center;
+      font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .client-context .info { flex: 1; }
+    .client-context .name { font-weight: 600; font-size: 14px; }
+    .client-context .code { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+    .client-context .btn-switch {
+      font-size: 12px; color: var(--accent); font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+      background: var(--surface);
+    }
+
+    /* ── Stats Cards ── */
+    .stats-row {
+      display: flex; gap: 10px; padding: 16px 16px 8px;
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 12px;
+    }
+    .stat-card .label {
+      font-family: var(--font-mono); font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); margin-bottom: 4px;
+    }
+    .stat-card .value {
+      font-family: var(--font-mono); font-size: 20px; font-weight: 700;
+    }
+    .stat-card .delta {
+      font-size: 11px; color: var(--green); margin-top: 2px;
+    }
+    .stat-card .delta.down { color: var(--red); }
+
+    /* ── Quick Actions ── */
+    .quick-actions {
+      display: flex; gap: 8px; padding: 8px 16px 16px;
+    }
+    .quick-action {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 14px 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      text-decoration: none; color: inherit;
+      transition: border-color 0.12s;
+    }
+    .quick-action:active { border-color: var(--accent); }
+    .quick-action svg { width: 24px; height: 24px; color: var(--accent); }
+    .quick-action span { font-size: 12px; font-weight: 500; text-align: center; }
+
+    /* ── Search ── */
+    .search-section { padding: 0 16px 12px; }
+    .search-bar {
+      position: relative;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 11px 16px 11px 42px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font-size: 14px; color: var(--fg);
+    }
+    .search-bar input:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .search-bar input::placeholder { color: var(--muted-lighter); }
+    .search-bar svg {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px;
+      color: var(--muted-lighter);
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 8px;
+    }
+    .section-title h2 {
+      font-size: 15px; font-weight: 600; margin: 0;
+    }
+    .section-title a {
+      font-size: 13px; color: var(--accent); font-weight: 500;
+    }
+
+    /* ── Order List ── */
+    .order-list { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .order-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .order-card .top-row {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .order-card .order-ref {
+      font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+    }
+    .order-card .order-status {
+      font-family: var(--font-mono); font-size: 10px;
+      padding: 3px 8px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .status-delivered { background: var(--green-soft); color: var(--green); }
+    .status-processing { background: oklch(92% 0.08 80); color: oklch(45% 0.12 80); }
+    .status-pending { background: var(--fg-soft); color: var(--muted); }
+    .order-card .mid-row {
+      display: flex; justify-content: space-between;
+      font-size: 13px; color: var(--muted);
+    }
+    .order-card .bottom-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 8px; border-top: 1px solid var(--border);
+    }
+    .order-card .total {
+      font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+    }
+    .order-card .items {
+      font-size: 13px; color: var(--muted);
+    }
+    .order-card .btn-detail {
+      font-size: 12px; color: var(--accent); font-weight: 500;
+      background: none; border: none; padding: 4px;
+    }
+
+    .load-more {
+      text-align: center; padding: 8px;
+      font-size: 13px; color: var(--muted);
+    }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 6px 0 calc(6px + var(--safe-bottom));
+      max-width: 480px; margin-inline: auto;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+      padding: 4px;
+      border: none; background: transparent;
+      color: var(--muted-lighter);
+      font-size: 10px; font-weight: 500;
+    }
+    .tab-item.active { color: var(--accent); }
+    .tab-item svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <button class="back-btn" onclick="window.location='agent-00-clienti.html'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <a href="agent-index.html"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <button class="cart-badge" onclick="window.location='agent-04-cart.html'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="count">3</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="client-context">
+    <div class="avatar">VB</div>
+    <div class="info">
+      <div class="name">Verdepiù di Bianchi & C.</div>
+      <div class="code">COD-003 · P.IVA 04212310162</div>
+    </div>
+    <a href="agent-00-clienti.html" class="btn-switch">Cambia</a>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Fatturato YTD</div>
+      <div class="value">€ 48.320</div>
+      <div class="delta">+12% vs anno prec.</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Ordini YTD</div>
+      <div class="value">14</div>
+      <div class="delta">+3 vs anno prec.</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Carrello</div>
+      <div class="value">€ 303</div>
+      <div class="delta" style="color:var(--muted);">3 articoli</div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <a href="agent-02-catalog.html" class="quick-action">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zM20 3h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zm-1 6h-4V5h4v4zM10 13H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zm-1 6H5v-4h4v4zM20 13h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zm-1 6h-4v-4h4v4z"/></svg>
+      <span>Catalogo</span>
+    </a>
+    <a href="agent-04-cart.html" class="quick-action">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span>Carrello</span>
+    </a>
+    <a href="agent-05-checkout.html" class="quick-action">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Checkout</span>
+    </a>
+    <a href="agent-00-clienti.html" class="quick-action">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <span>Clienti</span>
+    </a>
+  </div>
+
+  <div class="search-section">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Cerca tra gli articoli ordinati…" />
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h2>Ultimi ordini</h2>
+    <a href="#">Vedi tutti</a>
+  </div>
+
+  <div class="order-list">
+    <div class="order-card">
+      <div class="top-row">
+        <span class="order-ref">ORD-2026-07842</span>
+        <span class="order-status status-delivered">Consegnato</span>
+      </div>
+      <div class="mid-row">
+        <span>12 giu 2026</span>
+        <span>18 pz · 3 articoli</span>
+      </div>
+      <div class="bottom-row">
+        <span class="total">€ 421,08</span>
+        <button class="btn-detail">Dettaglio →</button>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="top-row">
+        <span class="order-ref">ORD-2026-07721</span>
+        <span class="order-status status-processing">In lavorazione</span>
+      </div>
+      <div class="mid-row">
+        <span>28 mag 2026</span>
+        <span>12 pz · 2 articoli</span>
+      </div>
+      <div class="bottom-row">
+        <span class="total">€ 287,50</span>
+        <button class="btn-detail">Dettaglio →</button>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="top-row">
+        <span class="order-ref">ORD-2026-07560</span>
+        <span class="order-status status-delivered">Consegnato</span>
+      </div>
+      <div class="mid-row">
+        <span>15 mag 2026</span>
+        <span>24 pz · 4 articoli</span>
+      </div>
+      <div class="bottom-row">
+        <span class="total">€ 612,30</span>
+        <button class="btn-detail">Dettaglio →</button>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="top-row">
+        <span class="order-ref">ORD-2026-07215</span>
+        <span class="order-status status-pending">In attesa</span>
+      </div>
+      <div class="mid-row">
+        <span>2 mag 2026</span>
+        <span>6 pz · 1 articolo</span>
+      </div>
+      <div class="bottom-row">
+        <span class="total">€ 95,40</span>
+        <button class="btn-detail">Dettaglio →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="load-more">Carica altri ordini…</div>
+
+  <nav class="tab-bar">
+    <button class="tab-item active" onclick="window.location='agent-01-dashboard.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="tab-item" onclick="window.location='agent-02-catalog.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zM20 3h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zm-1 6h-4V5h4v4zM10 13H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zm-1 6H5v-4h4v4zM20 13h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1zm-1 6h-4v-4h4v4z"/></svg>
+      <span>Catalogo</span>
+    </button>
+    <button class="tab-item" onclick="window.location='agent-04-cart.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span>Carrello</span>
+    </button>
+    <button class="tab-item" onclick="window.location='agent-05-checkout.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Checkout</span>
+    </button>
+  </nav>
+</body>
+</html>
