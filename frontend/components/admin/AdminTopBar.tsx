@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export default function AdminTopBar({
   title,
@@ -26,10 +26,25 @@ export default function AdminTopBar({
     { value: "da-configurare", label: "Da Configurare" },
   ];
 
+  // Su mobile la barra (ricerca/filtro/azioni) e' a scomparsa: il toggle e'
+  // nascosto da desktop, dove la barra e' sempre visibile.
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="admin-top">
-      <h1>{title}</h1>
-      <div className="top-actions">
+      <div className="admin-top-titlebar">
+        <h1>{title}</h1>
+        <button
+          type="button"
+          className="admin-top-toggle"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={open ? "Nascondi ricerca e filtri" : "Mostra ricerca e filtri"}
+        >
+          {open ? "▲" : "▼"}
+        </button>
+      </div>
+      <div className={`top-actions${open ? " open" : ""}`}>
         <div className="admin-search">
           <span className="search-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

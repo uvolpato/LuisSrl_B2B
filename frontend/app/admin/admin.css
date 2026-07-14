@@ -206,6 +206,11 @@
   display: flex;
   flex-direction: column;
 }
+/* Da desktop il titolo resta un figlio diretto del flex (contents) e il toggle
+   della barra a scomparsa non esiste: la barra e' sempre visibile. */
+.admin-top-titlebar { display: contents; }
+.admin-top-toggle { display: none; }
+
 .admin-top {
   position: sticky;
   top: 0;
@@ -2525,10 +2530,33 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .account-avatar { width: 56px; height: 56px; font-size: 20px; }
   .admin-content { padding: 20px 16px; }
 
-  /* Barra in alto: titolo su una riga, ricerca+filtro sotto, azioni a piena larghezza */
+  /* Barra in alto a scomparsa: titolo + freccia; ricerca/filtro/azioni si aprono */
   .admin-top { flex-wrap: wrap; padding: 12px 16px; gap: 10px; }
-  .admin-top h1 { font-size: 20px; flex: 1 1 100%; }
-  .top-actions { flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+  .admin-top-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 1 1 100%;
+  }
+  .admin-top h1 { font-size: 20px; margin: 0; }
+  .admin-top-toggle {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .top-actions { display: none; }
+  .top-actions.open { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
   .top-actions .admin-search { flex: 1 1 100%; min-width: 0; }
   .top-actions .filter-select { flex: 1 1 auto; min-width: 0; }
   .top-actions .action-buttons { flex: 1 1 100%; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; }
