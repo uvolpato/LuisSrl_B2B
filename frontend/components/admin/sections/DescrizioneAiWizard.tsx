@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import { api } from "../../../lib/api";
 import { useConfirm } from "../../common/ConfirmProvider";
@@ -463,7 +462,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
         </div>
       </div>
 
-      {lightbox && imgCorrente && typeof document !== "undefined" && createPortal(
+      {lightbox && imgCorrente && (
         <div className="wizard-lightbox" onClick={() => setLightbox(false)}>
           <img src={imgCorrente.url} alt="Prodotto" onClick={(e) => e.stopPropagation()} />
           <button type="button" className="wizard-lightbox-close" onClick={() => setLightbox(false)} aria-label="Chiudi">✕</button>
@@ -473,8 +472,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button type="button" className="wizard-lightbox-arrow next" onClick={(e) => { e.stopPropagation(); nextImg(); }} aria-label="Foto successiva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
             </>
           )}
-        </div>,
-        document.body,
+        </div>
       )}
     </div>
   );
