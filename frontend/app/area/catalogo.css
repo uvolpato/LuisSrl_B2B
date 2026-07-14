@@ -478,6 +478,38 @@
   scrollbar-width: none;
 }
 .catalogo-page.scheda-prodotto .gallery-thumbs::-webkit-scrollbar { display: none; }
+/* Badge "generata con AI" sulle immagini AI (solo area clienti) */
+.catalogo-page .ai-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 3;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: help;
+  pointer-events: auto;
+}
+.catalogo-page .ai-badge-sm {
+  bottom: 3px;
+  right: 3px;
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.catalogo-page .ai-badge-lightbox {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  font-size: 12px;
+  padding: 4px 8px;
+  z-index: 10;
+}
+
 .catalogo-page.scheda-prodotto .thumb {
   width: 58px; height: 58px;
   border-radius: 8px;
