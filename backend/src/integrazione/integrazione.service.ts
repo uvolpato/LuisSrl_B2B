@@ -597,6 +597,7 @@ export class IntegrazioneService {
         });
       }
     }
+    const deletedIds = new Set(data.immaginiDaEliminare ?? []);
     if (data.immaginiDaEliminare?.length) {
       const toDelete = await this.prisma.immagine.findMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
       for (const img of toDelete) {
@@ -606,8 +607,10 @@ export class IntegrazioneService {
       await this.prisma.immagine.deleteMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
     }
     if (data.immaginiOrdine) {
+      // Escludi le immagini appena eliminate (altrimenti update su record inesistente)
+      const ordine = data.immaginiOrdine.filter((id) => !deletedIds.has(id));
       await this.prisma.$transaction(
-        data.immaginiOrdine.map((id, idx) =>
+        ordine.map((id, idx) =>
           this.prisma.immagine.update({
             where: { id },
             data: { ordinamento: idx, copertina: idx === 0 },
@@ -617,24 +620,28 @@ export class IntegrazioneService {
     }
     if (data.immaginiGalleria) {
       await this.prisma.$transaction(
-        Object.entries(data.immaginiGalleria).map(([id, val]) =>
-          this.prisma.immagine.update({
-            where: { id: Number(id) },
-            data: { inGalleria: val },
-          }),
-        ),
+        Object.entries(data.immaginiGalleria)
+          .filter(([id]) => !deletedIds.has(Number(id)))
+          .map(([id, val]) =>
+            this.prisma.immagine.update({
+              where: { id: Number(id) },
+              data: { inGalleria: val },
+            }),
+          ),
       );
     }
     if (data.immaginiDisplay) {
       await this.prisma.$transaction(
-        Object.entries(data.immaginiDisplay).map(([id, props]) =>
-          this.prisma.immagine.update({
-            where: { id: Number(id) },
-            data: {
-              ...(props.css !== undefined ? { css: props.css } : {}),
-            },
-          }),
-        ),
+        Object.entries(data.immaginiDisplay)
+          .filter(([id]) => !deletedIds.has(Number(id)))
+          .map(([id, props]) =>
+            this.prisma.immagine.update({
+              where: { id: Number(id) },
+              data: {
+                ...(props.css !== undefined ? { css: props.css } : {}),
+              },
+            }),
+          ),
       );
     }
     if (data.raccolte !== undefined) {
