@@ -15,7 +15,7 @@ export default function AdminTopBar({
   title,
   searchValue,
   onSearchChange,
-  searchPlaceholder = "Cerca articolo, colore, famiglia…",
+  searchPlaceholder = "Cerca…",
   filter,
   onFilterChange,
   filterOptions,

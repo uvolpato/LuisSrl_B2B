@@ -279,6 +279,7 @@ export default function ClientiSection() {
         title="Gestione Clienti"
         searchValue={q}
         onSearchChange={setQ}
+        searchPlaceholder="Cerca cliente, codice, P.IVA, email…"
         filter={stato}
         onFilterChange={setStato}
         filterOptions={[

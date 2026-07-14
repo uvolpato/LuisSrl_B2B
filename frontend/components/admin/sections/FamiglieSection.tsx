@@ -202,6 +202,7 @@ async function handleDelete(codice: string) {
         title="Gestione Famiglie"
         searchValue={search}
         onSearchChange={setSearch}
+        searchPlaceholder="Cerca famiglia…"
         filter={filter}
         onFilterChange={setFilter}
         filterOptions={[

@@ -242,6 +242,7 @@ export default function RaccolteSection() {
         title="Gestione Raccolte"
         searchValue={search}
         onSearchChange={setSearch}
+        searchPlaceholder="Cerca raccolta…"
         filter={filter}
         onFilterChange={setFilter}
         filterOptions={[
