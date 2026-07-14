@@ -574,7 +574,7 @@ export default function ArticoloEditModal({
               <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <DescrizioneAiWizard
                   codiceLinea={article.codiceLinea}
-                  immagini={article.immagini}
+                  immagini={article.immagini.filter((i) => !pendingDeleteImages.includes(i.id))}
                   descrizione={article.descrizione}
                   descrizioneDettagliata={article.descrizioneDettagliata}
                   initialStepTesti={article.wizardStepTesti}
