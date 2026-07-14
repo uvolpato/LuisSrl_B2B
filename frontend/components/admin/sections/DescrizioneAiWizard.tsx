@@ -381,8 +381,8 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                 <button type="button" className="wizard-gallery-zoom" onClick={() => setLightbox(true)} aria-label="Ingrandisci foto">⛶</button>
                 {immagini.length > 1 && (
                   <>
-                    <button type="button" className="wizard-gallery-arrow prev" onClick={prevImg} aria-label="Foto precedente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                    <button type="button" className="wizard-gallery-arrow next" onClick={nextImg} aria-label="Foto successiva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    <button type="button" className="wizard-gallery-arrow prev" onClick={prevImg} aria-label="Foto precedente"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+                    <button type="button" className="wizard-gallery-arrow next" onClick={nextImg} aria-label="Foto successiva"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
                     <span className="wizard-gallery-count">{currentImg + 1} / {immagini.length}</span>
                   </>
                 )}
@@ -468,8 +468,8 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           <button type="button" className="wizard-lightbox-close" onClick={() => setLightbox(false)} aria-label="Chiudi">✕</button>
           {immagini.length > 1 && (
             <>
-              <button type="button" className="wizard-lightbox-arrow prev" onClick={(e) => { e.stopPropagation(); prevImg(); }} aria-label="Foto precedente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-              <button type="button" className="wizard-lightbox-arrow next" onClick={(e) => { e.stopPropagation(); nextImg(); }} aria-label="Foto successiva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+              <button type="button" className="wizard-lightbox-arrow prev" onClick={(e) => { e.stopPropagation(); prevImg(); }} aria-label="Foto precedente"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button type="button" className="wizard-lightbox-arrow next" onClick={(e) => { e.stopPropagation(); nextImg(); }} aria-label="Foto successiva"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
             </>
           )}
         </div>
