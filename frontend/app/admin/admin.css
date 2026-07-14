@@ -2404,10 +2404,9 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 34px; height: 34px; border-radius: 50%;
   border: 1px solid var(--border); background: var(--surface);
-  cursor: pointer; font-size: 22px; line-height: 1; color: var(--fg);
+  cursor: pointer; font-size: 15px; line-height: 1; color: var(--fg);
   display: flex; align-items: center; justify-content: center;
 }
-.wizard-gallery-arrow svg { width: 18px; height: 18px; display: block; }
 .wizard-gallery-arrow:hover { border-color: var(--accent); color: var(--accent); }
 .wizard-gallery-arrow.prev { left: 8px; }
 .wizard-gallery-arrow.next { right: 8px; }
@@ -2441,10 +2440,9 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .wizard-lightbox-arrow {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 48px; height: 48px; border: none; border-radius: 50%;
-  background: rgba(255,255,255,0.15); color: #fff; font-size: 30px; line-height: 1; cursor: pointer;
+  background: rgba(255,255,255,0.15); color: #fff; font-size: 20px; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.wizard-lightbox-arrow svg { width: 26px; height: 26px; display: block; }
 .wizard-lightbox-arrow.prev { left: 20px; }
 .wizard-lightbox-arrow.next { right: 20px; }
 .wizard-lightbox-close:hover, .wizard-lightbox-arrow:hover { background: rgba(255,255,255,0.3); }
