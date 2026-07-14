@@ -101,6 +101,7 @@ export default function ArticoloEditModal({
   const [dragOver, setDragOver] = useState(false);
   const [immaginiOrdine, setImmaginiOrdine] = useState<number[] | null>(null);
   const [pendingExtra, setPendingExtra] = useState<File[]>([]);
+  const [pendingAi, setPendingAi] = useState<File[]>([]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragGalleriaOver, setDragGalleriaOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -184,7 +185,7 @@ export default function ArticoloEditModal({
     if (editColore !== article.colore) return true;
     if (editColoreRgb !== (article.coloreRgb || "")) return true;
     if (editStato !== article.stato) return true;
-    if (pendingImages.length > 0 || pendingExtra.length > 0) return true;
+    if (pendingImages.length > 0 || pendingExtra.length > 0 || pendingAi.length > 0) return true;
     if (pendingDeleteImages.length > 0) return true;
     if (immaginiOrdine) return true;
     if (Object.keys(immaginiDisplay).length > 0) return true;
@@ -200,7 +201,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingExtra, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingExtra, pendingAi, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -225,6 +226,12 @@ export default function ArticoloEditModal({
         const form = new FormData();
         pendingExtra.forEach((f) => form.append('files', f));
         form.append('tipo', 'GALLERIA');
+        await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
+      }
+      if (pendingAi.length > 0) {
+        const form = new FormData();
+        pendingAi.forEach((f) => form.append('files', f));
+        form.append('tipo', 'AI');
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, variantiMultipli: editMultipli, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
@@ -456,7 +463,8 @@ export default function ArticoloEditModal({
                 )}
                 {activeSubTab === "ai" && (
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16 }}>
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI.</p>
+                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI. Puoi generarle o caricare immagini AI già pronte.</p>
+                    {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
                     <div className="gallery-compact">
                       {article.immagini.filter((i) => i.tipo === 'AI' && !pendingDeleteImages.includes(i.id)).map((img) => (
                         <PositionedImage
@@ -469,10 +477,16 @@ export default function ArticoloEditModal({
                           onClick={() => setEditingImage(img.id)}
                         />
                       ))}
-                      <div className="gallery-upload" style={{ aspectRatio: 1 }}>
-                        <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 18, height: 18 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
-                        <span>Genera con AI</span>
-                      </div>
+                      {pendingAi.map((f, i) => (
+                        <div key={`pending-ai-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
+                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <button type="button" style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, boxSizing: "border-box" }} onClick={() => setPendingAi((prev) => prev.filter((_, j) => j !== i))}><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+                        </div>
+                      ))}
+                      <label className="gallery-upload" style={{ aspectRatio: 1, cursor: "pointer" }}>
+                        <input type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files) { setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.target.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingAi((prev) => [...prev, ...images]); } }} />
+                        {IconPlus}<span>Carica AI</span>
+                      </label>
                     </div>
                   </div>
                 )}

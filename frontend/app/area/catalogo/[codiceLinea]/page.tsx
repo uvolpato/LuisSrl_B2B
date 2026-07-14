@@ -372,11 +372,17 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                     aspect={4 / 3}
                     alt={articolo.nome}
                     onClick={() => openLightbox()}
-                  />
+                  >
+                    {galleryImages[selectedImgIdx]?.tipo === "AI" && (
+                      <span className="ai-badge" title="Immagine generata con AI">AI</span>
+                    )}
+                  </PositionedImage>
                   <div className="gallery-hint" onClick={() => openLightbox()}>Fai clic per visualizzare la vista completa</div>
                   <div className="gallery-thumbs" id="galleryThumbs">
                     {galleryImages.slice(0, 5).map((img, i) => (
-                      <PositionedImage key={img.id} className={`thumb ${i === selectedImgIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => selectThumb(i)} />
+                      <PositionedImage key={img.id} className={`thumb ${i === selectedImgIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => selectThumb(i)}>
+                        {img.tipo === "AI" && <span className="ai-badge ai-badge-sm" title="Immagine generata con AI">AI</span>}
+                      </PositionedImage>
                     ))}
                     {galleryImages.length > 5 && (
                       <PositionedImage className="thumb" src={galleryImages[5].url} css={galleryImages[5].css} aspect={1} alt="Altri" onClick={() => openGalleryModal()}>
@@ -687,7 +693,11 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   alt=""
                   style={{ width: "100%", maxWidth: 900, borderRadius: 6, cursor: "zoom-in" }}
                   onClick={() => { setGalleryModalOpen(false); openLightbox(galleryModalIdx); }}
-                />
+                >
+                  {allImages[galleryModalIdx]?.tipo === "AI" && (
+                    <span className="ai-badge" title="Immagine generata con AI">AI</span>
+                  )}
+                </PositionedImage>
               </div>
               <div className="gallery-modal-nav">
                 <button onClick={() => galleryModalNav(-1)}>
@@ -705,7 +715,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
               </div>
               <div className="gallery-modal-thumbs" id="galleryModalThumbs">
                 {allImages.map((img, i) => (
-                  <PositionedImage key={img.id} className={`thumb-wrap ${i === galleryModalIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => setGalleryModalIdx(i)} style={{ width: 52, flexShrink: 0 }} />
+                  <PositionedImage key={img.id} className={`thumb-wrap ${i === galleryModalIdx ? "active" : ""}`} src={img.url} css={img.css} aspect={1} alt={`Thumb ${i + 1}`} onClick={() => setGalleryModalIdx(i)} style={{ width: 52, flexShrink: 0 }}>
+                    {img.tipo === "AI" && <span className="ai-badge ai-badge-sm" title="Immagine generata con AI">AI</span>}
+                  </PositionedImage>
                 ))}
               </div>
             </div>
@@ -731,6 +743,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M9 18l6-6-6-6" /></svg>
           </button>
           <div className="lightbox-counter">{lightboxIdx + 1} / {allImages.length}</div>
+          {allImages[lightboxIdx]?.tipo === "AI" && (
+            <span className="ai-badge ai-badge-lightbox" title="Immagine generata con AI">AI</span>
+          )}
         </div>
       )}
     </div>
