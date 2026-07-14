@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Seleziona Cliente — Luis Agenti</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    :root {
+      --bg: oklch(96% 0.005 80);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(22% 0.02 60);
+      --muted: oklch(50% 0.015 60);
+      --muted-lighter: oklch(62% 0.01 60);
+      --border: oklch(87% 0.01 70);
+      --accent: oklch(55% 0.14 45);
+      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg); color: var(--fg);
+      font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    input { font: inherit; }
+
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; gap: 12px;
+    }
+    .header-row .logo img { height: 28px; width: auto; }
+
+    .agent-info {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: var(--accent);
+      color: var(--surface);
+    }
+    .agent-info .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: oklch(100% 0 0 / 0.2);
+      display: grid; place-items: center;
+      font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+    }
+    .agent-info .details { flex: 1; }
+    .agent-info .name { font-weight: 600; font-size: 15px; }
+    .agent-info .role { font-size: 12px; opacity: 0.8; }
+
+    .page-title {
+      padding: 20px 16px 8px;
+    }
+    .page-title h1 {
+      font-family: var(--font-display);
+      font-size: 22px; margin: 0 0 4px;
+    }
+    .page-title p {
+      font-size: 14px; color: var(--muted); margin: 0;
+    }
+
+    .search-bar {
+      margin: 8px 16px 12px;
+      position: relative;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      font-size: 15px; color: var(--fg);
+    }
+    .search-bar input:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .search-bar input::placeholder { color: var(--muted-lighter); }
+    .search-bar svg {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%);
+      width: 18px; height: 18px;
+      color: var(--muted-lighter);
+    }
+
+    .client-list { padding: 0 16px 32px; display: flex; flex-direction: column; gap: 8px; }
+    .client-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.12s;
+    }
+    .client-card:active { border-color: var(--accent); }
+    .client-card .avatar {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .client-card .info { flex: 1; min-width: 0; }
+    .client-card .name { font-weight: 600; font-size: 15px; }
+    .client-card .code { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .client-card .meta {
+      display: flex; align-items: center; gap: 8px; margin-top: 4px;
+      font-size: 12px; color: var(--muted);
+    }
+    .client-card .meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+    .client-card .arrow { color: var(--muted-lighter); font-size: 18px; }
+    .client-card .badge-orders {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--accent-soft); color: var(--accent);
+      padding: 2px 8px; border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <a href="agent-index.html"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--border);display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:600;">UV</div>
+    </div>
+  </header>
+
+  <div class="agent-info">
+    <div class="avatar">UV</div>
+    <div class="details">
+      <div class="name">Ugo Volpato</div>
+      <div class="role">Agente · Zona Bergamo</div>
+    </div>
+  </div>
+
+  <div class="page-title">
+    <h1>Seleziona cliente</h1>
+    <p>Scegli il cliente per cui vuoi operare</p>
+  </div>
+
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" placeholder="Cerca cliente per nome o codice…" />
+  </div>
+
+  <div class="client-list">
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#E8D5C4;color:#8B6914;">VB</div>
+      <div class="info">
+        <div class="name">Verdepiù di Bianchi & C.</div>
+        <div class="code">COD-003 · P.IVA 04212310162</div>
+        <div class="meta">
+          <span>€ 48.320 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>14 ordini</span>
+        </div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#C4D8E8;color:#14508B;">GR</div>
+      <div class="info">
+        <div class="name">Garden Center Rossi S.p.A.</div>
+        <div class="code">COD-002 · P.IVA 03123450167</div>
+        <div class="meta">
+          <span>€ 72.150 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>23 ordini</span>
+        </div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#D4E8C4;color:#3D8B14;">FM</div>
+      <div class="info">
+        <div class="name">Fiori di Maria S.n.c.</div>
+        <div class="code">COD-001 · P.IVA 05678920121</div>
+        <div class="meta">
+          <span>€ 12.840 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>5 ordini</span>
+        </div>
+      </div>
+      <span class="badge-orders">Novità</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#E8C4D4;color:#8B1440;">FB</div>
+      <div class="info">
+        <div class="name">Floricoltura Brembate S.r.l.</div>
+        <div class="code">COD-004 · P.IVA 06789020164</div>
+        <div class="meta">
+          <span>€ 94.600 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>31 ordini</span>
+        </div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#C4E8D4;color:#148B4A;">VG</div>
+      <div class="info">
+        <div class="name">Vivaio Gardenia di G. Neri</div>
+        <div class="code">COD-005 · P.IVA 07890120365</div>
+        <div class="meta">
+          <span>€ 6.320 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>3 ordini</span>
+        </div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a href="agent-01-dashboard.html" class="client-card">
+      <div class="avatar" style="background:#E8E0C4;color:#6B5A14;">CR</div>
+      <div class="info">
+        <div class="name">Centro Rinascita S.p.A.</div>
+        <div class="code">COD-006 · P.IVA 08901230467</div>
+        <div class="meta">
+          <span>€ 156.200 fatturato YTD</span>
+          <span class="dot"></span>
+          <span>47 ordini</span>
+        </div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+</body>
+</html>
