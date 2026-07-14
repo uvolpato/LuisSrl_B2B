@@ -2530,6 +2530,41 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .modal { width: 95vw; max-height: 95vh; }
   .modal-body { padding: 20px; }
   /* .modal-root-* responsives in catalogo.css */
+
+  /* --- Edit articolo su mobile --- */
+  .modal-tabs-bar { padding: 0 12px; }
+  .modal-tab-btn { padding: 12px 10px; font-size: 13px; white-space: nowrap; }
+  .subtab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+  .modal-body-edit { padding: 16px; }
+
+  /* Wizard descrizione AI: colonna singola, foto compatta, dettatura in evidenza.
+     Altezze naturali + scroll: su mobile l'altezza fissa faceva collassare/sovrapporre. */
+  .modal-body-edit--fill { overflow-y: auto; }
+  .wizard { gap: 14px; height: auto; }
+  .wizard-body { height: auto; }
+  .wizard-content { min-height: 0; }
+  .wizard-input-area { flex: none; align-items: flex-start; }
+  .wizard-gallery-main { min-height: 160px; }
+  .wizard-thumb { width: 44px; height: 44px; }
+  .wizard-prompt { padding: 12px; }
+  .wizard-prompt p { font-size: 13px; }
+  .wizard-mic-btn { width: 52px; height: 52px; }
+  .wizard-textarea { height: auto; min-height: 130px; }
+  .wizard-nav { flex-direction: column; align-items: stretch; gap: 8px; }
+  .wizard-nav > .row { display: flex; gap: 8px !important; }
+  .wizard-nav .btn { flex: 1; justify-content: center; }
+  .wizard-guida { left: 0; right: 0; max-height: 50vh; }
+  .wizard-guida table { font-size: 12px; }
+
+  /* Vista risultato: colonne impilate invece che 2fr/1fr schiacciate */
+  .wizard-result-panels { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+  .wizard-col-md, .wizard-col-side { height: auto; min-height: 0; }
+  .wizard-md-area { min-height: 220px; }
+  .wizard-col-side .wizard-result-footer { margin-top: 12px; }
+  /* Sezioni a altezza naturale: evita sovrapposizioni fra textarea e titoli */
+  .wizard-breve-section, .wizard-dim-section { flex: none; min-height: 0; }
+  .wizard-breve-section textarea { flex: none; min-height: 90px; }
+  .wizard-dimensions-scroll { max-height: 200px; }
   #raccolta-form { grid-template-columns: 1fr !important; }
 
   .settings-modal { position: relative; }

@@ -1847,11 +1847,18 @@
 .detail-note p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
 .detail-section-title { margin: 16px 0 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
 
-@media (max-width: 560px) {
-  .modal-root { inset: 16px !important; }
-  .modal-root-header { padding: 16px 20px; }
-  .modal-root-body { padding: 20px; }
-  .modal-root-footer { padding: 12px 20px; }
+/* Mobile: modale a tutto schermo (niente margini, niente doppio scroll) */
+@media (max-width: 640px) {
+  .modal-root { inset: 0 !important; border-radius: 0; }
+  .modal-root-header { padding: 14px 16px; }
+  .modal-root-header h2 { font-size: 17px; }
+  .modal-root-body { padding: 16px; }
+  .modal-root-footer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .modal-root-footer .btn { flex: 1 1 auto; justify-content: center; }
   .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
