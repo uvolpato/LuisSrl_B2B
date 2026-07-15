@@ -2524,6 +2524,33 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   to { transform: rotate(360deg); }
 }
 
+/* Larghezza intermedia (tablet / desktop stretto): la barra non ci sta su una
+   riga. Tre colonne: Titolo | ricerca+tendina (incolonnate) | bottoni. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .admin-top { align-items: start; }
+  .admin-top h1 { flex: 0 0 auto; }
+  .top-actions {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "search actions"
+      "filter actions";
+    gap: 8px 12px;
+    align-items: center;
+  }
+  .top-actions .admin-search { grid-area: search; min-width: 0; }
+  .top-actions .filter-select { grid-area: filter; width: 100% !important; min-width: 0; }
+  .top-actions .action-buttons {
+    grid-area: actions;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-self: center;
+  }
+  .top-actions .action-buttons > * { white-space: nowrap; justify-content: center; }
+}
+
 @media (max-width: 640px) {
   .account-field-indent { padding-left: 0; }
   .account-main { gap: 14px; }
