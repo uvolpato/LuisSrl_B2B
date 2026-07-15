@@ -37,22 +37,14 @@
     button { font: inherit; cursor: pointer; }
     input { font: inherit; }
 
-    .app-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .header-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px; gap: 12px;
-    }
-    .header-row .logo img { height: 28px; width: auto; }
-
     .agent-info {
       display: flex; align-items: center; gap: 10px;
       padding: 12px 16px;
       background: var(--accent);
       color: var(--surface);
     }
+    .agent-info .mini-logo { margin-left: auto; display: flex; align-items: center; }
+    .agent-info .mini-logo img { height: 32px; width: auto; opacity: 0.5; }
     .agent-info .avatar {
       width: 40px; height: 40px;
       border-radius: 50%;
@@ -135,19 +127,13 @@
   </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-row">
-      <a href="agent-index.html"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--border);display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:600;">UV</div>
-    </div>
-  </header>
-
   <div class="agent-info">
     <div class="avatar">UV</div>
     <div class="details">
       <div class="name">Ugo Volpato</div>
       <div class="role">Agente · Zona Bergamo</div>
     </div>
+    <div class="mini-logo"><a href="agent-index.html"><img src="images/logo.webp" alt="Luis S.r.l." /></a></div>
   </div>
 
   <div class="page-title">
