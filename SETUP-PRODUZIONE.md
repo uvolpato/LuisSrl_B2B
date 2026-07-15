@@ -209,5 +209,45 @@ Ok per uso interno, **non** ideale per i clienti B2B.
 | Lucchetto verde, senza aprire porte | **DNS-01** + caddy con plugin DNS (scenario B) |
 | Subito, solo LAN, avviso accettabile | **porta alta + `tls internal`** (scenario C) |
 
+### Immagini caricate a runtime (IMPORTANTE)
+
+**Problema:** `next start` (produzione) serve la cartella `public/` **solo per i
+file presenti al momento del `build`**. Le immagini caricate dagli admin (o
+copiate) **dopo** il build danno **404** — in sviluppo (`next dev`) invece
+funzionano perché la cartella è servita live.
+
+**Soluzione:** far servire `/images/*` da **Caddy**, direttamente dal disco
+(sempre aggiornato, nessun rebuild). `setup-services.cmd` genera già il Caddyfile
+con questa regola. Forma completa (LAN):
+
+```
+https://192.168.1.41:9443 {
+    tls internal
+    handle_path /images/* {
+        root * "C:/Progetti/Luis Srl - B2B/frontend/public/images"
+        file_server
+    }
+    handle {
+        reverse_proxy localhost:3000
+    }
+}
+```
+
+Note:
+- `handle_path /images/*` **toglie** il prefisso `/images`, quindi `root` punta
+  a `.../frontend/public/images` (non a `.../public`).
+- Percorsi con **slash `/`** anche su Windows; racchiudi tra virgolette per gli
+  spazi nel path.
+- Vale finché usi Caddy davanti. Senza Caddy, l'alternativa pulita è servire gli
+  asset dal backend NestJS (la `public/` di Next è pensata per asset di build,
+  non per upload).
+
+**Modifica manuale del Caddyfile:** scrivilo con **Blocco note** (o `caddy fmt`),
+non con here-string PowerShell incollate: l'incollaggio a volte "mangia" la prima
+riga e Caddy fallisce con *"matchers must be in a site block"*. Dopo la modifica:
+`nssm restart LuisCaddy` e verifica `nssm status LuisCaddy` = `SERVICE_RUNNING`.
+Gli avvisi `unable to set keepalive` / `failed to install root certificate` nel
+log sono **innocui** (limiti di Windows).
+
 Dettagli aggiuntivi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
 [`DEPLOY.md`](DEPLOY.md) §7-9.
