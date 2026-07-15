@@ -242,6 +242,24 @@ Note:
   asset dal backend NestJS (la `public/` di Next è pensata per asset di build,
   non per upload).
 
+### Miniature immagini (ridimensionamento on-the-fly)
+
+Le immagini sono servite in due modi:
+- **Originali** (`/images/*`) → Caddy dal disco (vedi sopra).
+- **Miniature** (`/api/img?p=<path>&w=<width>`) → backend con **sharp**:
+  ridimensiona, converte in **WebP**, salva in cache su disco
+  (`frontend/public/images/.cache/…@<w>.webp`) e serve. Prima richiesta = lavoro
+  una volta, poi cache.
+
+Note:
+- Larghezze consentite: 200/400/800/1200/1600 (snap alla più vicina). Griglie e
+  thumbnail usano le piccole; il lightbox usa l'originale HD.
+- L'eliminazione di un'immagine rimuove anche i suoi derivati in cache.
+- Richiede `sharp` (dipendenza backend, installata da `npm ci`). Nessuna
+  modifica al Caddyfile: `/api/img` passa dal reverse proxy verso il backend.
+- La cache si popola da sola; per svuotarla basta cancellare la cartella
+  `.cache` (verrà rigenerata su richiesta).
+
 **Modifica manuale del Caddyfile:** scrivilo con **Blocco note** (o `caddy fmt`),
 non con here-string PowerShell incollate: l'incollaggio a volte "mangia" la prima
 riga e Caddy fallisce con *"matchers must be in a site block"*. Dopo la modifica:
