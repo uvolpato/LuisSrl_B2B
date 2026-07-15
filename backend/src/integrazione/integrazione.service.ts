@@ -668,7 +668,7 @@ export class IntegrazioneService {
     {
       const imgs = await this.prisma.immagine.findMany({
         where: { articoloId: art.id },
-        orderBy: { ordinamento: 'asc' },
+        orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
         select: { id: true, inGalleria: true, copertina: true },
       });
       const cover = imgs.find((i) => i.inGalleria);

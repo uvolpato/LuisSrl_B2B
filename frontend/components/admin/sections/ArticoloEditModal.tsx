@@ -393,8 +393,8 @@ export default function ArticoloEditModal({
                     <div className="gallery-compact">
                       {(() => {
                       const displayIds = (immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id));
-                      // Copertina = prima immagine attiva (visibile in galleria)
-                      const coverId = displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) : false; });
+                      // Copertina: prima attiva con flag copertina=true (DB), altrimenti prima attiva
+                      const coverId = displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) && im.copertina : false; }) ?? displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) : false; });
                       return displayIds.map((id, idx) => {
                         const img = article.immagini.find((i) => i.id === id);
                         if (!img) return null;

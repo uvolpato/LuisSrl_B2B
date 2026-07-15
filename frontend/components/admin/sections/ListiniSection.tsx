@@ -51,7 +51,7 @@ export default function ListiniSection() {
       `/api/integrazione/listini/${selectedListino}/righe?search=${encodeURIComponent(search)}&page=${page}&limit=${PAGE_SIZE}`
     )
       .then((data) => { setItems(data.items); setTotal(data.total); })
-      .catch((err) => setError(err instanceof Error ? err.message : "Errore nel caricamento delle righe"))
+      .catch(() => setError("Errore nel caricamento delle righe"))
       .finally(() => setLoading(false));
   }, [selectedListino, search, page]);
 
