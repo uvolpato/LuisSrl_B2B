@@ -182,7 +182,7 @@ export default function CatalogoPage() {
               <div className="product-grid">
                 {rows.map((a) => (
                   <Link href={`/area/catalogo/${a.id}`} key={a.id} className="product-card">
-                    <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} />
+                    <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400} />
                     <div className="product-body">
                       <div className="product-famiglia">
                         <span className="color-dot" style={{ background: a.coloreRgb || a.colore || "var(--fg-soft)" }} />

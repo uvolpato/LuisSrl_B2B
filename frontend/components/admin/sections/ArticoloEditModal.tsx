@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
+import { thumbUrl } from "../../../lib/thumb";
 import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
@@ -407,6 +408,7 @@ export default function ArticoloEditModal({
                             src={img.url}
                             css={immaginiDisplay[img.id]?.css || img.css}
                             aspect={1}
+                            thumbWidth={300}
                             draggable
                             onClick={() => setEditingImage(img.id)}
                             onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.setData('text/plain', ''); }}
@@ -455,6 +457,7 @@ export default function ArticoloEditModal({
                           src={img.url}
                           css={immaginiDisplay[img.id]?.css || img.css}
                           aspect={1}
+                          thumbWidth={300}
                           style={{ background: "var(--fg-soft)", cursor: "pointer" }}
                           onClick={() => setEditingImage(img.id)}
                         />
@@ -494,6 +497,7 @@ export default function ArticoloEditModal({
                           src={img.url}
                           css={immaginiDisplay[img.id]?.css || img.css}
                           aspect={1}
+                          thumbWidth={300}
                           style={{ background: "var(--fg-soft)", cursor: "pointer" }}
                           onClick={() => setEditingImage(img.id)}
                         />
@@ -839,7 +843,7 @@ export default function ArticoloEditModal({
                             {selected && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{ width: 12, height: 12 }}><polyline points="20 6 9 17 4 12"/></svg>}
                           </span>
                           {a.img ? (
-                            <img src={a.img} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                            <img src={thumbUrl(a.img, 200)} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
                           ) : (
                             <div style={{ width: 40, height: 40, borderRadius: 6, background: "var(--fg-soft)", flexShrink: 0 }} />
                           )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../../lib/api";
+import { thumbUrl } from "../../../lib/thumb";
 import Notice from "../../common/Notice";
 import type { Article } from "../types";
 import { PAGE_SIZE, PLACEHOLDER_IMG as PLACEHOLDER } from "../types";
@@ -131,7 +132,7 @@ export default function ArticoliSection() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="cell-entity-thumb"
-            src={a.img || PLACEHOLDER}
+            src={thumbUrl(a.img, 100) || PLACEHOLDER}
             alt={a.name}
             onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
           />
@@ -266,7 +267,7 @@ export default function ArticoliSection() {
               {artRows.map((a) => (
                 <div key={a.id} className="article-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="article-card-img" src={a.img || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
+                  <img className="article-card-img" src={thumbUrl(a.img, 400) || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
                   <div className="article-card-body">
                     <div className="article-card-top">
                       <span className="article-card-id">{a.id}</span>

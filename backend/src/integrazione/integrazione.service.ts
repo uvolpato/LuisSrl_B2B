@@ -30,6 +30,21 @@ const CONFIG = {
 
 const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
 const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
+const ASSETS_CACHE_DIR = path.join(ASSETS_BASE_DIR, '.cache');
+
+/** Rimuove i derivati in cache (miniature WebP) di un file immagine. */
+async function purgeThumbCache(rel: string): Promise<void> {
+  const dir = path.join(ASSETS_CACHE_DIR, path.dirname(rel));
+  const base = path.basename(rel);
+  try {
+    const files = await fsp.readdir(dir);
+    await Promise.all(
+      files
+        .filter((f) => f.startsWith(`${base}@`) && f.endsWith('.webp'))
+        .map((f) => fsp.unlink(path.join(dir, f)).catch(() => {})),
+    );
+  } catch { /* cache dir assente */ }
+}
 
 type ViewType = keyof typeof CONFIG;
 
@@ -601,8 +616,10 @@ export class IntegrazioneService {
     if (data.immaginiDaEliminare?.length) {
       const toDelete = await this.prisma.immagine.findMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
       for (const img of toDelete) {
-        const filePath = path.join(ASSETS_BASE_DIR, img.url.replace(`${ASSETS_PUBLIC_URL}/`, ''));
+        const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
+        const filePath = path.join(ASSETS_BASE_DIR, rel);
         try { await fsp.unlink(filePath); } catch { /* file già assente */ }
+        await purgeThumbCache(rel); // rimuove anche le miniature in cache
       }
       await this.prisma.immagine.deleteMany({ where: { id: { in: data.immaginiDaEliminare }, articoloId: art.id } });
     }
