@@ -2527,19 +2527,22 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 /* Larghezza intermedia (tablet / desktop stretto): la barra non ci sta su una
    riga. Tre colonne: Titolo | ricerca+tendina (incolonnate) | bottoni. */
 @media (min-width: 641px) and (max-width: 1024px) {
-  .admin-top { align-items: start; }
-  .admin-top h1 { flex: 0 0 auto; }
+  .admin-top { align-items: center; }
+  /* Titolo: colonna sua, una riga, non si restringe */
+  .admin-top h1 { flex: 0 0 auto; white-space: nowrap; }
   .top-actions {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) max-content;
     grid-template-areas:
       "search actions"
       "filter actions";
     gap: 8px 12px;
     align-items: center;
   }
-  .top-actions .admin-search { grid-area: search; min-width: 0; }
+  .top-actions .admin-search { grid-area: search; width: 100%; min-width: 0; }
+  .top-actions .admin-search input { width: 100%; min-width: 0; }
   .top-actions .filter-select { grid-area: filter; width: 100% !important; min-width: 0; }
   .top-actions .action-buttons {
     grid-area: actions;

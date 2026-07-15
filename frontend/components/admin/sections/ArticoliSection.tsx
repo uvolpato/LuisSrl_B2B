@@ -31,7 +31,7 @@ export default function ArticoliSection() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  const [articleFilter, setArticleFilter] = useState("tutti");
+  const [articleFilter, setArticleFilter] = useState("da-configurare");
   const [articleSearch, setArticleSearch] = useState("");
   const [artPage, setArtPage] = useState(1);
   const [articles, setArticles] = useState<Article[]>([]);
