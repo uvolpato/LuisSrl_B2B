@@ -1,6 +1,7 @@
 "use client";
 
 import { parseImgCss } from "../../lib/img-css";
+import { thumbUrl } from "../../lib/thumb";
 
 interface Props extends React.HTMLAttributes<HTMLDivElement> {
   src?: string | null;
@@ -8,6 +9,9 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
   aspect?: number;
   alt?: string;
   imgStyle?: React.CSSProperties;
+  /** Se valorizzato, usa la miniatura WebP ridimensionata (endpoint /api/img)
+   *  al posto dell'originale HD. Ignorato per src non-/images (blob, ecc.). */
+  thumbWidth?: number;
 }
 
 /** UNICO punto di rendering di un'immagine posizionata.
@@ -30,6 +34,7 @@ export default function PositionedImage({
   className,
   style,
   imgStyle: extraImgStyle,
+  thumbWidth,
   children,
   ...rest
 }: Props) {
@@ -56,7 +61,7 @@ export default function PositionedImage({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={src}
+            src={thumbUrl(src, thumbWidth)}
             alt={alt}
             draggable={false}
             style={{
