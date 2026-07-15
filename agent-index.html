@@ -32,6 +32,34 @@
       margin-bottom: 16px;
     }
     html[data-theme="accessible"] .badge-mobile { font-size: 14px; padding: 6px 16px; }
+    .specs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 0 auto 20px;
+      max-width: 540px;
+    }
+    .specs-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 9999px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    html[data-theme="accessible"] .specs-link { font-size: 14px; padding: 10px 22px; }
+    .specs-link:hover {
+      background: var(--accent);
+      color: var(--surface);
+    }
     .screen-list { display: flex; flex-direction: column; gap: 12px; padding-block: 16px 64px; }
     .screen-card {
       background: var(--surface);
@@ -75,6 +103,9 @@
       <h1>Portale Agenti Luis S.r.l.</h1>
       <p class="lead">Flusso completo: selezione cliente → dashboard → catalogo → scheda articolo → carrello → checkout. Ogni operazione nel contesto del cliente selezionato.</p>
     </div>
+    <nav class="specs-bar">
+      <a href="AGENT-SPEC.md" class="specs-link">Specifica Agenti →</a>
+    </nav>
     <div class="screen-list">
       <a href="agent-00-clienti.html" class="screen-card">
         <span class="screen-num">00</span>
