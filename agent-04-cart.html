@@ -38,7 +38,6 @@
 
     .app-header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
     .header-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; gap: 12px; }
-    .header-row .back-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; color: var(--fg); }
     .header-row h1 { font-family: var(--font-display); font-size: 18px; margin: 0; }
     .header-row .mini-logo img { height: 24px; width: auto; opacity: 0.5; }
     .header-row .mini-logo { display: flex; align-items: center; }
@@ -92,7 +91,6 @@
 <body>
   <header class="app-header">
     <div class="header-row">
-      <button class="back-btn" onclick="history.back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
       <div class="client-badge">VB</div>
       <div class="client-info">
         <div class="client-name">Verdepiù di Bianchi & C. — 2 articoli</div>
