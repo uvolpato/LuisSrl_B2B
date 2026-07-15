@@ -7,6 +7,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="agent.css">
   <style>
+    html, body { height: 100%; }
     body { padding-bottom: 72px; }
     .header-row h1 { font-family: var(--font-display); font-size: 18px; margin: 0; }
 
@@ -89,6 +90,9 @@
       .checkout-sidebar .section-card { margin: 0; }
       .checkout-sidebar > div:last-child { margin-top: 16px; }
     }
+    @media (min-width: 768px) {
+      .tab-bar { max-width: none; margin-inline: 0; }
+    }
     @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -118,6 +122,10 @@
         <div class="order-summary-items">
           <div class="order-summary-item"><span class="qty">12×</span><span class="name">Vaso Torchio Terracotta Ø30 H35</span><span class="total">€ 148,80</span></div>
           <div class="order-summary-item"><span class="qty">6×</span><span class="name">Vaso Amphora Cotto H50</span><span class="total">€ 154,44</span></div>
+          <div class="order-summary-item"><span class="qty">8×</span><span class="name">Vaso Oliva Terracotta Ø40 H50</span><span class="total">€ 151,20</span></div>
+          <div class="order-summary-item"><span class="qty">12×</span><span class="name">Ciotola Rustica Ø25 H18</span><span class="total">€ 115,20</span></div>
+          <div class="order-summary-item"><span class="qty">4×</span><span class="name">Orcio Decorato H65</span><span class="total">€ 130,00</span></div>
+          <div class="order-summary-item"><span class="qty">14×</span><span class="name">Piatto Portavaso Ø50</span><span class="total">€ 198,24</span></div>
         </div>
       </div>
 
@@ -155,15 +163,15 @@
       <div class="section-card">
         <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Riepilogo economico</h2>
         <table class="total-table">
-          <tr><td>Subtotale (18 pz)</td><td>€ 303,24</td></tr>
-          <tr class="discount"><td>Sconto cliente</td><td>−€ 34,13</td></tr>
-          <tr class="discount"><td>Sconto famiglia</td><td>−€ 18,36</td></tr>
-          <tr class="discount"><td>Sconto articolo</td><td>−€ 7,56</td></tr>
+          <tr><td>Subtotale (64 pz)</td><td>€ 847,52</td></tr>
+          <tr class="discount"><td>Sconto cliente</td><td>−€ 94,13</td></tr>
+          <tr class="discount"><td>Sconto famiglia</td><td>−€ 52,36</td></tr>
+          <tr class="discount"><td>Sconto articolo</td><td>−€ 21,56</td></tr>
           <tr><td>Spedizione</td><td>€ 12,50</td></tr>
-          <tr><td>Imponibile IVA</td><td>€ 255,69</td></tr>
-          <tr><td>IVA 22%</td><td>€ 56,25</td></tr>
+          <tr><td>Imponibile IVA</td><td>€ 691,97</td></tr>
+          <tr><td>IVA 22%</td><td>€ 152,23</td></tr>
           <tr><td colspan="2"><hr class="total-divider" /></td></tr>
-          <tr class="final"><td>Totale fattura</td><td>€ 311,94</td></tr>
+          <tr class="final"><td>Totale fattura</td><td>€ 844,20</td></tr>
         </table>
       </div>
 
