@@ -14,9 +14,16 @@
     .cart-items { display: flex; flex-direction: column; gap: 10px; }
     @media (min-width: 768px) {
       body { padding-bottom: 0; }
-      .cart-layout { flex-direction: row; max-width: 960px; margin: 0 auto; padding: 20px 24px; gap: 24px; align-items: flex-start; }
+      .cart-layout { flex-direction: row; max-width: 1100px; margin: 0 auto; padding: 24px 32px; gap: 32px; align-items: flex-start; }
       .cart-scroll { flex: 1; overflow: visible; padding: 0; }
-      .cart-summary { width: 320px; flex-shrink: 0; position: sticky; top: 20px; margin: 0; }
+      .cart-items { gap: 12px; }
+      .cart-card { padding: 18px; }
+      .cart-card .top-row { gap: 16px; }
+      .cart-card .thumb { width: 68px; height: 68px; }
+      .cart-card .item-name { font-size: 16px; }
+      .cart-card .item-variant { font-size: 13px; }
+      .cart-card .item-price { font-size: 15px; }
+      .cart-summary { width: 340px; flex-shrink: 0; position: sticky; top: 24px; margin: 0; }
     }
     .cart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
     html[data-theme="accessible"] .cart-card { border-width: 2px; padding: 18px; }
@@ -73,7 +80,7 @@
     <div class="header-row">
       <div class="client-badge">VB</div>
       <div class="client-info">
-        <div class="client-name">Verdepiù di Bianchi & C. — 2 articoli</div>
+        <div class="client-name">Verdepiù di Bianchi & C. — 6 articoli</div>
       </div>
       <a href="agent-index.html" class="mini-logo"><img src="images/logo.webp" alt="Luis S.r.l." /></a>
     </div>
@@ -121,16 +128,96 @@
             <button class="btn-remove">Rimuovi</button>
           </div>
         </div>
+
+        <div class="cart-card">
+          <div class="top-row">
+            <div class="thumb"><img src="images/catalogo-fiberstone.webp" alt="" /></div>
+            <div class="item-info">
+              <div class="item-name">Vaso Oliva Terracotta</div>
+              <div class="item-variant">Ø40 H50 · FIB-012</div>
+              <div class="item-price">€ 18,90 / pz</div>
+            </div>
+            <div class="line-total">€ 151,20</div>
+          </div>
+          <div class="qty-row">
+            <div class="qty-control"><button>−</button><input type="number" value="8" /><button>+</button></div>
+            <span style="font-size:11px;color:var(--muted);">mult. 4</span>
+          </div>
+          <div class="actions-row">
+            <input class="note-input" type="text" placeholder="Nota agente…" />
+            <button class="btn-remove">Rimuovi</button>
+          </div>
+        </div>
+
+        <div class="cart-card">
+          <div class="top-row">
+            <div class="thumb"><img src="images/catalogo-cotto-esterni.webp" alt="" /></div>
+            <div class="item-info">
+              <div class="item-name">Ciotola Rustica</div>
+              <div class="item-variant">Ø25 H18 · COT-EST-008</div>
+              <div class="item-price">€ 9,60 / pz</div>
+            </div>
+            <div class="line-total">€ 115,20</div>
+          </div>
+          <div class="qty-row">
+            <div class="qty-control"><button>−</button><input type="number" value="12" /><button>+</button></div>
+            <span style="font-size:11px;color:var(--muted);">mult. 6</span>
+          </div>
+          <div class="actions-row">
+            <input class="note-input" type="text" placeholder="Nota agente…" />
+            <button class="btn-remove">Rimuovi</button>
+          </div>
+        </div>
+
+        <div class="cart-card">
+          <div class="top-row">
+            <div class="thumb"><img src="images/catalogo-pottery-pots.webp" alt="" /></div>
+            <div class="item-info">
+              <div class="item-name">Orcio Decorato</div>
+              <div class="item-variant">H65 · POT-024</div>
+              <div class="item-price">€ 32,50 / pz</div>
+            </div>
+            <div class="line-total">€ 130,00</div>
+          </div>
+          <div class="qty-row">
+            <div class="qty-control"><button>−</button><input type="number" value="4" /><button>+</button></div>
+            <span style="font-size:11px;color:var(--muted);">mult. 2</span>
+          </div>
+          <div class="actions-row">
+            <input class="note-input" type="text" placeholder="Nota agente…" />
+            <button class="btn-remove">Rimuovi</button>
+          </div>
+        </div>
+
+        <div class="cart-card">
+          <div class="top-row">
+            <div class="thumb"><img src="images/catalogo-cotto-interni.webp" alt="" /></div>
+            <div class="item-info">
+              <div class="item-name">Piatto Portavaso</div>
+              <div class="item-variant">Ø50 · COT-INT-015</div>
+              <div class="item-price">€ 14,20 / pz</div>
+            </div>
+            <div class="line-total">€ 198,24</div>
+          </div>
+          <div class="qty-row">
+            <div class="qty-control"><button>−</button><input type="number" value="14" /><button>+</button></div>
+            <span style="font-size:11px;color:var(--muted);">mult. 2</span>
+          </div>
+          <div class="actions-row">
+            <input class="note-input" type="text" placeholder="Nota agente…" />
+            <button class="btn-remove">Rimuovi</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="cart-summary">
-      <div class="summary-line"><span class="label">Subtotale (18 pz)</span><span class="value">€ 303,24</span></div>
-      <div class="summary-line discount"><span class="label">Sconto cliente</span><span class="value">−€ 34,13</span></div>
-      <div class="summary-line discount"><span class="label">Sconto famiglia (massimo)</span><span class="value">−€ 18,36</span></div>
-      <div class="summary-line discount"><span class="label">Sconto articolo</span><span class="value">−€ 7,56</span></div>
+      <div class="summary-line"><span class="label">Subtotale (64 pz)</span><span class="value">€ 847,52</span></div>
+      <div class="summary-line discount"><span class="label">Sconto cliente</span><span class="value">−€ 94,13</span></div>
+      <div class="summary-line discount"><span class="label">Sconto famiglia (massimo)</span><span class="value">−€ 52,36</span></div>
+      <div class="summary-line discount"><span class="label">Sconto articolo</span><span class="value">−€ 21,56</span></div>
       <hr class="summary-divider" />
-      <div class="summary-total"><span class="label">Totale IVA esclusa</span><span class="value">€ 243,19</span></div>
+      <div class="summary-total"><span class="label">Totale IVA esclusa</span><span class="value">€ 679,47</span></div>
       <p style="font-size:12px;color:var(--muted);margin:6px 0 0;">IVA non inclusa · Spese di trasporto calcolate al checkout</p>
       <button class="btn-checkout" onclick="window.location='agent-05-checkout.html'">Procedi al checkout</button>
       <a href="agent-02-catalog.html" class="btn-continue">Continua lo shopping</a>
