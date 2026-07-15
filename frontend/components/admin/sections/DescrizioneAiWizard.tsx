@@ -142,6 +142,12 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     };
   }, []);
 
+  // Se il microfono è attivo ma la sua vista sparisce (caricamento AI o vista
+  // risultato), fermo la registrazione: non deve restare acceso "in background".
+  useEffect(() => {
+    if (listening && (loading || result)) stopListening();
+  }, [listening, loading, result, stopListening]);
+
   // Propaga stepTesti + result descrizioni + promptAi al padre (per isDirty modale),
   // ma saltando la prima inizializzazione
   const isFirstRender = useRef(true);
