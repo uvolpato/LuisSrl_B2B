@@ -88,9 +88,8 @@ REM --- Con dominio: HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443)
 REM /images/* servito da disco (Next non serve i file public aggiunti dopo il build)
 (
   echo !DOMAIN! {
-  echo     @images path /images/*
-  echo     handle @images {
-  echo         root * "%ROOT:\=/%/frontend/public"
+  echo     handle_path /images/* {
+  echo         root * "%ROOT:\=/%/frontend/public/images"
   echo         file_server
   echo     }
   echo     handle {
@@ -113,9 +112,8 @@ REM /images/* servito da disco (Next non serve i file public aggiunti dopo il bu
 (
   echo https://!LAN_HOST!:!HTTPS_PORT! {
   echo     tls internal
-  echo     @images path /images/*
-  echo     handle @images {
-  echo         root * "%ROOT:\=/%/frontend/public"
+  echo     handle_path /images/* {
+  echo         root * "%ROOT:\=/%/frontend/public/images"
   echo         file_server
   echo     }
   echo     handle {
