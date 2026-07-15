@@ -7,8 +7,10 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="agent.css">
   <style>
-    html, body { height: 100%; }
-    body { padding-bottom: 72px; }
+    html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; }
+    .app-content { flex: 1; min-height: 0; overflow-y: auto; }
+    .tab-bar { position: static; max-width: none; margin-inline: 0; }
     .header-row h1 { font-family: var(--font-display); font-size: 18px; margin: 0; }
 
     .stepper { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 16px 8px; }
@@ -90,9 +92,6 @@
       .checkout-sidebar .section-card { margin: 0; }
       .checkout-sidebar > div:last-child { margin-top: 16px; }
     }
-    @media (min-width: 768px) {
-      .tab-bar { max-width: none; margin-inline: 0; }
-    }
     @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -107,6 +106,7 @@
     </div>
   </header>
 
+  <div class="app-content">
   <div class="checkout-layout">
     <div class="checkout-main">
       <div class="stepper">
@@ -183,6 +183,7 @@
         <p style="font-size:11px;color:var(--muted);text-align:center;margin:8px 0 0;">L'ordine verrà trasmesso a Integra e una email di conferma sarà inviata a Verdepiù di Bianchi & C.</p>
       </div>
     </div>
+  </div>
   </div>
 
   <div class="modal-overlay" id="successModal">
