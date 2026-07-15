@@ -85,9 +85,17 @@ echo caddy: !CADDY!
 if "!DOMAIN!"=="" goto caddy_lan
 
 REM --- Con dominio: HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443) ---
+REM /images/* servito da disco (Next non serve i file public aggiunti dopo il build)
 (
   echo !DOMAIN! {
-  echo     reverse_proxy localhost:%FE_PORT%
+  echo     @images path /images/*
+  echo     handle @images {
+  echo         root * "%ROOT:\=/%/frontend/public"
+  echo         file_server
+  echo     }
+  echo     handle {
+  echo         reverse_proxy localhost:%FE_PORT%
+  echo     }
   echo }
 )>"%ROOT%\Caddyfile"
 goto caddy_svc
@@ -100,11 +108,19 @@ if "!LAN_HOST!"=="" echo [ERRORE] serve l'IP/host del server per il certificato.
 set HTTPS_PORT=
 set /p HTTPS_PORT=Porta HTTPS (invio = 8443):
 if "!HTTPS_PORT!"=="" set HTTPS_PORT=8443
-REM Schema https:// esplicito: senza, Caddy servirebbe la porta in HTTP
+REM Schema https:// esplicito: senza, Caddy servirebbe la porta in HTTP.
+REM /images/* servito da disco (Next non serve i file public aggiunti dopo il build)
 (
   echo https://!LAN_HOST!:!HTTPS_PORT! {
   echo     tls internal
-  echo     reverse_proxy localhost:%FE_PORT%
+  echo     @images path /images/*
+  echo     handle @images {
+  echo         root * "%ROOT:\=/%/frontend/public"
+  echo         file_server
+  echo     }
+  echo     handle {
+  echo         reverse_proxy localhost:%FE_PORT%
+  echo     }
   echo }
 )>"%ROOT%\Caddyfile"
 echo Accederai da: https://!LAN_HOST!:!HTTPS_PORT!  (certificato self-signed: accetta l'avviso)
