@@ -5,25 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Luis — Prototipo Agenti (Mobile)</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="agent.css">
   <style>
-    :root {
-      --bg: oklch(97% 0.005 80);
-      --surface: oklch(100% 0 0);
-      --fg: oklch(22% 0.02 60);
-      --muted: oklch(52% 0.015 60);
-      --border: oklch(88% 0.01 70);
-      --accent: oklch(55% 0.14 45);
-      --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
-      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
-      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font-family: var(--font-body); font-size: 16px; line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-    }
     .container { max-width: 720px; margin-inline: auto; padding-inline: 24px; }
     .hero { padding-block: clamp(32px, 5vw, 56px); text-align: center; }
     .hero h1 {
@@ -32,12 +15,15 @@
       line-height: 1.1; letter-spacing: -0.02em;
       margin: 0 0 8px;
     }
+    html[data-theme="accessible"] .hero h1 { font-size: clamp(34px, 5vw, 48px); }
     .hero .lead { font-size: 15px; color: var(--muted); margin: 0 0 16px; }
+    html[data-theme="accessible"] .hero .lead { font-size: 18px; }
     .eyebrow {
       font-family: var(--font-mono); font-size: 12px;
       letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--accent); margin-bottom: 12px;
     }
+    html[data-theme="accessible"] .eyebrow { font-size: 14px; }
     .badge-mobile {
       display: inline-block;
       font-family: var(--font-mono); font-size: 11px;
@@ -45,6 +31,7 @@
       padding: 4px 12px; border-radius: 999px;
       margin-bottom: 16px;
     }
+    html[data-theme="accessible"] .badge-mobile { font-size: 14px; padding: 6px 16px; }
     .screen-list { display: flex; flex-direction: column; gap: 12px; padding-block: 16px 64px; }
     .screen-card {
       background: var(--surface);
@@ -59,20 +46,25 @@
       transition: border-color 0.15s ease;
     }
     .screen-card:hover { border-color: var(--accent); }
+    html[data-theme="accessible"] .screen-card { border-width: 2px; padding: 24px 28px; }
     .screen-num {
       font-family: var(--font-mono); font-size: 12px;
       color: var(--accent); width: 28px; flex-shrink: 0;
     }
+    html[data-theme="accessible"] .screen-num { font-size: 15px; }
     .screen-card h2 {
       font-family: var(--font-display);
       font-size: 18px; margin: 0 0 2px;
     }
+    html[data-theme="accessible"] .screen-card h2 { font-size: 22px; }
     .screen-card p { margin: 0; color: var(--muted); font-size: 13px; }
+    html[data-theme="accessible"] .screen-card p { font-size: 16px; }
     .screen-arrow { margin-left: auto; color: var(--accent); font-size: 18px; }
     .pagefoot {
       padding-block: 15px; color: var(--muted); font-size: 13px;
       border-top: 1px solid var(--border); text-align: center;
     }
+    html[data-theme="accessible"] .pagefoot { font-size: 15px; }
   </style>
 </head>
 <body>
@@ -137,5 +129,10 @@
   <footer class="pagefoot">
     <div class="container">© 2026 Luis S.r.l. · Prototipo mobile agenti · <a href="index.html" style="color:var(--accent)">Torna al portale B2B</a></div>
   </footer>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Attiva/disattiva versione accessibile">Aa</button>
+  <script>
+    (function(){var t=localStorage.getItem('agentTheme');if(t==='accessible')document.documentElement.setAttribute('data-theme','accessible');})();
+    function toggleTheme(){var h=document.documentElement,a=h.getAttribute('data-theme')==='accessible';h.setAttribute('data-theme',a?'':'accessible');localStorage.setItem('agentTheme',a?'':'accessible');}
+  </script>
 </body>
 </html>
