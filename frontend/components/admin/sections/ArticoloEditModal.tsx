@@ -243,6 +243,15 @@ export default function ArticoloEditModal({
       if (pendingDeleteImages.length > 0) payload.immaginiDaEliminare = pendingDeleteImages;
       payload.raccolte = [...selectedRaccoltaIds];
       await api.put(`/api/integrazione/articoli/${article.codiceLinea}`, payload);
+      // Azzera la coda modifiche: senza questo, un secondo Salva ri-carica gli
+      // stessi file (duplicati infiniti) e riapplica ordine/galleria/eliminazioni.
+      setPendingImages([]);
+      setPendingExtra([]);
+      setPendingAi([]);
+      setPendingDeleteImages([]);
+      setImmaginiOrdine(null);
+      setImmaginiGalleria(null);
+      setImmaginiDisplay({});
       onSaved?.();
       fetch();
     } catch (e) {
