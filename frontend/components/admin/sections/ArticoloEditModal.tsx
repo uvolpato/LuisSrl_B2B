@@ -102,6 +102,7 @@ export default function ArticoloEditModal({
   const [immaginiOrdine, setImmaginiOrdine] = useState<number[] | null>(null);
   const [pendingExtra, setPendingExtra] = useState<File[]>([]);
   const [pendingAi, setPendingAi] = useState<File[]>([]);
+  const [dragAiOver, setDragAiOver] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragGalleriaOver, setDragGalleriaOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -467,8 +468,14 @@ export default function ArticoloEditModal({
                   </div>
                 )}
                 {activeSubTab === "ai" && (
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16 }}>
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI. Puoi generarle o caricare immagini AI già pronte.</p>
+                  <div
+                    style={{ flex: 1, display: "flex", flexDirection: "column", ...(dragAiOver ? { outline: "2px dashed var(--accent)", outlineOffset: -2, borderRadius: "var(--radius)", padding: 16 } : { padding: 16 }) }}
+                    onDragOver={(e) => { e.preventDefault(); setDragAiOver(true); }}
+                    onDragEnter={(e) => { e.preventDefault(); setDragAiOver(true); }}
+                    onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragAiOver(false); }}
+                    onDrop={(e) => { e.preventDefault(); setDragAiOver(false); setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingAi((prev) => [...prev, ...images]); }}
+                  >
+                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI. Puoi generarle o caricare immagini AI già pronte (trascina qui o clicca).</p>
                     {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
                     <div className="gallery-compact">
                       {article.immagini.filter((i) => i.tipo === 'AI' && !pendingDeleteImages.includes(i.id)).map((img) => (
