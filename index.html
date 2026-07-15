@@ -61,24 +61,7 @@
       color: var(--accent);
       margin-bottom: 16px;
     }
-    .specs-link {
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 24px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      border-radius: 9999px;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s;
-    }
-    .specs-link:hover {
-      background: var(--accent);
-      color: var(--surface);
-    }
+
     .screens {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -128,6 +111,38 @@
       font-size: 14px;
       font-weight: 500;
     }
+    .specs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 12px auto 0;
+      max-width: 780px;
+    }
+    .specs-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 9999px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .specs-link:hover {
+      background: var(--accent);
+      color: var(--surface);
+    }
+    .specs-link.primary {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+    }
     .pagefoot { padding-block: 15px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
     .pagefoot .row-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
   </style>
@@ -144,14 +159,16 @@
   </section>
 
   <div class="container">
-    <div style="display:flex;gap:12px;justify-content:center;margin:12px auto 0;width:fit-content;">
+    <nav class="specs-bar">
       <a href="specifiche.html" class="specs-link">Specifiche Tecniche →</a>
       <a href="costi-architettura.html" class="specs-link">Costi e Architettura →</a>
       <a href="roadmap-viewer.html" class="specs-link">Roadmap e Riepilogo Costi →</a>
       <a href="integrazione-viewer.html" class="specs-link">Integrazione API →</a>
       <a href="setup-produzione-viewer.html" class="specs-link">Setup Produzione →</a>
-      <a href="agent-index.html" class="specs-link" style="background:var(--accent);color:var(--surface);border-color:var(--accent);">Prototipo Agenti →</a>
-    </div>
+      <a href="seo-roadmap-viewer.html" class="specs-link">Roadmap SEO →</a>
+      <a href="customer-tracking-viewer.html" class="specs-link">Tracciamento Clienti →</a>
+      <a href="agent-index.html" class="specs-link primary">Prototipo Agenti →</a>
+    </nav>
     <div class="screens">
       <a href="01-landing.html" class="screen-card">
         <span class="num">01</span>
