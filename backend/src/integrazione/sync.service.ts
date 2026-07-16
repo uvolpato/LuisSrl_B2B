@@ -538,6 +538,37 @@ export class SyncService {
       `);
       await this.setProgress(logId, 92, 'Swap tabelle…');
 
+      // Aggiorna i dati anagrafici dei clienti già importati nel portale
+      try {
+        await this.prisma.$executeRawUnsafe(`
+          UPDATE customers c
+          SET
+            email = COALESCE(NULLIF(i.email, ''), c.email),
+            nome = COALESCE(NULLIF(i.ragione_sociale, ''), c.nome),
+            ragione_sociale = CASE WHEN NULLIF(i.ragione_sociale, '') IS NOT NULL THEN i.ragione_sociale ELSE c.ragione_sociale END,
+            partita_iva = COALESCE(NULLIF(i.partita_iva, ''), c.partita_iva),
+            telefono = COALESCE(NULLIF(i.telefono, ''), c.telefono),
+            sito_web = COALESCE(NULLIF(i.web, ''), c.sito_web),
+            indirizzo = COALESCE(NULLIF(i.indirizzo, ''), c.indirizzo),
+            cap = COALESCE(NULLIF(i.cap, ''), c.cap),
+            citta = COALESCE(NULLIF(i.citta, ''), c.citta),
+            provincia = COALESCE(NULLIF(i.provincia, ''), c.provincia),
+            codice_listino = COALESCE(NULLIF(NULLIF(i.codice_listino, ''), '--'), c.codice_listino, 'LIS1'),
+            codice_pagamento = COALESCE(NULLIF(i.codice_pagamento, ''), c.codice_pagamento),
+            fido = COALESCE(i.fido_totale, c.fido),
+            updated_at = NOW()
+          FROM integra_clienti i
+          WHERE i.codice_cliente = c.codice_cliente
+            AND c.codice_cliente IS NOT NULL
+        `);
+        const aggiornati = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          `SELECT count(*)::int8 n FROM customers c INNER JOIN integra_clienti i ON i.codice_cliente = c.codice_cliente WHERE c.codice_cliente IS NOT NULL`
+        );
+        this.logger.log(`Clienti aggiornati nel portale: ${Number(aggiornati[0].n)}`);
+      } catch (err) {
+        this.logger.warn(`Aggiornamento clienti portale non riuscito (non bloccante): ${err instanceof Error ? err.message : err}`);
+      }
+
       const durationMs = Date.now() - startedAt.getTime();
       const totalRows = clientiRows.length + indirizziRows.length + pagamentiRows.length;
       await this.setProgress(logId, 100, 'Completato');
