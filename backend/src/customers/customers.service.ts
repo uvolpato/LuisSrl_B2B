@@ -144,8 +144,11 @@ export class CustomersService {
     ip: string | undefined,
   ): Promise<{ user: CustomerProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const existing = await this.prisma.customer.findFirst({ where: { email: dto.email.toLowerCase() } });
-    if (existing) throw new ConflictException('users.email_exists');
+    const email = dto.email.toLowerCase();
+    // Email unica tra clienti E utenti admin (il login cerca prima negli utenti).
+    const existing = await this.prisma.customer.findFirst({ where: { email } });
+    const existingUser = await this.prisma.user.findFirst({ where: { email } });
+    if (existing || existingUser) throw new ConflictException('users.email_exists');
     if (dto.partitaIva) {
       const pivaExists = await this.prisma.customer.findFirst({ where: { partitaIva: dto.partitaIva } });
       if (pivaExists) throw new ConflictException('users.piva_exists');
@@ -153,7 +156,7 @@ export class CustomersService {
 
     const customer = await this.prisma.customer.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         passwordHash: await hashPassword(provisionalPassword),
         nome: dto.nome,
         ragioneSociale: dto.ragioneSociale ?? null,

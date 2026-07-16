@@ -68,12 +68,16 @@ export class UsersService {
     ip: string | undefined,
   ): Promise<{ user: UserProfile; provisionalPassword: string }> {
     const provisionalPassword = generateProvisionalPassword();
-    const existing = await this.prisma.user.findFirst({ where: { email: dto.email.toLowerCase() } });
-    if (existing) throw new ConflictException('users.email_exists');
+    const email = dto.email.toLowerCase();
+    // L'email è l'identità di login: dev'essere unica tra utenti E clienti,
+    // altrimenti il login (che cerca prima negli utenti) impedisce l'accesso all'altro.
+    const existing = await this.prisma.user.findFirst({ where: { email } });
+    const existingCustomer = await this.prisma.customer.findFirst({ where: { email } });
+    if (existing || existingCustomer) throw new ConflictException('users.email_exists');
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         passwordHash: await hashPassword(provisionalPassword),
         nome: dto.nome,
         ruolo: (dto.ruolo ?? 'UTENTE') as AdminRole,
