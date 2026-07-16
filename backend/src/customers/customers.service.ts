@@ -178,9 +178,22 @@ export class CustomersService {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
 
+    // L'email è l'identificativo di login: normalizza (lowercase) e verifica
+    // che non sia già usata da un altro cliente/utente.
+    let newEmail: string | undefined;
+    if (dto.email !== undefined) {
+      newEmail = dto.email.toLowerCase();
+      if (newEmail !== existing.email) {
+        const dup = await this.prisma.customer.findFirst({ where: { email: newEmail, NOT: { id: customerId } } });
+        const dupUser = await this.prisma.user.findFirst({ where: { email: newEmail } });
+        if (dup || dupUser) throw new ConflictException('users.email_exists');
+      }
+    }
+
     const updated = await this.prisma.customer.update({
       where: { id: customerId },
       data: {
+        ...(newEmail !== undefined && { email: newEmail }),
         ...(dto.nome !== undefined && { nome: dto.nome }),
         ...(dto.ragioneSociale !== undefined && { ragioneSociale: dto.ragioneSociale }),
         ...(dto.partitaIva !== undefined && { partitaIva: dto.partitaIva }),
