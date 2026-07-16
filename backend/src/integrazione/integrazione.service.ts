@@ -1253,7 +1253,9 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       params.push(`%${search}%`);
       idx++;
     }
-    const whereClause = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+    // Esclude già importati (per codice_cliente)
+    conds.push(`NOT EXISTS (SELECT 1 FROM customers cu WHERE cu.codice_cliente = c.codice_cliente)`);
+    const whereClause = `WHERE ${conds.join(' AND ')}`;
     const offset = (page - 1) * limit;
 
     const SORT_MAP: Record<string, string> = {
