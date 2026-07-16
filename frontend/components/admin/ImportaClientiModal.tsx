@@ -105,13 +105,16 @@ export default function ImportaClientiModal({
     timeoutRef.current = startTimeout();
 
     try {
-      const res = await api.post<{ creati: number; clienti: { id: number; codiceCliente: string }[] }>(
+      const res = await api.post<{ creati: number; aggiornati: number; clienti: { id: number; codiceCliente: string }[] }>(
         "/api/integrazione/clienti/importa",
         { codici: [...selected] },
       );
       clearTimeout(timeoutRef.current);
       if (!cancelled) {
-        setImportResult(`Importati ${res.creati} clienti`);
+        const parti: string[] = [];
+        if (res.creati > 0) parti.push(`${res.creati} creati`);
+        if (res.aggiornati > 0) parti.push(`${res.aggiornati} aggiornati`);
+        setImportResult(parti.length ? `Importazione completata: ${parti.join(', ')}` : 'Nessuna modifica');
         setSelected(new Set());
         fetchData(pageRef.current);
         onImported?.();
