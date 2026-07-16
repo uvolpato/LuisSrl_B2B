@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 import FocusTrap from "../common/FocusTrap";
 import Notice from "../common/Notice";
@@ -22,6 +23,13 @@ const EyeOffIcon = (
   </svg>
 );
 
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return "validation.password_min";
+  if (!/[A-Za-z]/.test(pw)) return "validation.password_letter";
+  if (!/[0-9]/.test(pw)) return "validation.password_digit";
+  return null;
+}
+
 export default function MustChangePasswordModal({
   oldPassword,
   userType,
@@ -32,6 +40,7 @@ export default function MustChangePasswordModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const tServer = useTranslations("server");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
@@ -51,14 +60,15 @@ export default function MustChangePasswordModal({
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const pwErr = validatePassword(newPassword);
+    if (pwErr) { setError(pwErr); return; }
+
     if (newPassword !== confirmPassword) {
-      setError("Le password non coincidono");
+      setError("validation.password_mismatch");
       return;
     }
-    if (newPassword.length < 8) {
-      setError("La password deve essere di almeno 8 caratteri");
-      return;
-    }
+
     setBusy(true);
     try {
       await api.post("/api/auth/change-password", { oldPassword, newPassword });
@@ -84,11 +94,11 @@ export default function MustChangePasswordModal({
             Al primo accesso è necessario cambiare la password provvisoria.
           </p>
           <form onSubmit={onSubmit}>
-            {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+            {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
             <label htmlFor="cp-new">Nuova password</label>
             <div style={{ position: "relative" }}>
               <input
-                id="cp-new" type={showNew ? "text" : "password"} required autoComplete="new-password" minLength={8}
+                id="cp-new" type={showNew ? "text" : "password"} required autoComplete="new-password"
                 value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                 style={{ paddingRight: 40 }}
               />
@@ -108,7 +118,7 @@ export default function MustChangePasswordModal({
             <label htmlFor="cp-confirm">Conferma nuova password</label>
             <div style={{ position: "relative" }}>
               <input
-                id="cp-confirm" type={showConfirm ? "text" : "password"} required autoComplete="new-password" minLength={8}
+                id="cp-confirm" type={showConfirm ? "text" : "password"} required autoComplete="new-password"
                 value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                 style={{ paddingRight: 40 }}
               />
