@@ -1253,9 +1253,7 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       params.push(`%${search}%`);
       idx++;
     }
-    // Esclude già importati (per codice_cliente)
-    conds.push(`NOT EXISTS (SELECT 1 FROM customers cu WHERE cu.codice_cliente = c.codice_cliente)`);
-    const whereClause = `WHERE ${conds.join(' AND ')}`;
+    const whereClause = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 
     const SORT_MAP: Record<string, string> = {
@@ -1356,7 +1354,9 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       if (cod) pagMap.set(cod, p);
     }
 
-    const created: { id: number; codiceCliente: string }[] = [];
+    const results: { id: number; codiceCliente: string }[] = [];
+    let creati = 0;
+    let aggiornati = 0;
     for (const r of rows) {
       const codice = r.codice_cliente ? String(r.codice_cliente).trim() : null;
       if (!codice) continue;
@@ -1365,41 +1365,50 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       const email = r.email ? String(r.email).trim() : '';
       const nome = ragioneSociale || (email ? email.split('@')[0] : codice);
 
-      const existing = await this.prisma.customer.findUnique({ where: { codiceCliente: codice } });
-      if (existing) continue;
-
-      // Password temporanea casuale: l'admin la cambierà al primo accesso / la comunicherà
-      const tmpPassword = Math.random().toString(36).slice(-10) + 'A1!';
-      const passwordHash = await hashPassword(tmpPassword);
-
       const pag = pagMap.get(codice);
       const fido = pag?.fido_totale != null ? Number(pag.fido_totale) : null;
 
-      // Risolve il listino: se null o '--' usa il default LIS1
       const rawListino = r.codice_listino ? String(r.codice_listino) : null;
       const listinoEffettivo = (!rawListino || rawListino === '--') ? 'LIS1' : rawListino;
 
-      const cust = await this.prisma.customer.create({
-        data: {
-          codiceCliente: codice,
-          codiceListino: listinoEffettivo,
-          email: email || `${codice.toLowerCase()}@noemail.local`,
-          passwordHash,
-          nome,
-          ragioneSociale,
-          partitaIva: r.partita_iva ? String(r.partita_iva) : null,
-          telefono: r.telefono ? String(r.telefono) : null,
-          sitoWeb: r.web ? String(r.web) : null,
-          indirizzo: r.indirizzo ? String(r.indirizzo) : null,
-          cap: r.cap ? String(r.cap) : null,
-          citta: r.citta ? String(r.citta) : null,
-          provincia: r.provincia ? String(r.provincia) : null,
-          codicePagamento: pag?.codice_pagamento ? String(pag.codice_pagamento) : (r.codice_pagamento ? String(r.codice_pagamento) : null),
-          fido,
-          stato: 'BLOCCATO',
-          mustChangePassword: true,
-        },
-      });
+      const datiComuni = {
+        codiceListino: listinoEffettivo,
+        email: email || `${codice.toLowerCase()}@noemail.local`,
+        nome,
+        ragioneSociale,
+        partitaIva: r.partita_iva ? String(r.partita_iva) : null,
+        telefono: r.telefono ? String(r.telefono) : null,
+        sitoWeb: r.web ? String(r.web) : null,
+        indirizzo: r.indirizzo ? String(r.indirizzo) : null,
+        cap: r.cap ? String(r.cap) : null,
+        citta: r.citta ? String(r.citta) : null,
+        provincia: r.provincia ? String(r.provincia) : null,
+        codicePagamento: pag?.codice_pagamento ? String(pag.codice_pagamento) : (r.codice_pagamento ? String(r.codice_pagamento) : null),
+        fido,
+      };
+
+      const existing = await this.prisma.customer.findUnique({ where: { codiceCliente: codice } });
+      let cust: { id: number };
+      if (existing) {
+        cust = await this.prisma.customer.update({
+          where: { id: existing.id },
+          data: { ...datiComuni },
+        });
+        aggiornati++;
+      } else {
+        const tmpPassword = Math.random().toString(36).slice(-10) + 'A1!';
+        const passwordHash = await hashPassword(tmpPassword);
+        cust = await this.prisma.customer.create({
+          data: {
+            codiceCliente: codice,
+            ...datiComuni,
+            passwordHash,
+            stato: 'BLOCCATO',
+            mustChangePassword: true,
+          },
+        });
+        creati++;
+      }
 
       // Assicura che il listino del cliente sia sincronizzato in cache
       try {
@@ -1430,7 +1439,7 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
         // silenzioso — il sync periodico riallineerà
       }
 
-      // Importa ordini da integra_ordini (locale, non FDW)
+      // Importa ordini da integra_ordini (salta duplicati per numeroOrdine + cliente)
       try {
         const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
           `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
@@ -1439,6 +1448,13 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
         for (const o of ordini) {
           const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
           if (!ordineId) continue;
+          const numOrd = o.numero_ordine ? String(o.numero_ordine) : `ORD-${ordineId}`;
+
+          const giaImportato = await this.prisma.ordineCliente.findFirst({
+            where: { customerId: cust.id, numeroOrdine: numOrd },
+          });
+          if (giaImportato) continue;
+
           const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
             `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1`,
             ordineId,
@@ -1449,7 +1465,7 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
           );
           const newOrd = await this.prisma.ordineCliente.create({
             data: {
-              numeroOrdine: o.numero_ordine ? String(o.numero_ordine) : `ORD-${ordineId}`,
+              numeroOrdine: numOrd,
               dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
               customerId: cust.id,
               importoTotale: totaleOrdine > 0 ? totaleOrdine : null,
@@ -1470,14 +1486,14 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
           }
         }
       } catch {
-        // integra_ordini assente o vuoto (sync non eseguito, VPN giù): gli ordini arriveranno dopo
+        // integra_ordini assente o vuoto: gli ordini arriveranno dopo
       }
 
-      created.push({ id: cust.id, codiceCliente: codice });
+      results.push({ id: cust.id, codiceCliente: codice });
     }
 
-    // AI: genera descrizione cliente (mix anagrafica + corrispondenza vuota al momento)
-    for (const c of created) {
+    // AI: genera descrizione cliente solo per nuovi (quelli senza descrizione)
+    for (const c of results) {
       try {
         const cust = await this.prisma.customer.findUnique({ where: { id: c.id } });
         if (cust && !cust.descrizione) {
@@ -1501,7 +1517,7 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       // silenzioso — il sync periodico riallineerà
     }
 
-    return { creati: created.length, clienti: created };
+    return { creati, aggiornati, clienti: results };
   }
 
   async importaIndirizziClienti(codici?: string[]): Promise<{ importati: number }> {
