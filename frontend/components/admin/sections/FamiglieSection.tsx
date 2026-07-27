@@ -40,6 +40,33 @@ export default function FamiglieSection() {
   const [editFamiglia, setEditFamiglia] = useState<Famiglia | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Riordino card (drag&drop): possibile solo in vista griglia senza ricerca/filtro,
+  // così l'ordine visibile coincide con l'ordine completo salvato.
+  const [dragCodice, setDragCodice] = useState<string | null>(null);
+  const [orderDirty, setOrderDirty] = useState(false);
+  const reorderable = view === "grid" && filter === "tutte" && !search;
+
+  function moveCard(from: string, to: string) {
+    if (from === to) return;
+    setItems((prev) => {
+      const arr = [...prev];
+      const fi = arr.findIndex((x) => x.codice === from);
+      const ti = arr.findIndex((x) => x.codice === to);
+      if (fi < 0 || ti < 0) return prev;
+      const [m] = arr.splice(fi, 1);
+      arr.splice(ti, 0, m);
+      return arr;
+    });
+    setOrderDirty(true);
+  }
+
+  async function saveOrder() {
+    try {
+      await api.put("/api/admin/famiglie/ordine", { codici: items.map((i) => i.codice) });
+      setOrderDirty(false);
+    } catch { setError("Errore nel salvataggio dell'ordine"); }
+  }
+
   const filtered = useMemo(() => {
     return items.filter((r) => {
       if (filter === "attive") return r.stato === "ATTIVO";
@@ -217,15 +244,28 @@ async function handleDelete(codice: string) {
           <div>
             <span className="meta">{meta}</span>
           </div>
-          <div className="view-toggle">
-            <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
-              {IconList}
-            </button>
-            <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia">
-              {IconGrid}
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {view === "grid" && orderDirty && (
+              <button className="btn btn-primary btn-sm" onClick={saveOrder}>Salva ordine</button>
+            )}
+            <div className="view-toggle">
+              <button className={view === "list" ? "active" : ""} onClick={() => setView("list")} title="Vista riga">
+                {IconList}
+              </button>
+              <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} title="Vista griglia">
+                {IconGrid}
+              </button>
+            </div>
           </div>
         </div>
+
+        {view === "grid" && (
+          <p style={{ margin: "0 0 10px", fontSize: 13, color: "var(--muted)" }}>
+            {reorderable
+              ? "Trascina le card per cambiare l'ordine con cui i clienti vedono le famiglie, poi premi «Salva ordine»."
+              : "Per riordinare le famiglie azzera ricerca e filtro."}
+          </p>
+        )}
 
         {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
 
@@ -245,8 +285,20 @@ async function handleDelete(codice: string) {
         ) : (
           <div className="data-cards-scroll">
             <div className="raccolte-grid">
-              {rows.map((r) => (
-                <div key={r.codice} className="raccolte-card">
+              {(reorderable ? filtered : rows).map((r) => (
+                <div
+                  key={r.codice}
+                  className="raccolte-card"
+                  draggable={reorderable}
+                  onDragStart={() => reorderable && setDragCodice(r.codice)}
+                  onDragOver={(e) => { if (reorderable && dragCodice) e.preventDefault(); }}
+                  onDrop={() => { if (reorderable && dragCodice) { moveCard(dragCodice, r.codice); setDragCodice(null); } }}
+                  onDragEnd={() => setDragCodice(null)}
+                  style={{
+                    cursor: reorderable ? "grab" : undefined,
+                    opacity: dragCodice === r.codice ? 0.5 : 1,
+                  }}
+                >
                   <img
                     className="raccolte-card-img"
                     src={r.immagine ?? PLACEHOLDER}

@@ -190,7 +190,7 @@ export class AdminService {
 
   async listFamiglie() {
     const rows = await this.prisma.famiglia.findMany({
-      orderBy: { nome: 'asc' },
+      orderBy: [{ ordine: 'asc' }, { nome: 'asc' }],
       include: {
         _count: { select: { articoli: true } },
       },
@@ -228,6 +228,17 @@ export class AdminService {
 
     await this.audit.log({ actorId, azione: 'admin.famiglia_update', entita: 'famiglie', entitaId: codice, ip });
     return updated;
+  }
+
+  /** Riordina le famiglie: l'indice nell'array diventa il campo `ordine`. */
+  async reorderFamiglie(codici: string[], actorId: number, ip?: string) {
+    await this.prisma.$transaction(
+      codici.map((codice, idx) =>
+        this.prisma.famiglia.update({ where: { codice }, data: { ordine: idx } }),
+      ),
+    );
+    await this.audit.log({ actorId, azione: 'admin.famiglie_reorder', entita: 'famiglie', entitaId: codici.join(','), ip });
+    return { ok: true };
   }
 
   /** Salva un'immagine caricata in ASSETS_BASE_DIR/<subdir> con nome progressivo e ritorna l'URL pubblico. */

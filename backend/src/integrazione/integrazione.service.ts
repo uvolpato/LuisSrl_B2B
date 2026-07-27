@@ -418,6 +418,29 @@ export class IntegrazioneService {
     return { articoli, famiglie: [...famiglie.values()], raccolte: [...raccolte.values()] };
   }
 
+  /** Card famiglie lato cliente: solo ATTIVE con articoli visibili, ordinate per `ordine`. */
+  async getFamiglieCliente() {
+    const fams = await this.prisma.famiglia.findMany({
+      where: { stato: 'ATTIVO' },
+      orderBy: [{ ordine: 'asc' }, { nome: 'asc' }],
+    });
+    const counts = await this.prisma.articolo.groupBy({
+      by: ['famigliaCodice'],
+      where: { configurato: true, stato: 'ATTIVO' },
+      _count: { _all: true },
+    });
+    const cmap = new Map(counts.map((c) => [c.famigliaCodice, c._count._all]));
+    return fams
+      .map((f) => ({
+        codice: f.codice,
+        nome: f.nomePortale || f.nome,
+        immagine: f.immagine,
+        descrizione: f.descrizione,
+        count: cmap.get(f.codice) ?? 0,
+      }))
+      .filter((f) => f.count > 0);
+  }
+
   /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
   private mapArticoloCard(a: any) {
     const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];

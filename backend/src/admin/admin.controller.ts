@@ -148,6 +148,12 @@ export class AdminController {
     return this.admin.listFamiglie();
   }
 
+  @Put('famiglie/ordine')
+  @RequirePermission('catalog.famiglie.edit')
+  reorderFamiglie(@Body('codici') codici: string[], @Req() req: AuthenticatedRequest) {
+    return this.admin.reorderFamiglie(codici ?? [], req.user.id, req.ip);
+  }
+
   @Patch('famiglie/:codice')
   @RequirePermission('catalog.famiglie.edit')
   updateFamiglia(
