@@ -455,8 +455,8 @@ export class IntegrazioneService {
         .filter((r: any) => r.raccolta.stato === 'ATTIVO')
         .map((r: any) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
       img: cover?.url ?? null,
-      // posizionamento impostato nel dettaglio articolo (object-fit/position/transform)
       imgCss: cover?.css ?? null,
+      imgTipo: cover?.tipo ?? null,
       variantiCount: a._count.varianti,
       createdAt: a.createdAt,
     };
