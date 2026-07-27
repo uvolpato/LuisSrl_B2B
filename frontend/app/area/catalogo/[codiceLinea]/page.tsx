@@ -521,27 +521,6 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: ((!selectedVariant && !singleVariant) || buyOut) ? 0.5 : 1 }}>
                   {buyOut ? "Esaurito" : buyBtnText}
                 </button>
-                <button className="btn btn-secondary" disabled={(!selectedVariant && !singleVariant) || buyOut}
-                  style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: ((!selectedVariant && !singleVariant) || buyOut) ? 0.5 : 1 }}>
-                  Acquista ora
-                </button>
-
-                <div className="divider" />
-
-                <div style={{ fontSize: 13, color: "var(--muted)", display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0, color: "var(--muted)" }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                    <span>Spedizione entro 48h · Tracciamento completo</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0, color: "var(--muted)" }}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 12l2 2 4-4" /></svg>
-                    <span>Venduto da Luis S.r.l. · Garanzia 24 mesi</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0, color: "var(--muted)" }}><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-                    <span>Resi gratuiti entro 30 giorni</span>
-                  </div>
-                </div>
               </div>
             </div>
 
