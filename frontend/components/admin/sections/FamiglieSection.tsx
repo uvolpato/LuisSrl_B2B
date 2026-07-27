@@ -60,6 +60,19 @@ export default function FamiglieSection() {
     setOrderDirty(true);
   }
 
+  // Alternativa touch al drag&drop: sposta di una posizione (tablet/smartphone).
+  function nudge(codice: string, dir: -1 | 1) {
+    setItems((prev) => {
+      const i = prev.findIndex((x) => x.codice === codice);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const arr = [...prev];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return arr;
+    });
+    setOrderDirty(true);
+  }
+
   async function saveOrder() {
     try {
       await api.put("/api/admin/famiglie/ordine", { codici: items.map((i) => i.codice) });
@@ -262,7 +275,7 @@ async function handleDelete(codice: string) {
         {view === "grid" && (
           <p style={{ margin: "0 0 10px", fontSize: 13, color: "var(--muted)" }}>
             {reorderable
-              ? "Trascina le card per cambiare l'ordine con cui i clienti vedono le famiglie, poi premi «Salva ordine»."
+              ? "Trascina le card oppure usa le frecce ↑ ↓ per cambiare l'ordine con cui i clienti vedono le famiglie, poi premi «Salva ordine»."
               : "Per riordinare le famiglie azzera ricerca e filtro."}
           </p>
         )}
@@ -322,6 +335,15 @@ async function handleDelete(codice: string) {
                       <span>{r._count.articoli} articoli</span>
                     </div>
                     <div className="raccolte-card-actions">
+                      {reorderable && (() => {
+                        const idx = items.findIndex((x) => x.codice === r.codice);
+                        return (
+                          <div style={{ display: "flex", gap: 4, marginRight: "auto" }}>
+                            <button className="btn btn-ghost btn-sm" onClick={() => nudge(r.codice, -1)} disabled={idx <= 0} title="Sposta su" aria-label="Sposta su">↑</button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => nudge(r.codice, 1)} disabled={idx >= items.length - 1} title="Sposta giù" aria-label="Sposta giù">↓</button>
+                          </div>
+                        );
+                      })()}
                       <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(r)} title="Modifica">{IconEdit} Modifica</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => toggleStatus(r)} title={r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}>
                         {r.stato === "ATTIVO" ? IconEyeOff : IconEye} {r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}
