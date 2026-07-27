@@ -473,10 +473,10 @@ export class IntegrazioneService {
     if (!vec) return; // provider non disponibile: riprovera' al prossimo salvataggio/backfill
     await this.prisma.$executeRawUnsafe(
       `INSERT INTO articolo_embedding (articolo_id, text_vec, fonte_hash, updated_at)
-       VALUES ($1, $2::vector, $3, now())
+       VALUES ($1, $2::double precision[], $3, now())
        ON CONFLICT (articolo_id) DO UPDATE
          SET text_vec = EXCLUDED.text_vec, fonte_hash = EXCLUDED.fonte_hash, updated_at = now()`,
-      a.id, this.embedding.toVectorLiteral(vec), hash,
+      a.id, this.embedding.toArrayLiteral(vec), hash,
     );
   }
 
@@ -486,20 +486,23 @@ export class IntegrazioneService {
     if (!query) return { articoli: [], provider: this.embedding.provider };
     const vec = await this.embedding.embedText(query);
     if (!vec) return { articoli: [], provider: this.embedding.provider, error: 'embeddings_non_disponibili' };
-    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; score: number }[]>(
-      `SELECT a.codice_linea, 1 - (e.text_vec <=> $1::vector) AS score
+    // Solo articoli visibili al cliente; coseno calcolato in Node (catalogo piccolo).
+    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; text_vec: number[] | null }[]>(
+      `SELECT a.codice_linea, e.text_vec
          FROM articolo_embedding e
          JOIN articoli a  ON a.id = e.articolo_id
          JOIN famiglie f  ON f.codice = a.famiglia_codice
-        WHERE a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'
-        ORDER BY e.text_vec <=> $1::vector
-        LIMIT $2`,
-      this.embedding.toVectorLiteral(vec), Math.min(Math.max(k, 1), 60),
+        WHERE a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'`,
     );
-    if (!rows.length) return { articoli: [], provider: this.embedding.provider };
-    const scoreByCodice = new Map(rows.map((r) => [r.codice_linea, Number(r.score)]));
+    const top = rows
+      .filter((r) => r.text_vec?.length)
+      .map((r) => ({ codice: r.codice_linea, score: EmbeddingService.cosine(vec, r.text_vec as number[]) }))
+      .sort((x, y) => y.score - x.score)
+      .slice(0, Math.min(Math.max(k, 1), 60));
+    if (!top.length) return { articoli: [], provider: this.embedding.provider };
+    const scoreByCodice = new Map(top.map((r) => [r.codice, r.score]));
     const arts = await this.prisma.articolo.findMany({
-      where: { codiceLinea: { in: rows.map((r) => r.codice_linea) } },
+      where: { codiceLinea: { in: top.map((r) => r.codice) } },
       include: {
         famiglia: true,
         immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
