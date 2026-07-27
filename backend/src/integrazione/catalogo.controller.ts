@@ -16,9 +16,32 @@ export class CatalogoController {
     private readonly prisma: PrismaService,
   ) {}
 
+  /** Lista paginata (infinite-scroll): filtri, ricerca testo, sort lato server. */
   @Get()
-  getCatalogo() {
-    return this.integrazione.getCatalogoCliente();
+  getCatalogo(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('famiglia') famiglia?: string,
+    @Query('raccolte') raccolte?: string,
+    @Query('tab') tab?: string,
+    @Query('q') q?: string,
+    @Query('sort') sort?: string,
+  ) {
+    return this.integrazione.getCatalogoPaginato({
+      page: page ? parseInt(page, 10) : 1,
+      pageSize: pageSize ? parseInt(pageSize, 10) : 24,
+      famiglia: famiglia ? famiglia.split(',').filter(Boolean) : undefined,
+      raccolte: raccolte ? raccolte.split(',').filter(Boolean) : undefined,
+      tab: tab || undefined,
+      q: q || undefined,
+      sort: sort || undefined,
+    });
+  }
+
+  /** Filtri sidebar (famiglie/raccolte con conteggi). */
+  @Get('facets')
+  getFacets() {
+    return this.integrazione.getCatalogoFacets();
   }
 
   /** Ricerca semantica: frase in linguaggio naturale → articoli per similarità. */
