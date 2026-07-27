@@ -1283,7 +1283,7 @@ Descrizione: ${descrizione}`;
       try { buf = await fsp.readFile(filePath); } catch { continue; }
       const ext = path.extname(filePath).toLowerCase();
       const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-      const prompt = 'Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti su forma, materiale, finitura, dimensioni percepite e colore. Sii concreto e preciso.';
+      const prompt = 'Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti sugli attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni percepite e uso (interno/esterno). Sii concreto e preciso; non inventare ciò che non è visibile.';
       try {
         const desc = await this.callGeminiText(prompt, { mime, b64: buf.toString('base64') });
         descrizioni.push(`[Immagine ${img.ordinamento}]: ${desc}`);
@@ -1394,7 +1394,23 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
       ? `\n\nImmagini a sfondo bianco dell'articolo:\n${imgDescs.join('\n')}`
       : '';
 
-    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}`;
+    // Misure reali dal DB (varianti): l'AI deve usare queste, non stimare "a occhio".
+    const variantiDim = await this.prisma.variante.findMany({
+      where: { articoloId: art.id, stato: { not: 'NASCOSTO' } },
+      select: { descrizione: true, dimensioni: true },
+      orderBy: { codice: 'asc' },
+    });
+    const dimSection = variantiDim.length
+      ? `\n\nVarianti e dimensioni reali (usa queste misure, non stimarle):\n${variantiDim
+          .map((v) => `- ${v.descrizione}${v.dimensioni ? `: ${JSON.stringify(v.dimensioni)}` : ''}`)
+          .join('\n')}`
+      : '';
+
+    // Requisiti oggettivi: garantiscono che la descrizione contenga gli attributi su
+    // cui si appoggiano ricerca testuale e per immagine (embedding + boost).
+    const requisiti = `\n\nRequisiti obbligatori: nella descrizione dettagliata cita in modo esplicito e concreto, quando determinabili, questi attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni (usa le misure reali delle varianti qui sopra), uso (interno/esterno). Non inventare attributi non presenti nelle immagini o nei dati.`;
+
+    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}${dimSection}${requisiti}`;
 
     const raw = await this.callGeminiText(fullPrompt);
 
