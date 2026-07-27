@@ -9,6 +9,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 import AreaHeader from "../../components/area/AreaHeader";
 import AreaFooter from "../../components/area/AreaFooter";
+import AiSearchModal from "../../components/area/AiSearchModal";
 import type { CustomerProfile } from "../../lib/types";
 
 function SparkleIcon({ size = 20 }: { size?: number }) {
@@ -24,47 +25,6 @@ function SearchIcon({ size = 18, className }: { size?: number; className?: strin
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function CloseIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function ImageIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <path d="M21 15l-5-5L5 21" />
-    </svg>
-  );
-}
-
-function FileIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
-
-function InfoIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4" />
-      <path d="M12 8h.01" />
     </svg>
   );
 }
@@ -107,12 +67,6 @@ const PRODUCT_BOXES = [
   },
 ];
 
-const SUGGESTED_TAGS = [
-  { label: "vaso alto per esterno", query: "vaso alto per esterno resistente al gelo" },
-  { label: "fioriera rettangolare", query: "fioriera rettangolare cotto color avana" },
-  { label: "cesto da interno", query: "cesto intrecciato per pianta da interno" },
-];
-
 export default function AreaClientePage() {
   const t = useTranslations("area");
   const tc = useTranslations("common");
@@ -121,42 +75,16 @@ export default function AreaClientePage() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [aiSearchInput, setAiSearchInput] = useState("");
-  const [uploadFeedback, setUploadFeedback] = useState<{ id: string; name: string } | null>(null);
-  const aiModalRef = useRef<HTMLDivElement>(null);
-  const fileInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const tabs = ["Ricercati", "Novità", "Listini"];
-
-  useEffect(() => {
-    if (!aiModalOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setAiModalOpen(false); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [aiModalOpen]);
-
-  useEffect(() => {
-    if (!aiModalOpen) setAiSearchInput("");
-  }, [aiModalOpen]);
-
-  const handleUpload = (id: string, file: File) => {
-    setUploadFeedback({ id, name: file.name });
-    setTimeout(() => setUploadFeedback(null), 3000);
-    const input = fileInputRefs.current.get(id);
-    if (input) input.value = "";
-  };
-
-  const handleDrop = (e: React.DragEvent, id: string) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleUpload(id, file);
-  };
 
   const openAiModal = () => setAiModalOpen(true);
   const closeAiModal = () => setAiModalOpen(false);
 
-  const handleSearchAi = () => {
+  // La ricerca AI vera vive nel catalogo: navighiamo lì con la query, che il
+  // catalogo esegue e conserva nell'URL (torna-indietro riporta ai risultati).
+  const handleSearchAi = (query: string) => {
     closeAiModal();
-    router.push("/area/catalogo");
+    router.push(`/area/catalogo?ai=${encodeURIComponent(query)}`);
   };
 
   if (loading || !user || user.userType !== "customer") return <LoadingScreen />;
@@ -693,99 +621,7 @@ export default function AreaClientePage() {
         </div>
       </div>
 
-      {/* AI Search Modal */}
-      <div className="modal-overlay" ref={aiModalRef} onClick={(e) => { if (e.target === aiModalRef.current) setAiModalOpen(false); }}>
-        <div className="ai-modal">
-          <div className="modal-head">
-            <h3>
-              <SparkleIcon size={20} /> Ricerca intelligente <span className="ai-badge">AI</span>
-            </h3>
-            <button className="modal-close-btn" onClick={closeAiModal}>
-              <CloseIcon />
-            </button>
-          </div>
-          <div className="modal-body">
-            <p className="ai-search-desc">
-              Descrivi quello che cerchi a parole oppure trascina o carica un'immagine o un file di testo — l'AI troverà i prodotti più simili nel catalogo.
-            </p>
-            <div className="ai-search-input-wrap">
-              <SearchIcon size={18} className="ai-search-icon" />
-              <input
-                type="text"
-                placeholder="Es. vaso terracotta rotondo Ø30 per esterno…"
-                value={aiSearchInput}
-                onChange={(e) => setAiSearchInput(e.target.value)}
-              />
-            </div>
-            <div className="ai-upload-row">
-              <label
-                className="ai-upload-btn"
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag-over"); }}
-                onDragLeave={(e) => { e.currentTarget.classList.remove("drag-over"); }}
-                onDrop={(e) => handleDrop(e, "image")}
-              >
-                <ImageIcon /> <span>{uploadFeedback?.id === "image" ? uploadFeedback.name : "Carica un'immagine"}</span>
-                <small>{uploadFeedback?.id === "image" ? "" : "trascina o clicca"}</small>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={(el) => { if (el) fileInputRefs.current.set("image", el); }}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload("image", f); }}
-                />
-              </label>
-              <label
-                className="ai-upload-btn"
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag-over"); }}
-                onDragLeave={(e) => { e.currentTarget.classList.remove("drag-over"); }}
-                onDrop={(e) => handleDrop(e, "file")}
-              >
-                <FileIcon /> <span>{uploadFeedback?.id === "file" ? uploadFeedback.name : "Carica un file di testo"}</span>
-                <small>{uploadFeedback?.id === "file" ? "" : "trascina o clicca"}</small>
-                <input
-                  type="file"
-                  accept=".txt,.csv,.pdf,.doc,.docx"
-                  ref={(el) => { if (el) fileInputRefs.current.set("file", el); }}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload("file", f); }}
-                />
-              </label>
-            </div>
-            <div className="ai-search-hint">
-              <InfoIcon /> Prova:{" "}
-              {SUGGESTED_TAGS.map((tag) => (
-                <button
-                  key={tag.label}
-                  className="ai-tag"
-                  onClick={() => { setAiSearchInput(tag.query); }}
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="modal-foot">
-            <button
-              className="btn btn-ghost"
-              onClick={closeAiModal}
-              style={{
-                background: "transparent", color: "var(--muted)", border: "1px solid var(--border)",
-                borderRadius: 8, padding: "9px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer",
-              }}
-            >
-              Annulla
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSearchAi}
-              style={{
-                background: "var(--accent)", color: "#fff", border: "1px solid var(--accent)",
-                borderRadius: 8, padding: "9px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer",
-              }}
-            >
-              Cerca
-            </button>
-          </div>
-        </div>
-      </div>
+      <AiSearchModal open={aiModalOpen} onClose={closeAiModal} onSubmit={handleSearchAi} />
 
       <AreaFooter />
     </>
