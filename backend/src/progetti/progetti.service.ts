@@ -2,16 +2,34 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CarrelloService } from '../carrello/carrello.service';
+import { IntegrazioneService } from '../integrazione/integrazione.service';
 
 @Injectable()
 export class ProgettiService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly carrello: CarrelloService,
+    private readonly integrazione: IntegrazioneService,
   ) {}
 
-  /** Arricchisce gli item con nome articolo, variante, dimensioni, immagine. */
-  private async enrich(items: { varianteCodice: string; quantita: number }[]) {
+  /**
+   * Arricchisce gli item con nome articolo, variante, dimensioni, immagine.
+   * Se clienteId è fornito calcola anche il prezzo (listino cliente + sconto raccolta),
+   * come nel carrello; nella vista pubblica i prezzi sono omessi.
+   */
+  private async enrich(items: { varianteCodice: string; quantita: number }[], clienteId?: number) {
+    // Prezzi solo per il proprietario del progetto.
+    let codiceListino: string | null = null;
+    const raccolteMap = new Map<string, number>();
+    if (clienteId) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+      codiceListino = customer?.codiceListino ?? null;
+      if (!codiceListino) {
+        const fallback = await this.integrazione.getFirstListino();
+        codiceListino = fallback?.codice_listino ?? null;
+      }
+    }
+
     return Promise.all(items.map(async (it) => {
       const v = await this.prisma.variante.findUnique({
         where: { codice: it.varianteCodice },
@@ -19,6 +37,7 @@ export class ProgettiService {
           articolo: {
             select: {
               nome: true, codiceLinea: true,
+              raccolte: { include: { raccolta: { select: { sconto: true } } } },
               immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
             },
           },
@@ -32,6 +51,11 @@ export class ProgettiService {
           dims.push(`${prefix}${val?.valore ?? val}${unit}`);
         }
       }
+      let prezzo: any = null;
+      if (clienteId && codiceListino && v) {
+        const maxSconto = Math.max(0, ...v.articolo.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
+        prezzo = await this.integrazione.getPrezzo(codiceListino, it.varianteCodice, maxSconto > 0 ? maxSconto : undefined);
+      }
       return {
         varianteCodice: it.varianteCodice,
         quantita: it.quantita,
@@ -41,6 +65,7 @@ export class ProgettiService {
         dimensioni: dims.join(' · '),
         immagineUrl: v?.articolo.immagini[0]?.url ?? null,
         multiplo: v?.multiplo ?? 1,
+        prezzo,
       };
     }));
   }
@@ -66,7 +91,7 @@ export class ProgettiService {
   async get(clienteId: number, id: number) {
     const p = await this.own(clienteId, id);
     const items = await this.prisma.progettoItem.findMany({ where: { progettoId: id }, orderBy: { createdAt: 'asc' } });
-    return { id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken, items: await this.enrich(items) };
+    return { id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken, items: await this.enrich(items, clienteId) };
   }
 
   async create(clienteId: number, nome: string, note?: string) {

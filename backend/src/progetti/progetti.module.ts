@@ -3,9 +3,10 @@ import { ProgettiController } from './progetti.controller';
 import { ProgettiPublicController } from './progetti-public.controller';
 import { ProgettiService } from './progetti.service';
 import { CarrelloModule } from '../carrello/carrello.module';
+import { IntegrazioneModule } from '../integrazione/integrazione.module';
 
 @Module({
-  imports: [CarrelloModule],
+  imports: [CarrelloModule, IntegrazioneModule],
   controllers: [ProgettiController, ProgettiPublicController],
   providers: [ProgettiService],
 })
