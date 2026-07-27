@@ -2,8 +2,9 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fsp from 'fs/promises';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { hashPassword } from '../common/password';
+import { EmbeddingService } from './embedding.service';
 
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
@@ -50,7 +51,10 @@ type ViewType = keyof typeof CONFIG;
 
 @Injectable()
 export class IntegrazioneService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embedding: EmbeddingService,
+  ) {}
 
   /** Mappa una riga della vista sui nomi di portale del CONFIG (BigInt → Number: non serializzabile in JSON). */
   private mapRow(cols: Record<string, string>, row: Record<string, unknown>) {
@@ -395,24 +399,7 @@ export class IntegrazioneService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const articoli = arts.map((a) => {
-      const cover = a.immagini.find((i) => i.copertina) ?? a.immagini[0];
-      return {
-        id: a.codiceLinea,
-        nome: a.nome,
-        colore: a.colore || null,
-        coloreRgb: a.coloreRgb || null,
-        famiglia: { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome },
-        raccolte: a.raccolte
-          .filter((r) => r.raccolta.stato === 'ATTIVO')
-          .map((r) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
-        img: cover?.url ?? null,
-        // posizionamento impostato nel dettaglio articolo (object-fit/position/transform)
-        imgCss: cover?.css ?? null,
-        variantiCount: a._count.varianti,
-        createdAt: a.createdAt,
-      };
-    });
+    const articoli = arts.map((a) => this.mapArticoloCard(a));
 
     // Filtri con conteggi derivati dagli stessi articoli visibili
     const famiglie = new Map<string, { codice: string; nome: string; count: number }>();
@@ -429,6 +416,101 @@ export class IntegrazioneService {
     }
 
     return { articoli, famiglie: [...famiglie.values()], raccolte: [...raccolte.values()] };
+  }
+
+  /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
+  private mapArticoloCard(a: any) {
+    const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];
+    return {
+      id: a.codiceLinea,
+      nome: a.nome,
+      colore: a.colore || null,
+      coloreRgb: a.coloreRgb || null,
+      famiglia: { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome },
+      raccolte: a.raccolte
+        .filter((r: any) => r.raccolta.stato === 'ATTIVO')
+        .map((r: any) => ({ nome: r.raccolta.nome, slug: r.raccolta.slug })),
+      img: cover?.url ?? null,
+      // posizionamento impostato nel dettaglio articolo (object-fit/position/transform)
+      imgCss: cover?.css ?? null,
+      variantiCount: a._count.varianti,
+      createdAt: a.createdAt,
+    };
+  }
+
+  // ── Ricerca semantica (pgvector + embedding testuale) ─────────────────────
+
+  /** Blob testo indicizzato per un articolo (deve combaciare col backfill). */
+  private buildEmbeddingBlob(a: {
+    nome: string; colore?: string | null; descrizioneAI?: string | null;
+    descrizione?: string | null; descrizioneDettagliata?: string | null;
+    famiglia?: { nome: string; nomePortale?: string | null } | null;
+  }): string {
+    const fam = a.famiglia?.nomePortale || a.famiglia?.nome || '';
+    return [a.nome, fam, a.colore, a.descrizioneAI, a.descrizione, a.descrizioneDettagliata]
+      .filter((s) => s && String(s).trim())
+      .join('\n');
+  }
+
+  /** (Ri)genera l'embedding di un articolo se il blob e' cambiato. Fire-and-forget. */
+  async reembedArticolo(codiceLinea: string): Promise<void> {
+    const a = await this.prisma.articolo.findUnique({
+      where: { codiceLinea },
+      include: { famiglia: true },
+    });
+    // Indicizziamo solo cio' che il cliente puo' vedere.
+    if (!a || !a.configurato || a.stato !== 'ATTIVO' || a.famiglia.stato !== 'ATTIVO') {
+      await this.prisma.$executeRawUnsafe('DELETE FROM articolo_embedding WHERE articolo_id = $1', a?.id ?? -1);
+      return;
+    }
+    const blob = this.buildEmbeddingBlob(a);
+    const hash = createHash('sha256').update(`${this.embedding.dim}:${blob}`).digest('hex');
+    const existing = await this.prisma.$queryRawUnsafe<{ fonte_hash: string }[]>(
+      'SELECT fonte_hash FROM articolo_embedding WHERE articolo_id = $1', a.id,
+    );
+    if (existing[0]?.fonte_hash === hash) return; // invariato
+    const vec = await this.embedding.embedText(blob);
+    if (!vec) return; // provider non disponibile: riprovera' al prossimo salvataggio/backfill
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO articolo_embedding (articolo_id, text_vec, fonte_hash, updated_at)
+       VALUES ($1, $2::vector, $3, now())
+       ON CONFLICT (articolo_id) DO UPDATE
+         SET text_vec = EXCLUDED.text_vec, fonte_hash = EXCLUDED.fonte_hash, updated_at = now()`,
+      a.id, this.embedding.toVectorLiteral(vec), hash,
+    );
+  }
+
+  /** Ricerca semantica: ritorna card catalogo ordinate per similarita' + score [0..1]. */
+  async searchSemantica(q: string, k = 24) {
+    const query = (q || '').trim();
+    if (!query) return { articoli: [], provider: this.embedding.provider };
+    const vec = await this.embedding.embedText(query);
+    if (!vec) return { articoli: [], provider: this.embedding.provider, error: 'embeddings_non_disponibili' };
+    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; score: number }[]>(
+      `SELECT a.codice_linea, 1 - (e.text_vec <=> $1::vector) AS score
+         FROM articolo_embedding e
+         JOIN articoli a  ON a.id = e.articolo_id
+         JOIN famiglie f  ON f.codice = a.famiglia_codice
+        WHERE a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'
+        ORDER BY e.text_vec <=> $1::vector
+        LIMIT $2`,
+      this.embedding.toVectorLiteral(vec), Math.min(Math.max(k, 1), 60),
+    );
+    if (!rows.length) return { articoli: [], provider: this.embedding.provider };
+    const scoreByCodice = new Map(rows.map((r) => [r.codice_linea, Number(r.score)]));
+    const arts = await this.prisma.articolo.findMany({
+      where: { codiceLinea: { in: rows.map((r) => r.codice_linea) } },
+      include: {
+        famiglia: true,
+        immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
+        raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
+        _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
+      },
+    });
+    const articoli = arts
+      .map((a) => ({ ...this.mapArticoloCard(a), score: scoreByCodice.get(a.codiceLinea) ?? 0 }))
+      .sort((x, y) => y.score - x.score); // findMany non preserva l'ordine dell'IN
+    return { articoli, provider: this.embedding.provider };
   }
 
   async getArticoli() {
@@ -505,6 +587,7 @@ export class IntegrazioneService {
       throw new BadRequestException(`Impossibile configurare: manca ${mancanti.join(', ')}.`);
     }
     await this.prisma.articolo.update({ where: { codiceLinea }, data: { configurato: true } });
+    void this.reembedArticolo(codiceLinea).catch(() => {});
     return { configurato: true };
   }
 
@@ -691,6 +774,8 @@ export class IntegrazioneService {
         });
       }
     }
+    // Testo/stato/famiglia possono essere cambiati → riallinea l'embedding (fire-and-forget)
+    void this.reembedArticolo(codiceLinea).catch(() => {});
     return { updated: true };
   }
 
