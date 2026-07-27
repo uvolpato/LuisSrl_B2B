@@ -8,6 +8,7 @@ export default function AiSearchModal({
   open,
   onClose,
   onSubmit,
+  onSubmitImage,
   loading = false,
   error = null,
   initialQuery = "",
@@ -15,6 +16,8 @@ export default function AiSearchModal({
   open: boolean;
   onClose: () => void;
   onSubmit: (query: string) => void | Promise<void>;
+  /** Se fornito, il caricamento di un'immagine avvia la ricerca per immagine. */
+  onSubmitImage?: (file: File) => void | Promise<void>;
   loading?: boolean;
   error?: string | null;
   initialQuery?: string;
@@ -120,8 +123,18 @@ export default function AiSearchModal({
           <div className="aism-upload-row">
             <label className="aism-upload-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-              <span>Carica un&apos;immagine</span><small>in arrivo</small>
-              <input type="file" accept="image/*" onChange={() => setImgNotice(true)} />
+              <span>Carica un&apos;immagine</span><small>{onSubmitImage ? "clicca o trascina" : "in arrivo"}</small>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={loading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  if (onSubmitImage) void onSubmitImage(f); else setImgNotice(true);
+                }}
+              />
             </label>
             <label className="aism-upload-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>

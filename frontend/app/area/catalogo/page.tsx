@@ -58,7 +58,7 @@ export default function CatalogoPage() {
   const [aiQuery, setAiQuery] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResults, setAiResults] = useState<{ query: string; articoli: CatalogoArticolo[] } | null>(null);
+  const [aiResults, setAiResults] = useState<{ query: string; kind: "text" | "image"; articoli: CatalogoArticolo[] } | null>(null);
   const restored = useRef(false);
 
   const runAiSearch = useCallback(async (queryArg?: string) => {
@@ -70,7 +70,7 @@ export default function CatalogoPage() {
     try {
       const res = await api.post<{ articoli: CatalogoArticolo[]; error?: string }>("/api/catalogo/ricerca", { q });
       if (res.error) { setAiError("La ricerca intelligente non è al momento disponibile."); return; }
-      setAiResults({ query: q, articoli: res.articoli });
+      setAiResults({ query: q, kind: "text", articoli: res.articoli });
       setAiOpen(false);
     } catch {
       setAiError("Ricerca non riuscita. Riprova.");
@@ -78,6 +78,28 @@ export default function CatalogoPage() {
       setAiLoading(false);
     }
   }, [aiQuery]);
+
+  const runImageSearch = useCallback(async (file: File) => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post<{ articoli: CatalogoArticolo[]; error?: string }>("/api/catalogo/ricerca-immagine", fd);
+      if (res.error) {
+        setAiError(res.error === "immagine_non_pertinente" || res.error === "immagine_non_riconosciuta"
+          ? "Non ho riconosciuto un prodotto nell'immagine. Prova con un'altra foto."
+          : "Ricerca non riuscita. Riprova.");
+        return;
+      }
+      setAiResults({ query: "immagine caricata", kind: "image", articoli: res.articoli });
+      setAiOpen(false);
+    } catch {
+      setAiError("Ricerca non riuscita. Riprova.");
+    } finally {
+      setAiLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     api.get<Catalogo>("/api/catalogo").then(setData).catch(() => setData({ articoli: [], famiglie: [], raccolte: [] }));
@@ -102,7 +124,8 @@ export default function CatalogoPage() {
   useEffect(() => {
     if (!restored.current) return;
     const p = new URLSearchParams();
-    if (aiResults) p.set("ai", aiResults.query);
+    // Solo la ricerca testuale è ripristinabile dall'URL (l'immagine non si può ri-passare).
+    if (aiResults?.kind === "text") p.set("ai", aiResults.query);
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
     if (activeTab !== "tutti") p.set("tab", activeTab);
@@ -239,7 +262,9 @@ export default function CatalogoPage() {
               {aiResults && (
                 <div className="ai-results-banner" style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 16px", padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 8, fontSize: 14 }}>
                   <span style={{ color: "var(--accent)", width: 18, height: 18, display: "inline-flex" }}>{IconStella}</span>
-                  Risultati per <strong>«{aiResults.query}»</strong>
+                  {aiResults.kind === "image"
+                    ? <>Risultati per <strong>immagine caricata</strong></>
+                    : <>Risultati per <strong>«{aiResults.query}»</strong></>}
                   <button type="button" className="btn btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }} onClick={() => { setAiResults(null); setAiQuery(""); }}>
                     Torna al catalogo
                   </button>
@@ -317,6 +342,7 @@ export default function CatalogoPage() {
         open={aiOpen}
         onClose={() => setAiOpen(false)}
         onSubmit={(q) => runAiSearch(q)}
+        onSubmitImage={(f) => runImageSearch(f)}
         loading={aiLoading}
         error={aiError}
         initialQuery={aiQuery}
