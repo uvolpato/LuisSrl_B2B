@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "../../../lib/api";
@@ -45,13 +45,17 @@ const IconStella = (
 export default function CatalogoPage() {
   const { user, loading: authLoading } = useAuth("customer");
   const router = useRouter();
-  const [data, setData] = useState<Catalogo | null>(null);
+  const [facets, setFacets] = useState<{ famiglie: Catalogo["famiglie"]; raccolte: Catalogo["raccolte"] }>({ famiglie: [], raccolte: [] });
+  const [articoli, setArticoli] = useState<CatalogoArticolo[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<string>("tutti");
   const [sort, setSort] = useState("venduti");
-  const [page, setPage] = useState(1);
   const [aiOpen, setAiOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Ricerca semantica: risultati dal backend (null = catalogo normale)
@@ -60,6 +64,7 @@ export default function CatalogoPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResults, setAiResults] = useState<{ query: string; kind: "text" | "image"; articoli: CatalogoArticolo[] } | null>(null);
   const restored = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const runAiSearch = useCallback(async (queryArg?: string) => {
     const q = (queryArg ?? aiQuery).trim();
@@ -101,8 +106,34 @@ export default function CatalogoPage() {
     }
   }, []);
 
+  // Carica una pagina della lista dal server e la accoda (o sostituisce, se reset).
+  const fetchPage = useCallback(async (pageN: number, reset: boolean) => {
+    setListLoading(true);
+    const p = new URLSearchParams();
+    p.set("page", String(pageN));
+    p.set("pageSize", String(PAGE_SIZE));
+    if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
+    if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
+    if (activeTab !== "tutti") p.set("tab", activeTab);
+    if (search.trim()) p.set("q", search.trim());
+    if (sort) p.set("sort", sort);
+    try {
+      const res = await api.get<{ articoli: CatalogoArticolo[]; total: number; hasMore: boolean }>(`/api/catalogo?${p.toString()}`);
+      setTotal(res.total);
+      setHasMore(res.hasMore);
+      setArticoli((prev) => (reset ? res.articoli : [...prev, ...res.articoli]));
+      setPage(pageN);
+    } catch {
+      if (reset) { setArticoli([]); setTotal(0); setHasMore(false); }
+    } finally {
+      setListLoading(false);
+    }
+  }, [famiglieSel, raccolteSel, activeTab, search, sort]);
+
+  // Facet (sidebar) — una volta.
   useEffect(() => {
-    api.get<Catalogo>("/api/catalogo").then(setData).catch(() => setData({ articoli: [], famiglie: [], raccolte: [] }));
+    api.get<{ famiglie: Catalogo["famiglie"]; raccolte: Catalogo["raccolte"] }>("/api/catalogo/facets")
+      .then(setFacets).catch(() => setFacets({ famiglie: [], raccolte: [] }));
   }, []);
 
   // Ripristina lo stato dall'URL: deep-link da /area/famiglie (?famiglia=),
@@ -119,12 +150,10 @@ export default function CatalogoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mantiene l'URL allineato allo stato, così tornando da un prodotto si ritrova
-  // la stessa ricerca AI e gli stessi filtri della sinistra.
+  // Mantiene l'URL allineato allo stato (filtri + ricerca AI testuale).
   useEffect(() => {
     if (!restored.current) return;
     const p = new URLSearchParams();
-    // Solo la ricerca testuale è ripristinabile dall'URL (l'immagine non si può ri-passare).
     if (aiResults?.kind === "text") p.set("ai", aiResults.query);
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
@@ -135,36 +164,28 @@ export default function CatalogoPage() {
     router.replace(qs ? `/area/catalogo?${qs}` : "/area/catalogo", { scroll: false });
   }, [aiResults, famiglieSel, raccolteSel, activeTab, sort, search, router]);
 
-  const filtered = useMemo(() => {
-    if (!data) return [];
-    let list = data.articoli;
-    if (famiglieSel.size > 0) list = list.filter((a) => famiglieSel.has(a.famiglia.codice));
-    if (activeTab !== "tutti") list = list.filter((a) => a.raccolte.some((r) => r.slug === activeTab));
-    if (raccolteSel.size > 0) list = list.filter((a) => a.raccolte.some((r) => raccolteSel.has(r.slug)));
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter((a) =>
-        a.nome.toLowerCase().includes(q) ||
-        a.id.toLowerCase().includes(q) ||
-        a.famiglia.nome.toLowerCase().includes(q) ||
-        a.raccolte.some((r) => r.nome.toLowerCase().includes(q)),
-      );
-    }
-    if (sort === "novita") {
-      list = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }
-    // "venduti" e "prezzo-*" ordinano davvero quando arriveranno ordini (Fase D) e listini (Fase C)
-    return list;
-  }, [data, famiglieSel, raccolteSel, activeTab, search, sort]);
+  // Al cambio di filtri/ricerca (fuori dalla modalità AI): ricarica dalla pagina 1 (debounce per il testo).
+  useEffect(() => {
+    if (!restored.current || aiResults) return;
+    const t = setTimeout(() => { void fetchPage(1, true); }, 250);
+    return () => clearTimeout(t);
+  }, [famiglieSel, raccolteSel, activeTab, search, sort, aiResults, fetchPage]);
 
-  useEffect(() => { setPage(1); }, [famiglieSel, raccolteSel, activeTab, search, aiResults]);
+  // Infinite scroll: carica la pagina successiva quando il sentinella entra in viewport.
+  useEffect(() => {
+    if (aiResults) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !listLoading) void fetchPage(page + 1, false);
+    }, { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, listLoading, page, aiResults, fetchPage]);
 
-  // In modalità ricerca semantica la lista viene dal backend (già ordinata per similarità)
-  const baseList = aiResults ? aiResults.articoli : filtered;
-  const totalPages = Math.max(1, Math.ceil(baseList.length / PAGE_SIZE));
-  const rows = baseList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const tabLabel = activeTab !== "tutti" ? data?.raccolte.find((r) => r.slug === activeTab)?.nome : null;
+  // Lista mostrata: risultati AI (top-k) oppure catalogo paginato accumulato.
+  const displayed = aiResults ? aiResults.articoli : articoli;
+  const tabLabel = activeTab !== "tutti" ? facets.raccolte.find((r) => r.slug === activeTab)?.nome : null;
 
   function toggleSet(set: Set<string>, val: string, setter: (s: Set<string>) => void) {
     const n = new Set(set);
@@ -179,30 +200,30 @@ export default function CatalogoPage() {
     <>
       <div className="filter-group">
         <h3>Famiglia</h3>
-        {(data?.famiglie ?? []).map((f) => (
+        {facets.famiglie.map((f) => (
           <label key={f.codice}>
             <input type="checkbox" checked={famiglieSel.has(f.codice)} onChange={() => toggleSet(famiglieSel, f.codice, setFamiglieSel)} />
             {f.nome} <span className="count">{f.count}</span>
           </label>
         ))}
-        {data && data.famiglie.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna famiglia</p>}
+        {facets.famiglie.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna famiglia</p>}
       </div>
       <hr className="filter-divider" />
       <div className="filter-group">
         <h3>Raccolte</h3>
-        {(data?.raccolte ?? []).map((r) => (
+        {facets.raccolte.map((r) => (
           <label key={r.slug}>
             <input type="checkbox" checked={raccolteSel.has(r.slug)} onChange={() => toggleSet(raccolteSel, r.slug, setRaccolteSel)} />
             {r.nome} <span className="count">{r.count}</span>
           </label>
         ))}
-        {data && data.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
+        {facets.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
       </div>
       <hr className="filter-divider" />
       <div className="filter-group">
         <h3>Disponibilità</h3>
         {/* Il dato giacenza arriva da Integra in Fase E: per ora tutto Disponibile */}
-        <label><input type="checkbox" checked readOnly /> Disponibile <span className="count">{data?.articoli.length ?? 0}</span></label>
+        <label><input type="checkbox" checked readOnly /> Disponibile <span className="count">{total}</span></label>
         <label><input type="checkbox" readOnly /> Scorte limitate <span className="count">0</span></label>
         <label><input type="checkbox" readOnly /> Esaurito <span className="count">0</span></label>
       </div>
@@ -237,7 +258,7 @@ export default function CatalogoPage() {
               <div className="catalog-header">
                 <div>
                   <h2>{aiResults ? "Ricerca intelligente" : (tabLabel ?? "Catalogo")}</h2>
-                  <p className="meta">{baseList.length} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
+                  <p className="meta">{aiResults ? displayed.length : total} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <button type="button" className="filters-toggle" onClick={() => setFiltersOpen(true)}>
@@ -252,7 +273,7 @@ export default function CatalogoPage() {
 
               <div className="raccolte-bar">
                 <button className={`raccolte-tab ${activeTab === "tutti" ? "active" : ""}`} onClick={() => setActiveTab("tutti")}>Tutti</button>
-                {(data?.raccolte ?? []).map((r) => (
+                {facets.raccolte.map((r) => (
                   <button key={r.slug} className={`raccolte-tab ${activeTab === r.slug ? "active" : ""}`} onClick={() => setActiveTab(r.slug)}>
                     {r.nome}
                   </button>
@@ -272,7 +293,7 @@ export default function CatalogoPage() {
               )}
 
               <div className="product-grid">
-                {rows.map((a) => (
+                {displayed.map((a) => (
                   <Link href={`/area/catalogo/${a.id}`} key={a.id} className="product-card">
                     <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
                       {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
@@ -297,19 +318,24 @@ export default function CatalogoPage() {
                 ))}
               </div>
 
-              {!data && <div className="catalog-empty">Caricamento…</div>}
-              {data && baseList.length === 0 && (
+              {listLoading && displayed.length === 0 && <div className="catalog-empty">Caricamento…</div>}
+              {!listLoading && displayed.length === 0 && (
                 <div className="catalog-empty">Nessun articolo trovato. Prova a modificare filtri o ricerca.</div>
               )}
 
-              {totalPages > 1 && (
-                <div className="pagination">
-                  <button disabled={page <= 1} onClick={() => setPage(page - 1)}>←</button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>
-                  ))}
-                  <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>→</button>
-                </div>
+              {/* Infinite scroll: sentinella + indicatore (solo catalogo, non in modalità AI) */}
+              {!aiResults && (
+                <>
+                  <div ref={sentinelRef} style={{ height: 1 }} />
+                  {listLoading && displayed.length > 0 && (
+                    <div className="catalog-empty" style={{ padding: "16px 0" }}>Carico altri articoli…</div>
+                  )}
+                  {!hasMore && displayed.length > 0 && (
+                    <p style={{ textAlign: "center", color: "var(--muted)", fontSize: 13, margin: "16px 0" }}>
+                      Hai visto tutti i {total} articoli.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -332,7 +358,7 @@ export default function CatalogoPage() {
           </div>
           <div className="filters-drawer-foot">
             <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => setFiltersOpen(false)}>
-              Mostra {filtered.length} articoli
+              Mostra {total} articoli
             </button>
           </div>
         </aside>

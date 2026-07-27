@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
 import * as fsp from 'fs/promises';
@@ -380,42 +381,79 @@ export class IntegrazioneService {
     return { famiglieCorrette: fixed.length, articoliSplittati: splittati.length, errori };
   }
 
-  /** Catalogo lato cliente: solo articoli configurati e attivi, con filtri famiglia/raccolta. */
-  async getCatalogoCliente() {
+  /** Filtri sidebar catalogo (famiglie/raccolte con conteggi) — query leggera. */
+  async getCatalogoFacets() {
     const arts = await this.prisma.articolo.findMany({
-      where: {
-        configurato: true,
-        stato: 'ATTIVO',
-        // Esclude gli articoli di famiglie disattivate (nascoste)
-        famiglia: { stato: 'ATTIVO' },
+      where: { configurato: true, stato: 'ATTIVO', famiglia: { stato: 'ATTIVO' } },
+      select: {
+        famigliaCodice: true,
+        famiglia: { select: { nome: true, nomePortale: true } },
+        raccolte: { select: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
       },
-      include: {
-        famiglia: true,
-        // Copertina se marcata, altrimenti la prima immagine in galleria (fallback)
-        immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
-        raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
-        _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
-      },
-      orderBy: { createdAt: 'desc' },
     });
-
-    const articoli = arts.map((a) => this.mapArticoloCard(a));
-
-    // Filtri con conteggi derivati dagli stessi articoli visibili
     const famiglie = new Map<string, { codice: string; nome: string; count: number }>();
     const raccolte = new Map<string, { slug: string; nome: string; count: number }>();
-    for (const a of articoli) {
-      const f = famiglie.get(a.famiglia.codice) ?? { ...a.famiglia, count: 0 };
+    for (const a of arts) {
+      const f = famiglie.get(a.famigliaCodice) ?? { codice: a.famigliaCodice, nome: a.famiglia.nomePortale || a.famiglia.nome, count: 0 };
       f.count++;
-      famiglie.set(a.famiglia.codice, f);
+      famiglie.set(a.famigliaCodice, f);
       for (const r of a.raccolte) {
-        const x = raccolte.get(r.slug) ?? { ...r, count: 0 };
+        if (r.raccolta.stato !== 'ATTIVO') continue;
+        const x = raccolte.get(r.raccolta.slug) ?? { slug: r.raccolta.slug, nome: r.raccolta.nome, count: 0 };
         x.count++;
-        raccolte.set(r.slug, x);
+        raccolte.set(r.raccolta.slug, x);
       }
     }
+    return { famiglie: [...famiglie.values()], raccolte: [...raccolte.values()] };
+  }
 
-    return { articoli, famiglie: [...famiglie.values()], raccolte: [...raccolte.values()] };
+  /** Catalogo paginato lato cliente: filtri famiglia/raccolta/tab, ricerca testo, sort. */
+  async getCatalogoPaginato(params: {
+    page?: number; pageSize?: number;
+    famiglia?: string[]; raccolte?: string[]; tab?: string; q?: string; sort?: string;
+  }) {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(Math.max(params.pageSize ?? 24, 1), 60);
+
+    const and: Prisma.ArticoloWhereInput[] = [
+      { configurato: true, stato: 'ATTIVO', famiglia: { stato: 'ATTIVO' } },
+    ];
+    if (params.famiglia?.length) and.push({ famigliaCodice: { in: params.famiglia } });
+    if (params.tab) and.push({ raccolte: { some: { raccolta: { slug: params.tab, stato: 'ATTIVO' } } } });
+    if (params.raccolte?.length) and.push({ raccolte: { some: { raccolta: { slug: { in: params.raccolte }, stato: 'ATTIVO' } } } });
+    if (params.q?.trim()) {
+      const q = params.q.trim();
+      and.push({ OR: [
+        { nome: { contains: q, mode: 'insensitive' } },
+        { codiceLinea: { contains: q, mode: 'insensitive' } },
+        { famiglia: { is: { OR: [{ nome: { contains: q, mode: 'insensitive' } }, { nomePortale: { contains: q, mode: 'insensitive' } }] } } },
+        { raccolte: { some: { raccolta: { nome: { contains: q, mode: 'insensitive' } } } } },
+      ] });
+    }
+    const where: Prisma.ArticoloWhereInput = { AND: and };
+
+    const [total, arts] = await Promise.all([
+      this.prisma.articolo.count({ where }),
+      this.prisma.articolo.findMany({
+        where,
+        include: {
+          famiglia: true,
+          immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
+          raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
+          _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
+        },
+        // "novita" = più recenti; gli altri sort (venduti/prezzo) diventano reali con ordini/listini.
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    return {
+      articoli: arts.map((a) => this.mapArticoloCard(a)),
+      total,
+      hasMore: page * pageSize < total,
+    };
   }
 
   /** Card famiglie lato cliente: solo ATTIVE con articoli visibili, ordinate per `ordine`. */
