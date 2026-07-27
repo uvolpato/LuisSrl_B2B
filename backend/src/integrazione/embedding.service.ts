@@ -73,8 +73,17 @@ export class EmbeddingService {
     return v;
   }
 
-  /** Letterale pgvector: [0.1,0.2,...] */
-  toVectorLiteral(v: number[]): string {
-    return `[${v.join(',')}]`;
+  /** Letterale array Postgres: {0.1,0.2,...} per cast ::double precision[] */
+  toArrayLiteral(v: number[]): string {
+    return `{${v.join(',')}}`;
+  }
+
+  /** Similarita' coseno tra due vettori della stessa dimensione. */
+  static cosine(a: number[], b: number[]): number {
+    let dot = 0, na = 0, nb = 0;
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+    const den = Math.sqrt(na) * Math.sqrt(nb);
+    return den ? dot / den : 0;
   }
 }

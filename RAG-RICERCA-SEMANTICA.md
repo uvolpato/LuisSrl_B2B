@@ -60,8 +60,16 @@ tutto da `.env`, mai versionato.
 (es. bge-m3 = 1024), aggiornare `EMBEDDINGS_DIM`, rigenerare la colonna `text_vec` e
 rilanciare il backfill. È previsto: il backfill è idempotente.
 
+### Storage: niente pgvector (scelta obbligata in prod)
+pgvector **non è installabile** su PostgreSQL 12 Windows senza compilazione MSVC, e i
+binari di dev (Docker/Linux) non sono portabili su Windows. Quindi l'embedding è salvato
+in una **colonna array standard** (`double precision[]`) e la **similarità coseno è
+calcolata in Node** sugli articoli visibili. A poche migliaia di articoli sono
+millisecondi. *Ceiling:* se il catalogo cresce di ordini di grandezza, migrare a pgvector
+(colonna `vector` + indice HNSW) e cambiare `searchSemantica`.
+
 ### Stato implementazione (Fase 1+2 fatte — solo testo)
-- `backend/prisma/embedding-setup.sql` — estensione + tabella `articolo_embedding` (dim 768, **senza indice ANN**: a questo volume lo scan coseno esatto è già in ms).
+- `backend/prisma/embedding-setup.sql` — tabella `articolo_embedding` con `text_vec double precision[]` (nessuna estensione).
 - `backend/src/integrazione/embedding.service.ts` — `EmbeddingService` (Gemini/local).
 - `IntegrazioneService.searchSemantica()` + `reembedArticolo()` (hook fire-and-forget su salvataggio/configura).
 - `POST /api/catalogo/ricerca {q}` (guard cliente) → card catalogo + `score`.
