@@ -81,10 +81,39 @@ model Customer {
   indirizzi          IndirizzoCliente[]
   contatti           ContattoCliente[]
   ordini             OrdineCliente[]
+  progetti           Progetto[]
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
   @@map("customers")
+}
+
+/// Liste di lavoro del cliente ("progetti"): selezioni composte nel tempo,
+/// condivisibili in sola lettura e riversabili nel carrello.
+model Progetto {
+  id         Int            @id @default(autoincrement())
+  clienteId  Int            @map("cliente_id")
+  cliente    Customer       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  nome       String
+  note       String?
+  shareToken String         @unique @map("share_token")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  items      ProgettoItem[]
+
+  @@map("progetti")
+}
+
+model ProgettoItem {
+  id             Int      @id @default(autoincrement())
+  progettoId     Int      @map("progetto_id")
+  progetto       Progetto @relation(fields: [progettoId], references: [id], onDelete: Cascade)
+  varianteCodice String   @map("variante_codice")
+  quantita       Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([progettoId, varianteCodice])
+  @@map("progetto_items")
 }
 
 model IndirizzoCliente {

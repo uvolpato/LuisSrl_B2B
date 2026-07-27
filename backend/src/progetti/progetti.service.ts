@@ -1,0 +1,152 @@
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CarrelloService } from '../carrello/carrello.service';
+
+@Injectable()
+export class ProgettiService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly carrello: CarrelloService,
+  ) {}
+
+  /** Arricchisce gli item con nome articolo, variante, dimensioni, immagine. */
+  private async enrich(items: { varianteCodice: string; quantita: number }[]) {
+    return Promise.all(items.map(async (it) => {
+      const v = await this.prisma.variante.findUnique({
+        where: { codice: it.varianteCodice },
+        include: {
+          articolo: {
+            select: {
+              nome: true, codiceLinea: true,
+              immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
+            },
+          },
+        },
+      });
+      const dims: string[] = [];
+      if (v?.dimensioni && typeof v.dimensioni === 'object') {
+        for (const [k, val] of Object.entries(v.dimensioni as Record<string, any>)) {
+          const prefix = k === 'diametro' ? 'Ø' : k === 'altezza' ? 'H' : '';
+          const unit = (k === 'diametro' || k === 'altezza') ? ' cm' : '';
+          dims.push(`${prefix}${val?.valore ?? val}${unit}`);
+        }
+      }
+      return {
+        varianteCodice: it.varianteCodice,
+        quantita: it.quantita,
+        articoloNome: v?.articolo.nome ?? null,
+        articoloCodiceLinea: v?.articolo.codiceLinea ?? null,
+        varianteDescrizione: v?.descrizione ?? null,
+        dimensioni: dims.join(' · '),
+        immagineUrl: v?.articolo.immagini[0]?.url ?? null,
+        multiplo: v?.multiplo ?? 1,
+      };
+    }));
+  }
+
+  private async own(clienteId: number, id: number) {
+    const p = await this.prisma.progetto.findUnique({ where: { id } });
+    if (!p || p.clienteId !== clienteId) throw new NotFoundException('progetti.non_trovato');
+    return p;
+  }
+
+  async list(clienteId: number) {
+    const progetti = await this.prisma.progetto.findMany({
+      where: { clienteId },
+      orderBy: { updatedAt: 'desc' },
+      include: { _count: { select: { items: true } } },
+    });
+    return progetti.map((p) => ({
+      id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken,
+      count: p._count.items, updatedAt: p.updatedAt,
+    }));
+  }
+
+  async get(clienteId: number, id: number) {
+    const p = await this.own(clienteId, id);
+    const items = await this.prisma.progettoItem.findMany({ where: { progettoId: id }, orderBy: { createdAt: 'asc' } });
+    return { id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken, items: await this.enrich(items) };
+  }
+
+  async create(clienteId: number, nome: string, note?: string) {
+    const n = (nome || '').trim();
+    if (!n) throw new BadRequestException('progetti.nome_richiesto');
+    const p = await this.prisma.progetto.create({
+      data: { clienteId, nome: n, note: note?.trim() || null, shareToken: randomUUID().replace(/-/g, '') },
+    });
+    return { id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken, count: 0, updatedAt: p.updatedAt };
+  }
+
+  async update(clienteId: number, id: number, data: { nome?: string; note?: string }) {
+    await this.own(clienteId, id);
+    const patch: { nome?: string; note?: string | null } = {};
+    if (data.nome !== undefined) {
+      const n = data.nome.trim();
+      if (!n) throw new BadRequestException('progetti.nome_richiesto');
+      patch.nome = n;
+    }
+    if (data.note !== undefined) patch.note = data.note.trim() || null;
+    const p = await this.prisma.progetto.update({ where: { id }, data: patch });
+    return { id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken };
+  }
+
+  async remove(clienteId: number, id: number) {
+    await this.own(clienteId, id);
+    await this.prisma.progetto.delete({ where: { id } });
+    return { rimosso: true };
+  }
+
+  async addItem(clienteId: number, id: number, varianteCodice: string, quantita: number) {
+    await this.own(clienteId, id);
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    if (!v) throw new NotFoundException('progetti.variante_non_trovata');
+    const multiplo = v.multiplo ?? 1;
+    const qty = Math.max(multiplo, Math.round(quantita / multiplo) * multiplo);
+    await this.prisma.progettoItem.upsert({
+      where: { progettoId_varianteCodice: { progettoId: id, varianteCodice } },
+      create: { progettoId: id, varianteCodice, quantita: qty },
+      update: { quantita: { increment: qty } },
+    });
+    await this.prisma.progetto.update({ where: { id }, data: { updatedAt: new Date() } });
+    return { ok: true };
+  }
+
+  async updateItem(clienteId: number, id: number, varianteCodice: string, quantita: number) {
+    await this.own(clienteId, id);
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    const multiplo = v?.multiplo ?? 1;
+    const qty = Math.max(multiplo, Math.round(quantita / multiplo) * multiplo);
+    await this.prisma.progettoItem.update({
+      where: { progettoId_varianteCodice: { progettoId: id, varianteCodice } },
+      data: { quantita: qty },
+    });
+    return { ok: true };
+  }
+
+  async removeItem(clienteId: number, id: number, varianteCodice: string) {
+    await this.own(clienteId, id);
+    await this.prisma.progettoItem.deleteMany({ where: { progettoId: id, varianteCodice } });
+    return { rimosso: true };
+  }
+
+  /** Riversa gli item del progetto nel carrello (somma, non svuota il progetto). */
+  async addToCart(clienteId: number, id: number) {
+    await this.own(clienteId, id);
+    const items = await this.prisma.progettoItem.findMany({ where: { progettoId: id } });
+    let aggiunti = 0;
+    for (const it of items) {
+      try { await this.carrello.addItem(clienteId, it.varianteCodice, it.quantita); aggiunti++; }
+      catch { /* variante non più disponibile: salta */ }
+    }
+    return { aggiunti, totali: items.length };
+  }
+
+  /** Vista pubblica in sola lettura via token (nessun dato del cliente). */
+  async getPublic(token: string) {
+    const p = await this.prisma.progetto.findUnique({ where: { shareToken: token } });
+    if (!p) throw new NotFoundException('progetti.non_trovato');
+    const items = await this.prisma.progettoItem.findMany({ where: { progettoId: p.id }, orderBy: { createdAt: 'asc' } });
+    return { nome: p.nome, note: p.note, items: await this.enrich(items) };
+  }
+}

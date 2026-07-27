@@ -13,6 +13,7 @@ import { IntegrazioneModule } from './integrazione/integrazione.module';
 import { CarrelloModule } from './carrello/carrello.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { OrdiniModule } from './ordini/ordini.module';
+import { ProgettiModule } from './progetti/progetti.module';
 import { ImgModule } from './img/img.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
@@ -33,6 +34,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     CarrelloModule,
     CheckoutModule,
     OrdiniModule,
+    ProgettiModule,
     ImgModule,
   ],
   controllers: [HealthController],
