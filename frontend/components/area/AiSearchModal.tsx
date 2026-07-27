@@ -30,10 +30,11 @@ export default function AiSearchModal({
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    // Durante la ricerca la modale è bloccata: niente chiusura con Esc.
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape" && !loading) onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  }, [open, onClose, loading]);
 
   const submit = () => { if (query.trim() && !loading) void onSubmit(query.trim()); };
 
@@ -41,7 +42,7 @@ export default function AiSearchModal({
     <div
       className={`aism-overlay${open ? " open" : ""}`}
       ref={overlayRef}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onClick={(e) => { if (!loading && e.target === overlayRef.current) onClose(); }}
     >
       <style>{`
         .aism-overlay {
@@ -84,6 +85,11 @@ export default function AiSearchModal({
         .aism-btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
         .aism-btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
         .aism-btn-primary:disabled { opacity: .6; cursor: default; }
+        .aism-modal { position: relative; }
+        .aism-spin { animation: aismSpin .8s linear infinite; }
+        @keyframes aismSpin { to { transform: rotate(360deg); } }
+        .aism-loading { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: color-mix(in oklch, var(--surface) 78%, transparent); backdrop-filter: blur(1px); border-radius: 16px; }
+        .aism-loading span { font-size: 14px; color: var(--muted); }
         @media (max-width: 600px) { .aism-upload-row { flex-direction: column; } .aism-modal { max-width: 100%; margin: 12px; border-radius: 12px; } }
       `}</style>
 
@@ -93,7 +99,7 @@ export default function AiSearchModal({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ color: "var(--accent)" }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z" /></svg>
             Ricerca intelligente <span className="aism-badge">AI</span>
           </h3>
-          <button className="aism-close" onClick={onClose} aria-label="Chiudi">
+          <button className="aism-close" onClick={onClose} aria-label="Chiudi" disabled={loading}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
@@ -108,6 +114,7 @@ export default function AiSearchModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              disabled={loading}
             />
           </div>
           <div className="aism-upload-row">
@@ -125,19 +132,28 @@ export default function AiSearchModal({
           <div className="aism-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
             Prova:
-            <button className="aism-tag" onClick={() => setQuery("vaso alto per esterno resistente al gelo")}>vaso alto per esterno</button>
-            <button className="aism-tag" onClick={() => setQuery("fioriera rettangolare cotto color avana")}>fioriera rettangolare</button>
-            <button className="aism-tag" onClick={() => setQuery("cesto intrecciato per pianta da interno")}>cesto da interno</button>
+            <button className="aism-tag" onClick={() => setQuery("vaso alto per esterno resistente al gelo")} disabled={loading}>vaso alto per esterno</button>
+            <button className="aism-tag" onClick={() => setQuery("fioriera rettangolare cotto color avana")} disabled={loading}>fioriera rettangolare</button>
+            <button className="aism-tag" onClick={() => setQuery("cesto intrecciato per pianta da interno")} disabled={loading}>cesto da interno</button>
           </div>
           {imgNotice && <p className="aism-note">La ricerca per immagine sarà disponibile a breve.</p>}
           {error && <p className="aism-error">{error}</p>}
         </div>
         <div className="aism-foot">
-          <button className="aism-btn aism-btn-ghost" onClick={onClose}>Annulla</button>
+          <button className="aism-btn aism-btn-ghost" onClick={onClose} disabled={loading}>Annulla</button>
           <button className="aism-btn aism-btn-primary" onClick={submit} disabled={loading || !query.trim()}>
             {loading ? "Cerco…" : "Cerca"}
           </button>
         </div>
+
+        {loading && (
+          <div className="aism-loading">
+            <svg className="aism-spin" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+            </svg>
+            <span>Ricerca in corso…</span>
+          </div>
+        )}
       </div>
     </div>
   );
