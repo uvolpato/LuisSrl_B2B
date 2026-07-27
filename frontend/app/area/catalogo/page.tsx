@@ -79,6 +79,12 @@ export default function CatalogoPage() {
     api.get<Catalogo>("/api/catalogo").then(setData).catch(() => setData({ articoli: [], famiglie: [], raccolte: [] }));
   }, []);
 
+  // Arrivo da /area/famiglie: preseleziona il filtro famiglia da ?famiglia=CODICE
+  useEffect(() => {
+    const fam = new URLSearchParams(window.location.search).get("famiglia");
+    if (fam) setFamiglieSel(new Set([fam]));
+  }, []);
+
   const filtered = useMemo(() => {
     if (!data) return [];
     let list = data.articoli;

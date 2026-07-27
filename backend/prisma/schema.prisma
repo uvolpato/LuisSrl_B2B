@@ -248,6 +248,8 @@ model Famiglia {
   immagine    String?
   descrizione String?
   stato       String     @default("ATTIVO")
+  /// Ordine di visualizzazione delle card famiglia (impostato dall'admin, drag&drop)
+  ordine      Int        @default(0)
   updatedAt   DateTime   @updatedAt @map("updated_at")
   articoli    Articolo[]
 
