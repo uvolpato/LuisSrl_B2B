@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { IntegrazioneService } from './integrazione.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
@@ -18,6 +18,12 @@ export class CatalogoController {
   @Get()
   getCatalogo() {
     return this.integrazione.getCatalogoCliente();
+  }
+
+  /** Ricerca semantica: frase in linguaggio naturale → articoli per similarità. */
+  @Post('ricerca')
+  ricercaSemantica(@Body('q') q: string, @Query('k') k?: string) {
+    return this.integrazione.searchSemantica(q ?? '', k ? parseInt(k, 10) : 24);
   }
 
   @Get(':codiceLinea')

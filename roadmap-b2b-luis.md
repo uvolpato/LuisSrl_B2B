@@ -254,7 +254,7 @@ Tutto in italiano o inglese.
 | Generazione immagini ambientate (AI) | Integrazione DALL·E / SD: click → genera → salva |
 | Descrizione AI via Mini PC | Input testo → Qwen 27B su Mini PC → descrizione discorsiva + punti + metadati |
 | Image-to-text via Mini PC | Foto articolo → Qwen visione su Mini PC → descrizione testuale |
-| Embedding descrizione | Generazione vettore su pgvector per ricerca semantica |
+| Embedding descrizione | Generazione vettore su pgvector per ricerca semantica (tabella `articolo_embedding`, vedi `RAG-RICERCA-SEMANTICA.md`) |
 | Anteprima scheda articolo finita | Vista cliente: immagini, descrizione, prezzo, dimensioni |
 | Filtri elenco | Configurati / Da configurare / Tutti |
 
@@ -348,10 +348,14 @@ Tutto in italiano o inglese.
 
 ## Blocco 10 — AI lato cliente (2-3 giorni)
 
+> Spec dettagliata del RAG (spazio vettoriale multimodale, pgvector, provider embedding,
+> backfill, endpoint, privacy, fasi): **`RAG-RICERCA-SEMANTICA.md`**.
+> L'embedding descrizione del Blocco 4 confluisce nella stessa tabella `articolo_embedding`.
+
 | Attività | Dettaglio |
 |----------|-----------|
-| Ricerca semantica | Input linguaggio naturale → embedding su Mini PC → pgvector → risultati |
-| Ricerca per immagini | Upload foto → image-to-text su Mini PC → articoli simili |
+| Ricerca semantica | Input linguaggio naturale → embedding (Mini PC/hosted) → pgvector `text_vec` → risultati |
+| Ricerca per immagini | Upload foto → embedding immagine → pgvector `img_vec` (similarità visiva, stesso spazio) → articoli simili |
 | Banner homepage | "Articoli interessanti" basati su cronologia cliente |
 | Cronologia visite | "Ripresi da dove hai lasciato" |
 | Cache embedding | Redis per query frequenti |

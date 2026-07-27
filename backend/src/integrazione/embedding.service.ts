@@ -1,0 +1,80 @@
+import { Injectable, Logger } from '@nestjs/common';
+
+/**
+ * Genera embedding testuali per la ricerca semantica.
+ * Provider astratto dietro un'unica interfaccia: oggi Gemini (stessa GEMINI_API_KEY
+ * gia' usata per descrizioni/immagini), domani il Mini PC LM Studio in LAN.
+ * Cambio provider = variabile d'ambiente, non refactor.
+ *
+ *   EMBEDDINGS_PROVIDER = gemini | local     (default gemini)
+ *   EMBEDDINGS_MODEL    = gemini-embedding-001 | <modello LM Studio>
+ *   EMBEDDINGS_DIM      = 768                 (deve coincidere con la colonna vector(N))
+ *   EMBEDDINGS_URL      = http://mini-pc:1234/v1   (solo provider local)
+ *
+ * NB dimensione: se il Mini PC usa un modello con dim diversa (es. 1024), aggiornare
+ * EMBEDDINGS_DIM, la colonna text_vec e rilanciare il backfill.
+ */
+@Injectable()
+export class EmbeddingService {
+  private readonly log = new Logger(EmbeddingService.name);
+
+  readonly provider = process.env.EMBEDDINGS_PROVIDER || 'gemini';
+  readonly dim = parseInt(process.env.EMBEDDINGS_DIM || '768', 10);
+  private readonly model =
+    process.env.EMBEDDINGS_MODEL ||
+    (this.provider === 'gemini' ? 'gemini-embedding-001' : 'text-embedding-nomic-embed-text-v1.5');
+
+  /** Ritorna il vettore, o null se il provider non e' configurato/raggiungibile (non deve rompere il flusso). */
+  async embedText(text: string): Promise<number[] | null> {
+    const clean = text.trim();
+    if (!clean) return null;
+    try {
+      return this.provider === 'local' ? await this.embedLocal(clean) : await this.embedGemini(clean);
+    } catch (e) {
+      this.log.warn(`embedText fallito (provider=${this.provider}): ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  private async embedGemini(text: string): Promise<number[]> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY mancante');
+    const base = (process.env.EMBEDDINGS_URL || 'https://generativelanguage.googleapis.com/v1beta/models/').replace(/\/+$/, '');
+    const url = `${base}/${this.model}:embedContent`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        model: `models/${this.model}`,
+        content: { parts: [{ text }] },
+        taskType: 'RETRIEVAL_DOCUMENT',
+        outputDimensionality: this.dim,
+      }),
+    });
+    if (!res.ok) throw new Error(`Gemini embed ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
+    const data = (await res.json()) as { embedding?: { values?: number[] } };
+    const v = data.embedding?.values;
+    if (!v?.length) throw new Error('risposta senza embedding');
+    return v;
+  }
+
+  // LM Studio / OpenAI-compatibile: POST {EMBEDDINGS_URL}/embeddings
+  private async embedLocal(text: string): Promise<number[]> {
+    const base = (process.env.EMBEDDINGS_URL || 'http://localhost:1234/v1').replace(/\/+$/, '');
+    const res = await fetch(`${base}/embeddings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: this.model, input: text }),
+    });
+    if (!res.ok) throw new Error(`local embed ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
+    const data = (await res.json()) as { data?: { embedding?: number[] }[] };
+    const v = data.data?.[0]?.embedding;
+    if (!v?.length) throw new Error('risposta senza embedding');
+    return v;
+  }
+
+  /** Letterale pgvector: [0.1,0.2,...] */
+  toVectorLiteral(v: number[]): string {
+    return `[${v.join(',')}]`;
+  }
+}

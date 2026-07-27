@@ -52,6 +52,28 @@ export default function CatalogoPage() {
   const [aiNotice, setAiNotice] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const aiInputRef = useRef<HTMLInputElement>(null);
+  // Ricerca semantica: risultati dal backend (null = catalogo normale)
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiResults, setAiResults] = useState<{ query: string; articoli: CatalogoArticolo[] } | null>(null);
+
+  async function runAiSearch() {
+    const q = (aiInputRef.current?.value ?? aiQuery).trim();
+    if (!q) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await api.post<{ articoli: CatalogoArticolo[]; error?: string }>("/api/catalogo/ricerca", { q });
+      if (res.error) { setAiError("La ricerca intelligente non è al momento disponibile."); return; }
+      setAiResults({ query: q, articoli: res.articoli });
+      setAiOpen(false);
+    } catch {
+      setAiError("Ricerca non riuscita. Riprova.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   useEffect(() => {
     api.get<Catalogo>("/api/catalogo").then(setData).catch(() => setData({ articoli: [], famiglie: [], raccolte: [] }));
@@ -79,10 +101,12 @@ export default function CatalogoPage() {
     return list;
   }, [data, famiglieSel, raccolteSel, activeTab, search, sort]);
 
-  useEffect(() => { setPage(1); }, [famiglieSel, raccolteSel, activeTab, search]);
+  useEffect(() => { setPage(1); }, [famiglieSel, raccolteSel, activeTab, search, aiResults]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // In modalità ricerca semantica la lista viene dal backend (già ordinata per similarità)
+  const baseList = aiResults ? aiResults.articoli : filtered;
+  const totalPages = Math.max(1, Math.ceil(baseList.length / PAGE_SIZE));
+  const rows = baseList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const tabLabel = activeTab !== "tutti" ? data?.raccolte.find((r) => r.slug === activeTab)?.nome : null;
 
@@ -156,8 +180,8 @@ export default function CatalogoPage() {
             <div>
               <div className="catalog-header">
                 <div>
-                  <h2>{tabLabel ?? "Catalogo"}</h2>
-                  <p className="meta">{filtered.length} articoli{tabLabel ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
+                  <h2>{aiResults ? "Ricerca intelligente" : (tabLabel ?? "Catalogo")}</h2>
+                  <p className="meta">{baseList.length} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <button type="button" className="filters-toggle" onClick={() => setFiltersOpen(true)}>
@@ -178,6 +202,16 @@ export default function CatalogoPage() {
                   </button>
                 ))}
               </div>
+
+              {aiResults && (
+                <div className="ai-results-banner" style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 16px", padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 8, fontSize: 14 }}>
+                  <span style={{ color: "var(--accent)", width: 18, height: 18, display: "inline-flex" }}>{IconStella}</span>
+                  Risultati per <strong>«{aiResults.query}»</strong>
+                  <button type="button" className="btn btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }} onClick={() => { setAiResults(null); setAiQuery(""); }}>
+                    Torna al catalogo
+                  </button>
+                </div>
+              )}
 
               <div className="product-grid">
                 {rows.map((a) => (
@@ -204,7 +238,7 @@ export default function CatalogoPage() {
               </div>
 
               {!data && <div className="catalog-empty">Caricamento…</div>}
-              {data && filtered.length === 0 && (
+              {data && baseList.length === 0 && (
                 <div className="catalog-empty">Nessun articolo trovato. Prova a modificare filtri o ricerca.</div>
               )}
 
@@ -254,10 +288,10 @@ export default function CatalogoPage() {
             </button>
           </div>
           <div className="modal-body">
-            <p className="ai-search-desc">Descrivi quello che cerchi a parole oppure trascina o carica un&apos;immagine o un file di testo — l&apos;AI troverà i prodotti più simili nel catalogo.</p>
+            <p className="ai-search-desc">Descrivi a parole quello che cerchi e l&apos;AI troverà i prodotti più simili nel catalogo. La ricerca per immagine arriverà a breve.</p>
             <div className="ai-search-input">
               <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-              <input type="text" placeholder="Es. vaso terracotta rotondo Ø30 per esterno…" ref={aiInputRef} onKeyDown={(e) => { if (e.key === "Enter") setAiNotice(true); }} />
+              <input type="text" placeholder="Es. vaso terracotta rotondo Ø30 per esterno…" ref={aiInputRef} value={aiQuery} onChange={(e) => setAiQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void runAiSearch(); }} autoFocus />
             </div>
             <div className="ai-upload-row">
               <label className="ai-upload-btn">
@@ -275,19 +309,26 @@ export default function CatalogoPage() {
             </div>
             <div className="ai-search-hint">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-              Prova: <span className="ai-tag" onClick={() => { if (aiInputRef.current) aiInputRef.current.value = "vaso alto per esterno resistente al gelo"; }}>vaso alto per esterno</span>
-              <span className="ai-tag" onClick={() => { if (aiInputRef.current) aiInputRef.current.value = "fioriera rettangolare cotto color avana"; }}>fioriera rettangolare</span>
-              <span className="ai-tag" onClick={() => { if (aiInputRef.current) aiInputRef.current.value = "cesto intrecciato per pianta da interno"; }}>cesto da interno</span>
+              Prova: <span className="ai-tag" onClick={() => setAiQuery("vaso alto per esterno resistente al gelo")}>vaso alto per esterno</span>
+              <span className="ai-tag" onClick={() => setAiQuery("fioriera rettangolare cotto color avana")}>fioriera rettangolare</span>
+              <span className="ai-tag" onClick={() => setAiQuery("cesto intrecciato per pianta da interno")}>cesto da interno</span>
             </div>
             {aiNotice && (
               <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 8, fontSize: 13 }}>
-                La ricerca intelligente sarà disponibile a breve.
+                La ricerca per immagine sarà disponibile a breve.
+              </p>
+            )}
+            {aiError && (
+              <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: "var(--danger-soft, #fde8e8)", borderRadius: 8, fontSize: 13 }}>
+                {aiError}
               </p>
             )}
           </div>
           <div className="modal-foot">
             <button className="btn btn-ghost" onClick={() => setAiOpen(false)}>Annulla</button>
-            <button className="btn btn-primary" onClick={() => setAiNotice(true)}>Cerca</button>
+            <button className="btn btn-primary" onClick={() => void runAiSearch()} disabled={aiLoading || !aiQuery.trim()}>
+              {aiLoading ? "Cerco…" : "Cerca"}
+            </button>
           </div>
         </div>
       </div>
