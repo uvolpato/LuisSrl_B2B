@@ -76,6 +76,9 @@ cd backend || goto :err
 call npm ci || goto :err
 call npx prisma generate || goto :err
 call npx prisma migrate deploy || goto :err
+REM SQL manuali idempotenti (non gestiti dalle migration Prisma): sicuri a ogni deploy.
+REM   - embedding-setup.sql: tabella pgvector per la ricerca semantica (CREATE ... IF NOT EXISTS)
+call npx prisma db execute --file prisma/embedding-setup.sql || goto :err
 call npm run build || goto :err
 
 REM --- [5/6] Frontend: dipendenze + build ---
