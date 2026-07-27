@@ -504,28 +504,78 @@ export class IntegrazioneService {
     );
   }
 
+  /**
+   * Riscrive la query del cliente in parole chiave normalizzate per il dominio
+   * (vasi/complementi) ed estrae il colore, così da poterlo prioritizzare.
+   * Se il rewrite è spento o fallisce, ritorna la query grezza.
+   */
+  private async rewriteQuery(q: string): Promise<{ colore: string | null; keywords: string }> {
+    const prompt = `Sei un assistente di ricerca per un catalogo B2B di vasi, fioriere, cache-pot e complementi d'arredo (materiali tipici: cotto, terracotta, fiberstone, ceramica, metallo; uso interno/esterno). Trasforma la richiesta del cliente in parole chiave normalizzate per una ricerca semantica nel catalogo.
+
+Regole:
+- Estrai il COLORE se presente e normalizzalo al termine merceologico più vicino (es. "marrone chiaro" -> "nocciola"; "grigio scuro" -> "antracite").
+- Produci parole chiave ordinate per rilevanza in questo ordine: colore, materiale, forma, dimensione/formato, uso (interno/esterno), altro.
+- Usa il vocabolario di settore, correggi refusi, espandi sigle ovvie, rimuovi parole inutili ("cerco", "vorrei", "un", ecc.).
+- NON inventare attributi non presenti nella richiesta.
+- Se la richiesta è vuota o incomprensibile, keywords = testo originale ripulito.
+
+Rispondi SOLO con JSON valido, senza testo attorno:
+{"colore": "<colore normalizzato o null>", "keywords": "<parole chiave separate da spazio, ordinate>"}
+
+Richiesta del cliente: "${q}"`;
+    try {
+      const raw = await this.callGeminiText(prompt);
+      const m = raw.match(/\{[\s\S]*\}/);
+      const obj = JSON.parse(m ? m[0] : raw) as { colore?: unknown; keywords?: unknown };
+      const keywords = (obj.keywords ? String(obj.keywords) : '').trim() || q;
+      const colore = obj.colore && String(obj.colore).toLowerCase() !== 'null'
+        ? String(obj.colore).trim().toLowerCase() : null;
+      return { colore, keywords };
+    } catch {
+      return { colore: null, keywords: q };
+    }
+  }
+
   /** Ricerca semantica: ritorna card catalogo ordinate per similarita' + score [0..1]. */
   async searchSemantica(q: string, k = 24) {
     const query = (q || '').trim();
     if (!query) return { articoli: [], provider: this.embedding.provider };
-    const vec = await this.embedding.embedText(query);
+
+    // Query rewrite + estrazione colore (flag env, default on). Il colore viene ripetuto
+    // nel testo da embeddare (piccolo peso in più) e usato per un boost sul ranking.
+    const rewriteOn = (process.env.SEARCH_QUERY_REWRITE || 'on') !== 'off';
+    const rw = rewriteOn ? await this.rewriteQuery(query) : { colore: null, keywords: query };
+    const toEmbed = rw.colore ? `${rw.colore} ${rw.colore} ${rw.keywords}` : rw.keywords;
+    const colorBoost = parseFloat(process.env.SEARCH_COLOR_BOOST || '0.15');
+
+    const vec = await this.embedding.embedText(toEmbed);
     if (!vec) return { articoli: [], provider: this.embedding.provider, error: 'embeddings_non_disponibili' };
-    // Solo articoli visibili al cliente; coseno calcolato in Node (catalogo piccolo).
-    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; text_vec: number[] | null }[]>(
-      `SELECT a.codice_linea, e.text_vec
+
+    // Solo articoli visibili al cliente; coseno + boost colore calcolati in Node.
+    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; colore: string | null; text_vec: number[] | null }[]>(
+      `SELECT a.codice_linea, a.colore, e.text_vec
          FROM articolo_embedding e
          JOIN articoli a  ON a.id = e.articolo_id
          JOIN famiglie f  ON f.codice = a.famiglia_codice
         WHERE a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'`,
     );
+    const matchColor = (c: string | null) => {
+      if (!rw.colore || !c) return false;
+      const ac = c.toLowerCase();
+      return ac.includes(rw.colore) || rw.colore.includes(ac);
+    };
     const ranked = rows
       .filter((r) => r.text_vec?.length)
-      .map((r) => ({ codice: r.codice_linea, score: EmbeddingService.cosine(vec, r.text_vec as number[]) }))
+      .map((r) => ({
+        codice: r.codice_linea,
+        score: EmbeddingService.cosine(vec, r.text_vec as number[]) + (matchColor(r.colore) ? colorBoost : 0),
+      }))
       .sort((x, y) => y.score - x.score);
+
     // Taglio di pertinenza: gli embedding generici danno punteggi ravvicinati, quindi
     // senza cutoff la ricerca "ordina tutto" invece di filtrare. Tengo i risultati
     // vicini al migliore (margine relativo) sopra una soglia minima assoluta.
-    // ponytail: due manopole via env, da tarare sul catalogo reale.
+    // ponytail: manopole via env, da tarare sul catalogo reale.
     const margin = parseFloat(process.env.EMBEDDINGS_SCORE_MARGIN || '0.04');
     const floor = parseFloat(process.env.EMBEDDINGS_SCORE_MIN || '0.5');
     const best = ranked[0]?.score ?? 0;
@@ -546,7 +596,7 @@ export class IntegrazioneService {
     const articoli = arts
       .map((a) => ({ ...this.mapArticoloCard(a), score: scoreByCodice.get(a.codiceLinea) ?? 0 }))
       .sort((x, y) => y.score - x.score); // findMany non preserva l'ordine dell'IN
-    return { articoli, provider: this.embedding.provider };
+    return { articoli, provider: this.embedding.provider, keywords: rw.keywords, colore: rw.colore };
   }
 
   async getArticoli() {

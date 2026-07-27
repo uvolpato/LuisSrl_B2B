@@ -75,6 +75,7 @@ millisecondi. *Ceiling:* se il catalogo cresce di ordini di grandezza, migrare a
 - `POST /api/catalogo/ricerca {q}` (guard cliente) → card catalogo + `score`.
 - `backend/scripts/backfill-embeddings.ts` (`npm run embeddings:backfill`).
 - Frontend: modale "Ricerca intelligente" collegata (solo testo); risultati nella griglia catalogo. Ricerca per immagine ancora "in arrivo".
+- **Query rewrite + boost colore** (`SEARCH_QUERY_REWRITE=on|off`): prima di embeddare, Gemini riscrive la query in keyword normalizzate di dominio ed estrae il colore (es. "marrone chiaro"→"nocciola"); il colore viene ripetuto nel testo embeddato e dà un bonus di ranking (`SEARCH_COLOR_BOOST`, default 0.15) agli articoli col colore corrispondente. Verificato in dev: "vaso marrone chiaro" → solo ARGO NOCCIOLA 0.92 (vs 0.79 senza rewrite). Costo: +1 chiamata Gemini per ricerca; fallback alla query grezza se non disponibile.
 - Verificato in dev: backfill 2/2 articoli, query "vaso grande da esterno" → score ~0.78.
 
 ---
