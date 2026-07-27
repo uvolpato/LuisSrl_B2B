@@ -221,6 +221,7 @@ export class AdminService {
         ...(dto.nomePortale !== undefined && { nomePortale: dto.nomePortale || null }),
         ...(dto.descrizione !== undefined && { descrizione: dto.descrizione }),
         ...(dto.immagine !== undefined && { immagine: dto.immagine }),
+        ...(dto.immagineAI !== undefined && { immagineAI: dto.immagineAI }),
         ...(dto.stato !== undefined && { stato: dto.stato }),
       },
       include: { _count: { select: { articoli: true } } },

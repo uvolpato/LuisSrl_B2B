@@ -18,6 +18,7 @@ interface Famiglia {
   nomePortale: string | null;
   codicePadre: string | null;
   immagine: string | null;
+  immagineAI: boolean;
   descrizione: string | null;
   stato: string;
   _count: { articoli: number; articoliAttivi?: number };
@@ -120,7 +121,7 @@ export default function FamiglieSection() {
   }
 
   async function handleSave(form: {
-    nomePortale?: string; descrizione?: string; immagine?: string; stato: string;
+    nomePortale?: string; descrizione?: string; immagine?: string; immagineAI?: boolean; stato: string;
   }, pendingFile?: File | null) {
     if (!editFamiglia) return;
     try {
@@ -131,7 +132,7 @@ export default function FamiglieSection() {
         form.immagine = res.url;
       }
       await api.patch(`/api/admin/famiglie/${editFamiglia.codice}`, {
-        nomePortale: form.nomePortale ?? "", descrizione: form.descrizione, immagine: form.immagine, stato: form.stato,
+        nomePortale: form.nomePortale ?? "", descrizione: form.descrizione, immagine: form.immagine, immagineAI: form.immagineAI, stato: form.stato,
       });
       setModalOpen(false);
       await reload();
@@ -313,12 +314,17 @@ async function handleDelete(codice: string) {
                     opacity: dragCodice === r.codice ? 0.5 : 1,
                   }}
                 >
-                  <img
-                    className="raccolte-card-img"
-                    src={thumbUrl(r.immagine, 400) || PLACEHOLDER}
-                    alt={displayNome(r)}
-                    onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <img
+                      className="raccolte-card-img"
+                      src={thumbUrl(r.immagine, 400) || PLACEHOLDER}
+                      alt={displayNome(r)}
+                      onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }}
+                    />
+                    {r.immagineAI && (
+                      <span style={{ position: "absolute", bottom: 6, right: 6, zIndex: 3, fontSize: 10, fontWeight: 600, letterSpacing: "0.5px", padding: "2px 6px", borderRadius: 6, background: "rgba(0,0,0,0.6)", color: "#fff", cursor: "help" }} title="Immagine generata con AI">AI</span>
+                    )}
+                  </div>
                   <div className="raccolte-card-body">
                     <div className="raccolte-card-top">
                       <h3>{displayNome(r)}</h3>
@@ -375,7 +381,7 @@ function FamigliaEditModal({
   open: boolean;
   famiglia: Famiglia | null;
   onSave: (form: {
-    nomePortale?: string; descrizione?: string; immagine?: string; stato: string;
+    nomePortale?: string; descrizione?: string; immagine?: string; immagineAI?: boolean; stato: string;
   }, pendingFile?: File | null) => Promise<void>;
   onDelete?: (codice: string) => Promise<void>;
   onClose: () => void;
@@ -384,6 +390,7 @@ function FamigliaEditModal({
   const [descrizione, setDescrizione] = useState("");
   const [stato, setStato] = useState("ATTIVO");
   const [immagineUrl, setImmagineUrl] = useState("");
+  const [immagineAI, setImmagineAI] = useState(false);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -411,11 +418,13 @@ function FamigliaEditModal({
       setDescrizione(famiglia.descrizione ?? "");
       setStato(famiglia.stato);
       setImmagineUrl(famiglia.immagine ?? "");
+      setImmagineAI(famiglia.immagineAI ?? false);
     } else {
       setNomePortale("");
       setDescrizione("");
       setStato("ATTIVO");
       setImmagineUrl("");
+      setImmagineAI(false);
     }
     setPendingImage(null);
     setPreviewUrl(null);
@@ -437,6 +446,7 @@ function FamigliaEditModal({
         nomePortale: nomePortale.trim() || undefined,
         descrizione: descrizione.trim() || undefined,
         immagine: immagineUrl || undefined,
+        immagineAI,
         stato,
       }, pendingImage);
     } catch (err) {
@@ -471,6 +481,18 @@ function FamigliaEditModal({
                   onFile={handleImageFile}
                   onRemove={() => { setPendingImage(null); setPreviewUrl(null); setImmagineUrl(""); }}
                 />
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={immagineAI}
+                    onChange={(e) => setImmagineAI(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: "var(--accent)" }}
+                  />
+                  <span>Immagine generata con AI</span>
+                  {immagineAI && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", background: "var(--accent-soft)", color: "var(--accent)", padding: "2px 6px", borderRadius: 999 }}>AI</span>
+                  )}
+                </label>
               </div>
 
               <div className="field" style={{ marginBottom: 10 }}>

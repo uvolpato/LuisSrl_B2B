@@ -246,6 +246,8 @@ model Famiglia {
   nomePortale String?    @map("nome_portale")
   codicePadre String?    @map("codice_padre")
   immagine    String?
+  /// Flag: immagine generata con AI (mostra badge "AI" sul portale)
+  immagineAI  Boolean    @default(false) @map("immagine_ai")
   descrizione String?
   stato       String     @default("ATTIVO")
   /// Ordine di visualizzazione delle card famiglia (impostato dall'admin, drag&drop)

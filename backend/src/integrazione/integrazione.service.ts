@@ -435,6 +435,7 @@ export class IntegrazioneService {
         codice: f.codice,
         nome: f.nomePortale || f.nome,
         immagine: f.immagine,
+        immagineAI: f.immagineAI,
         descrizione: f.descrizione,
         count: cmap.get(f.codice) ?? 0,
       }))
