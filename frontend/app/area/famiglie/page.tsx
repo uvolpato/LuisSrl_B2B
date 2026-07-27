@@ -13,6 +13,7 @@ interface Famiglia {
   codice: string;
   nome: string;
   immagine: string | null;
+  immagineAI: boolean;
   descrizione: string | null;
   count: number;
 }
@@ -79,13 +80,18 @@ export default function FamigliePage() {
           <div className="fam-grid">
             {(fams ?? []).map((f) => (
               <Link key={f.codice} href={`/area/catalogo?famiglia=${encodeURIComponent(f.codice)}`} className="fam-card">
-                {f.immagine ? (
-                  <img className="fam-card-img" src={thumbUrl(f.immagine, 400)} alt={f.nome} />
-                ) : (
-                  <div className="fam-card-img placeholder">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-                  </div>
-                )}
+                <div style={{ position: "relative" }}>
+                  {f.immagine ? (
+                    <img className="fam-card-img" src={thumbUrl(f.immagine, 400)} alt={f.nome} />
+                  ) : (
+                    <div className="fam-card-img placeholder">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                    </div>
+                  )}
+                  {f.immagineAI && (
+                    <span style={{ position: "absolute", bottom: 6, right: 6, zIndex: 3, fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", background: "var(--accent-soft)", color: "var(--accent)", padding: "3px 8px", borderRadius: 999 }} title="Immagine generata con AI">AI</span>
+                  )}
+                </div>
                 <div className="fam-card-body">
                   <h3 className="fam-card-name">{f.nome}</h3>
                   {f.descrizione && <p className="fam-card-desc">{f.descrizione}</p>}
