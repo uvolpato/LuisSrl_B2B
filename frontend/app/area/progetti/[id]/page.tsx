@@ -10,6 +10,10 @@ import AreaHeader from "../../../../components/area/AreaHeader";
 import AreaFooter from "../../../../components/area/AreaFooter";
 import { thumbUrl } from "../../../../lib/thumb";
 
+function formatPrice(n: number) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+}
+
 interface ItemP {
   varianteCodice: string;
   quantita: number;
@@ -19,6 +23,7 @@ interface ItemP {
   dimensioni: string;
   immagineUrl: string | null;
   multiplo: number;
+  prezzo: { prezzoNetto: number; prezzoListino: number; sconto: number } | null;
 }
 interface Dettaglio {
   id: number;
@@ -81,15 +86,6 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
         .pd-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .pd-head h1 { margin: 0; font-size: 24px; flex: 1; min-width: 200px; }
         .pd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .pd-item { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; background: var(--surface); }
-        .pd-item-img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: var(--accent-soft); flex-shrink: 0; }
-        .pd-item-name { font-weight: 600; }
-        .pd-item-meta { font-size: 13px; color: var(--muted); }
-        .pd-qty { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        .pd-qty button { width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; font-size: 16px; color: var(--fg); }
-        .pd-qty span { min-width: 40px; text-align: center; font-size: 14px; }
-        .pd-remove { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; }
-        .pd-remove:hover { color: var(--danger, #c0392b); }
       `}</style>
 
       <AreaHeader />
@@ -122,26 +118,36 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
               )}
 
               {p.items.map((it) => (
-                <div key={it.varianteCodice} className="pd-item">
-                  {it.immagineUrl
-                    ? <img className="pd-item-img" src={thumbUrl(it.immagineUrl, 150)} alt={it.articoloNome ?? ""} />
-                    : <div className="pd-item-img" />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="pd-item-name">
-                      {it.articoloCodiceLinea
-                        ? <Link href={`/area/catalogo/${it.articoloCodiceLinea}`} style={{ color: "inherit", textDecoration: "none" }}>{it.articoloNome}</Link>
-                        : it.articoloNome}
+                <div key={it.varianteCodice} className="cart-item">
+                  <div className="cart-item-img-wrap">
+                    {it.immagineUrl
+                      ? <img src={thumbUrl(it.immagineUrl, 200)} alt={it.articoloNome ?? ""} className="cart-item-img" />
+                      : <div className="cart-item-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg></div>}
+                  </div>
+                  <div className="cart-item-info">
+                    <Link href={`/area/catalogo/${it.articoloCodiceLinea}`} className="cart-item-name">{it.articoloNome ?? it.varianteCodice}</Link>
+                    <span className="cart-item-variant">
+                      <span className="badge code">{it.varianteCodice}</span>
+                      {it.dimensioni && <span className="badge dim">{it.dimensioni}</span>}
+                    </span>
+                    {it.varianteDescrizione && <span className="cart-item-desc">{it.varianteDescrizione}</span>}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      {it.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {it.multiplo} pz</span>}
+                      {it.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(it.prezzo?.prezzoNetto ?? 0)} / pz</strong>{(it.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(it.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{it.prezzo?.sconto ?? 0}%</span></>}</span>
                     </div>
-                    <div className="pd-item-meta">{it.varianteDescrizione}{it.dimensioni ? ` · ${it.dimensioni}` : ""}</div>
                   </div>
-                  <div className="pd-qty">
-                    <button onClick={() => setQty(it, it.quantita - it.multiplo)}>−</button>
-                    <span>{it.quantita}</span>
-                    <button onClick={() => setQty(it, it.quantita + it.multiplo)}>+</button>
+                  <div className="cart-item-actions">
+                    <span className="cart-item-price">{formatPrice(it.quantita * (it.prezzo?.prezzoNetto ?? 0))}</span>
+                    <div className="qty-control">
+                      <button type="button" onClick={() => setQty(it, it.quantita - it.multiplo)}>−</button>
+                      <input type="number" value={it.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
+                      <button type="button" onClick={() => setQty(it, it.quantita + it.multiplo)}>+</button>
+                    </div>
+                    <div className="cart-item-links">
+                      <button className="cart-item-link danger" onClick={() => removeItem(it)}>Rimuovi</button>
+                    </div>
                   </div>
-                  <button className="pd-remove" onClick={() => removeItem(it)} title="Rimuovi">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
-                  </button>
                 </div>
               ))}
             </>
