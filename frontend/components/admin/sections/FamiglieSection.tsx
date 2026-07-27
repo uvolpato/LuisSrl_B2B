@@ -10,6 +10,7 @@ import { PAGE_SIZE, PLACEHOLDER_IMG as PLACEHOLDER } from "../types";
 import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList } from "../icons";
 import AdminTopBar from "../AdminTopBar";
 import ImageDropzone from "../ImageDropzone";
+import { thumbUrl } from "../../../lib/thumb";
 
 interface Famiglia {
   codice: string;
@@ -173,7 +174,7 @@ async function handleDelete(codice: string) {
       cell: (r) => (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img
-            src={r.immagine ?? PLACEHOLDER}
+            src={thumbUrl(r.immagine, 100) || PLACEHOLDER}
             alt=""
             style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", background: "var(--bg)" }}
           />
@@ -314,7 +315,7 @@ async function handleDelete(codice: string) {
                 >
                   <img
                     className="raccolte-card-img"
-                    src={r.immagine ?? PLACEHOLDER}
+                    src={thumbUrl(r.immagine, 400) || PLACEHOLDER}
                     alt={displayNome(r)}
                     onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }}
                   />
