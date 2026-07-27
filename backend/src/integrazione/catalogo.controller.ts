@@ -1,4 +1,5 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { IntegrazioneService } from './integrazione.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
@@ -24,6 +25,16 @@ export class CatalogoController {
   @Post('ricerca')
   ricercaSemantica(@Body('q') q: string, @Query('k') k?: string) {
     return this.integrazione.searchSemantica(q ?? '', k ? parseInt(k, 10) : 24);
+  }
+
+  /** Ricerca per immagine: foto del cliente → attributi (Gemini Vision) → articoli simili. */
+  @Post('ricerca-immagine')
+  @UseInterceptors(FileInterceptor('file'))
+  ricercaImmagine(@UploadedFile() file: Express.Multer.File, @Query('k') k?: string) {
+    if (!file) throw new BadRequestException('Nessuna immagine caricata.');
+    if (!file.mimetype?.startsWith('image/')) throw new BadRequestException('Il file deve essere un\'immagine.');
+    if (file.size > 10 * 1024 * 1024) throw new BadRequestException('Immagine troppo grande (max 10MB).');
+    return this.integrazione.searchByImage(file.buffer, file.mimetype, k ? parseInt(k, 10) : 24);
   }
 
   @Get(':codiceLinea')

@@ -541,16 +541,22 @@ Richiesta del cliente: "${q}"`;
     }
   }
 
-  /** Ricerca semantica: ritorna card catalogo ordinate per similarita' + score [0..1]. */
+  /** Ricerca semantica testuale: riscrive la query e ordina il catalogo. */
   async searchSemantica(q: string, k = 24) {
     const query = (q || '').trim();
     if (!query) return { articoli: [], provider: this.embedding.provider };
-
-    // Query rewrite: keyword normalizzate + attributi oggettivi (flag env, default on).
     const rewriteOn = (process.env.SEARCH_QUERY_REWRITE || 'on') !== 'off';
     const rw = rewriteOn ? await this.rewriteQuery(query) : { attributi: [] as string[], keywords: query };
+    return this.rankArticoli(rw.attributi, rw.keywords, k);
+  }
+
+  /**
+   * Core di ranking condiviso da ricerca testo e immagine:
+   * embedda keywords (+ attributi in testa) e ordina per coseno + boost attributi.
+   */
+  private async rankArticoli(attributi: string[], keywords: string, k = 24) {
     // Attributi in testa e ripetuti nel testo embeddato per dargli peso semantico.
-    const toEmbed = rw.attributi.length ? `${rw.attributi.join(' ')} ${rw.attributi.join(' ')} ${rw.keywords}` : rw.keywords;
+    const toEmbed = attributi.length ? `${attributi.join(' ')} ${attributi.join(' ')} ${keywords}` : keywords;
     const attrBoost = parseFloat(process.env.SEARCH_ATTR_BOOST || '0.10');
     const boostCap = parseFloat(process.env.SEARCH_BOOST_CAP || '0.30');
 
@@ -577,8 +583,8 @@ Richiesta del cliente: "${q}"`;
     // Ogni attributo oggettivo presente nei dati dell'articolo dà un bonus (con tetto):
     // gli articoli che soddisfano più attributi richiesti salgono.
     const boostFor = (objtext: string) => {
-      if (!rw.attributi.length) return 0;
-      const matched = rw.attributi.filter((a) => objtext.includes(a)).length;
+      if (!attributi.length) return 0;
+      const matched = attributi.filter((a) => objtext.includes(a)).length;
       return Math.min(matched * attrBoost, boostCap);
     };
     const ranked = rows
@@ -613,7 +619,55 @@ Richiesta del cliente: "${q}"`;
     const articoli = arts
       .map((a) => ({ ...this.mapArticoloCard(a), score: scoreByCodice.get(a.codiceLinea) ?? 0 }))
       .sort((x, y) => y.score - x.score); // findMany non preserva l'ordine dell'IN
-    return { articoli, provider: this.embedding.provider, keywords: rw.keywords, attributi: rw.attributi };
+    return { articoli, provider: this.embedding.provider, keywords, attributi };
+  }
+
+  /**
+   * Estrae dagli attributi oggettivi da una foto del cliente (Gemini Vision) con
+   * guardrail stretti: solo il prodotto/contenitore, niente invenzioni, vocabolari chiusi.
+   */
+  private async analyzeImage(b64: string, mime: string): Promise<{ pertinente: boolean; attributi: string[]; keywords: string }> {
+    const prompt = `Analizza l'immagine per cercare un prodotto in un catalogo B2B di vasi, fioriere, cache-pot e complementi d'arredo.
+
+GUARDRAIL (rispettali sempre):
+- Descrivi SOLO il contenitore/prodotto. Ignora del tutto piante, fiori, terra, sfondo, arredo attorno, persone, mani.
+- NON inventare: se un attributo non è determinabile con certezza dalla foto, mettilo a null. Meglio vuoto che sbagliato.
+- NIENTE misure assolute in cm (non deducibili da una foto senza riferimenti): usa "dimensione_relativa" solo se evidente, altrimenti null.
+- Usa SOLO questi vocabolari chiusi:
+  - materiale: cotto | terracotta | fiberstone | ceramica | metallo | plastica | vetro | null
+  - forma: rotondo | quadrato | rettangolare | conico | cilindrico | ovale | null
+  - uso: interno | esterno | entrambi | null
+  - dimensione_relativa: piccolo | medio | grande | null
+- Se l'immagine NON contiene un prodotto pertinente (persona, animale, documento, screenshot, ecc.): "pertinente": false e tutti i campi null.
+- "attributi": elenco dei VALORI degli attributi oggettivi presenti (es. ["vaso","ceramica","rotondo","interno"]), NON i nomi dei campi. Solo termini certi, in minuscolo.
+- "keywords": stringa di parole chiave normalizzate ordinate per rilevanza, per l'embedding.
+
+Rispondi SOLO con JSON valido, senza testo attorno:
+{"pertinente": true, "tipo": "...|null", "colore": "...|null", "materiale": "...|null", "forma": "...|null", "finitura": "...|null", "dimensione_relativa": "...|null", "uso": "...|null", "attributi": ["..."], "keywords": "..."}`;
+    try {
+      const raw = await this.callGeminiText(prompt, { mime, b64 });
+      const m = raw.match(/\{[\s\S]*\}/);
+      const obj = JSON.parse(m ? m[0] : raw) as { pertinente?: unknown; attributi?: unknown; keywords?: unknown };
+      const pertinente = obj.pertinente !== false;
+      const attributi = Array.isArray(obj.attributi)
+        ? obj.attributi.map((a) => String(a).trim().toLowerCase()).filter((a) => a && a !== 'null')
+        : [];
+      const keywords = (obj.keywords ? String(obj.keywords) : '').trim();
+      return { pertinente, attributi, keywords };
+    } catch {
+      return { pertinente: true, attributi: [], keywords: '' };
+    }
+  }
+
+  /** Ricerca per immagine: estrae attributi dalla foto e riusa il ranking testuale. */
+  async searchByImage(buffer: Buffer, mime: string, k = 24) {
+    const a = await this.analyzeImage(buffer.toString('base64'), mime);
+    if (!a.pertinente) return { articoli: [], provider: this.embedding.provider, error: 'immagine_non_pertinente' };
+    if (!a.keywords && !a.attributi.length) {
+      return { articoli: [], provider: this.embedding.provider, error: 'immagine_non_riconosciuta' };
+    }
+    const res = await this.rankArticoli(a.attributi, a.keywords || a.attributi.join(' '), k);
+    return { ...res, keywords: a.keywords, attributi: a.attributi };
   }
 
   async getArticoli() {
