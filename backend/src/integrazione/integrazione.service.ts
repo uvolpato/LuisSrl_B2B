@@ -558,10 +558,16 @@ Richiesta del cliente: "${q}"`;
     if (!vec) return { articoli: [], provider: this.embedding.provider, error: 'embeddings_non_disponibili' };
 
     // Solo articoli visibili al cliente; coseno + boost attributi calcolati in Node.
-    // objtext = dati oggettivi dell'articolo (nome, colore, materiale/linea via famiglia).
+    // objtext = dati oggettivi dell'articolo: nome, colore, materiale/linea (famiglia),
+    // descrizione AI (contiene forma/dimensioni/colore a parole) + misure delle varianti.
     const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; objtext: string; text_vec: number[] | null }[]>(
       `SELECT a.codice_linea,
-              lower(coalesce(a.nome,'') || ' ' || coalesce(a.colore,'') || ' ' || coalesce(f.nome_portale, f.nome, '')) AS objtext,
+              lower(
+                coalesce(a.nome,'') || ' ' || coalesce(a.colore,'') || ' ' ||
+                coalesce(f.nome_portale, f.nome, '') || ' ' ||
+                coalesce(a.descrizione_ai,'') || ' ' || coalesce(a.descrizione,'') || ' ' ||
+                coalesce((SELECT string_agg(v.dimensioni::text, ' ') FROM varianti v WHERE v.articolo_id = a.id), '')
+              ) AS objtext,
               e.text_vec
          FROM articolo_embedding e
          JOIN articoli a  ON a.id = e.articolo_id
