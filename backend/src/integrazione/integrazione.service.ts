@@ -494,10 +494,19 @@ export class IntegrazioneService {
          JOIN famiglie f  ON f.codice = a.famiglia_codice
         WHERE a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'`,
     );
-    const top = rows
+    const ranked = rows
       .filter((r) => r.text_vec?.length)
       .map((r) => ({ codice: r.codice_linea, score: EmbeddingService.cosine(vec, r.text_vec as number[]) }))
-      .sort((x, y) => y.score - x.score)
+      .sort((x, y) => y.score - x.score);
+    // Taglio di pertinenza: gli embedding generici danno punteggi ravvicinati, quindi
+    // senza cutoff la ricerca "ordina tutto" invece di filtrare. Tengo i risultati
+    // vicini al migliore (margine relativo) sopra una soglia minima assoluta.
+    // ponytail: due manopole via env, da tarare sul catalogo reale.
+    const margin = parseFloat(process.env.EMBEDDINGS_SCORE_MARGIN || '0.04');
+    const floor = parseFloat(process.env.EMBEDDINGS_SCORE_MIN || '0.5');
+    const best = ranked[0]?.score ?? 0;
+    const top = ranked
+      .filter((r) => r.score >= Math.max(floor, best - margin))
       .slice(0, Math.min(Math.max(k, 1), 60));
     if (!top.length) return { articoli: [], provider: this.embedding.provider };
     const scoreByCodice = new Map(top.map((r) => [r.codice, r.score]));
