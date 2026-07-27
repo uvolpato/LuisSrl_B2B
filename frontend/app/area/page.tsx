@@ -631,7 +631,7 @@ export default function AreaClientePage() {
 
               {/* Action cards */}
               <div className="action-grid">
-                <Link href="/area/catalogo" className="action-card">
+                <Link href="/area/famiglie" className="action-card">
                   <span className="card-icon"><SearchIcon size={22} /></span>
                   <h3>Esplora il Catalogo</h3>
                   <p>Sfoglia l'intero catalogo con filtri per linea, famiglia, prezzo e disponibilità a magazzino.</p>
@@ -643,7 +643,7 @@ export default function AreaClientePage() {
                   <p>Carica un'immagine o descrivi ciò che cerchi per trovare in modo intelligente tra tutti i prodotti.</p>
                   <span className="card-link">Prova la ricerca AI</span>
                 </button>
-                <Link href="/area/catalogo" className="action-card">
+                <Link href="/area/famiglie" className="action-card">
                   <div className="card-icon"><GridIcon /></div>
                   <h3>Le nostre Linee</h3>
                   <p>Scopri il catalogo diviso per linea e famiglia di prodotto: Cotto, Fiberstone, Metallo e altre.</p>
@@ -657,11 +657,11 @@ export default function AreaClientePage() {
                   <div className="product-box" key={bi}>
                     <div className="product-box-header">
                       <h2>{box.title}</h2>
-                      <Link href="/area/catalogo">Vedi tutto</Link>
+                      <Link href="/area/famiglie">Vedi tutto</Link>
                     </div>
                     <div className="product-grid">
                       {box.images.map((src, ii) => (
-                        <Link key={ii} href="/area/catalogo" className="product-mini">
+                        <Link key={ii} href="/area/famiglie" className="product-mini">
                           <img className="product-mini-img" src={img(src)} alt={box.title} />
                         </Link>
                       ))}
@@ -674,7 +674,7 @@ export default function AreaClientePage() {
               {activeTab !== 0 && (
                 <div className="dash-bottom-cta">
                   <Link
-                    href="/area/catalogo"
+                    href="/area/famiglie"
                     className="btn btn-primary"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 8,
