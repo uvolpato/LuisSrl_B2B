@@ -20,6 +20,7 @@ interface CatalogoArticolo {
   raccolte: { nome: string; slug: string }[];
   img: string | null;
   imgCss: string | null;
+  imgTipo: string | null;
   variantiCount: number;
   createdAt: string;
 }
@@ -248,7 +249,9 @@ export default function CatalogoPage() {
               <div className="product-grid">
                 {rows.map((a) => (
                   <Link href={`/area/catalogo/${a.id}`} key={a.id} className="product-card">
-                    <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400} />
+                    <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
+                      {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
+                    </PositionedImage>
                     <div className="product-body">
                       <div className="product-famiglia">
                         <span className="color-dot" style={{ background: a.coloreRgb || a.colore || "var(--fg-soft)" }} />
