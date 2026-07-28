@@ -28,6 +28,9 @@ interface Catalogo {
   articoli: CatalogoArticolo[];
   famiglie: { codice: string; nome: string; count: number }[];
   raccolte: { slug: string; nome: string; count: number }[];
+  colori: { nome: string; rgb: string | null; count: number }[];
+  dimensioni: Record<string, { min: number; max: number }>;
+  prezzo: { min: number; max: number } | null;
 }
 
 const PAGE_SIZE = 12;
@@ -45,7 +48,7 @@ const IconStella = (
 export default function CatalogoPage() {
   const { user, loading: authLoading } = useAuth("customer");
   const router = useRouter();
-  const [facets, setFacets] = useState<{ famiglie: Catalogo["famiglie"]; raccolte: Catalogo["raccolte"] }>({ famiglie: [], raccolte: [] });
+  const [facets, setFacets] = useState<Pick<Catalogo, "famiglie" | "raccolte" | "colori" | "dimensioni" | "prezzo">>({ famiglie: [], raccolte: [], colori: [], dimensioni: {}, prezzo: null });
   const [articoli, setArticoli] = useState<CatalogoArticolo[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -54,6 +57,10 @@ export default function CatalogoPage() {
   const [search, setSearch] = useState("");
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
+  const [coloriSel, setColoriSel] = useState<Set<string>>(new Set());
+  const [diametroRange, setDiametroRange] = useState<[number, number]>([0, 999]);
+  const [altezzaRange, setAltezzaRange] = useState<[number, number]>([0, 999]);
+  const [prezzoRange, setPrezzoRange] = useState<[number, number]>([0, 9999]);
   const [activeTab, setActiveTab] = useState<string>("tutti");
   const [sort, setSort] = useState("venduti");
   const [aiOpen, setAiOpen] = useState(false);
@@ -114,9 +121,16 @@ export default function CatalogoPage() {
     p.set("pageSize", String(PAGE_SIZE));
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
+    if (coloriSel.size) p.set("colore", [...coloriSel].join(","));
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (search.trim()) p.set("q", search.trim());
     if (sort) p.set("sort", sort);
+    if (facets.dimensioni.diametro && diametroRange[0] > facets.dimensioni.diametro.min) p.set("diametroMin", String(diametroRange[0]));
+    if (facets.dimensioni.diametro && diametroRange[1] < facets.dimensioni.diametro.max) p.set("diametroMax", String(diametroRange[1]));
+    if (facets.dimensioni.altezza && altezzaRange[0] > facets.dimensioni.altezza.min) p.set("altezzaMin", String(altezzaRange[0]));
+    if (facets.dimensioni.altezza && altezzaRange[1] < facets.dimensioni.altezza.max) p.set("altezzaMax", String(altezzaRange[1]));
+    if (facets.prezzo && prezzoRange[0] > facets.prezzo.min) p.set("prezzoMin", String(prezzoRange[0]));
+    if (facets.prezzo && prezzoRange[1] < facets.prezzo.max) p.set("prezzoMax", String(prezzoRange[1]));
     try {
       const res = await api.get<{ articoli: CatalogoArticolo[]; total: number; hasMore: boolean }>(`/api/catalogo?${p.toString()}`);
       setTotal(res.total);
@@ -128,12 +142,19 @@ export default function CatalogoPage() {
     } finally {
       setListLoading(false);
     }
-  }, [famiglieSel, raccolteSel, activeTab, search, sort]);
+  }, [famiglieSel, raccolteSel, coloriSel, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
 
   // Facet (sidebar) — una volta.
   useEffect(() => {
-    api.get<{ famiglie: Catalogo["famiglie"]; raccolte: Catalogo["raccolte"] }>("/api/catalogo/facets")
-      .then(setFacets).catch(() => setFacets({ famiglie: [], raccolte: [] }));
+    api.get<Catalogo>("/api/catalogo/facets")
+      .then((data) => {
+        setFacets({ famiglie: data.famiglie ?? [], raccolte: data.raccolte ?? [], colori: data.colori ?? [], dimensioni: data.dimensioni ?? {}, prezzo: data.prezzo ?? null });
+        // Inizializza range con i valori reali dalle facets
+        if (data.dimensioni?.diametro) setDiametroRange([data.dimensioni.diametro.min, data.dimensioni.diametro.max]);
+        if (data.dimensioni?.altezza) setAltezzaRange([data.dimensioni.altezza.min, data.dimensioni.altezza.max]);
+        if (data.prezzo) setPrezzoRange([data.prezzo.min, data.prezzo.max]);
+      })
+      .catch(() => setFacets({ famiglie: [], raccolte: [], colori: [], dimensioni: {}, prezzo: null }));
   }, []);
 
   // Ripristina lo stato dall'URL: deep-link da /area/famiglie (?famiglia=),
@@ -169,7 +190,7 @@ export default function CatalogoPage() {
     if (!restored.current || aiResults) return;
     const t = setTimeout(() => { void fetchPage(1, true); }, 250);
     return () => clearTimeout(t);
-  }, [famiglieSel, raccolteSel, activeTab, search, sort, aiResults, fetchPage]);
+  }, [famiglieSel, raccolteSel, coloriSel, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, fetchPage]);
 
   // Infinite scroll: carica la pagina successiva quando il sentinella entra in viewport.
   useEffect(() => {
@@ -220,13 +241,61 @@ export default function CatalogoPage() {
         {facets.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
       </div>
       <hr className="filter-divider" />
-      <div className="filter-group">
-        <h3>Disponibilità</h3>
-        {/* Il dato giacenza arriva da Integra in Fase E: per ora tutto Disponibile */}
-        <label><input type="checkbox" checked readOnly /> Disponibile <span className="count">{total}</span></label>
-        <label><input type="checkbox" readOnly /> Scorte limitate <span className="count">0</span></label>
-        <label><input type="checkbox" readOnly /> Esaurito <span className="count">0</span></label>
-      </div>
+      {facets.colori.length > 0 && (
+        <>
+          <div className="filter-group">
+            <h3>Colore</h3>
+            {facets.colori.map((c) => (
+              <label key={c.nome} className="color-filter-label">
+                <input type="checkbox" checked={coloriSel.has(c.nome)} onChange={() => toggleSet(coloriSel, c.nome, setColoriSel)} />
+                <span className="color-dot" style={{ background: c.rgb || "var(--fg-soft)", width: 12, height: 12, borderRadius: "50%", display: "inline-block", flexShrink: 0 }} />
+                {c.nome} <span className="count">{c.count}</span>
+              </label>
+            ))}
+          </div>
+          <hr className="filter-divider" />
+        </>
+      )}
+      {Object.keys(facets.dimensioni).length > 0 && (
+        <>
+          <div className="filter-group">
+            <h3>Dimensioni</h3>
+            {facets.dimensioni.diametro && (
+              <div className="range-filter">
+                <label className="range-label">Diametro (cm)</label>
+                <div className="range-inputs">
+                  <input type="number" className="input range-input" value={diametroRange[0]} min={facets.dimensioni.diametro.min} max={diametroRange[1]} onChange={(e) => setDiametroRange([Number(e.target.value), diametroRange[1]])} />
+                  <span className="range-sep">—</span>
+                  <input type="number" className="input range-input" value={diametroRange[1]} min={diametroRange[0]} max={facets.dimensioni.diametro.max} onChange={(e) => setDiametroRange([diametroRange[0], Number(e.target.value)])} />
+                </div>
+              </div>
+            )}
+            {facets.dimensioni.altezza && (
+              <div className="range-filter">
+                <label className="range-label">Altezza (cm)</label>
+                <div className="range-inputs">
+                  <input type="number" className="input range-input" value={altezzaRange[0]} min={facets.dimensioni.altezza.min} max={altezzaRange[1]} onChange={(e) => setAltezzaRange([Number(e.target.value), altezzaRange[1]])} />
+                  <span className="range-sep">—</span>
+                  <input type="number" className="input range-input" value={altezzaRange[1]} min={altezzaRange[0]} max={facets.dimensioni.altezza.max} onChange={(e) => setAltezzaRange([altezzaRange[0], Number(e.target.value)])} />
+                </div>
+              </div>
+            )}
+          </div>
+          <hr className="filter-divider" />
+        </>
+      )}
+      {facets.prezzo && (
+        <div className="filter-group">
+          <h3>Prezzo (€)</h3>
+          <div className="range-filter">
+            <div className="range-inputs">
+              <input type="number" className="input range-input" value={prezzoRange[0]} min={facets.prezzo.min} max={prezzoRange[1]} onChange={(e) => setPrezzoRange([Number(e.target.value), prezzoRange[1]])} />
+              <span className="range-sep">—</span>
+              <input type="number" className="input range-input" value={prezzoRange[1]} min={prezzoRange[0]} max={facets.prezzo.max} onChange={(e) => setPrezzoRange([prezzoRange[0], Number(e.target.value)])} />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 

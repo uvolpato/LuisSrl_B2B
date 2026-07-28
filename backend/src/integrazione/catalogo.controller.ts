@@ -26,6 +26,13 @@ export class CatalogoController {
     @Query('tab') tab?: string,
     @Query('q') q?: string,
     @Query('sort') sort?: string,
+    @Query('colore') colore?: string,
+    @Query('diametroMin') diametroMin?: string,
+    @Query('diametroMax') diametroMax?: string,
+    @Query('altezzaMin') altezzaMin?: string,
+    @Query('altezzaMax') altezzaMax?: string,
+    @Query('prezzoMin') prezzoMin?: string,
+    @Query('prezzoMax') prezzoMax?: string,
   ) {
     return this.integrazione.getCatalogoPaginato({
       page: page ? parseInt(page, 10) : 1,
@@ -35,6 +42,13 @@ export class CatalogoController {
       tab: tab || undefined,
       q: q || undefined,
       sort: sort || undefined,
+      colore: colore ? colore.split(',').filter(Boolean) : undefined,
+      diametroMin: diametroMin ? parseFloat(diametroMin) : undefined,
+      diametroMax: diametroMax ? parseFloat(diametroMax) : undefined,
+      altezzaMin: altezzaMin ? parseFloat(altezzaMin) : undefined,
+      altezzaMax: altezzaMax ? parseFloat(altezzaMax) : undefined,
+      prezzoMin: prezzoMin ? parseFloat(prezzoMin) : undefined,
+      prezzoMax: prezzoMax ? parseFloat(prezzoMax) : undefined,
     });
   }
 
