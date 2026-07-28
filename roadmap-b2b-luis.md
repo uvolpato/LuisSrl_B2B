@@ -437,8 +437,8 @@ Tutto in italiano o inglese.
 
 | # | Attività | Priorità |
 |---|----------|----------|
-| 1 | **Catalogo — filtri fissi nello scroll** | alta |
-|   | I filtri laterali (sidebar) devono rimanere visibili durante lo scroll della pagina; al massimo si fermano quando raggiungono la fine della loro sezione (comportamento "sticky" con limite). | |
+| 1 | **Catalogo — filtri fissi nello scroll** | alta | ✅ fatto |
+|   | I filtri laterali (sidebar) rimangono visibili durante lo scroll (position: sticky con top:80px, max-height limitata, box propria). | |
 | 2 | **Carrello — responsive mobile/tablet** | alta |
 |   | Le card del carrello hanno problemi di layout su viewport piccolo (sforamento, elementi sovrapposti). Verificare e sistemare a 375px e 768px. | |
 | 3 | **Checkout — riepilogo ordine** | alta |
