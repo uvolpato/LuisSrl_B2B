@@ -8,6 +8,48 @@ import { hashPassword } from '../common/password';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
 
+function hexToSrgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.substring(0, 2), 16) / 255,
+    parseInt(h.substring(2, 4), 16) / 255,
+    parseInt(h.substring(4, 6), 16) / 255,
+  ];
+}
+
+function srgbToLinear(c: number): number {
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function rgbToXyz(r: number, g: number, b: number): [number, number, number] {
+  return [
+    0.4124564 * r + 0.3575761 * g + 0.1804375 * b,
+    0.2126729 * r + 0.7151522 * g + 0.0721750 * b,
+    0.0193339 * r + 0.1191920 * g + 0.9503041 * b,
+  ];
+}
+
+const D65: [number, number, number] = [0.95047, 1.0, 1.08883];
+const LAB_EPSILON = 216.0 / 24389.0;
+const LAB_KAPPA = 24389.0 / 27.0;
+
+function xyzToLab(x: number, y: number, z: number): [number, number, number] {
+  const f = (t: number) =>
+    t > LAB_EPSILON ? Math.cbrt(t) : (LAB_KAPPA * t + 16) / 116;
+  const fx = f(x / D65[0]);
+  const fy = f(y / D65[1]);
+  const fz = f(z / D65[2]);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+export function hexToLab(hex: string): { L: number; a: number; b: number } {
+  const [r, g, b] = hexToSrgb(hex);
+  const [rl, gl, bl] = [srgbToLinear(r), srgbToLinear(g), srgbToLinear(b)];
+  const [x, y, z] = rgbToXyz(rl, gl, bl);
+  const [L, a, bLab] = xyzToLab(x, y, z);
+  return { L, a, b: bLab };
+}
+
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
 const CONFIG = {
@@ -516,14 +558,38 @@ export class IntegrazioneService {
 
       let coloreRgbCond = Prisma.sql``;
       if (params.coloreRgb && params.coloreTolleranza != null) {
-        const hex = params.coloreRgb.replace('#', '');
-        const selR = parseInt(hex.substring(0, 2), 16);
-        const selG = parseInt(hex.substring(2, 4), 16);
-        const selB = parseInt(hex.substring(4, 6), 16);
-        coloreRgbCond = Prisma.sql`AND a."colore_rgb" IS NOT NULL AND sqrt(
-          power(('x' || substr(a."colore_rgb", 2, 2))::bit(8)::int - ${selR}, 2) +
-          power(('x' || substr(a."colore_rgb", 4, 2))::bit(8)::int - ${selG}, 2) +
-          power(('x' || substr(a."colore_rgb", 6, 2))::bit(8)::int - ${selB}, 2)
+        const selLab = hexToLab(params.coloreRgb);
+        // CIELAB distance: convert DB hex color to Lab inline, then compute ΔE
+        coloreRgbCond = Prisma.sql`AND a."colore_rgb" IS NOT NULL AND a."colore_rgb" ~ '^#[0-9A-Fa-f]{6}$' AND (
+          SELECT sqrt(
+            power(116 * fxyz.fy - 16.0 - ${selLab.L}, 2) +
+            power(500.0 * (fxyz.fx - fxyz.fy) - ${selLab.a}, 2) +
+            power(200.0 * (fxyz.fy - fxyz.fz) - ${selLab.b}, 2)
+          )
+          FROM (
+            SELECT
+              CASE WHEN xyz.x / 0.95047 > ${LAB_EPSILON} THEN (xyz.x / 0.95047) ^ (1.0/3.0) ELSE (7.787 * xyz.x / 0.95047) + 16.0/116.0 END AS fx,
+              CASE WHEN xyz.y > ${LAB_EPSILON} THEN xyz.y ^ (1.0/3.0) ELSE (7.787 * xyz.y) + 16.0/116.0 END AS fy,
+              CASE WHEN xyz.z / 1.08883 > ${LAB_EPSILON} THEN (xyz.z / 1.08883) ^ (1.0/3.0) ELSE (7.787 * xyz.z / 1.08883) + 16.0/116.0 END AS fz
+            FROM (
+              SELECT
+                0.4124564 * lin.rl + 0.3575761 * lin.gl + 0.1804375 * lin.bl AS x,
+                0.2126729 * lin.rl + 0.7151522 * lin.gl + 0.0721750 * lin.bl AS y,
+                0.0193339 * lin.rl + 0.1191920 * lin.gl + 0.9503041 * lin.bl AS z
+              FROM (
+                SELECT
+                  CASE WHEN srgb.r <= 0.04045 THEN srgb.r / 12.92 ELSE ((srgb.r + 0.055) / 1.055) ^ 2.4 END AS rl,
+                  CASE WHEN srgb.g <= 0.04045 THEN srgb.g / 12.92 ELSE ((srgb.g + 0.055) / 1.055) ^ 2.4 END AS gl,
+                  CASE WHEN srgb.b <= 0.04045 THEN srgb.b / 12.92 ELSE ((srgb.b + 0.055) / 1.055) ^ 2.4 END AS bl
+                FROM (
+                  SELECT
+                    get_byte(decode(substr(a."colore_rgb", 2, 2), 'hex'), 0) / 255.0 AS r,
+                    get_byte(decode(substr(a."colore_rgb", 4, 2), 'hex'), 0) / 255.0 AS g,
+                    get_byte(decode(substr(a."colore_rgb", 6, 2), 'hex'), 0) / 255.0 AS b
+                ) srgb
+              ) lin
+            ) xyz
+          ) fxyz
         ) <= ${params.coloreTolleranza}`;
       }
 
@@ -1575,23 +1641,31 @@ Descrizione: ${descrizione}`;
       systemPrompt = sc?.value?.trim();
     }
     if (!systemPrompt) {
-      systemPrompt = `Sei un copywriter specializzato in descrizioni prodotto per un catalogo B2B di articoli per fioristi e garden (vasi in ceramica, cotto portoghese, terracotta).
+      systemPrompt = `Sei un tecnico-specialista di vasellame e articoli garden per il canale B2B (grossista → rivenditore/fiorista).
+Non sei un copywriter consumer: NON usare tono celebrativo, emotivo o da vetrina. Il lettore è un professionista che deve valutare il prodotto per acquistarlo all'ingrosso.
 
-A partire dai contributi dell'operatore (suddivisi per dimensioni sensoriali), genera una descrizione dettagliata in italiano, in un unico paragrafo fluido e discorsivo (circa 150-300 parole).
+A partire dai contributi dell'operatore, genera una descrizione tecnico-professionale in italiano, in un unico paragrafo (150-300 parole).
 
-La descrizione deve:
-- Essere precisa, evocativa ma non eccessivamente poetica
-- Usare un tono professionale adatto a un rivenditore B2B
-- Integrare naturalmente gli spunti delle diverse dimensioni (forma, superficie, contesto, emozione)
-- Essere concreta: menziona materiali, finiture, caratteristiche fisiche osservabili
+Cosa descrivere (in ordine di priorità):
+1. Materiale e lavorazione: tipo di ceramica/terracotta/cotto, presa della smaltatura/ingobbio, eventuale smalto a mano vs industrial, difetti artigianali accettati
+2. Forma e finitura: geometria, finitura superficiale (lucida/Opaca/ruvida/rifinita), bordi, piede, eventuale imperfezione intenzionale
+3. Dimensioni e peso: usa le misure reali delle varianti (non stimare), menziona tolleranze se note
+4. Utilizzo professionale: interno/esterno, resistenza a gelo/intemperie, idoneità a contatto alimentare (se applicabile), manutenzione
+5. Imballaggio e logistica: confezionamento, fragilità, stackabilità, peso per trasporto
 
-Oltre alla descrizione dettagliata, scrivi anche una descrizione BREVE di 3-5 frasi, discorsiva e accattivante, adatta a un catalogo o a una card prodotto.
+Stile:
+- Tutto terze persone, nessun "voi" o "tu"
+- Zero aggettivi superlativi ("bellissimo", "elegante", "prestigioso") — solo fatti verificabili
+- Zero storytelling emotivo ("porta la calore della terra", "character unica")
+- Se non sai qualcosa, omettilo, non inventare
+
+Oltre alla descrizione dettagliata, scrivi una descrizione BREVE di 2-3 righe che riassuma: materiale, forma chiave, dimensione di riferimento, utilizzo tipico. Tono sintetico, da scheda tecnica.
 
 Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
 \`\`\`json
 {
-  "descrizioneDettagliata": "testo della descrizione dettagliata in un unico paragrafo",
-  "descrizioneBreve": "testo della descrizione breve, 3-5 frasi"
+  "descrizioneDettagliata": "testo della descrizione tecnico-professionale",
+  "descrizioneBreve": "2-3 righe riassuntive: materiale, forma, dimensione, uso"
 }
 \`\`\``;
     }

@@ -58,7 +58,7 @@ export default function CatalogoPage() {
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
   const [coloreRgb, setColoreRgb] = useState<string>("");
-  const [coloreTolleranza, setColoreTolleranza] = useState<number>(65);
+  const [coloreTolleranza, setColoreTolleranza] = useState<number>(15);
   const [diametroRange, setDiametroRange] = useState<[number, number]>([0, 999]);
   const [altezzaRange, setAltezzaRange] = useState<[number, number]>([0, 999]);
   const [prezzoRange, setPrezzoRange] = useState<[number, number]>([0, 9999]);
@@ -258,8 +258,8 @@ export default function CatalogoPage() {
           <>
             <div className="dual-range" style={{ marginTop: 8 }}>
               <span className="dual-range-val">{coloreTolleranza}</span>
-              <div className="dual-range-track" style={{ "--range-left": "0%", "--range-right": `${100 - (coloreTolleranza / 441) * 100}%` } as React.CSSProperties}>
-                <input type="range" min={1} max={441} step={1} value={coloreTolleranza} onChange={(e) => setColoreTolleranza(Number(e.target.value))} className="dual-range-input dual-range-min" />
+              <div className="dual-range-track" style={{ "--range-left": "0%", "--range-right": `${100 - (coloreTolleranza / 100) * 100}%` } as React.CSSProperties}>
+                <input type="range" min={1} max={100} step={1} value={coloreTolleranza} onChange={(e) => setColoreTolleranza(Number(e.target.value))} className="dual-range-input dual-range-min" />
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)" }}>
