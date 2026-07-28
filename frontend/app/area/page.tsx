@@ -10,6 +10,7 @@ import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 import AreaHeader from "../../components/area/AreaHeader";
 import AreaFooter from "../../components/area/AreaFooter";
 import AiSearchModal from "../../components/area/AiSearchModal";
+import { api } from "../../lib/api";
 import type { CustomerProfile } from "../../lib/types";
 
 function SparkleIcon({ size = 20 }: { size?: number }) {
@@ -75,16 +76,48 @@ export default function AreaClientePage() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [heroSearch, setHeroSearch] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const tabs = ["Ricercati", "Novità", "Listini"];
 
   const openAiModal = () => setAiModalOpen(true);
   const closeAiModal = () => setAiModalOpen(false);
+
+  // Ricerca testuale dalla barra: va al catalogo (ricerca server-side).
+  const doTextSearch = () => {
+    const q = heroSearch.trim();
+    if (!q) return;
+    router.push(`/area/catalogo?q=${encodeURIComponent(q)}`);
+  };
 
   // La ricerca AI vera vive nel catalogo: navighiamo lì con la query, che il
   // catalogo esegue e conserva nell'URL (torna-indietro riporta ai risultati).
   const handleSearchAi = (query: string) => {
     closeAiModal();
     router.push(`/area/catalogo?ai=${encodeURIComponent(query)}`);
+  };
+
+  // Ricerca per immagine: eseguita qui, risultati passati al catalogo via
+  // sessionStorage (un file non si può mettere nell'URL). Stessa modale del catalogo.
+  const handleImageSearch = async (file: File) => {
+    setAiLoading(true); setAiError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post<{ articoli: unknown[]; error?: string }>("/api/catalogo/ricerca-immagine", fd);
+      if (res.error) {
+        setAiError("Non ho riconosciuto un prodotto nell'immagine. Prova con un'altra foto.");
+        return;
+      }
+      sessionStorage.setItem("ai-image-results", JSON.stringify(res.articoli));
+      closeAiModal();
+      router.push("/area/catalogo?imgsearch=1");
+    } catch {
+      setAiError("Ricerca non riuscita. Riprova.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   if (loading || !user || user.userType !== "customer") return <LoadingScreen />;
@@ -542,7 +575,13 @@ export default function AreaClientePage() {
               {/* Search bar */}
               <div className="dash-search-bar">
                 <div className="dash-search-icon"><SearchIcon /></div>
-                <input type="text" placeholder="Cerca vasi, materiali o linee..." />
+                <input
+                  type="text"
+                  placeholder="Cerca vasi, materiali o linee..."
+                  value={heroSearch}
+                  onChange={(e) => setHeroSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") doTextSearch(); }}
+                />
                 <button className="dash-ai-btn" onClick={openAiModal} title="Ricerca intelligente AI" aria-label="Ricerca intelligente AI">
                   <SparkleIcon size={18} />
                 </button>
@@ -621,7 +660,7 @@ export default function AreaClientePage() {
         </div>
       </div>
 
-      <AiSearchModal open={aiModalOpen} onClose={closeAiModal} onSubmit={handleSearchAi} />
+      <AiSearchModal open={aiModalOpen} onClose={closeAiModal} onSubmit={handleSearchAi} onSubmitImage={handleImageSearch} loading={aiLoading} error={aiError} />
 
       <AreaFooter />
     </>
