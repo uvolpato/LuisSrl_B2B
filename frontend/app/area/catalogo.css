@@ -124,6 +124,7 @@
 .catalogo-page .dual-range-input {
   position: absolute; top: 0; left: 0; width: 100%; height: 24px;
   appearance: none; -webkit-appearance: none; background: transparent;
+  border: none; box-shadow: none; border-radius: 0;
   pointer-events: none; outline: none; margin: 0;
 }
 .catalogo-page .dual-range-input::-webkit-slider-runnable-track {
