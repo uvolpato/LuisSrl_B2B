@@ -475,6 +475,24 @@ Tutto in italiano o inglese.
 | **Giornaliera** | €350/giorno | Fatturato a fine mese su ore effettive |
 | **Solo blocchi 1-4** (primo rilascio utile) | €4.900 | Cliente inizia subito a caricare articoli, poi si decide il resto |
 
+### Confronto con prezzi di mercato
+
+A titolo informativo, il benchmark di mercato Italia 2026 per un profilo full-stack senior
+(Next.js + NestJS + PostgreSQL + AI) è:
+
+| Figura | Tariffa/giorno | Su 36 giorni |
+|--------|---------------|--------------|
+| **Consulente senior diretto** | €450–550/giorno | **€16.200–19.800** |
+| **Agenzia di sviluppo** | €600–800/giorno | **€21.600–28.800** |
+| **Prezzo applicato (€350/giorno)** | **€350/giorno** | **€12.600** |
+
+Il prezzo applicato è circa il **30% sotto il mercato** per un senior diretto
+e circa la **metà di un'agenzia**. Il risparmio riflette:
+
+- Sviluppo AI-assisted (Claude) che riduce i tempi rispetto a codice manuale
+- Assenza di overhead aziendale (IVA esclusa, partita IVA del professionista)
+- Collaborazione diretta, nessun intermediario
+
 ### Costi operativi mensili (a carico del cliente)
 
 | Voce | Costo/mese |
