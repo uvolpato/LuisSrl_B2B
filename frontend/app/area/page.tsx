@@ -179,12 +179,20 @@ export default function AreaClientePage() {
         }
         .dash-search-icon {
           position: absolute;
-          left: 16px;
+          left: 10px;
           top: 50%;
           transform: translateY(-50%);
           color: var(--muted);
-          pointer-events: none;
+          background: none;
+          border: none;
+          padding: 6px;
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: color 0.15s ease, background 0.15s ease;
         }
+        .dash-search-icon:hover { color: var(--accent); background: var(--accent-soft); }
         .dash-ai-btn {
           position: absolute;
           right: 8px;
@@ -580,7 +588,7 @@ export default function AreaClientePage() {
             <>
               {/* Search bar */}
               <div className="dash-search-bar">
-                <div className="dash-search-icon"><SearchIcon /></div>
+                <button type="button" className="dash-search-icon" onClick={doTextSearch} title="Cerca" aria-label="Cerca"><SearchIcon /></button>
                 <input
                   type="text"
                   placeholder={SCOPES[activeTab].placeholder}
