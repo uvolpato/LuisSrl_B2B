@@ -12,6 +12,7 @@ import ClientiSection from "../../components/admin/sections/ClientiSection";
 import RaccolteSection from "../../components/admin/sections/RaccolteSection";
 import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 import ListiniSection from "../../components/admin/sections/ListiniSection";
+import CostiAiSection from "../../components/admin/sections/CostiAiSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -49,6 +50,8 @@ export default function AdminPage() {
       {section === "raccolte" && <RaccolteSection />}
 
       {section === "listini" && <ListiniSection />}
+
+      {section === "costi-ai" && <CostiAiSection />}
 
       {["ordini", "import", "ai"].includes(section) && (
         <div className="admin-content">
