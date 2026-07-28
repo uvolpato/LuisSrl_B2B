@@ -150,6 +150,20 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
                   </div>
                 </div>
               ))}
+
+              {p.items.length > 0 && (
+                <div style={{ marginTop: 20, marginLeft: "auto", maxWidth: 340, border: "1px solid var(--border)", borderRadius: 12, padding: "16px 18px", background: "var(--surface)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "var(--muted)" }}>
+                    <span>Subtotale ({p.items.reduce((s, i) => s + i.quantita, 0)} pz)</span>
+                    <span>{formatPrice(p.items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0))}</span>
+                  </div>
+                  <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "12px 0" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 600 }}>
+                    <span>Totale IVA esclusa</span>
+                    <span>{formatPrice(p.items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0))}</span>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -8,12 +8,17 @@ import LoadingScreen from "../../../components/common/LoadingScreen";
 import AreaHeader from "../../../components/area/AreaHeader";
 import AreaFooter from "../../../components/area/AreaFooter";
 
+function formatPrice(n: number) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+}
+
 interface Progetto {
   id: number;
   nome: string;
   note: string | null;
   shareToken: string;
   count: number;
+  totale: number;
   updatedAt: string;
 }
 
@@ -90,7 +95,10 @@ export default function ProgettiPage() {
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="pg-card-name">{p.nome}</div>
-                  <div className="pg-card-meta">{p.count} {p.count === 1 ? "articolo" : "articoli"}</div>
+                  <div className="pg-card-meta">
+                    {p.count} {p.count === 1 ? "articolo" : "articoli"}
+                    {p.count > 0 && <> · <strong style={{ color: "var(--fg)" }}>{formatPrice(p.totale)}</strong></>}
+                  </div>
                 </div>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
               </Link>
