@@ -214,7 +214,9 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
                 <p style={{ color: "var(--muted)" }}>Nessun articolo. Aggiungili dalla scheda prodotto con «Aggiungi a un progetto».</p>
               )}
 
-              {groupBy(p.items, (i) => i.articoloCodiceLinea ?? i.varianteCodice).map((g) => renderGroup(g))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {groupBy(p.items, (i) => i.articoloCodiceLinea ?? i.varianteCodice).map((g) => renderGroup(g))}
+              </div>
 
               {p.items.length > 0 && (
                 <div style={{ marginTop: 20, marginLeft: "auto", maxWidth: 340, border: "1px solid var(--border)", borderRadius: 12, padding: "16px 18px", background: "var(--surface)" }}>
