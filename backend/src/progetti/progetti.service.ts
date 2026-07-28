@@ -80,11 +80,17 @@ export class ProgettiService {
     const progetti = await this.prisma.progetto.findMany({
       where: { clienteId },
       orderBy: { updatedAt: 'desc' },
-      include: { _count: { select: { items: true } } },
+      include: { items: { select: { varianteCodice: true, quantita: true } } },
     });
-    return progetti.map((p) => ({
-      id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken,
-      count: p._count.items, updatedAt: p.updatedAt,
+    // ponytail: calcola il totale per progetto arricchendo gli item; ok per pochi
+    // progetti. Se un cliente ne avesse a decine, muovere il calcolo in una query aggregata.
+    return Promise.all(progetti.map(async (p) => {
+      const enriched = await this.enrich(p.items, clienteId);
+      const totale = enriched.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+      return {
+        id: p.id, nome: p.nome, note: p.note, shareToken: p.shareToken,
+        count: p.items.length, totale, updatedAt: p.updatedAt,
+      };
     }));
   }
 
