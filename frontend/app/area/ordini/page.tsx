@@ -137,12 +137,21 @@ export default function OrdiniPage() {
           {/* Filtri e ricerca */}
           <div className="ordini-toolbar">
             <div className="ordini-search">
-              <input
-                className="form-input search-input"
-                placeholder="Cerca per numero ordine, codice prodotto…"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              />
+              <div style={{ position: "relative", display: "flex", flex: 1 }}>
+                <input
+                  className="form-input search-input"
+                  style={{ flex: 1, paddingRight: search ? 34 : undefined }}
+                  placeholder="Cerca per numero ordine, codice prodotto…"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+                {search && (
+                  <button type="button" onClick={() => { setSearch(""); setPage(1); }} aria-label="Cancella" title="Cancella"
+                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
               <button className="btn btn-primary btn-sm" onClick={() => fetchOrdini()} disabled={loading}>
                 Cerca
               </button>

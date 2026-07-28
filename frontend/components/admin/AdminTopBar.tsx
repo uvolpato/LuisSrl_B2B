@@ -76,7 +76,14 @@ export default function AdminTopBar({
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
+              style={searchValue ? { paddingRight: 34 } : undefined}
             />
+            {searchValue && (
+              <button type="button" onClick={() => onSearchChange("")} aria-label="Cancella" title="Cancella"
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            )}
           </div>
         )}
         {hasFilter && (
