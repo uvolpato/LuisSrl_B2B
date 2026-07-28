@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { api, setCsrfToken } from "../../lib/api";
 import { useAuth } from "../../lib/use-auth";
+import { useHeaderCenter } from "../../contexts/HeaderCenterContext";
 import type { CustomerProfile } from "../../lib/types";
 
 const MOBILE_BP = "(max-width: 768px)";
@@ -22,6 +23,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCompact, setCompact] = useState(false);
   const [cartCount, setCartCount] = useState<number | null>(null);
+  const { content: headerCenter } = useHeaderCenter();
 
   const fetchCartCount = useCallback(() => {
     api.get<{ count: number }>("/api/carrello/count").then((r) => setCartCount(r.count)).catch(() => setCartCount(0));
@@ -366,7 +368,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
             </Link>
           </div>
 
-          {children && <div className="header-center">{children}</div>}
+          {headerCenter && <div className="header-center">{headerCenter}</div>}
 
           <div className="header-right">
             <nav className={isCompact ? "nav-hidden" : ""}>

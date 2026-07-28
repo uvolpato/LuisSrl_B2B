@@ -6,8 +6,7 @@ import { useAuth } from "../../../lib/use-auth";
 import { api } from "../../../lib/api";
 import { thumbUrl } from "../../../lib/thumb";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
+
 import AddToProjectModal from "../../../components/area/AddToProjectModal";
 
 function formatPrice(n: number) {
@@ -209,7 +208,6 @@ export default function CarrelloPage() {
 
   return (
     <div className="catalogo-page cart-page">
-      <AreaHeader />
       <main id="content">
         <div className="container">
           <div className="page-title">
@@ -276,8 +274,6 @@ export default function CarrelloPage() {
           )}
         </div>
       </main>
-      <AreaFooter />
-
       <AddToProjectModal
         open={projOpen}
         onClose={() => setProjOpen(false)}

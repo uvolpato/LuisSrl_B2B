@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/use-auth";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
-import AreaHeader from "../../../../components/area/AreaHeader";
-import AreaFooter from "../../../../components/area/AreaFooter";
+
 import { thumbUrl } from "../../../../lib/thumb";
 
 function formatPrice(n: number) {
@@ -185,8 +184,6 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
         .pd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
       `}</style>
 
-      <AreaHeader />
-
       <main>
         <div className="container">
           <Link href="/area/progetti" className="pd-back">
@@ -236,7 +233,6 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </main>
 
-      <AreaFooter />
     </div>
   );
 }

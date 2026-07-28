@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
+
 
 function formatPrice(n: number) {
   return "€ " + n.toFixed(2).replace(".", ",");
@@ -186,7 +185,7 @@ export default function CheckoutPage() {
   if (confermato) {
     return (
       <div className="catalogo-page cart-page checkout-page">
-        <AreaHeader />
+        
         <main id="content">
           <div className="container">
             <div className="checkout-confirm">
@@ -210,7 +209,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </main>
-        <AreaFooter />
+        
       </div>
     );
   }
@@ -218,9 +217,9 @@ export default function CheckoutPage() {
   if (loading) {
     return (
       <div className="catalogo-page cart-page">
-        <AreaHeader />
+        
         <main id="content"><div className="container" style={{ paddingBlock: 48, color: "var(--muted)" }}>Caricamento…</div></main>
-        <AreaFooter />
+        
       </div>
     );
   }
@@ -228,12 +227,12 @@ export default function CheckoutPage() {
   if (error || !dati) {
     return (
       <div className="catalogo-page cart-page">
-        <AreaHeader />
+        
         <main id="content"><div className="container" style={{ paddingBlock: 48, textAlign: "center" }}>
           <p style={{ color: "var(--muted)", marginBottom: 20 }}>Impossibile caricare i dati di checkout.</p>
           <Link href="/area/carrello" className="btn btn-primary">Torna al carrello</Link>
         </div></main>
-        <AreaFooter />
+        
       </div>
     );
   }
@@ -241,19 +240,19 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="catalogo-page cart-page">
-        <AreaHeader />
+        
         <main id="content"><div className="container" style={{ paddingBlock: 48, textAlign: "center" }}>
           <p style={{ color: "var(--muted)", marginBottom: 20 }}>Il carrello è vuoto.</p>
           <Link href="/area/catalogo" className="btn btn-primary">Continua lo shopping</Link>
         </div></main>
-        <AreaFooter />
+        
       </div>
     );
   }
 
   return (
     <div className="catalogo-page cart-page checkout-page">
-      <AreaHeader />
+      
       <main id="content">
         <div className="container">
           <div className="page-title">
@@ -530,7 +529,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </main>
-      <AreaFooter />
+      
     </div>
   );
 }

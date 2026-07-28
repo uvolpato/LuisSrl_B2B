@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
+
 import OrdineDetailModal from "../../../components/users/OrdineDetailModal";
 import DataTable, { type Column, type RowAction } from "../../../components/admin/DataTable";
 import { IconEye } from "../../../components/admin/icons";
@@ -126,7 +125,6 @@ export default function OrdiniPage() {
 
   return (
     <div className="catalogo-page ordini-page">
-      <AreaHeader />
       <main id="content">
         <div className="container">
           <div className="page-title">
@@ -207,7 +205,6 @@ export default function OrdiniPage() {
         />
       )}
 
-      <AreaFooter />
     </div>
   );
 }

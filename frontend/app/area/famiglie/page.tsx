@@ -5,8 +5,7 @@ import Link from "next/link";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
+
 import { thumbUrl } from "../../../lib/thumb";
 
 interface Famiglia {
@@ -72,8 +71,6 @@ export default function FamigliePage() {
         }
       `}</style>
 
-      <AreaHeader />
-
       <main>
         <div className="container">
           <div className="fam-head">
@@ -113,7 +110,6 @@ export default function FamigliePage() {
         </div>
       </main>
 
-      <AreaFooter />
     </div>
   );
 }
