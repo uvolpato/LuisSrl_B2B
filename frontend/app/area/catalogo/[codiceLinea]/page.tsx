@@ -69,6 +69,21 @@ interface Articolo {
   immagini: Immagine[];
 }
 
+interface CorrelatoCard {
+  id: string;
+  nome: string;
+  colore: string | null;
+  coloreRgb: string | null;
+  famiglia: { codice: string; nome: string };
+  raccolte: Array<{ nome: string; slug: string }>;
+  img: string | null;
+  imgCss: string | null;
+  imgTipo: string | null;
+  variantiCount: number;
+  prezzo: number | null;
+  createdAt: string;
+}
+
 const STOCK_LABELS: Record<string, string> = { ok: "Disponibile", low: "Scorte limitate", out: "Esaurito" };
 const STOCK_CLASS: Record<string, string> = { ok: "stock-ok", low: "stock-low", out: "stock-out" };
 
@@ -102,6 +117,8 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
   const [articolo, setArticolo] = useState<Articolo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [correlati, setCorrelati] = useState<CorrelatoCard[]>([]);
+  const [loadingCorrelati, setLoadingCorrelati] = useState(true);
 
   const codiceLinea = paramsResolved?.codiceLinea;
 
@@ -114,6 +131,15 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { setArticolo(d); setLoading(false); })
       .catch(() => { setArticolo(null); setLoading(false); });
+  }, [codiceLinea]);
+
+  useEffect(() => {
+    if (!codiceLinea) return;
+    setLoadingCorrelati(true);
+    fetch(`/api/catalogo/${encodeURIComponent(codiceLinea)}/correlati`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => { setCorrelati(d); setLoadingCorrelati(false); })
+      .catch(() => { setCorrelati([]); setLoadingCorrelati(false); });
   }, [codiceLinea]);
 
   const galleryImages = useMemo(() => {
@@ -658,17 +684,25 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
             <section className="related-section">
               <div className="container">
                 <h2>Articoli correlati</h2>
-                <div className="related-grid">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Link key={i} href={`/area/catalogo/${articolo.codiceLinea}`} className="related-card">
-                      <PositionedImage className="rel-img" src={galleryImages[0]?.url} css={galleryImages[0]?.css} aspect={4/3} alt="" thumbWidth={400} />
-                      <div className="rel-body">
-                        <p className="rel-name">{articolo.nome}</p>
-                        <span className="rel-price">{formatPrice(10)}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                {loadingCorrelati ? (
+                  <div className="login-loading-area" style={{ padding: "40px 0", textAlign: "center" }}>
+                    <div className="spinner" />
+                  </div>
+                ) : correlati.length === 0 ? (
+                  <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>Nessun articolo correlato trovato.</p>
+                ) : (
+                  <div className="related-grid">
+                    {correlati.map((c) => (
+                      <Link key={c.id} href={`/area/catalogo/${c.id}`} className="related-card">
+                        <PositionedImage className="rel-img" src={c.img} css={c.imgCss} aspect={4/3} alt={c.nome} thumbWidth={400} />
+                        <div className="rel-body">
+                          <p className="rel-name">{c.nome}</p>
+                          <span className="rel-price">{c.prezzo != null ? formatPrice(c.prezzo) : "—"}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           </>

@@ -128,4 +128,9 @@ export class CatalogoController {
     );
     return { ...pubblico, varianti: variantiConPrezzi, variantiCount: variantiConPrezzi.length };
   }
+
+  @Get(':codiceLinea/correlati')
+  async getCorrelati(@Param('codiceLinea') codiceLinea: string, @Req() req: AuthenticatedRequest) {
+    return this.integrazione.getCorrelati(codiceLinea, req.user.id);
+  }
 }
