@@ -31,8 +31,9 @@
 .catalogo-page .area-header nav { display: flex; gap: var(--gap-lg); }
 .catalogo-page .area-header nav a { font-size: 14px; color: var(--muted); }
 .catalogo-page .area-header nav a:hover, .catalogo-page .area-header nav a.active { color: var(--fg); }
-.catalogo-page .search-box { flex: 1; max-width: 400px; position: relative; }
-.catalogo-page .search-box input {
+/* ── Search-box condivisa (header center via layout, non più dentro .catalogo-page) ── */
+.search-box { flex: 1; max-width: 400px; position: relative; }
+.search-box input {
   width: 100%;
   padding: 9px 42px 9px 36px;
   border: 1px solid var(--border);
@@ -42,21 +43,22 @@
   font-size: 14px;
   color: var(--fg);
 }
-.catalogo-page .search-box input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-.catalogo-page .search-box > svg {
+.search-box input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.search-box > svg {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; color: var(--muted);
 }
-.catalogo-page .search-box .ai-trigger {
+.search-box .ai-trigger {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: none; color: var(--muted);
   border-radius: 6px; padding: 0; line-height: 0;
+  cursor: pointer;
   transition: color 0.12s ease, background 0.12s ease;
 }
-.catalogo-page .search-box .ai-trigger:hover { color: var(--accent); background: var(--accent-soft); }
-.catalogo-page .search-box .ai-trigger svg { width: 16px; height: 16px; color: inherit; }
+.search-box .ai-trigger:hover { color: var(--accent); background: var(--accent-soft); }
+.search-box .ai-trigger svg { width: 18px; height: 18px; color: inherit; }
 
 /* ── Bottoni ── */
 .catalogo-page .btn {
