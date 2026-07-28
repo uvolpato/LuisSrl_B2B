@@ -384,6 +384,40 @@ Tutto in italiano o inglese.
 
 ---
 
+## Blocco 12 — Tracciamento comportamento clienti (3-4 giorni)
+
+> Progettazione completa in `CUSTOMER-TRACKING.md`.
+
+| Attività | Dettaglio |
+|----------|-----------|
+| **Fase 1 — Base** | Tabella `customer_event` (append-only: customerId, tipo, entità, dettagli JSON, ip, ts). Logging server-side degli eventi già in transito: login, view articolo, ricerca, carrello add/remove, ordine create/view. Timeline cronologica in admin. |
+| **Fase 2 — Client** | Endpoint `POST /api/eventi` con batch beacon (`navigator.sendBeacon`). Micro-eventi: page.view, page.leave (permanenza), scroll.depth. Tabella `customer_session` (aggregata per sessione: pagine viste, articoli visitati, ricerche, device). Scheda comportamentale per cliente + funnel vede→aggiunge→ordina. |
+| **Fase 3 — AI** | Job periodico di sintesi → `customer_insight` (testo in linguaggio naturale + metriche JSONB). Embedding pgvector dei riassunti. "Prossima azione consigliata" per up-sell/riattivazione. Segmentazione automatica (esploratori, ricompratori, dormienti). |
+
+**Cosa si vede:** admin vede timeline cliente, scheda comportamentale, funnel, alert commerciali; AI risponde su comportamento clienti.
+
+**Note:**
+- GDPR: informativa, minimizzazione, retention 12-24 mesi su eventi grezzi, accesso solo admin
+- Tabelle dedicate (non mischiare con AuditLog admin)
+- Nessun tool esterno (GA, Hotjar) — tutto in-house
+
+**Valore: €1.400 (4 giorni × €350)**
+
+---
+
+## To do — Rafinamenti UI e fix
+
+| # | Attività | Priorità |
+|---|----------|----------|
+| 1 | **Catalogo — filtri fissi nello scroll** | alta |
+|   | I filtri laterali (sidebar) devono rimanere visibili durante lo scroll della pagina; al massimo si fermano quando raggiungono la fine della loro sezione (comportamento "sticky" con limite). | |
+| 2 | **Carrello — responsive mobile/tablet** | alta |
+|   | Le card del carrello hanno problemi di layout su viewport piccolo (sforamento, elementi sovrapposti). Verificare e sistemare a 375px e 768px. | |
+| 3 | **Checkout — riepilogo ordine** | alta |
+|   | La sezione riepilogo dell'ordine nella pagina di checkout va sistemata (dati mancanti o layout rotto). | |
+
+---
+
 ## Riepilogo economico
 
 | # | Blocco | Giorni | €/giorno | **Valore** |
