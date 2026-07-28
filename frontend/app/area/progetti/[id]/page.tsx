@@ -7,17 +7,9 @@ import { api } from "../../../../lib/api";
 import { useAuth } from "../../../../lib/use-auth";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
 
-import { thumbUrl } from "../../../../lib/thumb";
+import { formatPrice, groupBy } from "../../../../lib/helpers";
+import CartLineGroup from "../../../../components/area/CartLineGroup";
 
-function formatPrice(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
-}
-
-function groupBy<T>(items: T[], key: (t: T) => string): [string, T[]][] {
-  const map = new Map<string, T[]>();
-  items.forEach((i) => { const k = key(i); if (!map.has(k)) map.set(k, []); map.get(k)!.push(i); });
-  return [...map.entries()];
-}
 
 interface ItemP {
   varianteCodice: string;
@@ -80,96 +72,6 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
     void navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
-  function itemImg(it: ItemP) {
-    return it.immagineUrl
-      ? <img src={thumbUrl(it.immagineUrl, 200)} alt={it.articoloNome ?? ""} className="cart-item-img" />
-      : <div className="cart-item-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg></div>;
-  }
-
-  function priceLine(it: ItemP) {
-    return (
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}>
-        <strong>{formatPrice(it.prezzo?.prezzoNetto ?? 0)} / pz</strong>
-        {(it.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(it.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{it.prezzo?.sconto ?? 0}%</span></>}
-      </span>
-    );
-  }
-
-  // Raggruppa le varianti della stessa linea come nel carrello.
-  function renderGroup([linea, vars]: [string, ItemP[]]) {
-    const first = vars[0];
-    if (vars.length === 1) {
-      const it = first;
-      return (
-        <div key={linea} className="cart-item">
-          <div className="cart-item-img-wrap">{itemImg(it)}</div>
-          <div className="cart-item-info">
-            <Link href={`/area/catalogo/${it.articoloCodiceLinea}`} className="cart-item-name">{it.articoloNome ?? it.varianteCodice}</Link>
-            <span className="cart-item-variant">
-              <span className="badge code">{it.varianteCodice}</span>
-              {it.dimensioni && <span className="badge dim">{it.dimensioni}</span>}
-            </span>
-            {it.varianteDescrizione && <span className="cart-item-desc">{it.varianteDescrizione}</span>}
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              {it.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {it.multiplo} pz</span>}
-              {it.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-              {priceLine(it)}
-            </div>
-          </div>
-          <div className="cart-item-actions">
-            <span className="cart-item-price">{formatPrice(it.quantita * (it.prezzo?.prezzoNetto ?? 0))}</span>
-            <div className="qty-control">
-              <button type="button" onClick={() => setQty(it, it.quantita - it.multiplo)}>−</button>
-              <input type="number" value={it.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-              <button type="button" onClick={() => setQty(it, it.quantita + it.multiplo)}>+</button>
-            </div>
-            <div className="cart-item-links">
-              <button className="cart-item-link danger" onClick={() => removeItem(it)}>Rimuovi</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    const totQty = vars.reduce((s, v) => s + v.quantita, 0);
-    return (
-      <div key={linea} className="cart-group">
-        <div className="cart-group-header">
-          <div className="cart-item-img-wrap">{itemImg(first)}</div>
-          <div className="cart-group-info">
-            <Link href={`/area/catalogo/${first.articoloCodiceLinea}`} className="cart-item-name">{first.articoloNome ?? linea}</Link>
-            <span className="cart-group-qty">{totQty} pz</span>
-          </div>
-        </div>
-        <div className="cart-group-variants">
-          {vars.map((v) => (
-            <div key={v.varianteCodice} className="cart-group-row">
-              <span className="cart-item-variant">
-                <span className="badge code">{v.varianteCodice}</span>
-                {v.dimensioni && <span className="badge dim">{v.dimensioni}</span>}
-                {v.varianteDescrizione && <span className="cart-item-desc">{v.varianteDescrizione}</span>}
-                {v.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {v.multiplo} pz</span>}
-                {v.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-                {priceLine(v)}
-              </span>
-              <div className="cart-group-row-actions">
-                <div className="cart-item-prices-col">
-                  <span className="cart-item-price">{formatPrice(v.quantita * (v.prezzo?.prezzoNetto ?? 0))}</span>
-                </div>
-                <div className="qty-control">
-                  <button type="button" onClick={() => setQty(v, v.quantita - v.multiplo)}>−</button>
-                  <input type="number" value={v.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-                  <button type="button" onClick={() => setQty(v, v.quantita + v.multiplo)}>+</button>
-                </div>
-                <div className="cart-group-links">
-                  <button className="cart-item-link danger" onClick={() => removeItem(v)}>Rimuovi</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   if (loading || !user || user.userType !== "customer") return <LoadingScreen />;
 
@@ -212,7 +114,11 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
               )}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {groupBy(p.items, (i) => i.articoloCodiceLinea ?? i.varianteCodice).map((g) => renderGroup(g))}
+                {groupBy(p.items, (i) => i.articoloCodiceLinea ?? i.varianteCodice).map((g) => (
+                  <CartLineGroup key={g[0]} group={g}
+                    onQty={(codice, delta) => { const it = p.items.find((i) => i.varianteCodice === codice); if (it) setQty(it, it.quantita + delta * it.multiplo); }}
+                    onRemove={(codice) => { const it = p.items.find((i) => i.varianteCodice === codice); if (it) removeItem(it); }} />
+                ))}
               </div>
 
               {p.items.length > 0 && (

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-
+import ClearButton from "../../../components/common/ClearButton";
 import OrdineDetailModal from "../../../components/users/OrdineDetailModal";
 import DataTable, { type Column, type RowAction } from "../../../components/admin/DataTable";
 import { IconEye } from "../../../components/admin/icons";
@@ -144,10 +144,7 @@ export default function OrdiniPage() {
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 />
                 {search && (
-                  <button type="button" onClick={() => { setSearch(""); setPage(1); }} aria-label="Cancella" title="Cancella"
-                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
+                  <ClearButton onClear={() => { setSearch(""); setPage(1); }} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)" }} />
                 )}
               </div>
               <button className="btn btn-primary btn-sm" onClick={() => fetchOrdini()} disabled={loading}>

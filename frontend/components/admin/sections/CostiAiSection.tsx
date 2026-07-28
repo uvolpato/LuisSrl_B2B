@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../../lib/api";
+import { formatPrice } from "../../../lib/helpers";
 
-function eur(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 4 }).format(n);
-}
+const eur = (n: number) => formatPrice(n, 4);
 
 interface Summary {
   periodoGiorni: number;

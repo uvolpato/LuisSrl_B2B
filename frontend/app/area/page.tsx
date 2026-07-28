@@ -9,6 +9,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 
 import AiSearchModal from "../../components/area/AiSearchModal";
+import ClearButton from "../../components/common/ClearButton";
 import { api } from "../../lib/api";
 import type { CustomerProfile } from "../../lib/types";
 
@@ -594,10 +595,7 @@ export default function AreaClientePage() {
                   onKeyDown={(e) => { if (e.key === "Enter") doTextSearch(); }}
                 />
                 {heroSearch && (
-                  <button type="button" onClick={() => setHeroSearch("")} aria-label="Cancella" title="Cancella"
-                    style={{ position: "absolute", right: 52, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center", borderRadius: 6 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
+                  <ClearButton onClear={() => setHeroSearch("")} style={{ position: "absolute", right: 52, top: "50%", transform: "translateY(-50%)", borderRadius: 6 }} />
                 )}
                 <button className="dash-ai-btn" onClick={openAiModal} title="Ricerca intelligente AI" aria-label="Ricerca intelligente AI">
                   <SparkleIcon size={18} />

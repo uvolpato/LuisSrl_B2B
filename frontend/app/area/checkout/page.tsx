@@ -6,11 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-
-
-function formatPrice(n: number) {
-  return "€ " + n.toFixed(2).replace(".", ",");
-}
+import { formatPrice } from "../../../lib/helpers";
 
 interface PrezzoInfo {
   prezzoNetto: number;

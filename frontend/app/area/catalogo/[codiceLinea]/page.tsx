@@ -9,6 +9,7 @@ import LoadingScreen from "../../../../components/common/LoadingScreen";
 import PositionedImage from "../../../../components/common/PositionedImage";
 import AddToProjectModal from "../../../../components/area/AddToProjectModal";
 import { parseImgCss } from "../../../../lib/img-css";
+import { formatPrice } from "../../../../lib/helpers";
 
 interface DimEntry {
   codice: string;
@@ -87,9 +88,6 @@ interface CorrelatoCard {
 const STOCK_LABELS: Record<string, string> = { ok: "Disponibile", low: "Scorte limitate", out: "Esaurito" };
 const STOCK_CLASS: Record<string, string> = { ok: "stock-ok", low: "stock-low", out: "stock-out" };
 
-function formatPrice(n: number) {
-  return "€ " + n.toFixed(2).replace(".", ",");
-}
 
 function getStock(giacenza: number): "ok" | "low" | "out" {
   if (giacenza <= 0) return "out";

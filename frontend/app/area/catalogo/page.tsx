@@ -7,6 +7,7 @@ import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import AiSearchModal from "../../../components/area/AiSearchModal";
+import ClearButton from "../../../components/common/ClearButton";
 import PositionedImage from "../../../components/common/PositionedImage";
 import { useHeaderCenter } from "../../../contexts/HeaderCenterContext";
 
@@ -88,10 +89,7 @@ export default function CatalogoPage() {
           style={search ? { paddingRight: 68 } : undefined}
         />
         {search && (
-          <button type="button" onClick={() => setSearch("")} aria-label="Cancella" title="Cancella"
-            style={{ position: "absolute", right: 42, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center", zIndex: 2 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
+          <ClearButton onClear={() => setSearch("")} style={{ position: "absolute", right: 42, top: "50%", transform: "translateY(-50%)", zIndex: 2 }} />
         )}
         <button className="ai-trigger" title="Ricerca intelligente AI" aria-label="Ricerca intelligente AI" onClick={() => setAiOpen(true)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C12 7.5 7.5 12 2 12C7.5 12 12 16.5 12 22C12 16.5 16.5 12 22 12C16.5 12 12 7.5 12 2Z" /></svg>
