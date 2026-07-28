@@ -81,7 +81,7 @@
   display: grid;
   grid-template-columns: 240px 1fr;
   gap: 40px;
-  padding-block: 32px 64px;
+  padding-block: 28px 64px;
   flex: 1;
 }
 @media (max-width: 920px) {
@@ -1156,7 +1156,7 @@
 .catalogo-page.scheda-prodotto .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 
 /* ===== Carrello ===== */
-.catalogo-page.cart-page .page-title { padding-block: 24px; }
+.catalogo-page.cart-page .page-title { padding-block: 28px 20px; }
 .catalogo-page.cart-page .page-title h1 {
   font-family: var(--font-display);
   font-size: var(--fs-h2);
@@ -1498,7 +1498,7 @@
 .catalogo-page .filters-drawer-foot { padding: 16px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
 
 /* ══ Checkout ══ */
-.catalogo-page.cart-page.checkout-page .page-title { padding-block: 24px; }
+.catalogo-page.cart-page.checkout-page .page-title { padding-block: 28px 20px; }
 .catalogo-page.cart-page.checkout-page .page-title h1 {
   font-family: var(--font-display);
   font-size: var(--fs-h2);
@@ -1715,6 +1715,8 @@
 .ordini-page .ordini-toolbar {
   flex-shrink: 0;
 }
+.ordini-page .page-title { padding-block: 28px 20px; }
+.ordini-page .page-title h1 { font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 40px); margin: 0; }
 
 /* Data table — regole identiche a admin.css (unscoped) per coerenza visiva */
 .data-table {

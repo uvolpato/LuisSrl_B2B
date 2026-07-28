@@ -51,9 +51,9 @@ export default function ProgettiPage() {
   return (
     <div className="progetti-page">
       <style>{`
-        .progetti-page main { padding: 32px 20px 64px; }
+        .progetti-page main { padding: 28px 20px 64px; }
         .progetti-page .container { max-width: 900px; margin: 0 auto; }
-        .pg-head h1 { margin: 0 0 4px; font-size: 26px; }
+        .pg-head h1 { margin: 0 0 4px; font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 40px); }
         .pg-head p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
         .pg-create { display: flex; gap: 10px; margin-bottom: 24px; }
         .pg-create input { flex: 1; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font: inherit; color: var(--fg); }
