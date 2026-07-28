@@ -1177,7 +1177,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     }
 
     scored.sort((a, b) => b.score - a.score);
-    const top = scored.slice(0, 8);
+    const top = scored.slice(0, 4);
 
     // Prezzi per il listino del cliente
     let codiceListino: string | null = null;
