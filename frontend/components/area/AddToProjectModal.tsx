@@ -7,12 +7,12 @@ interface Progetto { id: number; nome: string; count: number }
 
 /** Modale per aggiungere una variante (con quantità) a un progetto esistente o nuovo. */
 export default function AddToProjectModal({
-  open, onClose, varianteCodice, quantita,
+  open, onClose, items,
 }: {
   open: boolean;
   onClose: () => void;
-  varianteCodice: string | null;
-  quantita: number;
+  /** Varianti (con quantità) da aggiungere: una dalla buy-box, o più dalla griglia. */
+  items: { varianteCodice: string; quantita: number }[];
 }) {
   const [progetti, setProgetti] = useState<Progetto[] | null>(null);
   const [nuovo, setNuovo] = useState("");
@@ -26,11 +26,17 @@ export default function AddToProjectModal({
     api.get<Progetto[]>("/api/progetti").then(setProgetti).catch(() => setProgetti([]));
   }, [open]);
 
+  async function addItems(progettoId: number) {
+    for (const it of items) {
+      await api.post(`/api/progetti/${progettoId}/items`, it);
+    }
+  }
+
   async function addTo(progettoId: number, nome: string) {
-    if (!varianteCodice || busy) return;
+    if (!items.length || busy) return;
     setBusy(true); setError(null);
     try {
-      await api.post(`/api/progetti/${progettoId}/items`, { varianteCodice, quantita });
+      await addItems(progettoId);
       setDone(nome);
     } catch { setError("Non riuscito. Riprova."); }
     finally { setBusy(false); }
@@ -38,11 +44,11 @@ export default function AddToProjectModal({
 
   async function createAndAdd() {
     const n = nuovo.trim();
-    if (!n || !varianteCodice || busy) return;
+    if (!n || !items.length || busy) return;
     setBusy(true); setError(null);
     try {
       const p = await api.post<{ id: number; nome: string }>("/api/progetti", { nome: n });
-      await api.post(`/api/progetti/${p.id}/items`, { varianteCodice, quantita });
+      await addItems(p.id);
       setDone(p.nome);
     } catch { setError("Non riuscito. Riprova."); }
     finally { setBusy(false); }
@@ -58,7 +64,9 @@ export default function AddToProjectModal({
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 24px 64px color-mix(in oklch, var(--fg) 18%, transparent)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 0" }}>
           <h3 style={{ margin: 0, fontSize: 18 }}>Aggiungi a un progetto</h3>
-          <button onClick={onClose} aria-label="Chiudi" style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", cursor: "pointer" }}>✕</button>
+          <button onClick={onClose} aria-label="Chiudi" style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, lineHeight: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
         </div>
 
         <div style={{ padding: "16px 20px 20px" }}>

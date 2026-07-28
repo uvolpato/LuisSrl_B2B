@@ -132,6 +132,12 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   const [buyQty, setBuyQty] = useState<number | null>(null);
   const [gridQtys, setGridQtys] = useState<Record<string, number>>({});
   const [addProjOpen, setAddProjOpen] = useState(false);
+  const [projItems, setProjItems] = useState<{ varianteCodice: string; quantita: number }[]>([]);
+  function openProject(items: { varianteCodice: string; quantita: number }[]) {
+    if (!items.length) return;
+    setProjItems(items);
+    setAddProjOpen(true);
+  }
   const [addBtnText, setAddBtnText] = useState("Aggiungi al carrello");
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryModalIdx, setGalleryModalIdx] = useState(0);
@@ -524,7 +530,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   {buyOut ? "Esaurito" : buyBtnText}
                 </button>
                 <button className="btn btn-secondary" disabled={!selectedVariant && !singleVariant}
-                  onClick={() => setAddProjOpen(true)}
+                  onClick={() => { const v = selectedVariant || singleVariant; if (v) openProject([{ varianteCodice: v.codice, quantita: buyQty ?? v.multiplo }]); }}
                   style={{ width: "100%", justifyContent: "center", gap: 8, padding: 12, fontSize: 15, opacity: (!selectedVariant && !singleVariant) ? 0.5 : 1 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
                   Aggiungi a un progetto
@@ -635,10 +641,18 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                     <span className="total-sep">·</span>
                     Totale: <strong>{formatPrice(gridTotals.total)}</strong>
                   </div>
-                  <button className="btn btn-primary" onClick={addAllToCart}
-                    style={addBtnText !== "Aggiungi al carrello" ? { background: "oklch(45% 0.12 145)" } : {}}>
-                    {addBtnText}
-                  </button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button className="btn btn-secondary" disabled={gridTotals.count === 0}
+                      onClick={() => openProject(filteredVarianti.filter((v) => (gridQtys[v.codice] || 0) > 0).map((v) => ({ varianteCodice: v.codice, quantita: gridQtys[v.codice] })))}
+                      style={{ gap: 6, opacity: gridTotals.count === 0 ? 0.5 : 1 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+                      Aggiungi a un progetto
+                    </button>
+                    <button className="btn btn-primary" onClick={addAllToCart}
+                      style={addBtnText !== "Aggiungi al carrello" ? { background: "oklch(45% 0.12 145)" } : {}}>
+                      {addBtnText}
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -668,8 +682,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
       <AddToProjectModal
         open={addProjOpen}
         onClose={() => setAddProjOpen(false)}
-        varianteCodice={(selectedVariant || singleVariant)?.codice ?? null}
-        quantita={buyQty ?? (selectedVariant || singleVariant)?.multiplo ?? 1}
+        items={projItems}
       />
 
       {galleryModalOpen && (
