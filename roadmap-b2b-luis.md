@@ -1,12 +1,37 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: bozza 4.3 — 13 giugno 2026 (allineata al modello Articolo → Variante e ai canali viste Postgres + Excel AGOMIR, spec v1.12)
+Versione: 5.0 — 29 luglio 2026 (allineata al cross‑check completato tra specifiche, roadmap e codice)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 ---
 
-## Progresso attuale
+## Progresso attuale (riepilogo)
+
+| Blocco | Stato | Gap |
+|--------|-------|-----|
+| **1** — Infrastruttura e accessi | ✅ COMPLETATO | — |
+| **1A** — Profilazione ruoli e permessi | ✅ COMPLETATO | 🔴 modale crea/modifica utente con gruppo + override; 🔴 separazione anagrafica clienti read‑only |
+| **2** — Integrazione Integra (lettura) | ✅ COMPLETATO | — |
+| **3** — Listini e prezzi | ✅ Backend OK, frontend da ripulire | ⚠️ codice morto `variantExamplePrice()` + commento fuorviante in scheda prodotto |
+| **4** — Gestione articoli + AI | ✅ COMPLETATO | — |
+| **5** — Catalogo lato cliente | ✅ COMPLETATO | 🔴 3 fix UI in ToDo (filtri sticky, responsive carrello, riepilogo checkout) |
+| **6** — Clienti e inviti | ✅ COMPLETATO | — |
+| **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento |
+| **8** — Ordini | ⚠️ Parziale | ❌ admin gestione ordini (cambio stato, note); ❌ notifiche email |
+| **9** — Export ordini verso Integra | ❌ NON IMPLEMENTATO | Assente — blocco fondamentale |
+| **10** — AI lato cliente | ⚠️ Parziale | ❌ banner AI con prompt admin; ❌ cronologia visite; ❌ cache Redis |
+| **11** — Collaudo, formazione, go‑live | ❌ NON INIZIATO | — |
+| **12** — Tracciamento clienti | ❌ NON INIZIATO | Progettato in `CUSTOMER-TRACKING.md` |
+
+### Gap critici
+1. **Export Excel AGOMIR (Blocco 9)** — assente, non si possono esportare ordini verso Integra
+2. **Admin gestione ordini (Blocco 8)** — nessuna UI/API per cambiare stato ordini
+3. **Notifiche email ordini** — MailModule esiste ma non collegato a ordini
+4. **Banner AI configurabile (Blocco 10)** — dashboard con box hardcoded, nessun prompt admin
+5. **Codice morto** — `variantExamplePrice()` in scheda prodotto mai chiamata, commento fuorviante
+
+---
 
 ### Blocco 1 — Infrastruttura e accessi — ✅ COMPLETATO
 
@@ -67,13 +92,14 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
 **Da fare — Blocco 2:** HTTPS/tunnel per il go-live (differito); sezioni admin oltre Clienti (Articoli, Famiglie, Raccolte, Ordini) con dati mock — diventano reali dal Blocco 2.
 
-### Blocco 2 — Integrazione Integra — ✅ COMPLETATO (giugno–luglio 2026)
+### Blocco 2 — Integrazione Integra — ✅ COMPLETATO (lettura, giugno–luglio 2026)
 - Tabella `integrazioni_raw` + viste `vista_integra_famiglie/linee/prodotti` dall'export reale
   (`esportazioni.xlsx` → `backend/data/integra-prodotti.json`, script `seed-integra-from-export.js` con `--wipe`)
 - **Import per linea**: l'aggregato Articolo è la linea (prodotti come Varianti); prodotti senza
   linea → un Articolo per prodotto. Mappa euristica id→linea (`integrazioni_linee_map`) in attesa
   dell'id esplicito da AGOMIR
 - Schermata "Nuovo Articolo" con ricerca, selezione e import; lista aggiornata dopo l'import
+- **⚠️ Solo lettura — export verso Integra (Blocco 9) non implementato**
 
 ### Blocco 4 — Gestione articoli + AI (admin) — ✅ COMPLETATO (giugno–luglio 2026)
 - Sezioni admin Articoli / Famiglie / Raccolte complete (griglia+card, colonna descrizione,
@@ -84,16 +110,16 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
   ambientate (Gemini) e wizard descrizione AI
 - Flusso "configurato" irreversibile (foto+colore+varianti+descrizione AI; criterio listino nel Blocco 3)
 
-### Blocco 5 — Catalogo lato cliente — 🔨 IN CORSO (luglio 2026)
-- **Fase A fatta**: `/area/catalogo` fedele al prototipo 02-catalog (sidebar filtri, tab raccolte,
-  ricerca, griglia card, paginazione, modale AI "in arrivo", Carrello (0) inattivo).
+### Blocco 5 — Catalogo lato cliente — ✅ COMPLETATO (luglio 2026)
+- **Fase A**: `/area/catalogo` fedele al prototipo 02-catalog (sidebar filtri, tab raccolte,
+  ricerca, griglia card, paginazione, modale AI, facets con conteggi, CIELAB color filter).
   API `GET /api/catalogo` — solo articoli configurati+attivi, guard customer
-- **Fase B fatta**: scheda articolo `/area/catalogo/[codice]` fedele a 03-product (galleria che
-  rispetta il posizionamento immagini impostato in admin, lightbox a vista completa, griglia
-  d'ordine varianti con multipli, buy-box) — **prezzi finti in attesa del Blocco 3 listini**
+- **Fase B**: scheda articolo `/area/catalogo/[codice]` fedele a 03-product (galleria che
+  rispetta il posizionamento immagini, lightbox, griglia d'ordine varianti con multipli,
+  buy-box, articoli correlati con scoring CIELAB+raccolte+dimensioni).
+  **Prezzi reali dal listino cliente** (`integra_listini_righe` con sconti a cascata)
 - Dettaglio cliente blindato: 404 su articoli nascosti/non configurati, campi admin esclusi
-- **Ordine fasi rimanenti**: listini → carrello/ordini → giacenza+dashboard → export AGOMIR →
-  AI lato cliente → collaudo e go-live
+- **⚠️ 3 fix UI in sospeso**: filtri sticky, responsive carrello, riepilogo checkout
 
 ### Credenziali admin
 - Email: `admin@luissrl.it`
@@ -227,15 +253,16 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 3 — Listini e prezzi (1-2 giorni)
+## Blocco 3 — Listini e prezzi (1-2 giorni) ⚠️ Backend OK, frontend da ripulire
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Lettura listini da viste Postgres | Listini con prezzi per Variante (codice articolo), sola lettura |
-| Associazione cliente-listino | Admin assegna un listino a ogni cliente |
-| Lettura sconti personalizzati da viste Postgres | Sconti aggiuntivi clienti specifici (opzionale) |
-| Calcolo prezzo finale | Prezzo = listino del cliente − eventuali sconti |
-| Esposizione prezzo in scheda articolo | Visibile solo a cliente loggato |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Lettura listini da viste Postgres | Listini con prezzi per Variante (codice articolo), sola lettura | ✅ backend |
+| Associazione cliente-listino | Admin assegna un listino a ogni cliente (campo `codiceListino` su Customer) | ✅ |
+| Lettura sconti personalizzati da viste Postgres | Sconti aggiuntivi clienti specifici (opzionale) | ✅ backend (`integra_listini_sconti`) |
+| Calcolo prezzo finale | Prezzo = listino del cliente − sconti a cascata (s1–s4) + extra raccolta | ✅ backend (`getPrezzo()`) |
+| Esposizione prezzo in scheda articolo | Visibile solo a cliente loggato | ✅ frontend |
+| Pulizia codice morto | Rimuovere `variantExamplePrice()` e commento "Listini non ancora integrati" da `[codiceLinea]/page.tsx` | 🔴 da fare |
 
 **Cosa si vede:** i listini arrivano dalle viste Postgres, il cliente vede il prezzo corretto.
 
@@ -243,7 +270,7 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 4 — Gestione articoli + AI (3-4 giorni)
+## Blocco 4 — Gestione articoli + AI (3-4 giorni) ✅ COMPLETATO
 
 | Attività | Dettaglio |
 |----------|-----------|
@@ -264,15 +291,15 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 5 — Catalogo lato cliente (2 giorni)
+## Blocco 5 — Catalogo lato cliente (2 giorni) ✅ COMPLETATO
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Griglia articoli | Card con immagine, nome, codice, prezzo, badge disponibilità |
-| Filtri e ricerca | Per Famiglia principale, Raccolta, testo libero |
-| Scheda articolo cliente | Galleria immagini, zoom, varianti/confezioni, prezzo |
-| Prezzi personalizzati | Listino cliente applicato in base a profilo |
-| Design responsive | Mobile-first (i rivenditori usano tablet in negozio) |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Griglia articoli | Card con immagine, nome, prezzo, badge disponibilità, AI badge, sort | ✅ |
+| Filtri e ricerca | Per Famiglia, Raccolta, testo, CIELAB colore, prezzo, dimensioni | ✅ |
+| Scheda articolo cliente | Galleria, lightbox, griglia varianti, multipli, buy-box, correlati | ✅ |
+| Prezzi personalizzati | Listino cliente (`integra_listini_righe` + sconti a cascata) | ✅ |
+| Design responsive | Mobile-first | ⚠️ 3 fix in ToDo |
 
 **Cosa si vede:** cliente loggato naviga catalogo con prezzi personalizzati.
 
@@ -280,7 +307,7 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 6 — Clienti e inviti (1-2 giorni)
+## Blocco 6 — Clienti e inviti (1-2 giorni) ✅ COMPLETATO
 
 | Attività | Dettaglio |
 |----------|-----------|
@@ -297,14 +324,14 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 7 — Giacenza (1 giorno)
+## Blocco 7 — Giacenza (1 giorno) ⚠️ Parziale
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Lettura giacenza da viste Postgres | Quantità per Variante (codice articolo) |
-| Badge disponibilità | Solo "Disponibile" / "Non disponibile" in griglia e scheda (la quantità non è esposta al cliente) |
-| Filtro disponibilità | Mostra solo articoli disponibili |
-| Data ultimo aggiornamento | Trasparenza sul dato mostrato |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Lettura giacenza da viste Postgres | Quantità per Variante (codice articolo) | ✅ backend (`syncGiacenza()`) |
+| Badge disponibilità | Solo "Disponibile" / "Non disponibile" in griglia e scheda | ✅ (3 livelli: ok/low/out) |
+| Filtro disponibilità | Mostra solo articoli disponibili | ❌ mancante |
+| Data ultimo aggiornamento | Trasparenza sul dato mostrato | ❌ mancante |
 
 **Cosa si vede:** badge colorati in catalogo, filtro funzionante.
 
@@ -312,18 +339,17 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 8 — Ordini (2-3 giorni)
+## Blocco 8 — Ordini (2-3 giorni) ⚠️ Parziale
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Carrello | Aggiungi/rimuovi articoli, quantità, varianti |
-| Barra acquisto | In scheda articolo: seleziona variante → quantità → aggiungi |
-| Checkout | Riepilogo, note ordine, conferma |
-| Stati ordine | Bozza → Confermato → In lavorazione → Spedito |
-| Storico ordini cliente | Elenco ordini con stato e data |
-| Dettaglio ordine | Righe, quantità, prezzi, stato |
-| Admin: gestione ordini | Elenco, cambio stato, note interne |
-| Notifica email | Conferma ordine, aggiornamento stato |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Carrello | Aggiungi/rimuovi articoli, quantità, varianti, salva per dopo | ✅ |
+| Checkout | Riepilogo, indirizzi, note ordine, conferma | ✅ (fix riepilogo in ToDo) |
+| Stati ordine | Bozza → Confermato → In lavorazione → Spedito | ✅ backend (solo BOZZA usato) |
+| Storico ordini cliente | Elenco ordini con stato e data | ✅ |
+| Dettaglio ordine | Righe, quantità, prezzi, stato | ✅ `OrdineDetailModal` |
+| Admin: gestione ordini | Elenco, cambio stato, note interne | ❌ mancante |
+| Notifica email | Conferma ordine, aggiornamento stato | ❌ mancante (MailModule esiste) |
 
 **Cosa si vede:** cliente ordina, admin evasa, email di notifica.
 
@@ -331,7 +357,7 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 9 — Export ordini verso Integra (1-2 giorni)
+## Blocco 9 — Export ordini verso Integra (1-2 giorni) ❌ NON IMPLEMENTATO
 
 | Attività | Dettaglio |
 |----------|-----------|
@@ -342,23 +368,25 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** il portale genera l'Excel ordini che l'automazione AGOMIR importa in Integra.
 
+**Nota:** nessun modulo di export esiste al momento.
+
 **Valore: €700 (2 giorni × €350)**
 
 ---
 
-## Blocco 10 — AI lato cliente (2-3 giorni)
+## Blocco 10 — AI lato cliente (2-3 giorni) ⚠️ Parziale
 
 > Spec dettagliata del RAG (spazio vettoriale multimodale, pgvector, provider embedding,
 > backfill, endpoint, privacy, fasi): **`RAG-RICERCA-SEMANTICA.md`**.
 > L'embedding descrizione del Blocco 4 confluisce nella stessa tabella `articolo_embedding`.
 
-| Attività | Dettaglio |
-|----------|-----------|
-| Ricerca semantica | Input linguaggio naturale → embedding (Mini PC/hosted) → pgvector `text_vec` → risultati |
-| Ricerca per immagini | Upload foto → embedding immagine → pgvector `img_vec` (similarità visiva, stesso spazio) → articoli simili |
-| Banner homepage | "Articoli interessanti" basati su cronologia cliente |
-| Cronologia visite | "Ripresi da dove hai lasciato" |
-| Cache embedding | Redis per query frequenti |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Ricerca semantica | Input linguaggio naturale → pgvector `text_vec` → risultati | ✅ `POST /api/catalogo/ricerca` |
+| Ricerca per immagini | Upload foto → Gemini Vision → pgvector → articoli simili | ✅ `POST /api/catalogo/ricerca-immagine` |
+| Banner homepage | "Articoli interessanti" basati su cronologia cliente | ❌ dashboard con box hardcoded |
+| Cronologia visite | "Ripresi da dove hai lasciato" | ❌ sezione statica |
+| Cache embedding | Redis per query frequenti | ❌ mancante |
 
 **Cosa si vede:** cliente cerca "vasi rettangolari grandi per esterno" e trova risultati; carica foto e trova articoli simili.
 
@@ -366,7 +394,7 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 11 — Collaudo, formazione e go-live (2-3 giorni)
+## Blocco 11 — Collaudo, formazione e go-live (2-3 giorni) ❌ NON INIZIATO
 
 | Attività | Dettaglio |
 |----------|-----------|
@@ -415,6 +443,8 @@ Tutto in italiano o inglese.
 |   | Le card del carrello hanno problemi di layout su viewport piccolo (sforamento, elementi sovrapposti). Verificare e sistemare a 375px e 768px. | |
 | 3 | **Checkout — riepilogo ordine** | alta |
 |   | La sezione riepilogo dell'ordine nella pagina di checkout va sistemata (dati mancanti o layout rotto). | |
+| 4 | **Codice morto listini** | media |
+|   | Rimuovere `variantExamplePrice()` e commento "Listini non ancora integrati" da `[codiceLinea]/page.tsx`. I prezzi sono reali da `integra_listini_righe`. | |
 
 ---
 
@@ -434,7 +464,8 @@ Tutto in italiano o inglese.
 | 9 | Export ordini verso Integra | 2 | €350 | **€700** |
 | 10 | AI lato cliente | 3 | €350 | **€1.050** |
 | 11 | Collaudo, formazione, go-live | 3 | €350 | **€1.050** |
-| | **Totale** | **32 giorni** | | **€11.200** |
+| 12 | Tracciamento comportamento clienti | 4 | €350 | **€1.400** |
+| | **Totale** | **36 giorni** | | **€12.600** |
 
 ### Opzioni di fatturazione
 
