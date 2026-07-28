@@ -426,7 +426,7 @@ export class IntegrazioneService {
   }
 
   /** Filtri sidebar catalogo (famiglie/raccolte con conteggi) — query leggera. */
-  async getCatalogoFacets() {
+  async getCatalogoFacets(codiceListino: string = 'LIS1') {
     const arts = await this.prisma.articolo.findMany({
       where: { configurato: true, stato: 'ATTIVO', famiglia: { stato: 'ATTIVO' } },
       select: {
@@ -480,9 +480,9 @@ export class IntegrazioneService {
       }
     }
 
-    // Prezzo: min/max prezzo netto da LIS1 (solo articoli del portale con varianti)
-    const prezzoRows = await this.prisma.$queryRawUnsafe<Array<{ min_prezzo: number | null; max_prezzo: number | null }>>(
-      `SELECT min((plr.prezzo_listino * (1 - coalesce(plr.sconto_1,0)/100) * (1 - coalesce(plr.sconto_2,0)/100)
+    // Prezzo: min/max prezzo netto dal listino (solo articoli del portale con varianti)
+    const prezzoRows = await this.prisma.$queryRaw<Array<{ min_prezzo: number | null; max_prezzo: number | null }>>(
+      Prisma.sql`SELECT min((plr.prezzo_listino * (1 - coalesce(plr.sconto_1,0)/100) * (1 - coalesce(plr.sconto_2,0)/100)
                     * (1 - coalesce(plr.sconto_3,0)/100) * (1 - coalesce(plr.sconto_4,0)/100)))::numeric AS min_prezzo,
               max((plr.prezzo_listino * (1 - coalesce(plr.sconto_1,0)/100) * (1 - coalesce(plr.sconto_2,0)/100)
                     * (1 - coalesce(plr.sconto_3,0)/100) * (1 - coalesce(plr.sconto_4,0)/100)))::numeric AS max_prezzo
@@ -490,7 +490,7 @@ export class IntegrazioneService {
        JOIN articoli a ON a.id = v.articolo_id
        JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
        WHERE a.configurato = true AND a.stato = 'ATTIVO'
-         AND plr.codice_listino = 'LIS1' AND plr.prezzo_listino > 0`,
+         AND plr.codice_listino = ${codiceListino} AND plr.prezzo_listino > 0`,
     );
     const prezzo = prezzoRows[0]?.min_prezzo != null && prezzoRows[0]?.max_prezzo != null
       ? { min: Math.floor(Number(prezzoRows[0].min_prezzo)), max: Math.ceil(Number(prezzoRows[0].max_prezzo)) }
@@ -508,6 +508,7 @@ export class IntegrazioneService {
     altezzaMin?: number; altezzaMax?: number;
     prezzoMin?: number; prezzoMax?: number;
     coloreRgb?: string; coloreTolleranza?: number;
+    codiceListino?: string;
   }) {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(Math.max(params.pageSize ?? 24, 1), 60);
@@ -529,8 +530,8 @@ export class IntegrazioneService {
       ] });
     }
 
-    // Se ci sono filtri dimensioni, prezzo o coloreRgb, usiamo una raw query unica
-    const hasRawFilters = (params.diametroMin != null || params.diametroMax != null || params.altezzaMin != null || params.altezzaMax != null || params.prezzoMin != null || params.prezzoMax != null || (params.coloreRgb && params.coloreTolleranza != null));
+    // Se ci sono filtri dimensioni, prezzo, coloreRgb o sort custom, usiamo una raw query unica
+    const hasRawFilters = (params.diametroMin != null || params.diametroMax != null || params.altezzaMin != null || params.altezzaMax != null || params.prezzoMin != null || params.prezzoMax != null || (params.coloreRgb && params.coloreTolleranza != null) || (params.sort && params.sort !== 'novita'));
 
     if (hasRawFilters) {
       // Costruiamo WHERE Prisma, poi lo serializziamo in SQL con il dialetto Prisma
@@ -612,7 +613,7 @@ export class IntegrazioneService {
       let variantExistsSql: Prisma.Sql;
       if (needPrezzo) {
         const priceExpr = Prisma.sql`(plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric`;
-        variantSubConds.push(Prisma.sql`plr.codice_listino = 'LIS1' AND plr.prezzo_listino > 0`);
+        variantSubConds.push(Prisma.sql`plr.codice_listino = ${params.codiceListino ?? 'LIS1'} AND plr.prezzo_listino > 0`);
         if (params.prezzoMin != null) variantSubConds.push(Prisma.sql`${priceExpr} >= ${params.prezzoMin}`);
         if (params.prezzoMax != null) variantSubConds.push(Prisma.sql`${priceExpr} <= ${params.prezzoMax}`);
         const allVariantConds = Prisma.join(variantSubConds, ' AND ');
@@ -626,7 +627,9 @@ export class IntegrazioneService {
 
       const countSql = Prisma.sql`SELECT count(*)::int AS n FROM articoli a JOIN "famiglie" f ON f.codice = a."famiglia_codice" ${allConds}`;
       const orderSql = params.sort === 'prezzo-asc' || params.sort === 'prezzo-desc'
-        ? Prisma.sql`ORDER BY (SELECT min(plr2.prezzo_listino * (1-coalesce(plr2.sconto_1,0)/100) * (1-coalesce(plr2.sconto_2,0)/100) * (1-coalesce(plr2.sconto_3,0)/100) * (1-coalesce(plr2.sconto_4,0)/100)) FROM varianti vp2 JOIN integra_listini_righe plr2 ON plr2.codice_prodotto = vp2.codice WHERE vp2.articolo_id = a.id AND plr2.codice_listino = 'LIS1' AND plr2.prezzo_listino > 0) ${params.sort === 'prezzo-asc' ? Prisma.sql`ASC NULLS LAST` : Prisma.sql`DESC NULLS LAST`}`
+        ? Prisma.sql`ORDER BY (SELECT min(plr2.prezzo_listino * (1-coalesce(plr2.sconto_1,0)/100) * (1-coalesce(plr2.sconto_2,0)/100) * (1-coalesce(plr2.sconto_3,0)/100) * (1-coalesce(plr2.sconto_4,0)/100)) FROM varianti vp2 JOIN integra_listini_righe plr2 ON plr2.codice_prodotto = vp2.codice WHERE vp2.articolo_id = a.id AND plr2.codice_listino = ${params.codiceListino ?? 'LIS1'} AND plr2.prezzo_listino > 0) ${params.sort === 'prezzo-asc' ? Prisma.sql`ASC NULLS LAST` : Prisma.sql`DESC NULLS LAST`}`
+        : params.sort === 'nome-asc' ? Prisma.sql`ORDER BY a."nome" ASC NULLS LAST`
+        : params.sort === 'nome-desc' ? Prisma.sql`ORDER BY a."nome" DESC NULLS LAST`
         : Prisma.sql`ORDER BY a."created_at" DESC`;
 
       const offset = (page - 1) * pageSize;
@@ -661,8 +664,9 @@ export class IntegrazioneService {
       const artMap = new Map(arts.map((a) => [a.id, a]));
       const ordered = ids.map((id) => artMap.get(id)).filter(Boolean) as typeof arts;
 
+      const prezzi = await this.getPrezziMinimiArticoli(ids, params.codiceListino ?? 'LIS1');
       return {
-        articoli: ordered.map((a) => this.mapArticoloCard(a)),
+        articoli: ordered.map((a) => this.mapArticoloCard(a, prezzi)),
         total,
         hasMore: page * pageSize < total,
       };
@@ -687,8 +691,10 @@ export class IntegrazioneService {
       }),
     ]);
 
+    const artIds = arts.map((a) => a.id);
+    const prezzi = await this.getPrezziMinimiArticoli(artIds, params.codiceListino ?? 'LIS1');
     return {
-      articoli: arts.map((a) => this.mapArticoloCard(a)),
+      articoli: arts.map((a) => this.mapArticoloCard(a, prezzi)),
       total,
       hasMore: page * pageSize < total,
     };
@@ -718,9 +724,31 @@ export class IntegrazioneService {
       .filter((f) => f.count > 0);
   }
 
+  /** Batch query: prezzo minimo netto per ogni articolo, dato un codice listino. */
+  private async getPrezziMinimiArticoli(artIds: number[], codiceListino: string): Promise<Map<number, number | null>> {
+    if (!artIds.length) return new Map();
+    const priceExpr = `(plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric`;
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; prezzo: number | null }>>(
+      `SELECT v.articolo_id AS art_id, min(${priceExpr}) AS prezzo
+       FROM varianti v
+       JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
+       WHERE v.articolo_id = ANY($1::int[])
+         AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
+       GROUP BY v.articolo_id`,
+      artIds, codiceListino,
+    );
+    const map = new Map<number, number | null>();
+    for (const r of rows) map.set(r.art_id, r.prezzo != null ? Number(r.prezzo) : null);
+    return map;
+  }
+
   /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
-  private mapArticoloCard(a: any) {
+  private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>) {
     const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];
+    let prezzoMin: number | null = null;
+    if (prezziPerArticolo) {
+      prezzoMin = prezziPerArticolo.get(a.id) ?? null;
+    }
     return {
       id: a.codiceLinea,
       nome: a.nome,
@@ -734,6 +762,7 @@ export class IntegrazioneService {
       imgCss: cover?.css ?? null,
       imgTipo: cover?.tipo ?? null,
       variantiCount: a._count.varianti,
+      prezzo: prezzoMin,
       createdAt: a.createdAt,
     };
   }

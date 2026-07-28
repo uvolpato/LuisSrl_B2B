@@ -212,6 +212,7 @@
   color: var(--muted);
 }
 .catalogo-page .product-card .product-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.catalogo-page .product-card .product-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--fg); }
 .catalogo-page .product-card .product-variants { font-size: 13px; color: var(--muted); }
 .catalogo-page .product-card .product-stock {
   font-family: var(--font-mono);

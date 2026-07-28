@@ -22,6 +22,7 @@ interface CatalogoArticolo {
   imgCss: string | null;
   imgTipo: string | null;
   variantiCount: number;
+  prezzo: number | null;
   createdAt: string;
 }
 interface Catalogo {
@@ -35,10 +36,11 @@ interface Catalogo {
 
 const PAGE_SIZE = 12;
 const SORT_OPTIONS = [
-  { value: "venduti", label: "Ordina: più venduti" },
+  { value: "novita", label: "Novità" },
   { value: "prezzo-asc", label: "Prezzo: basso → alto" },
   { value: "prezzo-desc", label: "Prezzo: alto → basso" },
-  { value: "novita", label: "Novità" },
+  { value: "nome-asc", label: "Nome: A → Z" },
+  { value: "nome-desc", label: "Nome: Z → A" },
 ];
 
 const IconStella = (
@@ -63,7 +65,7 @@ export default function CatalogoPage() {
   const [altezzaRange, setAltezzaRange] = useState<[number, number]>([0, 999]);
   const [prezzoRange, setPrezzoRange] = useState<[number, number]>([0, 9999]);
   const [activeTab, setActiveTab] = useState<string>("tutti");
-  const [sort, setSort] = useState("venduti");
+  const [sort, setSort] = useState("novita");
   const [aiOpen, setAiOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Ricerca semantica: risultati dal backend (null = catalogo normale)
@@ -179,7 +181,7 @@ export default function CatalogoPage() {
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
     if (activeTab !== "tutti") p.set("tab", activeTab);
-    if (sort !== "venduti") p.set("sort", sort);
+    if (sort !== "novita") p.set("sort", sort);
     if (search.trim()) p.set("q", search.trim());
     const qs = p.toString();
     router.replace(qs ? `/area/catalogo?${qs}` : "/area/catalogo", { scroll: false });
@@ -401,6 +403,9 @@ export default function CatalogoPage() {
                         </div>
                       )}
                       <div className="product-meta">
+                        {a.prezzo != null && (
+                          <span className="product-price">{a.variantiCount > 1 ? `da ` : ''}{a.prezzo.toFixed(2)}&nbsp;&euro;</span>
+                        )}
                         <span className="product-variants">{a.variantiCount} varianti</span>
                         <span className="product-stock stock-ok">Disponibile</span>
                       </div>

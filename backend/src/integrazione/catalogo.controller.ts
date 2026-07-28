@@ -18,7 +18,7 @@ export class CatalogoController {
 
   /** Lista paginata (infinite-scroll): filtri, ricerca testo, sort lato server. */
   @Get()
-  getCatalogo(
+  async getCatalogo(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('famiglia') famiglia?: string,
@@ -35,7 +35,17 @@ export class CatalogoController {
     @Query('prezzoMax') prezzoMax?: string,
     @Query('coloreRgb') coloreRgb?: string,
     @Query('coloreTolleranza') coloreTolleranza?: string,
+    @Req() req?: AuthenticatedRequest,
   ) {
+    let codiceListino: string | null = null;
+    if (req?.user?.id) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
+      codiceListino = customer?.codiceListino ?? null;
+    }
+    if (!codiceListino) {
+      const fallback = await this.integrazione.getFirstListino();
+      codiceListino = fallback?.codice_listino ?? 'LIS1';
+    }
     return this.integrazione.getCatalogoPaginato({
       page: page ? parseInt(page, 10) : 1,
       pageSize: pageSize ? parseInt(pageSize, 10) : 24,
@@ -53,13 +63,23 @@ export class CatalogoController {
       prezzoMax: prezzoMax ? parseFloat(prezzoMax) : undefined,
       coloreRgb: coloreRgb || undefined,
       coloreTolleranza: coloreTolleranza ? parseFloat(coloreTolleranza) : undefined,
+      codiceListino,
     });
   }
 
   /** Filtri sidebar (famiglie/raccolte con conteggi). */
   @Get('facets')
-  getFacets() {
-    return this.integrazione.getCatalogoFacets();
+  async getFacets(@Req() req: AuthenticatedRequest) {
+    let codiceListino: string | null = null;
+    if (req?.user?.id) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
+      codiceListino = customer?.codiceListino ?? null;
+    }
+    if (!codiceListino) {
+      const fallback = await this.integrazione.getFirstListino();
+      codiceListino = fallback?.codice_listino ?? 'LIS1';
+    }
+    return this.integrazione.getCatalogoFacets(codiceListino);
   }
 
   /** Ricerca semantica: frase in linguaggio naturale → articoli per similarità. */
