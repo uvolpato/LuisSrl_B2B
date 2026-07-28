@@ -107,9 +107,44 @@
 .catalogo-page .color-filter-label { gap: 6px !important; }
 .catalogo-page .range-filter { margin-top: 8px; }
 .catalogo-page .range-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; }
-.catalogo-page .range-inputs { display: flex; align-items: center; gap: 6px; }
-.catalogo-page .range-input { width: 70px !important; padding: 5px 8px !important; font-size: 13px !important; text-align: center; }
-.catalogo-page .range-sep { color: var(--muted); font-size: 13px; }
+.catalogo-page .dual-range { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.catalogo-page .dual-range-val { font-size: 12px; font-family: var(--font-mono); color: var(--muted); min-width: 32px; text-align: center; }
+.catalogo-page .dual-range-track { position: relative; flex: 1; height: 24px; }
+.catalogo-page .dual-range-track::before {
+  content: ""; position: absolute; top: 10px; left: 0; right: 0;
+  height: 4px; border-radius: 2px; background: var(--border);
+}
+.catalogo-page .dual-range-track::after {
+  content: ""; position: absolute; top: 10px; height: 4px; border-radius: 2px;
+  background: var(--accent); pointer-events: none;
+  left: var(--range-left, 0%); right: var(--range-right, 0%);
+}
+.catalogo-page .dual-range-input {
+  position: absolute; top: 0; left: 0; width: 100%; height: 24px;
+  appearance: none; -webkit-appearance: none; background: transparent;
+  pointer-events: none; outline: none; margin: 0;
+}
+.catalogo-page .dual-range-input::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px; background: var(--border);
+}
+.catalogo-page .dual-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  margin-top: -6px; pointer-events: auto; cursor: grab;
+  position: relative; z-index: 2;
+}
+.catalogo-page .dual-range-input::-moz-range-track {
+  height: 4px; border-radius: 2px; background: var(--border); border: none;
+}
+.catalogo-page .dual-range-input::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  margin-top: -6px; pointer-events: auto; cursor: grab;
+}
+.catalogo-page .dual-range-max { z-index: 2; }
+.catalogo-page .dual-range-min { z-index: 3; }
 
 .catalogo-page .catalog-header {
   display: flex; align-items: center; justify-content: space-between;

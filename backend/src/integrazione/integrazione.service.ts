@@ -416,14 +416,16 @@ export class IntegrazioneService {
     );
     const colori = coloriRows.map((r) => ({ nome: r.colore, rgb: r.rgb, count: Number(r.cnt) }));
 
-    // Dimensioni: min/max da varianti.dimensioni JSONB
+    // Dimensioni: min/max da varianti.dimensioni JSONB (solo articoli attivi)
     const dimRows = await this.prisma.$queryRawUnsafe<Array<{ dim: string; min_val: number | null; max_val: number | null }>>(
       `SELECT d.dim,
               min((v.dimensioni->d.dim->>'valore')::numeric) AS min_val,
               max((v.dimensioni->d.dim->>'valore')::numeric) AS max_val
        FROM varianti v
+       JOIN articoli a ON a.id = v.articolo_id
        CROSS JOIN (SELECT 'diametro' AS dim UNION ALL SELECT 'altezza' AS dim) d
-       WHERE v.dimensioni IS NOT NULL
+       WHERE a.configurato = true AND a.stato = 'ATTIVO'
+         AND v.dimensioni IS NOT NULL
          AND v.dimensioni ? d.dim
          AND (v.dimensioni->d.dim->>'valore') IS NOT NULL
          AND (v.dimensioni->d.dim->>'valore') <> ''
@@ -436,14 +438,17 @@ export class IntegrazioneService {
       }
     }
 
-    // Prezzo: min/max prezzo netto da LIS1 (default)
+    // Prezzo: min/max prezzo netto da LIS1 (solo articoli del portale con varianti)
     const prezzoRows = await this.prisma.$queryRawUnsafe<Array<{ min_prezzo: number | null; max_prezzo: number | null }>>(
-      `SELECT min(prezzo_listino * (1 - coalesce(sconto_1,0)/100) * (1 - coalesce(sconto_2,0)/100)
-                    * (1 - coalesce(sconto_3,0)/100) * (1 - coalesce(sconto_4,0)/100))::numeric AS min_prezzo,
-              max(prezzo_listino * (1 - coalesce(sconto_1,0)/100) * (1 - coalesce(sconto_2,0)/100)
-                    * (1 - coalesce(sconto_3,0)/100) * (1 - coalesce(sconto_4,0)/100))::numeric AS max_prezzo
-       FROM integra_listini_righe
-       WHERE codice_listino = 'LIS1' AND prezzo_listino > 0`,
+      `SELECT min((plr.prezzo_listino * (1 - coalesce(plr.sconto_1,0)/100) * (1 - coalesce(plr.sconto_2,0)/100)
+                    * (1 - coalesce(plr.sconto_3,0)/100) * (1 - coalesce(plr.sconto_4,0)/100)))::numeric AS min_prezzo,
+              max((plr.prezzo_listino * (1 - coalesce(plr.sconto_1,0)/100) * (1 - coalesce(plr.sconto_2,0)/100)
+                    * (1 - coalesce(plr.sconto_3,0)/100) * (1 - coalesce(plr.sconto_4,0)/100)))::numeric AS max_prezzo
+       FROM varianti v
+       JOIN articoli a ON a.id = v.articolo_id
+       JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
+       WHERE a.configurato = true AND a.stato = 'ATTIVO'
+         AND plr.codice_listino = 'LIS1' AND plr.prezzo_listino > 0`,
     );
     const prezzo = prezzoRows[0]?.min_prezzo != null && prezzoRows[0]?.max_prezzo != null
       ? { min: Math.floor(Number(prezzoRows[0].min_prezzo)), max: Math.ceil(Number(prezzoRows[0].max_prezzo)) }
@@ -460,6 +465,7 @@ export class IntegrazioneService {
     diametroMin?: number; diametroMax?: number;
     altezzaMin?: number; altezzaMax?: number;
     prezzoMin?: number; prezzoMax?: number;
+    coloreRgb?: string; coloreTolleranza?: number;
   }) {
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(Math.max(params.pageSize ?? 24, 1), 60);
@@ -481,40 +487,8 @@ export class IntegrazioneService {
       ] });
     }
 
-    // Filtro dimensioni via raw SQL (JSONB su varianti)
-    const dimConds: Prisma.Sql[] = [];
-    const dimArgs: unknown[] = [];
-    let dimIdx = 1;
-    if (params.diametroMin != null) {
-      dimConds.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = "Articolo".id AND v.dimensioni IS NOT NULL AND v.dimensioni ? 'diametro' AND (v.dimensioni->'diametro'->>'valore')::numeric >= ${params.diametroMin})`);
-    }
-    if (params.diametroMax != null) {
-      dimConds.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = "Articolo".id AND v.dimensioni IS NOT NULL AND v.dimensioni ? 'diametro' AND (v.dimensioni->'diametro'->>'valore')::numeric <= ${params.diametroMax})`);
-    }
-    if (params.altezzaMin != null) {
-      dimConds.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = "Articolo".id AND v.dimensioni IS NOT NULL AND v.dimensioni ? 'altezza' AND (v.dimensioni->'altezza'->>'valore')::numeric >= ${params.altezzaMin})`);
-    }
-    if (params.altezzaMax != null) {
-      dimConds.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = "Articolo".id AND v.dimensioni IS NOT NULL AND v.dimensioni ? 'altezza' AND (v.dimensioni->'altezza'->>'valore')::numeric <= ${params.altezzaMax})`);
-    }
-    if (dimConds.length) and.push({ AND: dimConds.map((c) => ({ id: { not: 0 } })) as any });
-    // Aggiungiamo le condizioni raw separatamente — Prisma accetta Sql nel where con un hack:
-    // usiamo $queryRaw per count e findMany con WHERE istruttivo.
-
-    // Filtro prezzo via raw SQL
-    const prezzoCond = (params.prezzoMin != null || params.prezzoMax != null)
-      ? Prisma.sql`AND EXISTS (
-          SELECT 1 FROM varianti pv
-          JOIN integra_listini_righe plr ON plr.codice_prodotto = pv.codice
-          WHERE pv.articolo_id = a.id AND plr.codice_listino = 'LIS1'
-          AND plr.prezzo_listino > 0
-          ${params.prezzoMin != null ? Prisma.sql`AND (plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric >= ${params.prezzoMin}` : Prisma.sql``}
-          ${params.prezzoMax != null ? Prisma.sql`AND (plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric <= ${params.prezzoMax}` : Prisma.sql``}
-        )`
-      : Prisma.sql``;
-
-    // Se ci sono filtri dimensioni o prezzo, usiamo una raw query unica per coerenza
-    const hasRawFilters = dimConds.length > 0 || params.prezzoMin != null || params.prezzoMax != null;
+    // Se ci sono filtri dimensioni, prezzo o coloreRgb, usiamo una raw query unica
+    const hasRawFilters = (params.diametroMin != null || params.diametroMax != null || params.altezzaMin != null || params.altezzaMax != null || params.prezzoMin != null || params.prezzoMax != null || (params.coloreRgb && params.coloreTolleranza != null));
 
     if (hasRawFilters) {
       // Costruiamo WHERE Prisma, poi lo serializziamo in SQL con il dialetto Prisma
@@ -522,22 +496,35 @@ export class IntegrazioneService {
 
       let famCond = Prisma.sql``;
       if (params.famiglia?.length) {
-        const famSql = params.famiglia.map((f) => Prisma.sql`${f}`).join(', ');
-        famCond = Prisma.sql`AND a."famiglia_codice" IN (${Prisma.raw(famSql)})`;
+        const famIn = Prisma.join(params.famiglia.map((f) => Prisma.sql`${f}`), ', ');
+        famCond = Prisma.sql`AND a."famiglia_codice" IN (${famIn})`;
       }
 
       let racCond = Prisma.sql``;
       if (params.tab) {
         racCond = Prisma.sql`AND EXISTS (SELECT 1 FROM "articoli_raccolte" ar JOIN "raccolte" r ON r.id = ar.raccolta_id WHERE ar.articolo_id = a.id AND r.slug = ${params.tab} AND r."stato" = 'ATTIVO')`;
       } else if (params.raccolte?.length) {
-        const racSql = params.raccolte.map((r) => Prisma.sql`${r}`).join(', ');
-        racCond = Prisma.sql`AND EXISTS (SELECT 1 FROM "articoli_raccolte" ar JOIN "raccolte" r ON r.id = ar.raccolta_id WHERE ar.articolo_id = a.id AND r.slug IN (${Prisma.raw(racSql)}) AND r."stato" = 'ATTIVO')`;
+        const racIn = Prisma.join(params.raccolte.map((r) => Prisma.sql`${r}`), ', ');
+        racCond = Prisma.sql`AND EXISTS (SELECT 1 FROM "articoli_raccolte" ar JOIN "raccolte" r ON r.id = ar.raccolta_id WHERE ar.articolo_id = a.id AND r.slug IN (${racIn}) AND r."stato" = 'ATTIVO')`;
       }
 
       let coloreCond = Prisma.sql``;
       if (params.colore?.length) {
-        const colSql = params.colore.map((c) => Prisma.sql`${c}`).join(', ');
-        coloreCond = Prisma.sql`AND a."colore" IN (${Prisma.raw(colSql)})`;
+        const colIn = Prisma.join(params.colore.map((c) => Prisma.sql`${c}`), ', ');
+        coloreCond = Prisma.sql`AND a."colore" IN (${colIn})`;
+      }
+
+      let coloreRgbCond = Prisma.sql``;
+      if (params.coloreRgb && params.coloreTolleranza != null) {
+        const hex = params.coloreRgb.replace('#', '');
+        const selR = parseInt(hex.substring(0, 2), 16);
+        const selG = parseInt(hex.substring(2, 4), 16);
+        const selB = parseInt(hex.substring(4, 6), 16);
+        coloreRgbCond = Prisma.sql`AND a."colore_rgb" IS NOT NULL AND sqrt(
+          power(('x' || substr(a."colore_rgb", 2, 2))::bit(8)::int - ${selR}, 2) +
+          power(('x' || substr(a."colore_rgb", 4, 2))::bit(8)::int - ${selG}, 2) +
+          power(('x' || substr(a."colore_rgb", 6, 2))::bit(8)::int - ${selB}, 2)
+        ) <= ${params.coloreTolleranza}`;
       }
 
       let qCond = Prisma.sql``;
@@ -546,25 +533,39 @@ export class IntegrazioneService {
         qCond = Prisma.sql`AND (a."nome" ILIKE ${'%' + q + '%'} OR a."codice_linea" ILIKE ${'%' + q + '%'} OR f."nome" ILIKE ${'%' + q + '%'} OR COALESCE(f."nome_portale", '') ILIKE ${'%' + q + '%'})`;
       }
 
-      // Condizioni dimensioni raw
-      const dimRawParts: Prisma.Sql[] = [];
-      if (params.diametroMin != null) dimRawParts.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti vd WHERE vd.articolo_id = a.id AND vd.dimensioni IS NOT NULL AND vd.dimensioni ? 'diametro' AND (vd.dimensioni->'diametro'->>'valore')::numeric >= ${params.diametroMin})`);
-      if (params.diametroMax != null) dimRawParts.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti vd WHERE vd.articolo_id = a.id AND vd.dimensioni IS NOT NULL AND vd.dimensioni ? 'diametro' AND (vd.dimensioni->'diametro'->>'valore')::numeric <= ${params.diametroMax})`);
-      if (params.altezzaMin != null) dimRawParts.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti va WHERE va.articolo_id = a.id AND va.dimensioni IS NOT NULL AND va.dimensioni ? 'altezza' AND (va.dimensioni->'altezza'->>'valore')::numeric >= ${params.altezzaMin})`);
-      if (params.altezzaMax != null) dimRawParts.push(Prisma.sql`EXISTS (SELECT 1 FROM varianti va WHERE va.articolo_id = a.id AND va.dimensioni IS NOT NULL AND va.dimensioni ? 'altezza' AND (va.dimensioni->'altezza'->>'valore')::numeric <= ${params.altezzaMax})`);
+      // Un singolo EXISTS che verifica dimensioni + prezzo sulla STESSA variante
+      const variantSubConds: Prisma.Sql[] = [];
+      variantSubConds.push(Prisma.sql`v.articolo_id = a.id`);
+      variantSubConds.push(Prisma.sql`v.dimensioni IS NOT NULL`);
+      if (params.diametroMin != null) variantSubConds.push(Prisma.sql`v.dimensioni->'diametro' IS NOT NULL AND (v.dimensioni->'diametro'->>'valore')::numeric >= ${params.diametroMin}`);
+      if (params.diametroMax != null) variantSubConds.push(Prisma.sql`v.dimensioni->'diametro' IS NOT NULL AND (v.dimensioni->'diametro'->>'valore')::numeric <= ${params.diametroMax}`);
+      if (params.altezzaMin != null) variantSubConds.push(Prisma.sql`v.dimensioni->'altezza' IS NOT NULL AND (v.dimensioni->'altezza'->>'valore')::numeric >= ${params.altezzaMin}`);
+      if (params.altezzaMax != null) variantSubConds.push(Prisma.sql`v.dimensioni->'altezza' IS NOT NULL AND (v.dimensioni->'altezza'->>'valore')::numeric <= ${params.altezzaMax}`);
 
-      const dimRawSql = dimRawParts.length ? Prisma.sql`AND ${Prisma.join(dimRawParts, ' AND ')}` : Prisma.sql``;
+      const needPrezzo = params.prezzoMin != null || params.prezzoMax != null;
+      let variantExistsSql: Prisma.Sql;
+      if (needPrezzo) {
+        const priceExpr = Prisma.sql`(plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric`;
+        variantSubConds.push(Prisma.sql`plr.codice_listino = 'LIS1' AND plr.prezzo_listino > 0`);
+        if (params.prezzoMin != null) variantSubConds.push(Prisma.sql`${priceExpr} >= ${params.prezzoMin}`);
+        if (params.prezzoMax != null) variantSubConds.push(Prisma.sql`${priceExpr} <= ${params.prezzoMax}`);
+        const allVariantConds = Prisma.join(variantSubConds, ' AND ');
+        variantExistsSql = Prisma.sql`AND EXISTS (SELECT 1 FROM varianti v JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice WHERE ${allVariantConds})`;
+      } else {
+        const allVariantConds = Prisma.join(variantSubConds, ' AND ');
+        variantExistsSql = Prisma.sql`AND EXISTS (SELECT 1 FROM varianti v WHERE ${allVariantConds})`;
+      }
 
-      const allConds = Prisma.join([baseWhere, famCond, racCond, coloreCond, qCond, dimRawSql, prezzoCond], ' ');
+      const allConds = Prisma.join([baseWhere, famCond, racCond, coloreCond, coloreRgbCond, qCond, variantExistsSql], ' ');
 
-      const countSql = Prisma.sql`SELECT count(*)::int AS n FROM "Articolo" a JOIN "famiglie" f ON f.codice = a."famiglia_codice" ${allConds}`;
+      const countSql = Prisma.sql`SELECT count(*)::int AS n FROM articoli a JOIN "famiglie" f ON f.codice = a."famiglia_codice" ${allConds}`;
       const orderSql = params.sort === 'prezzo-asc' || params.sort === 'prezzo-desc'
         ? Prisma.sql`ORDER BY (SELECT min(plr2.prezzo_listino * (1-coalesce(plr2.sconto_1,0)/100) * (1-coalesce(plr2.sconto_2,0)/100) * (1-coalesce(plr2.sconto_3,0)/100) * (1-coalesce(plr2.sconto_4,0)/100)) FROM varianti vp2 JOIN integra_listini_righe plr2 ON plr2.codice_prodotto = vp2.codice WHERE vp2.articolo_id = a.id AND plr2.codice_listino = 'LIS1' AND plr2.prezzo_listino > 0) ${params.sort === 'prezzo-asc' ? Prisma.sql`ASC NULLS LAST` : Prisma.sql`DESC NULLS LAST`}`
-        : Prisma.sql`ORDER BY a."createdAt" DESC`;
+        : Prisma.sql`ORDER BY a."created_at" DESC`;
 
       const offset = (page - 1) * pageSize;
       const dataSql = Prisma.sql`
-        SELECT a.id FROM "Articolo" a
+        SELECT a.id FROM articoli a
         JOIN "famiglie" f ON f.codice = a."famiglia_codice"
         ${allConds} ${orderSql}
         LIMIT ${pageSize} OFFSET ${offset}`;
