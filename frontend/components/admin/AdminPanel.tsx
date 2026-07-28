@@ -8,6 +8,7 @@ import DataTable, { type Column, type RowAction } from "./DataTable";
 import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEditorModal";
 import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
 import SyncPanel from "./SyncPanel";
+import CostiAiSection from "./sections/CostiAiSection";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import { useConfirm } from "../common/ConfirmProvider";
@@ -34,7 +35,7 @@ function formatDate(d: string): string {
   return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync";
+type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -317,6 +318,9 @@ export default function AdminPanel() {
         <button className={`admin-panel-tab ${activeTab === "sync" ? "active" : ""}`} onClick={() => { setActiveTab("sync"); }}>
           Sync
         </button>
+        <button className={`admin-panel-tab ${activeTab === "costi-ai" ? "active" : ""}`} onClick={() => { setActiveTab("costi-ai"); }}>
+          Costi AI
+        </button>
       </div>
 
       <div className="admin-panel-body">
@@ -442,6 +446,9 @@ export default function AdminPanel() {
           )}
           {activeTab === "sync" && (
             <SyncPanel />
+          )}
+          {activeTab === "costi-ai" && (
+            <CostiAiSection />
           )}
         </div>
       </div>
