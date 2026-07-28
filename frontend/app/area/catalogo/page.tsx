@@ -57,7 +57,8 @@ export default function CatalogoPage() {
   const [search, setSearch] = useState("");
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
-  const [coloriSel, setColoriSel] = useState<Set<string>>(new Set());
+  const [coloreRgb, setColoreRgb] = useState<string>("");
+  const [coloreTolleranza, setColoreTolleranza] = useState<number>(65);
   const [diametroRange, setDiametroRange] = useState<[number, number]>([0, 999]);
   const [altezzaRange, setAltezzaRange] = useState<[number, number]>([0, 999]);
   const [prezzoRange, setPrezzoRange] = useState<[number, number]>([0, 9999]);
@@ -121,7 +122,7 @@ export default function CatalogoPage() {
     p.set("pageSize", String(PAGE_SIZE));
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
-    if (coloriSel.size) p.set("colore", [...coloriSel].join(","));
+    if (coloreRgb) { p.set("coloreRgb", coloreRgb); p.set("coloreTolleranza", String(coloreTolleranza)); }
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (search.trim()) p.set("q", search.trim());
     if (sort) p.set("sort", sort);
@@ -142,14 +143,13 @@ export default function CatalogoPage() {
     } finally {
       setListLoading(false);
     }
-  }, [famiglieSel, raccolteSel, coloriSel, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
+  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
 
   // Facet (sidebar) — una volta.
   useEffect(() => {
     api.get<Catalogo>("/api/catalogo/facets")
       .then((data) => {
         setFacets({ famiglie: data.famiglie ?? [], raccolte: data.raccolte ?? [], colori: data.colori ?? [], dimensioni: data.dimensioni ?? {}, prezzo: data.prezzo ?? null });
-        // Inizializza range con i valori reali dalle facets
         if (data.dimensioni?.diametro) setDiametroRange([data.dimensioni.diametro.min, data.dimensioni.diametro.max]);
         if (data.dimensioni?.altezza) setAltezzaRange([data.dimensioni.altezza.min, data.dimensioni.altezza.max]);
         if (data.prezzo) setPrezzoRange([data.prezzo.min, data.prezzo.max]);
@@ -190,7 +190,7 @@ export default function CatalogoPage() {
     if (!restored.current || aiResults) return;
     const t = setTimeout(() => { void fetchPage(1, true); }, 250);
     return () => clearTimeout(t);
-  }, [famiglieSel, raccolteSel, coloriSel, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, fetchPage]);
+  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, fetchPage]);
 
   // Infinite scroll: carica la pagina successiva quando il sentinella entra in viewport.
   useEffect(() => {
@@ -212,6 +212,13 @@ export default function CatalogoPage() {
     const n = new Set(set);
     if (n.has(val)) n.delete(val); else n.add(val);
     setter(n);
+  }
+
+  function rangePerc(val: [number, number], min: number, max: number) {
+    if (max <= min) return { left: "0%", right: "0%" };
+    const l = ((val[0] - min) / (max - min)) * 100;
+    const r = ((max - val[1]) / (max - min)) * 100;
+    return { left: `${l}%`, right: `${r}%` };
   }
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
@@ -241,58 +248,73 @@ export default function CatalogoPage() {
         {facets.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
       </div>
       <hr className="filter-divider" />
-      {facets.colori.length > 0 && (
-        <>
-          <div className="filter-group">
-            <h3>Colore</h3>
-            {facets.colori.map((c) => (
-              <label key={c.nome} className="color-filter-label">
-                <input type="checkbox" checked={coloriSel.has(c.nome)} onChange={() => toggleSet(coloriSel, c.nome, setColoriSel)} />
-                <span className="color-dot" style={{ background: c.rgb || "var(--fg-soft)", width: 12, height: 12, borderRadius: "50%", display: "inline-block", flexShrink: 0 }} />
-                {c.nome} <span className="count">{c.count}</span>
-              </label>
-            ))}
-          </div>
-          <hr className="filter-divider" />
-        </>
-      )}
+      <div className="filter-group">
+        <h3>Cerca per colore</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="color" value={coloreRgb || "#808080"} onChange={(e) => setColoreRgb(e.target.value)} style={{ width: 32, height: 32, padding: 0, border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer" }} />
+          {coloreRgb && <button onClick={() => setColoreRgb("")} style={{ fontSize: 12, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕</button>}
+        </div>
+        {coloreRgb && (
+          <>
+            <div className="dual-range" style={{ marginTop: 8 }}>
+              <span className="dual-range-val">{coloreTolleranza}</span>
+              <div className="dual-range-track" style={{ "--range-left": "0%", "--range-right": `${100 - (coloreTolleranza / 441) * 100}%` } as React.CSSProperties}>
+                <input type="range" min={1} max={441} step={1} value={coloreTolleranza} onChange={(e) => setColoreTolleranza(Number(e.target.value))} className="dual-range-input dual-range-min" />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)" }}>
+              <span>Preciso</span><span>Esteso</span>
+            </div>
+          </>
+        )}
+      </div>
+      <hr className="filter-divider" />
       {Object.keys(facets.dimensioni).length > 0 && (
         <>
-          <div className="filter-group">
-            <h3>Dimensioni</h3>
-            {facets.dimensioni.diametro && (
-              <div className="range-filter">
-                <label className="range-label">Diametro (cm)</label>
-                <div className="range-inputs">
-                  <input type="number" className="input range-input" value={diametroRange[0]} min={facets.dimensioni.diametro.min} max={diametroRange[1]} onChange={(e) => setDiametroRange([Number(e.target.value), diametroRange[1]])} />
-                  <span className="range-sep">—</span>
-                  <input type="number" className="input range-input" value={diametroRange[1]} min={diametroRange[0]} max={facets.dimensioni.diametro.max} onChange={(e) => setDiametroRange([diametroRange[0], Number(e.target.value)])} />
+          {facets.dimensioni.diametro && (
+            <>
+              <div className="filter-group">
+                <h3>Diametro (cm)</h3>
+                <div className="dual-range">
+                  <span className="dual-range-val">{diametroRange[0]}</span>
+                  <div className="dual-range-track" style={{ "--range-left": rangePerc(diametroRange, facets.dimensioni.diametro.min, facets.dimensioni.diametro.max).left, "--range-right": rangePerc(diametroRange, facets.dimensioni.diametro.min, facets.dimensioni.diametro.max).right } as React.CSSProperties}>
+                    <input type="range" min={facets.dimensioni.diametro.min} max={facets.dimensioni.diametro.max} step={1} value={diametroRange[0]} onChange={(e) => { const v = Number(e.target.value); if (v <= diametroRange[1]) setDiametroRange([v, diametroRange[1]]); }} className="dual-range-input dual-range-min" />
+                    <input type="range" min={facets.dimensioni.diametro.min} max={facets.dimensioni.diametro.max} step={1} value={diametroRange[1]} onChange={(e) => { const v = Number(e.target.value); if (v >= diametroRange[0]) setDiametroRange([diametroRange[0], v]); }} className="dual-range-input dual-range-max" />
+                  </div>
+                  <span className="dual-range-val">{diametroRange[1]}</span>
                 </div>
               </div>
-            )}
-            {facets.dimensioni.altezza && (
-              <div className="range-filter">
-                <label className="range-label">Altezza (cm)</label>
-                <div className="range-inputs">
-                  <input type="number" className="input range-input" value={altezzaRange[0]} min={facets.dimensioni.altezza.min} max={altezzaRange[1]} onChange={(e) => setAltezzaRange([Number(e.target.value), altezzaRange[1]])} />
-                  <span className="range-sep">—</span>
-                  <input type="number" className="input range-input" value={altezzaRange[1]} min={altezzaRange[0]} max={facets.dimensioni.altezza.max} onChange={(e) => setAltezzaRange([altezzaRange[0], Number(e.target.value)])} />
+              <hr className="filter-divider" />
+            </>
+          )}
+          {facets.dimensioni.altezza && (
+            <>
+              <div className="filter-group">
+                <h3>Altezza (cm)</h3>
+                <div className="dual-range">
+                  <span className="dual-range-val">{altezzaRange[0]}</span>
+                  <div className="dual-range-track" style={{ "--range-left": rangePerc(altezzaRange, facets.dimensioni.altezza.min, facets.dimensioni.altezza.max).left, "--range-right": rangePerc(altezzaRange, facets.dimensioni.altezza.min, facets.dimensioni.altezza.max).right } as React.CSSProperties}>
+                    <input type="range" min={facets.dimensioni.altezza.min} max={facets.dimensioni.altezza.max} step={1} value={altezzaRange[0]} onChange={(e) => { const v = Number(e.target.value); if (v <= altezzaRange[1]) setAltezzaRange([v, altezzaRange[1]]); }} className="dual-range-input dual-range-min" />
+                    <input type="range" min={facets.dimensioni.altezza.min} max={facets.dimensioni.altezza.max} step={1} value={altezzaRange[1]} onChange={(e) => { const v = Number(e.target.value); if (v >= altezzaRange[0]) setAltezzaRange([altezzaRange[0], v]); }} className="dual-range-input dual-range-max" />
+                  </div>
+                  <span className="dual-range-val">{altezzaRange[1]}</span>
                 </div>
               </div>
-            )}
-          </div>
-          <hr className="filter-divider" />
+              <hr className="filter-divider" />
+            </>
+          )}
         </>
       )}
       {facets.prezzo && (
         <div className="filter-group">
           <h3>Prezzo (€)</h3>
-          <div className="range-filter">
-            <div className="range-inputs">
-              <input type="number" className="input range-input" value={prezzoRange[0]} min={facets.prezzo.min} max={prezzoRange[1]} onChange={(e) => setPrezzoRange([Number(e.target.value), prezzoRange[1]])} />
-              <span className="range-sep">—</span>
-              <input type="number" className="input range-input" value={prezzoRange[1]} min={prezzoRange[0]} max={facets.prezzo.max} onChange={(e) => setPrezzoRange([prezzoRange[0], Number(e.target.value)])} />
+          <div className="dual-range">
+            <span className="dual-range-val">{prezzoRange[0]}</span>
+            <div className="dual-range-track" style={{ "--range-left": rangePerc(prezzoRange, facets.prezzo.min, facets.prezzo.max).left, "--range-right": rangePerc(prezzoRange, facets.prezzo.min, facets.prezzo.max).right } as React.CSSProperties}>
+              <input type="range" min={facets.prezzo.min} max={facets.prezzo.max} step={1} value={prezzoRange[0]} onChange={(e) => { const v = Number(e.target.value); if (v <= prezzoRange[1]) setPrezzoRange([v, prezzoRange[1]]); }} className="dual-range-input dual-range-min" />
+              <input type="range" min={facets.prezzo.min} max={facets.prezzo.max} step={1} value={prezzoRange[1]} onChange={(e) => { const v = Number(e.target.value); if (v >= prezzoRange[0]) setPrezzoRange([prezzoRange[0], v]); }} className="dual-range-input dual-range-max" />
             </div>
+            <span className="dual-range-val">{prezzoRange[1]}</span>
           </div>
         </div>
       )}

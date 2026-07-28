@@ -33,6 +33,8 @@ export class CatalogoController {
     @Query('altezzaMax') altezzaMax?: string,
     @Query('prezzoMin') prezzoMin?: string,
     @Query('prezzoMax') prezzoMax?: string,
+    @Query('coloreRgb') coloreRgb?: string,
+    @Query('coloreTolleranza') coloreTolleranza?: string,
   ) {
     return this.integrazione.getCatalogoPaginato({
       page: page ? parseInt(page, 10) : 1,
@@ -49,6 +51,8 @@ export class CatalogoController {
       altezzaMax: altezzaMax ? parseFloat(altezzaMax) : undefined,
       prezzoMin: prezzoMin ? parseFloat(prezzoMin) : undefined,
       prezzoMax: prezzoMax ? parseFloat(prezzoMax) : undefined,
+      coloreRgb: coloreRgb || undefined,
+      coloreTolleranza: coloreTolleranza ? parseFloat(coloreTolleranza) : undefined,
     });
   }
 
