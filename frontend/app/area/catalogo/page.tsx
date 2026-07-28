@@ -341,7 +341,14 @@ export default function CatalogoPage() {
             placeholder="Cerca articoli, famiglie, raccolte…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={search ? { paddingRight: 68 } : undefined}
           />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} aria-label="Cancella" title="Cancella"
+              style={{ position: "absolute", right: 42, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "grid", placeItems: "center", zIndex: 2 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          )}
           <button className="ai-trigger" title="Ricerca intelligente AI" onClick={() => setAiOpen(true)}>
             {IconStella}
           </button>
