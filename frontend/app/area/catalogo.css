@@ -1130,6 +1130,9 @@
 /* btn-secondary used in buy box */
 .catalogo-page.scheda-prodotto .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
 .catalogo-page.scheda-prodotto .btn-secondary:hover { border-color: var(--fg); }
+/* btn-progetto in cart riepilogo: stesso look */
+.catalogo-page.cart-page .order-summary .btn-progetto { background: transparent; color: var(--fg); border-color: var(--border); }
+.catalogo-page.cart-page .order-summary .btn-progetto:hover { border-color: var(--fg); }
 
 /* Eyebrow shared */
 .catalogo-page.scheda-prodotto .eyebrow {

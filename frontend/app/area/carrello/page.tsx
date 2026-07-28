@@ -8,6 +8,7 @@ import { thumbUrl } from "../../../lib/thumb";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import AreaHeader from "../../../components/area/AreaHeader";
 import AreaFooter from "../../../components/area/AreaFooter";
+import AddToProjectModal from "../../../components/area/AddToProjectModal";
 
 function formatPrice(n: number) {
   return "€ " + n.toFixed(2).replace(".", ",");
@@ -48,6 +49,8 @@ export default function CarrelloPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [projOpen, setProjOpen] = useState(false);
+  const [projItems, setProjItems] = useState<{ varianteCodice: string; quantita: number }[]>([]);
 
   const fetchCart = useCallback(async () => {
     try {
@@ -259,6 +262,12 @@ export default function CarrelloPage() {
                 <Link href="/area/checkout" className="btn btn-primary checkout-btn">
                   Procedi al checkout
                 </Link>
+                <button className="btn btn-secondary btn-progetto" disabled={!activeItems.length}
+                  onClick={() => { setProjItems(activeItems.map((i) => ({ varianteCodice: i.varianteCodice, quantita: i.quantita }))); setProjOpen(true); }}
+                  style={{ width: "100%", justifyContent: "center", gap: 8, padding: 12, fontSize: 15, marginTop: 8, opacity: activeItems.length === 0 ? 0.5 : 1 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+                  Aggiungi a un progetto
+                </button>
                 <Link href="/area/catalogo" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>
                   Continua lo shopping
                 </Link>
@@ -268,6 +277,19 @@ export default function CarrelloPage() {
         </div>
       </main>
       <AreaFooter />
+
+      <AddToProjectModal
+        open={projOpen}
+        onClose={() => setProjOpen(false)}
+        items={projItems}
+        onAdded={async () => {
+          for (const it of projItems) {
+            try { await api.del(`/api/carrello/${encodeURIComponent(it.varianteCodice)}`); } catch { }
+          }
+          notifyCart();
+          await fetchCart();
+        }}
+      />
     </div>
   );
 }
