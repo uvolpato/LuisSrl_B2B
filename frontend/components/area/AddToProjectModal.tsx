@@ -7,12 +7,14 @@ interface Progetto { id: number; nome: string; count: number }
 
 /** Modale per aggiungere una variante (con quantità) a un progetto esistente o nuovo. */
 export default function AddToProjectModal({
-  open, onClose, items,
+  open, onClose, items, onAdded,
 }: {
   open: boolean;
   onClose: () => void;
   /** Varianti (con quantità) da aggiungere: una dalla buy-box, o più dalla griglia. */
   items: { varianteCodice: string; quantita: number }[];
+  /** Opzionale: chiamato dopo che gli items sono stati aggiunti a un progetto. */
+  onAdded?: () => void;
 }) {
   const [progetti, setProgetti] = useState<Progetto[] | null>(null);
   const [nuovo, setNuovo] = useState("");
@@ -38,6 +40,7 @@ export default function AddToProjectModal({
     try {
       await addItems(progettoId);
       setDone(nome);
+      onAdded?.();
     } catch { setError("Non riuscito. Riprova."); }
     finally { setBusy(false); }
   }
@@ -50,6 +53,7 @@ export default function AddToProjectModal({
       const p = await api.post<{ id: number; nome: string }>("/api/progetti", { nome: n });
       await addItems(p.id);
       setDone(p.nome);
+      onAdded?.();
     } catch { setError("Non riuscito. Riprova."); }
     finally { setBusy(false); }
   }
