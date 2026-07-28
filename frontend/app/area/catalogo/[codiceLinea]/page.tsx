@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useAuth } from "../../../../lib/use-auth";
 import { api } from "../../../../lib/api";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
-import AreaHeader from "../../../../components/area/AreaHeader";
-import AreaFooter from "../../../../components/area/AreaFooter";
+
 import PositionedImage from "../../../../components/common/PositionedImage";
 import AddToProjectModal from "../../../../components/area/AddToProjectModal";
 import { parseImgCss } from "../../../../lib/img-css";
@@ -350,7 +349,6 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
   return (
     <div className="catalogo-page scheda-prodotto">
-      <AreaHeader />
       <main id="content">
         <div className="breadcrumb">
           <Link href="/area/catalogo">Catalogo</Link>
@@ -676,8 +674,6 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
           </>
         )}
       </main>
-
-      <AreaFooter />
 
       <AddToProjectModal
         open={addProjOpen}

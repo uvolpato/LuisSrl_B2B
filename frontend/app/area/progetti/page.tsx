@@ -5,8 +5,7 @@ import Link from "next/link";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
+
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
@@ -67,8 +66,6 @@ export default function ProgettiPage() {
         .pg-card-meta { font-size: 13px; color: var(--muted); }
       `}</style>
 
-      <AreaHeader />
-
       <main>
         <div className="container">
           <div className="pg-head">
@@ -113,7 +110,6 @@ export default function ProgettiPage() {
         </div>
       </main>
 
-      <AreaFooter />
     </div>
   );
 }

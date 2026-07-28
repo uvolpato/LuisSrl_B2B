@@ -2,8 +2,6 @@
 
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import AreaHeader from "../../../components/area/AreaHeader";
-import AreaFooter from "../../../components/area/AreaFooter";
 import ProfileSection from "../../../components/area/ProfileSection";
 import type { CustomerProfile } from "../../../lib/types";
 
@@ -16,7 +14,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      <AreaHeader />
       <div className="profile-page-main">
         <div className="container">
           <ProfileSection
@@ -25,7 +22,6 @@ export default function ProfilePage() {
           />
         </div>
       </div>
-      <AreaFooter />
     </>
   );
 }

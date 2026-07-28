@@ -7,8 +7,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "../../lib/use-auth";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
-import AreaHeader from "../../components/area/AreaHeader";
-import AreaFooter from "../../components/area/AreaFooter";
+
 import AiSearchModal from "../../components/area/AiSearchModal";
 import { api } from "../../lib/api";
 import type { CustomerProfile } from "../../lib/types";
@@ -560,8 +559,6 @@ export default function AreaClientePage() {
         }
       `}</style>
 
-      <AreaHeader />
-
       {/* Main content */}
       <div id="content" className="dash-main">
         <div className="container" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 960, paddingInline: 32 }}>
@@ -681,8 +678,6 @@ export default function AreaClientePage() {
       </div>
 
       <AiSearchModal open={aiModalOpen} onClose={closeAiModal} onSubmit={handleSearchAi} onSubmitImage={handleImageSearch} loading={aiLoading} error={aiError} />
-
-      <AreaFooter />
     </>
   );
 }
