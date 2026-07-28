@@ -30,9 +30,9 @@ export default function FamigliePage() {
   return (
     <div className="famiglie-page">
       <style>{`
-        .famiglie-page main { padding: 32px 20px 64px; }
+        .famiglie-page main { padding: 28px 20px 64px; }
         .famiglie-page .container { max-width: 1200px; margin: 0 auto; }
-        .fam-head h1 { margin: 0 0 4px; font-size: 26px; }
+        .fam-head h1 { margin: 0 0 4px; font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 40px); }
         .fam-head p { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
         .fam-grid {
           display: grid; gap: 20px;

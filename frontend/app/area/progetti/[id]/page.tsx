@@ -176,11 +176,11 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="progetto-detail catalogo-page cart-page">
       <style>{`
-        .progetto-detail main { padding: 24px 20px 64px; }
+        .progetto-detail main { padding: 28px 20px 64px; }
         .progetto-detail .container { max-width: 900px; margin: 0 auto; }
         .pd-back { font-size: 14px; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px; }
         .pd-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-        .pd-head h1 { margin: 0; font-size: 24px; flex: 1; min-width: 200px; }
+        .pd-head h1 { margin: 0; font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 40px); flex: 1; min-width: 200px; }
         .pd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
       `}</style>
 
