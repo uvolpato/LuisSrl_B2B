@@ -169,6 +169,14 @@ export default function CatalogoPage() {
     const so = p.get("sort"); if (so) setSort(so);
     const q = p.get("q"); if (q) setSearch(q);
     const ai = p.get("ai"); if (ai) { setAiQuery(ai); void runAiSearch(ai); }
+    // Ricerca per immagine avviata dalla dashboard: risultati passati via sessionStorage.
+    if (p.get("imgsearch")) {
+      const raw = sessionStorage.getItem("ai-image-results");
+      if (raw) {
+        try { setAiResults({ query: "immagine caricata", kind: "image", articoli: JSON.parse(raw) }); } catch { /* ignora */ }
+        sessionStorage.removeItem("ai-image-results");
+      }
+    }
     restored.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
