@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { AiUsageService } from '../ai-usage/ai-usage.service';
 
 /**
  * Genera embedding testuali per la ricerca semantica.
@@ -24,12 +25,17 @@ export class EmbeddingService {
     process.env.EMBEDDINGS_MODEL ||
     (this.provider === 'gemini' ? 'gemini-embedding-001' : 'text-embedding-nomic-embed-text-v1.5');
 
+  constructor(private readonly aiUsage: AiUsageService) {}
+
   /** Ritorna il vettore, o null se il provider non e' configurato/raggiungibile (non deve rompere il flusso). */
   async embedText(text: string): Promise<number[] | null> {
     const clean = text.trim();
     if (!clean) return null;
     try {
-      return this.provider === 'local' ? await this.embedLocal(clean) : await this.embedGemini(clean);
+      const vec = this.provider === 'local' ? await this.embedLocal(clean) : await this.embedGemini(clean);
+      // embedContent non ritorna i token: stima ~4 char/token (solo per il costo).
+      void this.aiUsage.record({ tipo: 'embedding', modello: this.model, tokenIn: Math.ceil(clean.length / 4) });
+      return vec;
     } catch (e) {
       this.log.warn(`embedText fallito (provider=${this.provider}): ${(e as Error).message}`);
       return null;

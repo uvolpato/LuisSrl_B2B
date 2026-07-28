@@ -6,6 +6,7 @@ import * as fsp from 'fs/promises';
 import { randomUUID, createHash } from 'crypto';
 import { hashPassword } from '../common/password';
 import { EmbeddingService } from './embedding.service';
+import { AiUsageService } from '../ai-usage/ai-usage.service';
 
 // ponytail: mapping configurabile — quando arrivano le viste FDW reali,
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
@@ -55,6 +56,7 @@ export class IntegrazioneService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly embedding: EmbeddingService,
+    private readonly aiUsage: AiUsageService,
   ) {}
 
   /** Mappa una riga della vista sui nomi di portale del CONFIG (BigInt → Number: non serializzabile in JSON). */
@@ -566,7 +568,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
 Richiesta del cliente: "${q}"`;
     try {
-      const raw = await this.callGeminiText(prompt);
+      const raw = await this.callGeminiText(prompt, undefined, 'rewrite');
       const m = raw.match(/\{[\s\S]*\}/);
       const obj = JSON.parse(m ? m[0] : raw) as { attributi?: unknown; keywords?: unknown };
       const keywords = (obj.keywords ? String(obj.keywords) : '').trim() || q;
@@ -683,7 +685,7 @@ GUARDRAIL (rispettali sempre):
 Rispondi SOLO con JSON valido, senza testo attorno:
 {"pertinente": true, "tipo": "...|null", "colore": "...|null", "materiale": "...|null", "forma": "...|null", "finitura": "...|null", "dimensione_relativa": "...|null", "uso": "...|null", "attributi": ["..."], "keywords": "..."}`;
     try {
-      const raw = await this.callGeminiText(prompt, { mime, b64 });
+      const raw = await this.callGeminiText(prompt, { mime, b64 }, 'vision');
       const m = raw.match(/\{[\s\S]*\}/);
       const obj = JSON.parse(m ? m[0] : raw) as { pertinente?: unknown; attributi?: unknown; keywords?: unknown };
       const pertinente = obj.pertinente !== false;
@@ -1109,6 +1111,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     };
     const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
     if (!part?.inlineData?.data) throw new BadRequestException("La generazione AI non ha restituito un'immagine.");
+    void this.aiUsage.record({ tipo: 'immagine', modello: model, immagini: 1 });
     return { mime: part.inlineData.mimeType || 'image/png', b64: part.inlineData.data };
   }
 
@@ -1221,7 +1224,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   // ── AI: wizard descrizione sensoriale ──
 
-  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }): Promise<string> {
+  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione'): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
     const aiCfg = await this.getAiConfig('testi');
@@ -1254,7 +1257,9 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       }
       const data = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+        usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
       };
+      void this.aiUsage.record({ tipo: usageTipo, modello: aiCfg.model, tokenIn: data.usageMetadata?.promptTokenCount, tokenOut: data.usageMetadata?.candidatesTokenCount });
       const candidate = data.candidates?.[0];
       const text = candidate?.content?.parts?.map((p) => p.text).join('\n') || '';
       const finishReason = candidate?.finishReason ?? 'UNKNOWN';

@@ -104,6 +104,24 @@ model Progetto {
   @@map("progetti")
 }
 
+/// Traccia ogni chiamata AI (Gemini) con attribuzione all'attore e costo stimato.
+model AiUsage {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now()) @map("created_at")
+  attoreTipo   String   @map("attore_tipo") // admin | customer | agent | system
+  attoreId     Int?     @map("attore_id")
+  tipo         String   // descrizione | immagine | embedding | rewrite | vision
+  modello      String
+  tokenIn      Int      @default(0) @map("token_in")
+  tokenOut     Int      @default(0) @map("token_out")
+  immagini     Int      @default(0)
+  costoStimato Float    @default(0) @map("costo_stimato")
+
+  @@index([createdAt])
+  @@index([attoreTipo, attoreId])
+  @@map("ai_usage")
+}
+
 model ProgettoItem {
   id             Int      @id @default(autoincrement())
   progettoId     Int      @map("progetto_id")
