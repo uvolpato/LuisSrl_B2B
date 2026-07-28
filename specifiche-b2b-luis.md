@@ -115,6 +115,22 @@ Soluzione adottata per la presentazione delle varianti sulla scheda prodotto, pe
 
 > In fondo alla griglia: totale delle righe valorizzate e pulsante unico **"Aggiungi al carrello"**.
 
+### 4.5 Articoli correlati (in fondo alla scheda prodotto)
+
+Nella scheda prodotto viene mostrata una sezione **"Articoli correlati"** con massimo 4 card,
+scelti automaticamente tra gli articoli della stessa Famiglia principale.
+
+L'algoritmo di scoring assegna un punteggio a ogni candidato:
+
+| Criterio | Punteggio max | Dettaglio |
+|----------|--------------|-----------|
+| **Raccolte in comune** | 30 | +30 se l'articolo correlato condivide almeno una Raccolta con l'articolo corrente |
+| **Colore simile (CIELAB)** | 20 | Distanza colorimetrica dE calcolata da `coloreRgb`; punteggio lineare da 20 (dE=0) a 0 (dE≥50) |
+| **Dimensioni vicine** | 15 | Sovrapposizione tra range dimensionali (min/max di `dimensioni.valore`); +1 per ogni 5 mm di overlap, max 15 |
+
+Vengono mostrati i 4 articoli con punteggio più alto (score > 0).  
+I prezzi visualizzati sono calcolati sul listino del cliente loggato.
+
 ---
 
 ## 5. Quantità e confezioni multiple
