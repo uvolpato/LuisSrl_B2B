@@ -31,6 +31,7 @@ const NAV_ITEMS = [
     items: [
       { id: "import", label: "Import / Export", icon: "upload" },
       { id: "ai", label: "AI / Ricerca", icon: "star" },
+      { id: "costi-ai", label: "Costi AI", icon: "dollar" },
       { id: "accessi", label: "Accessi", icon: "clock" },
     ],
   },
