@@ -104,6 +104,12 @@
 .catalogo-page .sidebar input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
 .catalogo-page .sidebar .count { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .catalogo-page .sidebar .filter-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+.catalogo-page .color-filter-label { gap: 6px !important; }
+.catalogo-page .range-filter { margin-top: 8px; }
+.catalogo-page .range-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; }
+.catalogo-page .range-inputs { display: flex; align-items: center; gap: 6px; }
+.catalogo-page .range-input { width: 70px !important; padding: 5px 8px !important; font-size: 13px !important; text-align: center; }
+.catalogo-page .range-sep { color: var(--muted); font-size: 13px; }
 
 .catalogo-page .catalog-header {
   display: flex; align-items: center; justify-content: space-between;
