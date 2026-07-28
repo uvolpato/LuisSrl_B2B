@@ -27,9 +27,14 @@ export default function ProgettiPage() {
   const [progetti, setProgetti] = useState<Progetto[] | null>(null);
   const [nome, setNome] = useState("");
   const [creating, setCreating] = useState(false);
+  const [q, setQ] = useState("");
 
   const reload = () => api.get<Progetto[]>("/api/progetti").then(setProgetti).catch(() => setProgetti([]));
   useEffect(() => { void reload(); }, []);
+  // Ricerca arrivata dalla dashboard (ambito "Progetti"): ?q=
+  useEffect(() => { setQ(new URLSearchParams(window.location.search).get("q") ?? ""); }, []);
+
+  const visibili = (progetti ?? []).filter((p) => !q.trim() || p.nome.toLowerCase().includes(q.trim().toLowerCase()));
 
   async function create() {
     const n = nome.trim();
@@ -84,11 +89,12 @@ export default function ProgettiPage() {
             </button>
           </div>
 
+          {q.trim() && <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -12, marginBottom: 16 }}>Filtro: «{q}» · <button onClick={() => setQ("")} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", padding: 0 }}>azzera</button></p>}
           {!progetti && <p style={{ color: "var(--muted)" }}>Caricamento…</p>}
-          {progetti && progetti.length === 0 && <p style={{ color: "var(--muted)" }}>Nessun progetto. Creane uno qui sopra.</p>}
+          {progetti && visibili.length === 0 && <p style={{ color: "var(--muted)" }}>{q.trim() ? "Nessun progetto corrisponde alla ricerca." : "Nessun progetto. Creane uno qui sopra."}</p>}
 
           <div className="pg-list">
-            {(progetti ?? []).map((p) => (
+            {visibili.map((p) => (
               <Link key={p.id} href={`/area/progetti/${p.id}`} className="pg-card">
                 <span className="pg-card-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>

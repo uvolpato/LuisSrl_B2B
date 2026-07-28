@@ -38,6 +38,11 @@ export default function OrdiniPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [search, setSearch] = useState("");
+  // Ricerca arrivata dalla dashboard (ambito "Ordini"): ?q=
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearch(q);
+  }, []);
   const [year, setYear] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("dataOrdine");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");

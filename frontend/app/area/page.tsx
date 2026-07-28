@@ -79,16 +79,22 @@ export default function AreaClientePage() {
   const [heroSearch, setHeroSearch] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const tabs = ["Ricercati", "Novità", "Listini"];
+  // Le tab sono l'ambito della ricerca testuale della barra.
+  const SCOPES = [
+    { label: "Catalogo", href: "/area/catalogo", placeholder: "Cerca vasi, materiali o linee…" },
+    { label: "Ordini", href: "/area/ordini", placeholder: "Cerca nei tuoi ordini…" },
+    { label: "Progetti", href: "/area/progetti", placeholder: "Cerca nei tuoi progetti…" },
+  ];
+  const tabs = SCOPES.map((s) => s.label);
 
   const openAiModal = () => setAiModalOpen(true);
   const closeAiModal = () => setAiModalOpen(false);
 
-  // Ricerca testuale dalla barra: va al catalogo (ricerca server-side).
+  // Ricerca testuale: va alla sezione dell'ambito selezionato con ?q=.
   const doTextSearch = () => {
     const q = heroSearch.trim();
     if (!q) return;
-    router.push(`/area/catalogo?q=${encodeURIComponent(q)}`);
+    router.push(`${SCOPES[activeTab].href}?q=${encodeURIComponent(q)}`);
   };
 
   // La ricerca AI vera vive nel catalogo: navighiamo lì con la query, che il
@@ -577,7 +583,7 @@ export default function AreaClientePage() {
                 <div className="dash-search-icon"><SearchIcon /></div>
                 <input
                   type="text"
-                  placeholder="Cerca vasi, materiali o linee..."
+                  placeholder={SCOPES[activeTab].placeholder}
                   value={heroSearch}
                   onChange={(e) => setHeroSearch(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") doTextSearch(); }}
