@@ -125,7 +125,7 @@
   pointer-events: none; outline: none; margin: 0;
 }
 .catalogo-page .dual-range-input::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 2px; background: var(--border);
+  height: 4px; border-radius: 2px; background: transparent;
 }
 .catalogo-page .dual-range-input::-webkit-slider-thumb {
   -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
@@ -135,7 +135,7 @@
   position: relative; z-index: 2;
 }
 .catalogo-page .dual-range-input::-moz-range-track {
-  height: 4px; border-radius: 2px; background: var(--border); border: none;
+  height: 4px; border-radius: 2px; background: transparent; border: none;
 }
 .catalogo-page .dual-range-input::-moz-range-thumb {
   width: 16px; height: 16px; border-radius: 50%;
