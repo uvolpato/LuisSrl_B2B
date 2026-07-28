@@ -78,7 +78,7 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
   if (loading || !user || user.userType !== "customer") return <LoadingScreen />;
 
   return (
-    <div className="progetto-detail">
+    <div className="progetto-detail catalogo-page cart-page">
       <style>{`
         .progetto-detail main { padding: 24px 20px 64px; }
         .progetto-detail .container { max-width: 900px; margin: 0 auto; }
