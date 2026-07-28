@@ -5,11 +5,7 @@ import Link from "next/link";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/use-auth";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-
-
-function formatPrice(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
-}
+import { formatPrice } from "../../../lib/helpers";
 
 interface Progetto {
   id: number;

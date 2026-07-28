@@ -4,14 +4,10 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../lib/use-auth";
 import { api } from "../../../lib/api";
-import { thumbUrl } from "../../../lib/thumb";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-
 import AddToProjectModal from "../../../components/area/AddToProjectModal";
-
-function formatPrice(n: number) {
-  return "€ " + n.toFixed(2).replace(".", ",");
-}
+import CartLineGroup from "../../../components/area/CartLineGroup";
+import { formatPrice, groupBy } from "../../../lib/helpers";
 
 interface PrezzoInfo {
   prezzoNetto: number;
@@ -33,15 +29,6 @@ interface CartItem {
   prezzo: PrezzoInfo | null;
 }
 
-function groupBy<T>(items: T[], key: (t: T) => string): [string, T[]][] {
-  const map = new Map<string, T[]>();
-  items.forEach((i) => {
-    const k = key(i);
-    if (!map.has(k)) map.set(k, []);
-    map.get(k)!.push(i);
-  });
-  return [...map.entries()];
-}
 
 export default function CarrelloPage() {
   const { user, loading: authLoading } = useAuth("customer");
@@ -108,103 +95,6 @@ export default function CarrelloPage() {
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
-  function renderGroup(group: [string, CartItem[]], salvaLabel: string, salvato: boolean) {
-    const [linea, vars] = group;
-    const first = vars[0];
-    const img = first.immagineUrl ? (
-      <img src={thumbUrl(first.immagineUrl, 200)} alt={first.articoloNome ?? ""} className="cart-item-img" />
-    ) : (
-      <div className="cart-item-img-placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-      </div>
-    );
-
-    if (vars.length === 1) {
-      return (
-        <div key={linea} className="cart-item">
-          <div className="cart-item-img-wrap">{img}</div>
-          <div className="cart-item-info">
-            <Link href={`/area/catalogo/${first.articoloCodiceLinea}`} className="cart-item-name">
-              {first.articoloNome ?? linea}
-            </Link>
-            <span className="cart-item-variant">
-              <span className="badge code">{first.varianteCodice}</span>
-              {first.dimensioni && <span className="badge dim">{first.dimensioni}</span>}
-            </span>
-            {first.varianteDescrizione && <span className="cart-item-desc">{first.varianteDescrizione}</span>}
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              {first.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {first.multiplo} pz</span>}
-              {first.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(first.prezzo?.prezzoNetto ?? 0)} / pz</strong>{(first.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(first.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{first.prezzo?.sconto ?? 0}%</span></>}</span>
-            </div>
-          </div>
-          <div className="cart-item-actions">
-            <span className="cart-item-price">{formatPrice(first.quantita * (first.prezzo?.prezzoNetto ?? 0))}</span>
-            {salvato ? (
-              <span className="cart-item-qty-label">{first.quantita} pz</span>
-            ) : (
-              <div className="qty-control">
-                <button type="button" onClick={() => changeQty(first.varianteCodice, -1)}>−</button>
-                <input type="number" value={first.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-                <button type="button" onClick={() => changeQty(first.varianteCodice, 1)}>+</button>
-              </div>
-            )}
-            <div className="cart-item-links">
-              <button className="cart-item-link" disabled={busy === first.varianteCodice} onClick={() => toggleSave(first.varianteCodice)}>{salvaLabel}</button>
-              <button className="cart-item-link danger" disabled={busy === first.varianteCodice} onClick={() => remove(first.varianteCodice)}>Rimuovi</button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const totQty = vars.reduce((s, v) => s + v.quantita, 0);
-    return (
-      <div key={linea} className="cart-group">
-        <div className="cart-group-header">
-          <div className="cart-item-img-wrap">{img}</div>
-          <div className="cart-group-info">
-            <Link href={`/area/catalogo/${first.articoloCodiceLinea}`} className="cart-item-name">
-              {first.articoloNome ?? linea}
-            </Link>
-            <span className="cart-group-qty">{totQty} pz</span>
-          </div>
-        </div>
-        <div className="cart-group-variants">
-          {vars.map((v) => (
-            <div key={v.varianteCodice} className="cart-group-row">
-              <span className="cart-item-variant">
-                <span className="badge code">{v.varianteCodice}</span>
-                {v.dimensioni && <span className="badge dim">{v.dimensioni}</span>}
-                {v.varianteDescrizione && <span className="cart-item-desc">{v.varianteDescrizione}</span>}
-                {v.multiplo > 1 && <span className="cart-item-multiplo">Multiplo: {v.multiplo} pz</span>}
-                {v.multiplo > 1 && <span style={{ color: "var(--muted)", fontSize: 20, lineHeight: 1 }}>·</span>}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fg)" }}><strong>{formatPrice(v.prezzo?.prezzoNetto ?? 0)} / pz</strong>{(v.prezzo?.sconto ?? 0) > 0 && <> <span style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginLeft: 4 }}>{formatPrice(v.prezzo?.prezzoListino ?? 0)}</span> <span style={{ fontSize: 11, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 999, marginLeft: 4 }}>−{v.prezzo?.sconto ?? 0}%</span></>}</span>
-              </span>
-              <div className="cart-group-row-actions">
-                <div className="cart-item-prices-col">
-                  <span className="cart-item-price">{formatPrice(v.quantita * (v.prezzo?.prezzoNetto ?? 0))}</span>
-                </div>
-                {salvato ? (
-                  <span className="cart-item-qty-label">{v.quantita} pz</span>
-                ) : (
-                  <div className="qty-control">
-                    <button type="button" onClick={() => changeQty(v.varianteCodice, -1)}>−</button>
-                    <input type="number" value={v.quantita} readOnly onKeyDown={(e) => e.preventDefault()} onFocus={(e) => e.target.blur()} />
-                    <button type="button" onClick={() => changeQty(v.varianteCodice, 1)}>+</button>
-                  </div>
-                )}
-                <div className="cart-group-links">
-                  <button className="cart-item-link" disabled={busy === v.varianteCodice} onClick={() => toggleSave(v.varianteCodice)}>{salvaLabel}</button>
-                  <button className="cart-item-link danger" disabled={busy === v.varianteCodice} onClick={() => remove(v.varianteCodice)}>Rimuovi</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="catalogo-page cart-page">
@@ -228,7 +118,10 @@ export default function CarrelloPage() {
                   <>
                     <h2 className="cart-section-title">Articoli ({activeItems.length} varianti)</h2>
                     <div className="cart-groups">
-                      {activeGroups.map((g) => renderGroup(g, "Salva per dopo", false))}
+                      {activeGroups.map((g) => (
+                        <CartLineGroup key={g[0]} group={g} onQty={changeQty} onRemove={remove}
+                          save={{ label: "Salva per dopo", onToggle: toggleSave }} busyCodice={busy} />
+                      ))}
                     </div>
                   </>
                 )}
@@ -237,7 +130,10 @@ export default function CarrelloPage() {
                   <>
                     <h2 className="cart-section-title" style={{ marginTop: 40 }}>Acquista dopo ({savedItems.length} varianti)</h2>
                     <div className="cart-groups saved">
-                      {savedGroups.map((g) => renderGroup(g, "Sposta nel carrello", true))}
+                      {savedGroups.map((g) => (
+                        <CartLineGroup key={g[0]} group={g} onQty={changeQty} onRemove={remove}
+                          save={{ label: "Sposta nel carrello", onToggle: toggleSave }} readOnlyQty busyCodice={busy} />
+                      ))}
                     </div>
                   </>
                 )}
