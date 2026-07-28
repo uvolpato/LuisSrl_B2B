@@ -1100,6 +1100,101 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     };
   }
 
+  /** Articoli correlati: stessa famiglia, raccolte in comune, colore simile, dimensioni vicine. */
+  async getCorrelati(codiceLinea: string, clienteId?: number) {
+    const art = await this.prisma.articolo.findUnique({
+      where: { codiceLinea },
+      include: {
+        famiglia: true,
+        raccolte: { include: { raccolta: { select: { slug: true } } } },
+        varianti: { select: { dimensioni: true } },
+      },
+    });
+    if (!art) return [];
+
+    const raccolteSlugs = new Set(art.raccolte.map((r) => r.raccolta.slug));
+
+    // Dimensioni min/max della fonte
+    let srcDimMin = Infinity, srcDimMax = -Infinity;
+    for (const v of art.varianti) {
+      if (!v.dimensioni) continue;
+      for (const [k, val] of Object.entries(v.dimensioni as Record<string, any>)) {
+        const n = Number(val?.valore);
+        if (!isNaN(n)) { srcDimMin = Math.min(srcDimMin, n); srcDimMax = Math.max(srcDimMax, n); }
+      }
+    }
+
+    // Tutti gli articoli attivi della stessa famiglia
+    const candidates = await this.prisma.articolo.findMany({
+      where: {
+        famigliaCodice: art.famigliaCodice,
+        codiceLinea: { not: codiceLinea },
+        configurato: true,
+        stato: 'ATTIVO',
+      },
+      include: {
+        famiglia: { select: { nome: true, nomePortale: true } },
+        immagini: { where: { copertina: true }, take: 1 },
+        raccolte: { include: { raccolta: { select: { nome: true, slug: true } } } },
+        varianti: { select: { dimensioni: true } },
+        _count: { select: { varianti: true } },
+      },
+    });
+
+    const scored: Array<{ art: typeof candidates[number]; score: number }> = [];
+    for (const c of candidates) {
+      let score = 0;
+
+      // Raccolte in comune (+30)
+      const hasCommon = c.raccolte.some((r) => raccolteSlugs.has(r.raccolta.slug));
+      if (hasCommon) score += 30;
+
+      // Colore simile con CIELAB (+20)
+      if (art.coloreRgb && c.coloreRgb) {
+        const srcLab = hexToLab(art.coloreRgb);
+        const cLab = hexToLab(c.coloreRgb);
+        const dE = Math.sqrt((srcLab.L - cLab.L) ** 2 + (srcLab.a - cLab.a) ** 2 + (srcLab.b - cLab.b) ** 2);
+        if (dE < 50) score += Math.round((1 - dE / 50) * 20);
+      }
+
+      // Dimensioni vicine (+15)
+      if (srcDimMin !== Infinity) {
+        let cDimMin = Infinity, cDimMax = -Infinity;
+        for (const v of c.varianti) {
+          if (!v.dimensioni) continue;
+          for (const [, val] of Object.entries(v.dimensioni as Record<string, any>)) {
+            const n = Number(val?.valore);
+            if (!isNaN(n)) { cDimMin = Math.min(cDimMin, n); cDimMax = Math.max(cDimMax, n); }
+          }
+        }
+        if (cDimMin !== Infinity) {
+          const overlap = Math.min(srcDimMax, cDimMax) - Math.max(srcDimMin, cDimMin);
+          if (overlap > 0) score += Math.min(15, Math.round(overlap / 5));
+        }
+      }
+
+      if (score > 0) scored.push({ art: c, score });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    const top = scored.slice(0, 8);
+
+    // Prezzi per il listino del cliente
+    let codiceListino: string | null = null;
+    if (clienteId) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+      codiceListino = customer?.codiceListino ?? null;
+    }
+    if (!codiceListino) {
+      const fallback = await this.getFirstListino();
+      codiceListino = fallback?.codice_listino ?? 'LIS1';
+    }
+    const ids = top.map((t) => t.art.id);
+    const prezzi = await this.getPrezziMinimiArticoli(ids, codiceListino);
+
+    return top.map((t) => this.mapArticoloCard(t.art, prezzi));
+  }
+
   async updateArticolo(
     codiceLinea: string,
     data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
