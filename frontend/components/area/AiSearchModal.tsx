@@ -147,6 +147,12 @@ export default function AiSearchModal({
               <input type="file" accept=".txt,.csv,.pdf,.doc,.docx" onChange={() => setImgNotice(true)} />
             </label>
           </div>
+          {onSubmitImage && (
+            <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              Carica solo foto del prodotto: evita persone o dati personali. L&apos;immagine non viene salvata.
+            </p>
+          )}
           <div className="aism-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
             Prova:
