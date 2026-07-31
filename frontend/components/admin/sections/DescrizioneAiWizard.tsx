@@ -200,7 +200,8 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     if (currentStep > 0) setCurrentStep((p) => p - 1);
   }
 
-  async function handleGenerate() {
+  async function handleGenerate(stepsToUse?: StepTesto[] | React.MouseEvent<HTMLButtonElement>) {
+    const steps = Array.isArray(stepsToUse) ? stepsToUse : stepTesti;
     setLoading(true);
     setResult(null);
     const msgInterval = setInterval(() => {
@@ -208,11 +209,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }, 800);
     try {
       const res = await api.post<WizardResult>(`/wizard-proxy/${codiceLinea}`, {
-        stepTesti,
+        stepTesti: steps,
         azione: "genera",
         promptPersonalizzato: customPrompt || undefined,
       });
-    onSave(null, null, stepTesti);
+      onSave(null, null, steps);
       setResult(res);
     } catch (e) {
       setProgressMsg("Errore: " + (e instanceof ApiError ? e.code : String(e)));
@@ -231,7 +232,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     onRefreshImmagini?.();
     // Se tutti gli step sono compilati, parte direttamente la generazione AI
     if (st.every((s) => s.testo?.trim().length > 0)) {
-      handleGenerate();
+      handleGenerate(st);
     }
   }
 
