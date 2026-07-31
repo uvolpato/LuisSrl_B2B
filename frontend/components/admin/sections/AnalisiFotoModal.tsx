@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "../../common/Modal";
 import { api } from "../../../lib/api";
 import type { StepTesto } from "./DescrizioneAiWizard";
+import { STEPS } from "./DescrizioneAiWizard";
 
 interface Props {
   codiceLinea: string;
@@ -135,11 +136,32 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
         {error && <div style={{ color: "var(--danger)", fontSize: 12 }}>{error}</div>}
 
         {result ? (
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button className="btn btn-ghost btn-sm" onClick={onClose}>Annulla</button>
-            <button className="btn btn-primary btn-sm" onClick={handleAccept}>
-              Accetta e genera descrizione
-            </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Riepilogo dimensioni sensoriali (come nella descrizione generata) */}
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "12px" }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "var(--fg)" }}>Riepilogo dimensioni sensoriali</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {result.stepTesti.map((s) => (
+                  <div key={s.step} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--fg-soft)", borderRadius: "var(--radius)" }}>
+                    <span style={{ fontSize: 18 }}>{STEPS[s.step - 1]?.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong style={{ fontSize: 12, display: "block", marginBottom: 2 }}>{s.label}</strong>
+                      <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--accent)", lineHeight: 1 }}>
+                        {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--muted)", display: "block", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Bottoni */}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>Annulla</button>
+              <button className="btn btn-primary btn-sm" onClick={handleAccept}>
+                Accetta e genera descrizione
+              </button>
+            </div>
           </div>
         ) : (
           <button className="btn btn-primary" onClick={handleAnalyze}

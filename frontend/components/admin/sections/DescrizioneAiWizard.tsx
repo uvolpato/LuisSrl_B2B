@@ -7,14 +7,14 @@ import { useConfirm } from "../../common/ConfirmProvider";
 import Notice from "../../common/Notice";
 import AnalisiFotoModal from "./AnalisiFotoModal";
 
-interface StepDef {
+export interface StepDef {
   step: number;
   label: string;
   icon: string;
   prompt: string;
 }
 
-const STEPS: StepDef[] = [
+export const STEPS: StepDef[] = [
   { step: 1, label: "Forma", icon: "◬", prompt: "Osserva la forma del prodotto. Descrivi cosa vedi: è slanciato o tozzo? ha curve morbide o linee nette? che dimensioni ha? sembra massiccio o leggero?" },
   { step: 2, label: "Superficie", icon: "✋", prompt: "Osserva la superficie. È liscia o ruvida? opaca o lucida? calda o fredda al tatto? sembra lavorata a mano o industriale? che materiale sembra? noti venature, screpolature, imperfezioni volute?" },
   { step: 3, label: "Contesto", icon: "◻", prompt: "Immagina questo prodotto in un ambiente. Dove lo metteresti? in una veranda, in un giardino, su un tavolo, in un negozio? Che luce riceve? Che altri oggetti gli stanno accanto? È formale o informale?" },

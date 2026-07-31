@@ -2485,29 +2485,37 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 @media (max-width: 768px) {
   .wizard-body { grid-template-columns: 1fr; }
   .wizard-gallery-main { min-height: 200px; }
+  /* Prompt guida: nel flusso, si nasconde dopo 8s su mobile */
+  .wizard-prompt {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  .wizard-prompt:not(.visible) {
+    opacity: 0;
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 0;
+    background: transparent;
+  }
 }
 .wizard-prompt {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 35;
   display: flex;
   gap: 10px;
   align-items: flex-start;
   background: color-mix(in oklch, var(--fg) 6%, var(--surface));
   border-radius: var(--radius);
   padding: 14px 16px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-  cursor: pointer;
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg);
 }
-.wizard-prompt.visible { opacity: 1; visibility: visible; transform: translateY(0); }
 .wizard-prompt-icon { font-size: 20px; line-height: 1.4; flex-shrink: 0; }
-.wizard-prompt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg); }
+.wizard-prompt p { margin: 0; }
 .wizard-input-area { display: flex; gap: 12px; align-items: stretch; flex: 1; min-height: 0; }
 .wizard-microphone { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
 .wizard-mic-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); cursor: pointer; display: grid; place-items: center; color: var(--muted); transition: all 0.15s ease; padding: 0; position: relative; }
@@ -2654,8 +2662,6 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .wizard-input-area { flex: none; align-items: flex-start; }
   .wizard-gallery-main { min-height: 160px; }
   .wizard-thumb { width: 44px; height: 44px; }
-  .wizard-prompt { padding: 12px; }
-  .wizard-prompt p { font-size: 13px; }
   .wizard-mic-btn { width: 52px; height: 52px; }
   .wizard-textarea { height: auto; min-height: 130px; }
   .wizard-nav { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
