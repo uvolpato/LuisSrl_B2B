@@ -223,21 +223,21 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }
   }
 
-  function handleAnalisiAccepted(st: StepTesto[]) {
+function handleAnalisiAccepted(st: StepTesto[]) {
     setStepTesti(st);
     setCurrentStep(0);
     setShowAnalisiModal(false);
+    setResult(null); // pulisce eventuale descrizione vecchia → va in step view
     api.put(`/api/integrazione/articoli/${codiceLinea}`, { wizardStepTesti: st }).catch(() => {});
     onSave(null, null, st);
     onRefreshImmagini?.();
     // Se tutti gli step sono compilati, parte direttamente la generazione AI
     if (st.every((s) => s.testo?.trim().length > 0)) {
-      // setTimeout per far flushare prima setLoading(true) di handleGenerate
       setTimeout(() => handleGenerate(st), 0);
     }
-  }
+}
 
-  async function handleShowDescrizioni() {
+   async function handleShowDescrizioni() {
     if (result) {
       setResult({
         descrizioneDettagliata: savedDettagliata ?? "",
