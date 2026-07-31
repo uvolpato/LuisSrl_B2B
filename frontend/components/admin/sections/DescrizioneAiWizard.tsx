@@ -182,7 +182,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   }
 
   function canGoNext(): boolean {
-    return stepTesti[currentStep]?.testo?.trim().length > 0;
+    return true;
   }
 
   function goNext() {
@@ -379,13 +379,13 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       {wizardError && <div className="wizard-error">{wizardError}</div>}
       <div className="wizard-header">
         {!useCompactSteps && STEPS.map((s, idx) => (
-          <button key={s.step} className={`wizard-step-tab${idx === currentStep ? " active" : ""}${idx < currentStep ? " done" : ""}`} onClick={() => { if (idx <= currentStep || canGoNext()) setCurrentStep(idx); }} disabled={idx > currentStep && !canGoNext()}>
+          <button key={s.step} className={`wizard-step-tab${idx === currentStep ? " active" : ""}${idx < currentStep ? " done" : ""}`} onClick={() => setCurrentStep(idx)}>
             <span className="wizard-step-icon">{s.icon}</span>
             <span className="wizard-step-label">{s.label}</span>
           </button>
         ))}
         {useCompactSteps && (
-          <select className="input wizard-step-select" value={currentStep} onChange={(e) => { const v = Number(e.target.value); if (v <= currentStep || canGoNext()) setCurrentStep(v); }} style={{ flex: 1, maxWidth: 240, fontSize: 17 }}>
+          <select className="input wizard-step-select" value={currentStep} onChange={(e) => setCurrentStep(Number(e.target.value))} style={{ flex: 1, maxWidth: 240, fontSize: 17 }}>
             {STEPS.map((s, idx) => (
               <option key={s.step} value={idx}>{s.icon} {s.label}</option>
             ))}
@@ -506,7 +506,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           </div>
 
           <div className="wizard-nav">
-            <button className="btn btn-secondary btn-sm" onClick={goBack} disabled={currentStep === 0}>
+            <button className="btn btn-secondary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={goBack} disabled={currentStep === 0}>
               Indietro
             </button>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -514,11 +514,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                 Cancella
               </button>
               {currentStep < STEPS.length - 1 ? (
-                <button className="btn btn-primary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={goNext} disabled={!canGoNext()}>
+                <button className="btn btn-primary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={goNext}>
                   Avanti
                 </button>
               ) : (
-                <button className="btn btn-primary" style={{ minWidth: 100, justifyContent: 'center' }} onClick={handleGenerate} disabled={!canGoNext()}>
+                <button className="btn btn-primary" style={{ minWidth: 100, justifyContent: 'center' }} onClick={handleGenerate}>
                   <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
                   Rielabora con AI
                 </button>
