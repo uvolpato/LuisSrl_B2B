@@ -558,11 +558,19 @@ export default function AreaClientePage() {
           .ai-upload-row { flex-direction: column; }
           .ai-modal { max-width: 100%; margin: 12px; border-radius: 12px; }
         }
+
+        .dash-main .container { max-width: 960px; padding-inline: 32px; }
+        @media (max-width: 640px) {
+          .dash-main .container { padding-inline: 16px; }
+          .dash-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+          .dash-tab { flex-shrink: 0; }
+          .dash-search-bar { max-width: 100%; }
+        }
       `}</style>
 
       {/* Main content */}
       <div id="content" className="dash-main">
-        <div className="container" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 960, paddingInline: 32 }}>
+        <div className="container" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
 
           {/* Welcome */}
           <div className="dash-welcome">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { api, ApiError } from "../../../lib/api";
 import { useConfirm } from "../../common/ConfirmProvider";
@@ -70,28 +70,22 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [customPrompt, setCustomPrompt] = useState(promptAi ?? "");
   const promptDirty = customPrompt !== initialPromptRef.current;
   const [showGuida, setShowGuida] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(true);
+  useEffect(() => {
+    if (!showPrompt) return;
+    const t = setTimeout(() => setShowPrompt(false), 8000);
+    return () => clearTimeout(t);
+  }, [showPrompt, currentStep]);
   const [mdView, setMdView] = useState(true);
   const [showAnalisiModal, setShowAnalisiModal] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
+  // Su mobile i passi del wizard diventano un menu a tendina (solo ≤768px)
   const [useCompactSteps, setUseCompactSteps] = useState(false);
-  const fullStepsWidthRef = useRef(0);
-  useLayoutEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const check = () => {
-      setUseCompactSteps((prev) => {
-        if (prev) {
-          return fullStepsWidthRef.current > el.clientWidth + 2;
-        }
-        const overflows = el.scrollWidth > el.clientWidth + 2;
-        if (overflows) fullStepsWidthRef.current = el.scrollWidth;
-        return overflows;
-      });
-    };
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setUseCompactSteps(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setUseCompactSteps(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, []);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
   const latestStepTesti = useRef(stepTesti);
@@ -275,6 +269,19 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
 
   const hasGeneratedDesc = !!(result?.descrizioneDettagliata);
 
+  const dimItems = stepTesti.filter((s) => s.testo.trim()).map((s) => (
+    <div key={s.step} className="wizard-dim-item">
+      <span className="wizard-dim-icon">{STEPS[s.step - 1]?.icon}</span>
+      <div className="wizard-dim-info">
+        <strong>{s.label}</strong>
+        <div className="wizard-dim-dots">
+          {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
+        </div>
+        <span className="wizard-dim-preview">{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
+      </div>
+    </div>
+  ));
+
   if (result) {
     return (
       <div className="wizard-result">
@@ -313,23 +320,19 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                 />
               </div>
             )}
-            <div className="wizard-dim-section">
-              <h4>Riepilogo dimensioni sensoriali</h4>
-              <div className="wizard-dimensions-scroll">
-                {stepTesti.filter(s => s.testo.trim()).map(s => (
-                  <div key={s.step} className="wizard-dim-item">
-                    <span className="wizard-dim-icon">{STEPS[s.step - 1]?.icon}</span>
-                    <div className="wizard-dim-info">
-                      <strong>{s.label}</strong>
-                      <div className="wizard-dim-dots">
-                        {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
-                      </div>
-                      <span className="wizard-dim-preview">{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
-                    </div>
-                  </div>
-                ))}
+            {useCompactSteps ? (
+              <details className="wizard-dim-section">
+                <summary>
+                  <h4>Riepilogo dimensioni sensoriali</h4>
+                </summary>
+                <div className="wizard-dimensions-scroll">{dimItems}</div>
+              </details>
+            ) : (
+              <div className="wizard-dim-section">
+                <h4>Riepilogo dimensioni sensoriali</h4>
+                <div className="wizard-dimensions-scroll">{dimItems}</div>
               </div>
-            </div>
+            )}
             <div className="wizard-result-footer">
               {hasGeneratedDesc && (
                 <button className="btn btn-primary btn-sm" onClick={handleGenerate} disabled={promptDirty} title={promptDirty ? "Salva prima il prompt modificato" : ""}>Rigenera</button>
@@ -373,7 +376,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   return (
       <div className="wizard">
       {wizardError && <div className="wizard-error">{wizardError}</div>}
-      <div className="wizard-header" ref={headerRef}>
+      <div className="wizard-header">
         {!useCompactSteps && STEPS.map((s, idx) => (
           <button key={s.step} className={`wizard-step-tab${idx === currentStep ? " active" : ""}${idx < currentStep ? " done" : ""}`} onClick={() => { if (idx <= currentStep || canGoNext()) setCurrentStep(idx); }} disabled={idx > currentStep && !canGoNext()}>
             <span className="wizard-step-icon">{s.icon}</span>
@@ -381,7 +384,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           </button>
         ))}
         {useCompactSteps && (
-          <select className="input wizard-step-select" value={currentStep} onChange={(e) => { const v = Number(e.target.value); if (v <= currentStep || canGoNext()) setCurrentStep(v); }} style={{ flex: 1, maxWidth: 240, fontSize: 14 }}>
+          <select className="input wizard-step-select" value={currentStep} onChange={(e) => { const v = Number(e.target.value); if (v <= currentStep || canGoNext()) setCurrentStep(v); }} style={{ flex: 1, maxWidth: 240, fontSize: 17 }}>
             {STEPS.map((s, idx) => (
               <option key={s.step} value={idx}>{s.icon} {s.label}</option>
             ))}
@@ -394,20 +397,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             </button>
           )}
           <button className="btn btn-ghost btn-sm" onClick={() => setShowAnalisiModal(true)} title="Analisi AI da foto">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 14, height: 14 }}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 18, height: 18 }}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowGuida(!showGuida)} title="Guida sensoriale">?</button>
+          <button className="btn btn-ghost btn-sm" style={{ fontSize: 16, lineHeight: 1 }} onClick={() => setShowGuida(!showGuida)} title="Guida sensoriale">?</button>
         </div>
       </div>
-
-      {showAnalisiModal && (
-        <AnalisiFotoModal
-          codiceLinea={codiceLinea}
-          existingImages={immagini}
-          onClose={() => setShowAnalisiModal(false)}
-          onAccept={handleAnalisiAccepted}
-        />
-      )}
 
       {showGuida && (
         <div className="wizard-guida">
@@ -421,6 +415,15 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             </tbody>
           </table>
         </div>
+      )}
+
+      {showAnalisiModal && (
+        <AnalisiFotoModal
+          codiceLinea={codiceLinea}
+          existingImages={immagini}
+          onClose={() => setShowAnalisiModal(false)}
+          onAccept={handleAnalisiAccepted}
+        />
       )}
 
       <div className="wizard-body">
@@ -459,7 +462,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           )}
         </div>
         <div className="wizard-content">
-          <div className="wizard-prompt">
+          <div className={`wizard-prompt${showPrompt ? " visible" : ""}`} onClick={() => setShowPrompt(false)}>
             <span className="wizard-prompt-icon">{STEPS[currentStep]?.icon}</span>
             <p>{STEPS[currentStep]?.prompt}</p>
           </div>
@@ -479,6 +482,16 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                 </button>
               )}
               {listening && <span className="wizard-mic-status">Sto ascoltando…</span>}
+              <button
+                type="button"
+                className={`wizard-mic-btn${showPrompt ? " active" : ""}`}
+                onClick={() => setShowPrompt((s) => !s)}
+                title="Spiegazione del passo"
+                aria-label="Spiegazione del passo"
+                style={{ fontSize: 17 }}
+              >
+                {STEPS[currentStep]?.icon}
+              </button>
             </div>
             <textarea
               className="textarea wizard-textarea"
@@ -494,15 +507,15 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               Indietro
             </button>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
+              <button className="btn btn-secondary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
               </button>
               {currentStep < STEPS.length - 1 ? (
-                <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
+                <button className="btn btn-primary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={goNext} disabled={!canGoNext()}>
                   Avanti
                 </button>
               ) : (
-                <button className="btn btn-primary" onClick={handleGenerate} disabled={!canGoNext()}>
+                <button className="btn btn-primary" style={{ minWidth: 100, justifyContent: 'center' }} onClick={handleGenerate} disabled={!canGoNext()}>
                   <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
                   Rielabora con AI
                 </button>

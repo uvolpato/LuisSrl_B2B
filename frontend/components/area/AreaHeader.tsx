@@ -8,7 +8,7 @@ import { useAuth } from "../../lib/use-auth";
 import { useHeaderCenter } from "../../contexts/HeaderCenterContext";
 import type { CustomerProfile } from "../../lib/types";
 
-const MOBILE_BP = "(max-width: 768px)";
+const MOBILE_BP = "(max-width: 920px)";
 
 const INITIALS_CSS = (name: string) => {
   const parts = name.trim().split(/\s+/);
@@ -104,6 +104,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           background: color-mix(in oklch, var(--bg) 92%, transparent);
           backdrop-filter: blur(12px);
           border-bottom: 1px solid var(--border);
+          overflow: hidden;
         }
         .area-header-inner {
           display: flex;
@@ -225,7 +226,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
         }
         .area-header .hamburger-btn:hover { background: var(--accent-soft); }
         .area-header .cart-btn-text { display: inline; }
-        @media (max-width: 768px) {
+        @media (max-width: 920px) {
           .area-header .cart-btn-text { display: none; }
         }
 

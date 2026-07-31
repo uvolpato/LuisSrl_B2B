@@ -7,7 +7,7 @@ import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
 import Tooltip from "../../common/Tooltip";
-import { IconPlus, IconEye, IconEyeOff } from "../icons";
+import { IconPlus, IconEye, IconEyeOff, IconTrash } from "../icons";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import EditImageModal from "./EditImageModal";
 import DescrizioneAiWizard from "./DescrizioneAiWizard";
@@ -120,13 +120,22 @@ export default function ArticoloEditModal({
   const [copyError, setCopyError] = useState<string | null>(null);
 
   const tabsBarRef = useRef<HTMLDivElement>(null);
-  const [compactTabs, setCompactTabs] = useState(false);
+  const [tabsOverflow, setTabsOverflow] = useState(false);
+  const [narrowTabs, setNarrowTabs] = useState(false);
   const fullTabsWidthRef = useRef(0);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setNarrowTabs(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setNarrowTabs(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   useLayoutEffect(() => {
+    if (!open) return;
     const el = tabsBarRef.current;
     if (!el) return;
     const check = () => {
-      setCompactTabs((prev) => {
+      setTabsOverflow((prev) => {
         if (prev) {
           return fullTabsWidthRef.current > el.clientWidth + 2;
         }
@@ -139,7 +148,8 @@ export default function ArticoloEditModal({
     const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [open]);
+  const compactTabs = narrowTabs || tabsOverflow;
 
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
@@ -312,7 +322,7 @@ export default function ArticoloEditModal({
 
       <div className="modal-tabs-bar" ref={tabsBarRef}>
         {compactTabs ? (
-          <select className="input" value={activeTab} onChange={(e) => setActiveTab(e.target.value)} style={{ flex: 1, maxWidth: 240, fontSize: 14, margin: "8px 12px" }}>
+          <select className="input" value={activeTab} onChange={(e) => setActiveTab(e.target.value)} style={{ width: "calc(100% - 16px)", margin: "8px 8px", fontSize: 14 }}>
             {tabs.map((t) => (
               <option key={t.key} value={t.key}>{t.label}</option>
             ))}
@@ -691,23 +701,32 @@ export default function ArticoloEditModal({
         )}
       </div>
 
-      <div className="modal-root-footer">
-        <button type="button" className="btn btn-danger-outline btn-sm" onClick={handleDelete} disabled={saving || !article} style={{ width: 80, justifyContent: "center" }}>Elimina</button>
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+      <div className="modal-root-footer article-edit-footer">
+        <button type="button" className="btn btn-danger-outline btn-sm btn-w80" onClick={handleDelete} disabled={saving || !article}>
+          <span className="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg></span>
+          <span className="f-label">Elimina</span>
+        </button>
+        <div className="f-middle">
           {article && !article.configurato && (
             <button type="button" className="btn btn-primary btn-sm" onClick={handleConfigura} disabled={saving || isDirty} title={isDirty ? "Salva prima le modifiche" : "Verifica i requisiti e marca l'articolo come configurato (irreversibile)"}>
-              Imposta a configurato
+              <span className="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+              <span className="f-label">Imposta a configurato</span>
             </button>
           )}
           {article?.configurato && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)" }}>
-              <span className="user-status-dot attivo" /> Configurato
+            <span className="f-status">
+              <span className="user-status-dot attivo" />
+              <span className="f-label">Configurato</span>
             </span>
           )}
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={handleClose} style={{ width: 80, justifyContent: "center" }}>Annulla</button>
+        <button type="button" className="btn btn-secondary btn-sm btn-w80" onClick={handleClose}>
+          <span className="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></span>
+          <span className="f-label">Annulla</span>
+        </button>
         <button type="button" className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !article || !isDirty}>
-          {saving ? "Salvataggio…" : "Salva Modifiche"}
+          <span className="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg></span>
+          <span className="f-label">{saving ? "Salvataggio…" : "Salva Modifiche"}</span>
         </button>
       </div>
       {copyModalOpen && (
