@@ -185,6 +185,10 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     return true;
   }
 
+  function canGenerate(): boolean {
+    return stepTesti.every((s) => s.testo?.trim().length > 0);
+  }
+
   function goNext() {
     stopListening();
     onSave(null, null, stepTesti);
@@ -518,7 +522,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                   Avanti
                 </button>
               ) : (
-                <button className="btn btn-primary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={handleGenerate}>
+                <button className="btn btn-primary btn-sm" style={{ minWidth: 100, justifyContent: 'center' }} onClick={handleGenerate} disabled={!canGenerate()}>
                   <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 16, height: 16 }}><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
                   Rielabora con AI
                 </button>
