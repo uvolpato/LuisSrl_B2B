@@ -21,6 +21,7 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(existingImages.map((i) => i.id)));
   const [result, setResult] = useState<{ stepTesti: StepTesto[]; immagini: { id: number; url: string }[] } | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [fullTextSteps, setFullTextSteps] = useState<Set<number>>(new Set());
 
   const frozen = analyzing || !!result;
 
@@ -158,7 +159,35 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
                         <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: "auto" }}>{isExpanded ? "▲" : "▼"}</span>
                       </summary>
                       <div style={{ padding: "0 42px 10px 42px", borderTop: "1px solid var(--border)", fontSize: 13, lineHeight: 1.5, color: "var(--fg)" }}>
-                        {s.testo}
+                        {(() => {
+                          const isFull = fullTextSteps.has(s.step);
+                          const preview = s.testo.slice(0, 200);
+                          const hasMore = s.testo.length > 200;
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <span style={{ whiteSpace: isFull ? "pre-wrap" : "normal" }}>
+                                {isFull ? s.testo : (hasMore ? preview + "…" : s.testo)}
+                              </span>
+                              {hasMore && (
+                                <button
+                                  type="button"
+                                  style={{ alignSelf: "flex-start", fontSize: 11, color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline" }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setFullTextSteps((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(s.step)) next.delete(s.step); else next.add(s.step);
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  {isFull ? "Mostra meno" : "Mostra tutto"}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </details>
                   );
