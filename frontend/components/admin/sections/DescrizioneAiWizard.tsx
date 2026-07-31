@@ -229,6 +229,10 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     api.put(`/api/integrazione/articoli/${codiceLinea}`, { wizardStepTesti: st }).catch(() => {});
     onSave(null, null, st);
     onRefreshImmagini?.();
+    // Se tutti gli step sono compilati, parte direttamente la generazione AI
+    if (st.every((s) => s.testo?.trim().length > 0)) {
+      handleGenerate();
+    }
   }
 
   async function handleShowDescrizioni() {
