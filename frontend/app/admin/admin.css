@@ -989,8 +989,8 @@
 .tab-panel.active { display: block; }
 
 /* Form fields */
-.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
-.field-section { margin-bottom: 18px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.field-section { margin-bottom: 10px; }
 .field-section:last-child { margin-bottom: 0; }
 .field-section-title {
   font-size: 12px;
@@ -998,9 +998,9 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
-.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .field-grid > .field { margin-bottom: 0; }
 .field-col-2 { grid-column: span 2; }
 .color-picker-row { display: flex; align-items: center; gap: 8px; }
@@ -1509,22 +1509,22 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   flex-direction: column;
 }
 
-.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
 .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mono { font-family: var(--font-mono); }
 /* Modal tabs bar (inside modal with noHeader) */
 .modal-tabs-bar {
   display: flex;
+  align-items: center;
   gap: 0;
   padding: 0 28px;
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
   flex-shrink: 0;
+  overflow: hidden;
+  min-height: 44px;
 }
-.modal-tabs-bar::-webkit-scrollbar { display: none; }
-.modal-tab-btn {
+.modal-tabs-bar::-webkit-scrollbar { display: none; }.modal-tab-btn {
   padding: 12px 14px;
   border: none;
   background: none;
@@ -2350,16 +2350,16 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 
 /* Descrizione AI Wizard */
 .wizard { display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; flex: 1; position: relative; }
-.wizard-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.wizard-steps { display: flex; align-items: center; gap: 0; flex: 1; }
-.wizard-step-dot { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: var(--radius); color: var(--muted); font-size: 13px; transition: all 0.15s ease; }
-.wizard-step-dot:hover { background: var(--fg-soft); color: var(--fg); }
-.wizard-step-dot.active { color: var(--accent); font-weight: 600; }
-.wizard-step-dot.done { color: var(--fg); }
-.wizard-step-dot.existing { color: var(--accent); }
-.wizard-step-dot:disabled { opacity: 0.4; cursor: default; }
-.wizard-dot-icon { font-size: 16px; line-height: 1; }
-.wizard-dot-label { font-size: 12px; white-space: nowrap; }
+.wizard-header { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.wizard-header-right { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.wizard-step-tab { display: flex; align-items: center; gap: 5px; padding: 6px 10px; border: none; background: transparent; cursor: pointer; border-radius: var(--radius); color: var(--muted); font-size: 13px; white-space: nowrap; transition: all 0.15s ease; flex-shrink: 0; }
+.wizard-step-tab:hover { background: var(--fg-soft); color: var(--fg); }
+.wizard-step-tab.active { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+.wizard-step-tab.done { color: var(--fg); }
+.wizard-step-tab:disabled { opacity: 0.4; cursor: default; }
+.wizard-step-icon { font-size: 15px; line-height: 1; }
+.wizard-step-label { font-size: 12px; }
+
 .wizard-guida {
   position: absolute;
   top: 44px;
@@ -2598,17 +2598,6 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .field-row { grid-template-columns: 1fr; }
   .modal { width: 95vw; max-height: 95vh; }
   .modal-body { padding: 20px; }
-  /* .modal-root-* responsives in catalogo.css */
-
-  /* --- Edit articolo su mobile --- */
-  .modal-tabs-bar { padding: 0 12px; }
-  .modal-tab-btn { padding: 12px 10px; font-size: 13px; white-space: nowrap; }
-  .subtab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
-  .modal-body-edit { padding: 16px; }
-
-  /* Wizard descrizione AI: colonna singola, foto compatta, dettatura in evidenza.
-     Altezze naturali + scroll: su mobile l'altezza fissa faceva collassare/sovrapporre. */
-  .modal-body-edit--fill { overflow-y: auto; }
   .wizard { gap: 14px; height: auto; }
   .wizard-body { height: auto; }
   .wizard-content { min-height: 0; }
@@ -2644,6 +2633,22 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .settings-content-header { padding: 16px 20px; position: relative; z-index: 6; }
   .settings-page { padding: 20px; }
 }
+}
+
+/* Modale edit articolo fullscreen (match catalogo.css 768px) */
+@media (max-width: 768px) {
+  .modal-tabs-bar { padding: 0 8px; }
+  .modal-tab-btn { padding: 10px 6px; font-size: 12px; white-space: nowrap; }
+  .subtab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+  .modal-body-edit { padding: 16px; }
+  .modal-body-edit--fill { overflow-y: auto; }
+  .wizard-header { gap: 8px; }
+  .wizard-body { height: auto; }
+  .wizard-content { min-height: 0; }
+  .wizard-input-area { flex: none; align-items: flex-start; }
+  .wizard-nav { flex-direction: column; align-items: stretch; gap: 8px; }
+  .wizard-nav > .row { display: flex; gap: 8px; }
+  .wizard-nav .btn { flex: 1; justify-content: center; }
 }
 
 /* Customer edit modal — ordini */

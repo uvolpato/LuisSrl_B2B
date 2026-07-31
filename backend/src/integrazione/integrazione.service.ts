@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as path from 'path';
@@ -1197,7 +1197,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -1301,6 +1301,20 @@ Rispondi SOLO con JSON valido, senza testo attorno:
           ),
       );
     }
+    if (data.immaginiTipo) {
+      const allowed = ['CARICATA', 'AI'];
+      await this.prisma.$transaction(
+        Object.entries(data.immaginiTipo)
+          .filter(([id]) => !deletedIds.has(Number(id)))
+          .filter(([, tipo]) => allowed.includes(tipo))
+          .map(([id, tipo]) =>
+            this.prisma.immagine.update({
+              where: { id: Number(id) },
+              data: { tipo },
+            }),
+          ),
+      );
+    }
     // Invariante copertina: se esiste almeno un'immagine attiva (inGalleria),
     // deve esserci esattamente una copertina, ed è la prima attiva per ordinamento.
     // Copre: eliminazione/disattivazione della copertina (passa alla successiva) e
@@ -1350,26 +1364,25 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     return { deleted: true };
   }
 
-  async uploadImmagini(codiceLinea: string, files: Express.Multer.File[], tipo = 'CARICATA') {
+  async uploadImmagini(codiceLinea: string, files: Express.Multer.File[]) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
-    const existingCount = await this.prisma.immagine.count({ where: { articoloId: art.id, tipo } });
+    const existingCount = await this.prisma.immagine.count({ where: { articoloId: art.id } });
     const baseDir = ASSETS_BASE_DIR;
     const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
     const artDir = path.join(baseDir, safeCod);
     await fsp.mkdir(artDir, { recursive: true });
-    const infisso = ({ CARICATA: 'bianco', GALLERIA: 'galleria', AI: 'ai' } as Record<string, string>)[tipo] ?? tipo.toLowerCase();
     const hasCover = await this.prisma.immagine.findFirst({ where: { articoloId: art.id, copertina: true } });
     const uploaded: { url: string }[] = [];
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       const ext = path.extname(f.originalname) || '.jpg';
       const n = String(existingCount + i + 1).padStart(3, '0');
-      const filename = `${safeCod}_${infisso}_${n}${ext}`;
+      const filename = `${safeCod}_${n}${ext}`;
       await fsp.writeFile(path.join(artDir, filename), f.buffer);
       const img = await this.prisma.immagine.create({
         data: {
-          articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo,
+          articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`, ordinamento: existingCount + i, tipo: 'CARICATA',
           copertina: !hasCover && i === 0,
         },
       });
@@ -1584,14 +1597,18 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   // ── AI: wizard descrizione sensoriale ──
 
-  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione'): Promise<string> {
+  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione', images?: { mime: string; b64: string }[], outputTokens?: { tokenIn?: number; tokenOut?: number }): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
     const aiCfg = await this.getAiConfig('testi');
     const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [{ text: prompt }];
-    if (image) parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
+    if (images?.length) {
+      for (const img of images) parts.push({ inlineData: { mimeType: img.mime, data: img.b64 } });
+    } else if (image) {
+      parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
+    }
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), images?.length ? 90000 : 60000);
     try {
       const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${aiCfg.model}:generateContent`;
       const res = await fetch(url, {
@@ -1613,13 +1630,20 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         const txt = await res.text().catch(() => '');
         let detail = txt.slice(0, 300);
         try { detail = (JSON.parse(txt) as { error?: { message?: string } })?.error?.message ?? detail; } catch { /* */ }
-        throw new BadRequestException(`Errore AI testo (${res.status}): ${detail.slice(0, 200)}`);
+        const userMsg = detail.includes('high demand') || detail.includes('quota')
+          ? 'Il modello AI di Google è momentaneamente sovraccarico. Riprova tra qualche minuto.'
+          : detail.includes('API key') || detail.includes('API_KEY_INVALID')
+          ? 'La chiave API di Google Gemini non è valida. Contatta l\'amministratore.'
+          : detail.slice(0, 200);
+        throw new BadRequestException(`Google AI non risponde (${res.status}): ${userMsg}`);
       }
       const data = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
         usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
       };
-      void this.aiUsage.record({ tipo: usageTipo, modello: aiCfg.model, tokenIn: data.usageMetadata?.promptTokenCount, tokenOut: data.usageMetadata?.candidatesTokenCount });
+      const md = data.usageMetadata;
+      void this.aiUsage.record({ tipo: usageTipo, modello: aiCfg.model, tokenIn: md?.promptTokenCount, tokenOut: md?.candidatesTokenCount });
+      if (outputTokens) { outputTokens.tokenIn = md?.promptTokenCount; outputTokens.tokenOut = md?.candidatesTokenCount; }
       const candidate = data.candidates?.[0];
       const text = candidate?.content?.parts?.map((p) => p.text).join('\n') || '';
       const finishReason = candidate?.finishReason ?? 'UNKNOWN';
@@ -1627,6 +1651,10 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         console.warn(`Gemini finishReason=${finishReason} (atteso STOP). Testo ricevuto: ${text.slice(0, 200)}`);
       }
       return text;
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new BadRequestException(`Errore AI: ${msg.slice(0, 200)}`);
     } finally {
       clearTimeout(timeout);
     }
@@ -1750,6 +1778,8 @@ Descrizione: ${descrizione}`;
     codiceLinea: string,
     body: { stepTesti: { step: number; label: string; testo: string }[]; azione?: string; promptPersonalizzato?: string },
   ) {
+    const geminiTokens: { tokenIn?: number; tokenOut?: number } = {};
+    try {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
 
@@ -1783,13 +1813,13 @@ Stile:
 - Zero storytelling emotivo ("porta la calore della terra", "character unica")
 - Se non sai qualcosa, omettilo, non inventare
 
-Oltre alla descrizione dettagliata, scrivi una descrizione BREVE di 2-3 righe che riassuma: materiale, forma chiave, dimensione di riferimento, utilizzo tipico. Tono sintetico, da scheda tecnica.
+Oltre alla descrizione dettagliata, scrivi anche una descrizione BREVE di 4 frasi che illustri: materiale, forma chiave, dimensione di riferimento, finitura, utilizzo tipico e destinazione d'uso (interno/esterno). Tono scorrevole, da presentazione commerciale.
 
 Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
 \`\`\`json
 {
   "descrizioneDettagliata": "testo della descrizione tecnico-professionale",
-  "descrizioneBreve": "2-3 righe riassuntive: materiale, forma, dimensione, uso"
+  "descrizioneBreve": "4 frasi descrittive: materiale, forma, dimensione, finitura, uso"
 }
 \`\`\``;
     }
@@ -1823,7 +1853,8 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
 
     const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}${dimSection}${requisiti}`;
 
-    const raw = await this.callGeminiText(fullPrompt);
+    const raw = await this.callGeminiText(fullPrompt, undefined, 'descrizione', undefined, geminiTokens);
+    console.log(`[wizardDescrizione] Gemini risposta per ${codiceLinea}: token ${geminiTokens.tokenIn}/${geminiTokens.tokenOut}, testo (${raw.length}): ${raw.slice(0, 500)}`);
 
     // Estrae descrizioneDettagliata e (opzionale) descrizioneBreve dal JSON di Gemini.
     // Gestisce risposte troncate (mancanza di } finale o di descrizioneBreve).
@@ -1874,7 +1905,165 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
     const varianti = await this.prisma.variante.findMany({ where: { articoloId: art.id }, select: { codice: true, descrizione: true } });
     const descrizioneDettagliata = this.saveDescrizioneMd(codiceLinea, art.nome, soloDettagliata, descrizioneBreve, art.colore, varianti, body.stepTesti, imgDescs, fullPrompt);
 
-    return { descrizioneDettagliata, descrizioneBreve, raw };
+    return { descrizioneDettagliata, descrizioneBreve, tokenIn: geminiTokens.tokenIn, tokenOut: geminiTokens.tokenOut };
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      const tokenMsg = geminiTokens.tokenIn != null
+        ? ` (prompt: ${geminiTokens.tokenIn}, risposta: ${geminiTokens.tokenOut ?? '?'})`
+        : '';
+      throw new BadRequestException(`Errore generazione descrizione${tokenMsg}: ${msg.slice(0, 300)}`);
+    }
+  }
+
+  /** Analizza foto scattate dall'utente tramite Gemini e restituisce le 5 osservazioni sensoriali. */
+  async analizzaDescrizioneDaFoto(
+    codiceLinea: string,
+    files: Express.Multer.File[],
+    imageIds?: number[],
+  ) {
+    const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
+    if (!art) throw new NotFoundException('Articolo non trovato');
+
+    // Salva le foto caricate (inGalleria=false, non copertina)
+    const nuoveImmagini: { id: number; url: string }[] = [];
+    if (files?.length) {
+      const baseDir = ASSETS_BASE_DIR;
+      const safeCod = codiceLinea.replace(/[^A-Za-z0-9_-]/g, '_');
+      const artDir = path.join(baseDir, safeCod);
+      await fsp.mkdir(artDir, { recursive: true });
+      const existingCount = await this.prisma.immagine.count({ where: { articoloId: art.id } });
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const ext = path.extname(f.originalname) || '.jpg';
+        const n = String(existingCount + i + 1).padStart(3, '0');
+        const filename = `${safeCod}_${n}${ext}`;
+        await fsp.writeFile(path.join(artDir, filename), f.buffer);
+        const img = await this.prisma.immagine.create({
+          data: {
+            articoloId: art.id, url: `${ASSETS_PUBLIC_URL}/${safeCod}/${filename}`,
+            ordinamento: existingCount + i, tipo: 'CARICATA', inGalleria: false,
+          },
+        });
+        nuoveImmagini.push({ id: img.id, url: img.url });
+      }
+    }
+
+    // Raccogli tutte le immagini da analizzare (nuove + esistenti per ID)
+    const allIds = [
+      ...nuoveImmagini.map((i) => i.id),
+      ...(imageIds ?? []),
+    ];
+    const immagini = await this.prisma.immagine.findMany({
+      where: { id: { in: allIds }, articoloId: art.id },
+    });
+    if (!immagini.length) throw new BadRequestException('Nessuna immagine da analizzare.');
+
+    // Legge i file immagine dal disco
+    const imgData: { mime: string; b64: string }[] = [];
+    for (const img of immagini) {
+      const rel = img.url.replace(`${ASSETS_PUBLIC_URL}/`, '');
+      const filePath = path.join(ASSETS_BASE_DIR, rel);
+      try {
+        const buf = await fsp.readFile(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+        imgData.push({ mime, b64: buf.toString('base64') });
+      } catch {
+        // salta file non leggibili
+      }
+    }
+    if (!imgData.length) throw new BadRequestException('Nessuna immagine leggibile trovata.');
+
+    // Legge varianti con dimensioni per suggerirle a Gemini
+    const varianti = await this.prisma.variante.findMany({
+      where: { articoloId: art.id },
+      select: { descrizione: true, dimensioni: true },
+    });
+    const variantiHint = varianti.length
+      ? `\n\nSe vedi più oggetti nelle foto, usa le dimensioni reali delle varianti possibili:\n${
+          varianti.map((v) => {
+            const dims = v.dimensioni as Record<string, { valore: string; unita: string }> | null;
+            const parts: string[] = [];
+            if (dims?.altezza) parts.push(`altezza ${dims.altezza.valore}${dims.altezza.unita || 'cm'}`);
+            if (dims?.diametro) parts.push(`diametro ${dims.diametro.valore}${dims.diametro.unita || 'cm'}`);
+            if (dims?.lunghezza) parts.push(`lunghezza ${dims.lunghezza.valore}${dims.lunghezza.unita || 'cm'}`);
+            if (dims?.larghezza) parts.push(`larghezza ${dims.larghezza.valore}${dims.larghezza.unita || 'cm'}`);
+            if (dims?.profondita) parts.push(`profondità ${dims.profondita.valore}${dims.profondita.unita || 'cm'}`);
+            return `- ${v.descrizione}${parts.length ? ': ' + parts.join(', ') : ''}`;
+          }).join('\n')
+        }`
+      : '';
+
+    const prompt = `Sei un osservatore esperto di vasellame e articoli garden B2B.
+Osserva le foto e descrivi il prodotto in italiano, tono tecnico-concreto. Devi produrre TUTTE E 5 le voci qui sotto, ciascuna con un testo specifico e dettagliato.
+
+FORMA: geometria, proporzioni, struttura, bordi, profilo, piede
+SUPERFICIE: materiale, finitura, liscio/ruvido, opaco/lucido, venature
+CONTESTO: dove va usato, interno/esterno, luce, a cosa serve
+EMOZIONE: sensazione, elegante/rustico, moderno/classico, caldo/freddo
+LIBERA: peso, resistenza, particolarità, destinazione professionale
+${variantiHint}
+Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti e 5 i campi DEVONO essere presenti:
+
+{"forma":"...","superficie":"...","contesto":"...","emozione":"...","libera":"..."}`;
+
+    console.log(`[analizzaDescrizione] Invio ${imgData.length} foto a Gemini per ${codiceLinea}...`);
+    const raw = await this.callGeminiText(prompt, undefined, 'descrizione', imgData);
+    console.log(`[analizzaDescrizione] Risposta Gemini per ${codiceLinea}: ${raw.slice(0, 2000)}`);
+
+    let stepTesti: { step: number; label: string; testo: string }[] = [];
+    let rawJson = '';
+
+    // Trova qualsiasi blocco JSON nella risposta
+    const braces = raw.match(/\{[\s\S]*\}/);
+    if (braces) {
+      const chiusa = braces[0].lastIndexOf('}');
+      if (chiusa !== -1) {
+        const jsonStr = braces[0].slice(0, chiusa + 1);
+        rawJson = jsonStr;
+        try {
+          const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+          const labels = ['Forma', 'Superficie', 'Contesto', 'Emozione', 'Libera'];
+          const keys = ['forma', 'superficie', 'contesto', 'emozione', 'libera'];
+
+          const pLower: Record<string, unknown> = {};
+          for (const k of Object.keys(parsed)) pLower[k.toLowerCase()] = parsed[k];
+
+          // Formato array: {"osservazioni":[{"step":1,"label":"Forma","testo":"..."},...]}
+          const oss = pLower['osservazioni'];
+          if (Array.isArray(oss) && oss.length) {
+            stepTesti = oss.map((o: Record<string, unknown>) => ({
+              step: Number(o.step ?? 0),
+              label: String(o.label ?? ''),
+              testo: String(o.testo ?? '').trim() || 'No Data',
+            }));
+          }
+
+          // Formato piatto: {"forma":"...","superficie":"..."}
+          if (!stepTesti.length) {
+            stepTesti = labels.map((label, i) => ({
+              step: i + 1, label,
+              testo: String(pLower[keys[i]] ?? '').trim() || 'No Data',
+            }));
+          }
+        } catch { /* fallback */ }
+      }
+    }
+
+    if (!stepTesti.length) {
+      const labels = ['Forma', 'Superficie', 'Contesto', 'Emozione', 'Libera'];
+      const keys = ['forma', 'superficie', 'contesto', 'emozione', 'libera'];
+      const safe = raw.replace(/\r?\n/g, '\\n').replace(/\t/g, '\\t');
+      stepTesti = labels.map((label, i) => {
+        const re = new RegExp(`"${keys[i]}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i');
+        const m = safe.match(re);
+        return { step: i + 1, label, testo: m?.[1]?.replace(/\\n/g, '\n').replace(/\\t/g, '\t')?.trim() || 'No Data' };
+      });
+      if (!rawJson) rawJson = raw.slice(0, 2000);
+    }
+
+    return { stepTesti, raw: rawJson, immagini: nuoveImmagini };
   }
 
   /** Restituisce il mapping corrente (utile per debug) */
