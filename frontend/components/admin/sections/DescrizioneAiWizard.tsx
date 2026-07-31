@@ -232,7 +232,8 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     onRefreshImmagini?.();
     // Se tutti gli step sono compilati, parte direttamente la generazione AI
     if (st.every((s) => s.testo?.trim().length > 0)) {
-      handleGenerate(st);
+      // setTimeout per far flushare prima setLoading(true) di handleGenerate
+      setTimeout(() => handleGenerate(st), 0);
     }
   }
 
