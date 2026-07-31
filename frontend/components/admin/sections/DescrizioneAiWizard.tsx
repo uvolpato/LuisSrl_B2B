@@ -223,7 +223,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     }
   }
 
-function handleAnalisiAccepted(st: StepTesto[]) {
+  function handleAnalisiAccepted(st: StepTesto[]) {
     setStepTesti(st);
     setCurrentStep(0);
     setShowAnalisiModal(false);
@@ -235,9 +235,9 @@ function handleAnalisiAccepted(st: StepTesto[]) {
     if (st.every((s) => s.testo?.trim().length > 0)) {
       setTimeout(() => handleGenerate(st), 0);
     }
-}
+  }
 
-   async function handleShowDescrizioni() {
+  async function handleShowDescrizioni() {
     if (result) {
       setResult({
         descrizioneDettagliata: savedDettagliata ?? "",
