@@ -237,6 +237,22 @@ export default function CatalogoPage() {
     return () => io.disconnect();
   }, [hasMore, listLoading, page, aiResults, fetchPage]);
 
+  // Sidebar sticky: calcola il distacco naturale al load e lo usa come top
+  // così la sidebar non si muove finché il suo contenuto è completamente visibile.
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>(".catalogo-page .sidebar-inner");
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top > 0) {
+        el.style.setProperty("top", rect.top + "px");
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   // Lista mostrata: risultati AI (top-k) oppure catalogo paginato accumulato.
   const displayed = aiResults ? aiResults.articoli : articoli;
   const tabLabel = activeTab !== "tutti" ? facets.raccolte.find((r) => r.slug === activeTab)?.nome : null;
@@ -360,7 +376,9 @@ export default function CatalogoPage() {
         <div className="container">
           <div className="catalog-layout">
             <aside className="sidebar">
-              {filtersContent}
+              <div className="sidebar-inner">
+                {filtersContent}
+              </div>
             </aside>
 
             <div>
