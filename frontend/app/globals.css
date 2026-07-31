@@ -160,8 +160,8 @@ button.small { padding: 5px 10px; font-size: 13px; }
   border-radius: var(--radius);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   width: max-content;
-  max-width: 440px;
-  min-width: 300px;
+  max-width: min(440px, calc(100vw - 32px));
+  min-width: min(300px, 100%);
   padding: 22px 24px;
 }
 .confirm-dialog-title { font-size: 17px; font-weight: 600; margin: 0 0 8px; color: var(--fg); }

@@ -2027,6 +2027,31 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   }
   .admin-main { margin-left: 0; padding-top: 60px; }
   .admin-search { width: 180px; }
+
+  /* AdminPanel: sidebar interna sotto i contenuti, tab scrollabili */
+  .admin-panel-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .admin-panel-tab { flex-shrink: 0; }
+  .admin-panel-body { flex-direction: column; }
+  .admin-panel-subnav {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 8px;
+    scrollbar-width: thin;
+  }
+  .admin-panel-subnav-item { flex: 0 0 auto; width: auto; }
+  .admin-panel-header { flex-wrap: wrap; gap: 12px; }
+  .admin-panel-actions { flex-wrap: wrap; }
+  .admin-panel-content { padding: 16px; }
+}
+
+@media (max-width: 640px) {
+  .admin-panel-search { flex: 1 1 100%; }
+  .admin-panel-search input { width: 100%; min-width: 0; }
+  .admin-panel-actions .btn { flex: 1 1 auto; justify-content: center; }
 }
 
 /* Sidebar transition quando riappare su desktop */
@@ -2374,12 +2399,17 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   font-size: 13px;
   max-height: 60vh;
   overflow: auto;
+  animation: wizard-guida-in 0.18s ease-out;
+}
+@keyframes wizard-guida-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .wizard-guida table { width: 100%; border-collapse: collapse; }
 .wizard-guida th { text-align: left; padding: 6px 10px; font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .wizard-guida td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .wizard-body { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; flex: 1; min-height: 0; }
-.wizard-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
+.wizard-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; position: relative; }
 
 /* Galleria: foto grande + navigazione tra tutte le immagini */
 .wizard-gallery { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
@@ -2452,17 +2482,37 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .wizard-lightbox-arrow.next { right: 20px; }
 .wizard-lightbox-close:hover, .wizard-lightbox-arrow:hover { background: rgba(255,255,255,0.3); }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .wizard-body { grid-template-columns: 1fr; }
   .wizard-gallery-main { min-height: 200px; }
 }
-.wizard-prompt { display: flex; gap: 10px; align-items: flex-start; background: var(--fg-soft); border-radius: var(--radius); padding: 14px 16px; }
+.wizard-prompt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 35;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: color-mix(in oklch, var(--fg) 6%, var(--surface));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  cursor: pointer;
+}
+.wizard-prompt.visible { opacity: 1; visibility: visible; transform: translateY(0); }
 .wizard-prompt-icon { font-size: 20px; line-height: 1.4; flex-shrink: 0; }
 .wizard-prompt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg); }
 .wizard-input-area { display: flex; gap: 12px; align-items: stretch; flex: 1; min-height: 0; }
 .wizard-microphone { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
 .wizard-mic-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); cursor: pointer; display: grid; place-items: center; color: var(--muted); transition: all 0.15s ease; padding: 0; position: relative; }
 .wizard-mic-btn:hover { border-color: var(--accent); color: var(--accent); }
+.wizard-mic-btn.active { border-color: var(--accent); color: var(--accent); }
 .wizard-mic-btn svg { width: 20px; height: 20px; }
 .wizard-mic-btn.listening { border-color: #e74c3c; color: #e74c3c; background: #fef0ef; animation: wizard-mic-pulse 1s ease-in-out infinite; }
 .wizard-mic-status { font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -2608,21 +2658,12 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .wizard-prompt p { font-size: 13px; }
   .wizard-mic-btn { width: 52px; height: 52px; }
   .wizard-textarea { height: auto; min-height: 130px; }
-  .wizard-nav { flex-direction: column; align-items: stretch; gap: 8px; }
-  .wizard-nav > .row { display: flex; gap: 8px !important; }
-  .wizard-nav .btn { flex: 1; justify-content: center; }
+  .wizard-nav { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .wizard-nav > div { display: contents !important; }
+  .wizard-nav .btn { flex: 1 1 0%; justify-content: center; white-space: nowrap; }
   .wizard-guida { left: 0; right: 0; max-height: 50vh; }
   .wizard-guida table { font-size: 12px; }
 
-  /* Vista risultato: colonne impilate invece che 2fr/1fr schiacciate */
-  .wizard-result-panels { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
-  .wizard-col-md, .wizard-col-side { height: auto; min-height: 0; }
-  .wizard-md-area { min-height: 220px; }
-  .wizard-col-side .wizard-result-footer { margin-top: 12px; }
-  /* Sezioni a altezza naturale: evita sovrapposizioni fra textarea e titoli */
-  .wizard-breve-section, .wizard-dim-section { flex: none; min-height: 0; }
-  .wizard-breve-section textarea { flex: none; min-height: 90px; }
-  .wizard-dimensions-scroll { max-height: 200px; }
   #raccolta-form { grid-template-columns: 1fr !important; }
 
   .settings-modal { position: relative; }
@@ -2633,7 +2674,6 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .settings-content-header { padding: 16px 20px; position: relative; z-index: 6; }
   .settings-page { padding: 20px; }
 }
-}
 
 /* Modale edit articolo fullscreen (match catalogo.css 768px) */
 @media (max-width: 768px) {
@@ -2642,13 +2682,44 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .subtab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
   .modal-body-edit { padding: 16px; }
   .modal-body-edit--fill { overflow-y: auto; }
+  /* Rompe la catena di altezza fissa da desktop (wrapper height:100% + flex:1):
+     il risultato cresce col contenuto e a scrollare e' la modale. */
+  .wizard-result { flex: none; height: auto; }
+  /* Vista risultato (mobile): colonne impilate, scroll naturale, footer sticky */
+  .wizard-result-panels { grid-template-columns: 1fr; height: auto; overflow-y: visible; }
+  .wizard-col-md, .wizard-col-side { height: auto; min-height: 0; }
+  .wizard-md-area { flex: none; min-height: 0; }
+  .wizard-md-preview { overflow-y: auto; max-height: 220px; }
+  .wizard-md-textarea { flex: none; height: 200px; min-height: 0; }
+  .wizard-breve-section, .wizard-dim-section { flex: none; min-height: 0; }
+  .wizard-breve-section textarea { flex: none; min-height: 90px; }
+  .wizard-dimensions-scroll { max-height: none; overflow-y: visible; }
+  .wizard-dim-section summary { cursor: pointer; padding: 2px 0; }
+  .wizard-dim-section summary h4 { margin-bottom: 0; }
+  /* Toggle Visualizza/Modifica sopra l'anteprima */
+  .wizard-col-md { flex-direction: column-reverse; }
+  .wizard-md-tabs-bar { margin-top: 0; margin-bottom: 8px; }
+  /* Footer azioni sticky: sempre raggiungibile in fondo alla modale. Si
+     estende nella striscia di padding-bottom del container (16px) cosi'
+     il contenuto che scorre non si intravede mai sotto la pulsantiera. */
+  .wizard-col-side .wizard-result-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: 12px;
+    margin-bottom: -16px;
+    padding: 10px 0 22px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 2;
+  }
   .wizard-header { gap: 8px; }
   .wizard-body { height: auto; }
   .wizard-content { min-height: 0; }
   .wizard-input-area { flex: none; align-items: flex-start; }
-  .wizard-nav { flex-direction: column; align-items: stretch; gap: 8px; }
-  .wizard-nav > .row { display: flex; gap: 8px; }
-  .wizard-nav .btn { flex: 1; justify-content: center; }
+  .wizard-nav { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .wizard-nav > div { display: contents !important; }
+  .wizard-nav .btn { flex: 1 1 0%; justify-content: center; white-space: nowrap; }
+}
 }
 
 /* Customer edit modal — ordini */

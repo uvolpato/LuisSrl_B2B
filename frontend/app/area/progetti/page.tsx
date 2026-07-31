@@ -51,8 +51,8 @@ export default function ProgettiPage() {
         .progetti-page .container { max-width: 900px; margin: 0 auto; }
         .pg-head h1 { margin: 0 0 4px; font-family: var(--font-display); font-size: clamp(28px, 3.5vw, 40px); }
         .pg-head p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
-        .pg-create { display: flex; gap: 10px; margin-bottom: 24px; }
-        .pg-create input { flex: 1; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font: inherit; color: var(--fg); }
+        .pg-create { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+        .pg-create input { flex: 1 1 220px; min-width: 0; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font: inherit; color: var(--fg); }
         .pg-create input:focus { outline: none; border-color: var(--accent); }
         .pg-list { display: flex; flex-direction: column; gap: 10px; }
         .pg-card { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
@@ -60,6 +60,10 @@ export default function ProgettiPage() {
         .pg-card-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex-shrink: 0; }
         .pg-card-name { font-weight: 600; font-size: 16px; }
         .pg-card-meta { font-size: 13px; color: var(--muted); }
+        @media (max-width: 480px) {
+          .pg-create .btn { flex: 1 1 100%; justify-content: center; }
+          .pg-card { flex-wrap: wrap; }
+        }
       `}</style>
 
       <main>
