@@ -71,13 +71,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const promptDirty = customPrompt !== initialPromptRef.current;
   const [showGuida, setShowGuida] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
-  useEffect(() => {
-    if (!showPrompt) return;
-    const t = setTimeout(() => setShowPrompt(false), 8000);
-    return () => clearTimeout(t);
-  }, [showPrompt, currentStep]);
-  const [mdView, setMdView] = useState(true);
-  const [showAnalisiModal, setShowAnalisiModal] = useState(false);
   // Su mobile i passi del wizard diventano un menu a tendina (solo ≤768px)
   const [useCompactSteps, setUseCompactSteps] = useState(false);
   useEffect(() => {
@@ -87,6 +80,14 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
+  // Aperto/chiuso solo su mobile (≤768px); su desktop resta sempre aperto.
+  useEffect(() => {
+    if (!useCompactSteps || !showPrompt) return;
+    const t = setTimeout(() => setShowPrompt(false), 8000);
+    return () => clearTimeout(t);
+  }, [useCompactSteps, showPrompt, currentStep]);
+  const [mdView, setMdView] = useState(true);
+  const [showAnalisiModal, setShowAnalisiModal] = useState(false);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
   const latestStepTesti = useRef(stepTesti);
   latestStepTesti.current = stepTesti;
@@ -462,7 +463,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           )}
         </div>
         <div className="wizard-content">
-          <div className={`wizard-prompt${showPrompt ? " visible" : ""}`} onClick={() => setShowPrompt(false)}>
+          <div className={`wizard-prompt${showPrompt ? " visible" : ""}`} onClick={() => useCompactSteps && setShowPrompt(false)}>
             <span className="wizard-prompt-icon">{STEPS[currentStep]?.icon}</span>
             <p>{STEPS[currentStep]?.prompt}</p>
           </div>
@@ -482,16 +483,18 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                 </button>
               )}
               {listening && <span className="wizard-mic-status">Sto ascoltando…</span>}
-              <button
-                type="button"
-                className={`wizard-mic-btn${showPrompt ? " active" : ""}`}
-                onClick={() => setShowPrompt((s) => !s)}
-                title="Spiegazione del passo"
-                aria-label="Spiegazione del passo"
-                style={{ fontSize: 17 }}
-              >
-                {STEPS[currentStep]?.icon}
-              </button>
+              {useCompactSteps && !showPrompt && (
+                <button
+                  type="button"
+                  className="wizard-mic-btn"
+                  onClick={() => setShowPrompt(true)}
+                  title="Mostra spiegazione del passo"
+                  aria-label="Spiegazione del passo"
+                  style={{ fontSize: 17 }}
+                >
+                  {STEPS[currentStep]?.icon}
+                </button>
+              )}
             </div>
             <textarea
               className="textarea wizard-textarea"
