@@ -20,8 +20,6 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
   const [dragOver, setDragOver] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(existingImages.map((i) => i.id)));
   const [result, setResult] = useState<{ stepTesti: StepTesto[]; immagini: { id: number; url: string }[] } | null>(null);
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
-  const [fullTextSteps, setFullTextSteps] = useState<Set<number>>(new Set());
 
   const frozen = analyzing || !!result;
 
@@ -139,59 +137,26 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
 
         {result ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {/* Riepilogo dimensioni sensoriali (come nella descrizione generata) */}
+            {/* Riepilogo dimensioni sensoriali (testo completo sempre visibile) */}
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "12px" }}>
               <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "var(--fg)" }}>Riepilogo dimensioni sensoriali</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {result.stepTesti.map((s) => {
-                  const isExpanded = expandedStep === s.step;
-                  return (
-                    <details key={s.step} style={{ background: "var(--fg-soft)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }} open={isExpanded} onToggle={() => setExpandedStep(isExpanded ? null : s.step)}>
-                      <summary style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", cursor: "pointer", listStyle: "none" }}>
-                        <span style={{ fontSize: 18 }}>{STEPS[s.step - 1]?.icon}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <strong style={{ fontSize: 12, display: "block", marginBottom: 2 }}>{s.label}</strong>
-                          <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--accent)", lineHeight: 1 }}>
-                            {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
-                          </div>
-                          <span style={{ fontSize: 11, color: "var(--muted)", display: "block", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.testo.slice(0, 60)}{s.testo.length > 60 ? "…" : ""}</span>
+                {result.stepTesti.map((s) => (
+                  <div key={s.step} style={{ background: "var(--fg-soft)", borderRadius: "var(--radius)", border: "1px solid var(--border)", padding: "10px 12px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>{STEPS[s.step - 1]?.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ fontSize: 12, display: "block", marginBottom: 4 }}>{s.label}</strong>
+                        <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--accent)", lineHeight: 1, marginBottom: 6 }}>
+                          {"●".repeat(Math.min(Math.ceil(s.testo.length / 30), 6))}{"○".repeat(Math.max(6 - Math.min(Math.ceil(s.testo.length / 30), 6), 0))}
                         </div>
-                        <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: "auto" }}>{isExpanded ? "▲" : "▼"}</span>
-                      </summary>
-                      <div style={{ padding: "0 42px 10px 42px", borderTop: "1px solid var(--border)", fontSize: 13, lineHeight: 1.5, color: "var(--fg)" }}>
-                        {(() => {
-                          const isFull = fullTextSteps.has(s.step);
-                          const preview = s.testo.slice(0, 200);
-                          const hasMore = s.testo.length > 200;
-                          return (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                              <span style={{ whiteSpace: isFull ? "pre-wrap" : "normal" }}>
-                                {isFull ? s.testo : (hasMore ? preview + "…" : s.testo)}
-                              </span>
-                              {hasMore && (
-                                <button
-                                  type="button"
-                                  style={{ alignSelf: "flex-start", fontSize: 11, color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline" }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setFullTextSteps((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(s.step)) next.delete(s.step); else next.add(s.step);
-                                      return next;
-                                    });
-                                  }}
-                                >
-                                  {isFull ? "Mostra meno" : "Mostra tutto"}
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })()}
+                        <div style={{ fontSize: 13, lineHeight: 1.5, color: "var(--fg)", whiteSpace: "pre-wrap" }}>
+                          {s.testo}
+                        </div>
                       </div>
-                    </details>
-                  );
-                })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             {/* Bottoni */}
