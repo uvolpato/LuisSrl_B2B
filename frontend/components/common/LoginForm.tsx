@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError, setCsrfToken } from "../../lib/api";
 import Notice from "./Notice";
@@ -38,13 +38,22 @@ export default function LoginForm({
 }) {
   const t = useTranslations("login");
   const tServer = useTranslations("server");
-  const [email, setEmail] = useState(isDev() ? DEV_EMAIL : "");
-  const [password, setPassword] = useState(isDev() ? DEV_PASSWORD : "");
+  // Inizializzati vuoti (deterministici server/client, evita mismatch di hydration)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [forgot, setForgot] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
+
+  // Dev only: precompila le credenziali admin dopo il mount (client-only, safe per hydration)
+  useEffect(() => {
+    if (isDev()) {
+      setEmail(DEV_EMAIL);
+      setPassword(DEV_PASSWORD);
+    }
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

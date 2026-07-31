@@ -20,7 +20,11 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/* iOS converte telefono/email in link, rompendo la hydration: disabilitato */}
+        <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+      </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ConfirmProvider>{children}</ConfirmProvider>
