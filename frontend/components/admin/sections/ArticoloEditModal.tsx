@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
 import { thumbUrl } from "../../../lib/thumb";
 import Modal from "../../common/Modal";
@@ -63,11 +63,7 @@ const tabs = [
   { key: "raccolte", label: "Raccolte" },
 ];
 
-const subTabs = [
-  { key: "ordine", label: "Galleria" },
-  { key: "white", label: "Sfondo Bianco" },
-  { key: "ai", label: "Immagini AI" },
-];
+
 
 export default function ArticoloEditModal({
   open,
@@ -85,7 +81,7 @@ export default function ArticoloEditModal({
   const initialStepTestiRef = useRef<ArticoloDetail["wizardStepTesti"]>(null);
   const initialPromptAiRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState("generale");
-  const [activeSubTab, setActiveSubTab] = useState("ordine");
+  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,14 +97,11 @@ export default function ArticoloEditModal({
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [immaginiOrdine, setImmaginiOrdine] = useState<number[] | null>(null);
-  const [pendingExtra, setPendingExtra] = useState<File[]>([]);
-  const [pendingAi, setPendingAi] = useState<File[]>([]);
-  const [dragAiOver, setDragAiOver] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragGalleriaOver, setDragGalleriaOver] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [immaginiGalleria, setImmaginiGalleria] = useState<Record<number, boolean> | null>(null);
   const [immaginiDisplay, setImmaginiDisplay] = useState<Record<number, { css: string }>>({});
+  const [immaginiTipo, setImmaginiTipo] = useState<Record<number, string>>({});
   const [pendingDeleteImages, setPendingDeleteImages] = useState<number[]>([]);
   const [editingImage, setEditingImage] = useState<number | null>(null);
 
@@ -125,6 +118,28 @@ export default function ArticoloEditModal({
   const [copying, setCopying] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
+
+  const tabsBarRef = useRef<HTMLDivElement>(null);
+  const [compactTabs, setCompactTabs] = useState(false);
+  const fullTabsWidthRef = useRef(0);
+  useLayoutEffect(() => {
+    const el = tabsBarRef.current;
+    if (!el) return;
+    const check = () => {
+      setCompactTabs((prev) => {
+        if (prev) {
+          return fullTabsWidthRef.current > el.clientWidth + 2;
+        }
+        const overflows = el.scrollWidth > el.clientWidth + 2;
+        if (overflows) fullTabsWidthRef.current = el.scrollWidth;
+        return overflows;
+      });
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
@@ -145,10 +160,10 @@ export default function ArticoloEditModal({
       setVPage(1);
       setPendingImages([]);
       setImmaginiOrdine(null);
-      setPendingExtra([]);
       setUploadError(null);
       setImmaginiGalleria(null);
       setImmaginiDisplay({});
+      setImmaginiTipo({});
       setPendingDeleteImages([]);
       setRaccolteSearch("");
     } catch (e) {
@@ -187,10 +202,11 @@ export default function ArticoloEditModal({
     if (editColore !== article.colore) return true;
     if (editColoreRgb !== (article.coloreRgb || "")) return true;
     if (editStato !== article.stato) return true;
-    if (pendingImages.length > 0 || pendingExtra.length > 0 || pendingAi.length > 0) return true;
+    if (pendingImages.length > 0) return true;
     if (pendingDeleteImages.length > 0) return true;
     if (immaginiOrdine) return true;
     if (Object.keys(immaginiDisplay).length > 0) return true;
+    if (Object.keys(immaginiTipo).length > 0) return true;
     for (const v of article.varianti) {
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
       if ((editMultipli[v.codice] ?? v.multiplo) !== v.multiplo) return true;
@@ -203,7 +219,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingExtra, pendingAi, pendingDeleteImages, immaginiGalleria, immaginiDisplay]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -224,35 +240,23 @@ export default function ArticoloEditModal({
         pendingImages.forEach((f) => form.append('files', f));
         await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
       }
-      if (pendingExtra.length > 0) {
-        const form = new FormData();
-        pendingExtra.forEach((f) => form.append('files', f));
-        form.append('tipo', 'GALLERIA');
-        await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
-      }
-      if (pendingAi.length > 0) {
-        const form = new FormData();
-        pendingAi.forEach((f) => form.append('files', f));
-        form.append('tipo', 'AI');
-        await api.post(`/api/integrazione/articoli/${article.codiceLinea}/immagini`, form);
-      }
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, variantiMultipli: editMultipli, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
+      if (Object.keys(immaginiTipo).length > 0) payload.immaginiTipo = immaginiTipo;
       if (pendingDeleteImages.length > 0) payload.immaginiDaEliminare = pendingDeleteImages;
       payload.raccolte = [...selectedRaccoltaIds];
       await api.put(`/api/integrazione/articoli/${article.codiceLinea}`, payload);
       // Azzera la coda modifiche: senza questo, un secondo Salva ri-carica gli
       // stessi file (duplicati infiniti) e riapplica ordine/galleria/eliminazioni.
       setPendingImages([]);
-      setPendingExtra([]);
-      setPendingAi([]);
       setPendingDeleteImages([]);
       setImmaginiOrdine(null);
       setImmaginiGalleria(null);
       setImmaginiDisplay({});
+      setImmaginiTipo({});
       onSaved?.();
       fetch();
     } catch (e) {
@@ -306,12 +310,20 @@ export default function ArticoloEditModal({
         </button>
       </div>
 
-      <div className="modal-tabs-bar">
-        {tabs.map((t) => (
-          <button key={t.key} className={`modal-tab-btn ${activeTab === t.key ? "active" : ""}`} onClick={() => { setActiveTab(t.key); if (t.key === "immagini") setActiveSubTab("ordine"); }}>
-            {t.label}
-          </button>
-        ))}
+      <div className="modal-tabs-bar" ref={tabsBarRef}>
+        {compactTabs ? (
+          <select className="input" value={activeTab} onChange={(e) => setActiveTab(e.target.value)} style={{ flex: 1, maxWidth: 240, fontSize: 14, margin: "8px 12px" }}>
+            {tabs.map((t) => (
+              <option key={t.key} value={t.key}>{t.label}</option>
+            ))}
+          </select>
+        ) : (
+          tabs.map((t) => (
+            <button key={t.key} className={`modal-tab-btn ${activeTab === t.key ? "active" : ""}`} onClick={() => { setActiveTab(t.key); }}>
+              {t.label}
+            </button>
+          ))
+        )}
       </div>
 
       <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "immagini" ? " modal-body-edit--fill" : ""}`}>
@@ -373,148 +385,59 @@ export default function ArticoloEditModal({
 
             {activeTab === "immagini" && (
               <div style={{ display: "flex", flexDirection: "column", flex: 1, height: "100%" }}>
-                <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
-                  {subTabs.map((st) => (
-                    <button key={st.key} className={`subtab-btn ${activeSubTab === st.key ? "active" : ""}`} onClick={() => setActiveSubTab(st.key)}>
-                      {st.label}
-                    </button>
-                  ))}
+                  <div
+                    style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", minHeight: 0, ...(dragOver ? { outline: "2px dashed var(--accent)", outlineOffset: -2, borderRadius: "var(--radius)", padding: 16 } : { padding: 16 }) }}
+                  onDragOver={(e) => { if (dragIdx !== null) return; e.preventDefault(); setDragOver(true); }}
+                  onDragEnter={(e) => { if (dragIdx !== null) return; e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false); }}
+                  onDrop={(e) => { e.preventDefault(); setDragOver(false); if (dragIdx !== null) return; setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingImages((prev) => [...prev, ...images]); }}
+                >
+                  <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini dell'articolo. Trascina qui o clicca per aggiungere, usa il drag per riordinare. Attiva/disattiva la visibilità in galleria. La prima immagine attiva è la copertina.</p>
+                  {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
+                  <div className="gallery-compact">
+                    {(() => {
+                    const displayIds = (immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id));
+                    const coverId = displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) && im.copertina : false; }) ?? displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) : false; });
+                    return displayIds.map((id, idx) => {
+                      const img = article.immagini.find((i) => i.id === id);
+                      if (!img) return null;
+                      const isDrag = dragIdx === idx;
+                      const galleriaVal = immaginiGalleria?.[img.id] ?? img.inGalleria;
+                      return (
+                        <PositionedImage
+                          key={img.id}
+                          className="gallery-item"
+                          src={img.url}
+                          css={immaginiDisplay[img.id]?.css || img.css}
+                          aspect={1}
+                          thumbWidth={300}
+                          draggable
+                          onClick={() => setEditingImage(img.id)}
+                          onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.setData('text/plain', ''); }}
+                          onDragOver={(e) => { if (dragIdx === null) return; e.preventDefault(); if (dragIdx !== idx) { const list = immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id); const copy = [...list]; const [moved] = copy.splice(dragIdx, 1); copy.splice(idx, 0, moved); setImmaginiOrdine(copy); setDragIdx(idx); } }}
+                          onDragEnd={() => setDragIdx(null)}
+                          style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab" }}
+                        >
+                          {img.id === coverId && <span className="cover-badge">Copertina</span>}
+                          <button type="button" onClick={() => setImmaginiGalleria((prev) => ({ ...prev ?? {}, [img.id]: !(prev?.[img.id] ?? img.inGalleria) }))} style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: "50%", border: `2px solid ${galleriaVal ? "var(--accent)" : "var(--muted)"}`, background: galleriaVal ? "var(--accent)" : "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: galleriaVal ? "#fff" : "var(--muted)", fontSize: 12, lineHeight: 1, padding: 0, flexShrink: 0 }} title={galleriaVal ? "Visibile in galleria" : "Nascosto in galleria"}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 12, height: 12 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          </button>
+                        </PositionedImage>
+                      );
+                    });
+                    })()}
+                    {pendingImages.map((f, i) => (
+                      <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
+                        <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        <button type="button" style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, boxSizing: "border-box" }} onClick={() => setPendingImages((prev) => prev.filter((_, j) => j !== i))}><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+                      </div>
+                    ))}
+                    <label className="gallery-upload" style={{ aspectRatio: 1, cursor: "pointer" }}>
+                      <input type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files) { setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.target.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingImages((prev) => [...prev, ...images]); } }} />
+                      {IconPlus}<span>Aggiungi</span>
+                    </label>
+                  </div>
                 </div>
-                {activeSubTab === "ordine" && (
-                  <div
-                    style={{ flex: 1, display: "flex", flexDirection: "column", ...(dragGalleriaOver ? { outline: "2px dashed var(--accent)", outlineOffset: -2, borderRadius: "var(--radius)", padding: 16 } : { padding: 16 }) }}
-                    onDragOver={(e) => { if (dragIdx !== null) return; e.preventDefault(); setDragGalleriaOver(true); }}
-                    onDragEnter={(e) => { if (dragIdx !== null) return; e.preventDefault(); setDragGalleriaOver(true); }}
-                    onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragGalleriaOver(false); }}
-                    onDrop={(e) => { e.preventDefault(); setDragGalleriaOver(false); if (dragIdx !== null) return; setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingExtra((prev) => [...prev, ...images]); }}
-                  >
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Tutte le immagini. Attiva/disattiva la visibilità in galleria. La prima immagine attiva è la copertina.</p>
-                    {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
-                    <div className="gallery-compact">
-                      {(() => {
-                      const displayIds = (immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id)).filter((id) => !pendingDeleteImages.includes(id));
-                      // Copertina: prima attiva con flag copertina=true (DB), altrimenti prima attiva
-                      const coverId = displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) && im.copertina : false; }) ?? displayIds.find((id) => { const im = article.immagini.find((i) => i.id === id); return im ? (immaginiGalleria?.[id] ?? im.inGalleria) : false; });
-                      return displayIds.map((id, idx) => {
-                        const img = article.immagini.find((i) => i.id === id);
-                        if (!img) return null;
-                        const isDrag = dragIdx === idx;
-                        const galleriaVal = immaginiGalleria?.[img.id] ?? img.inGalleria;
-                        const desaturate = img.tipo === 'GALLERIA' && !galleriaVal;
-                        return (
-                          <PositionedImage
-                            key={img.id}
-                            className="gallery-item"
-                            src={img.url}
-                            css={immaginiDisplay[img.id]?.css || img.css}
-                            aspect={1}
-                            thumbWidth={300}
-                            draggable
-                            onClick={() => setEditingImage(img.id)}
-                            onDragStart={(e) => { setDragIdx(idx); e.dataTransfer.setData('text/plain', ''); }}
-                            onDragOver={(e) => { if (dragIdx === null) return; e.preventDefault(); if (dragIdx !== idx) { const list = immaginiOrdine ?? article.immagini.sort((a, b) => a.ordinamento - b.ordinamento).map((i) => i.id); const copy = [...list]; const [moved] = copy.splice(dragIdx, 1); copy.splice(idx, 0, moved); setImmaginiOrdine(copy); setDragIdx(idx); } }}
-                            onDragEnd={() => setDragIdx(null)}
-                            style={{ background: isDrag ? "var(--accent-soft)" : "var(--fg-soft)", opacity: isDrag ? 0.6 : 1, cursor: "grab" }}
-                            imgStyle={desaturate ? { filter: "grayscale(1)" } : undefined}
-                          >
-                            {img.id === coverId && <span className="cover-badge">Copertina</span>}
-                            <button type="button" onClick={() => setImmaginiGalleria((prev) => ({ ...prev ?? {}, [img.id]: !(prev?.[img.id] ?? img.inGalleria) }))} style={{ position: "absolute", bottom: 4, right: 4, width: 24, height: 24, borderRadius: "50%", border: `2px solid ${galleriaVal ? "var(--accent)" : "var(--muted)"}`, background: galleriaVal ? "var(--accent)" : "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: galleriaVal ? "#fff" : "var(--muted)", fontSize: 12, lineHeight: 1, padding: 0, flexShrink: 0 }} title={galleriaVal ? "Visibile in galleria" : "Nascosto in galleria"}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 12, height: 12 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </button>
-                          </PositionedImage>
-                        );
-                      });
-                      })()}
-                      {pendingExtra.map((f, i) => (
-                        <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
-                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          <button type="button" style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, boxSizing: "border-box" }} onClick={() => setPendingExtra((prev) => prev.filter((_, j) => j !== i))}><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-                        </div>
-                      ))}
-                      <label className="gallery-upload" style={{ aspectRatio: 1, cursor: "pointer" }}>
-                        <input type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files) { setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.target.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingExtra((prev) => [...prev, ...images]); } }} />
-                        {IconPlus}<span>Aggiungi</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                {activeSubTab === "white" && (
-                  <div
-                    style={{ flex: 1, display: "flex", flexDirection: "column", ...(dragOver ? { outline: "2px dashed var(--accent)", outlineOffset: -2, borderRadius: "var(--radius)", padding: 16 } : { padding: 16 }) }}
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                    onDragEnter={(e) => { e.preventDefault(); setDragOver(true); }}
-                    onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false); }}
-                    onDrop={(e) => { e.preventDefault(); setDragOver(false); setPendingImages((prev) => [...prev, ...Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"))]); }}
-                  >
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Foto del prodotto su sfondo bianco. Trascina le immagini qui o clicca per selezionarle.</p>
-                    <div
-                      className="gallery-compact"
-                    >
-                      {article.immagini.filter((i) => i.tipo === 'CARICATA' && !pendingDeleteImages.includes(i.id)).map((img) => (
-                        <PositionedImage
-                          key={img.id}
-                          className="gallery-item"
-                          src={img.url}
-                          css={immaginiDisplay[img.id]?.css || img.css}
-                          aspect={1}
-                          thumbWidth={300}
-                          style={{ background: "var(--fg-soft)", cursor: "pointer" }}
-                          onClick={() => setEditingImage(img.id)}
-                        />
-                      ))}
-                      {pendingImages.map((f, i) => (
-                        <div key={`pending-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
-                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          <button
-                            type="button"
-                            style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, boxSizing: "border-box" }}
-                            onClick={() => setPendingImages((prev) => prev.filter((_, j) => j !== i))}
-                          ><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-                        </div>
-                      ))}
-                      <label className="gallery-upload" style={{ aspectRatio: 1, cursor: "pointer" }}>
-                        <input type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files) setPendingImages((prev) => [...prev, ...Array.from(e.target.files!)]); }} />
-                        {IconPlus}<span>Aggiungi</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                {activeSubTab === "ai" && (
-                  <div
-                    style={{ flex: 1, display: "flex", flexDirection: "column", ...(dragAiOver ? { outline: "2px dashed var(--accent)", outlineOffset: -2, borderRadius: "var(--radius)", padding: 16 } : { padding: 16 }) }}
-                    onDragOver={(e) => { e.preventDefault(); setDragAiOver(true); }}
-                    onDragEnter={(e) => { e.preventDefault(); setDragAiOver(true); }}
-                    onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) setDragAiOver(false); }}
-                    onDrop={(e) => { e.preventDefault(); setDragAiOver(false); setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.dataTransfer.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingAi((prev) => [...prev, ...images]); }}
-                  >
-                    <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: 14 }}>Immagini ambientate generate da AI. Puoi generarle o caricare immagini AI già pronte (trascina qui o clicca).</p>
-                    {uploadError && <Notice variant="error" onClose={() => setUploadError(null)} style={{ marginBottom: 12 }}>{uploadError}</Notice>}
-                    <div className="gallery-compact">
-                      {article.immagini.filter((i) => i.tipo === 'AI' && !pendingDeleteImages.includes(i.id)).map((img) => (
-                        <PositionedImage
-                          key={img.id}
-                          className="gallery-item"
-                          src={img.url}
-                          css={immaginiDisplay[img.id]?.css || img.css}
-                          aspect={1}
-                          thumbWidth={300}
-                          style={{ background: "var(--fg-soft)", cursor: "pointer" }}
-                          onClick={() => setEditingImage(img.id)}
-                        />
-                      ))}
-                      {pendingAi.map((f, i) => (
-                        <div key={`pending-ai-${i}`} className="gallery-item" style={{ background: "var(--fg-soft)", position: "relative", display: "flex" }}>
-                          <img src={URL.createObjectURL(f)} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          <button type="button" style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", padding: 0, boxSizing: "border-box" }} onClick={() => setPendingAi((prev) => prev.filter((_, j) => j !== i))}><svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-                        </div>
-                      ))}
-                      <label className="gallery-upload" style={{ aspectRatio: 1, cursor: "pointer" }}>
-                        <input type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files) { setUploadError(null); const nonImage: string[] = []; const images: File[] = []; Array.from(e.target.files).forEach((f) => { if (f.type.startsWith("image/")) images.push(f); else nonImage.push(f.name); }); if (nonImage.length > 0) setUploadError(`File non supportati: ${nonImage.join(", ")}. Solo immagini.`); if (images.length > 0) setPendingAi((prev) => [...prev, ...images]); } }} />
-                        {IconPlus}<span>Carica AI</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -604,6 +527,7 @@ export default function ArticoloEditModal({
                   descrizioneDettagliata={article.descrizioneDettagliata}
                   initialStepTesti={article.wizardStepTesti}
                   promptAi={article.promptAi}
+                  onRefreshImmagini={() => fetch()}
                   onSave={(descrizione, descrizioneDettagliata, stepTesti, promptAi) => {
                     setArticle((prev) => prev ? ({
                       ...prev,
@@ -768,19 +692,20 @@ export default function ArticoloEditModal({
       </div>
 
       <div className="modal-root-footer">
-        <button type="button" className="btn btn-danger-outline btn-sm" onClick={handleDelete} disabled={saving || !article}>Elimina</button>
-        {article && !article.configurato && (
-          <button type="button" className="btn btn-primary btn-sm" onClick={handleConfigura} disabled={saving || isDirty} title={isDirty ? "Salva prima le modifiche" : "Verifica i requisiti e marca l'articolo come configurato (irreversibile)"}>
-            Imposta a configurato
-          </button>
-        )}
-        {article?.configurato && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)" }}>
-            <span className="user-status-dot attivo" /> Configurato
-          </span>
-        )}
-        <div style={{ flex: 1 }} />
-        <button type="button" className="btn btn-secondary btn-sm" onClick={handleClose}>Annulla</button>
+        <button type="button" className="btn btn-danger-outline btn-sm" onClick={handleDelete} disabled={saving || !article} style={{ width: 80, justifyContent: "center" }}>Elimina</button>
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+          {article && !article.configurato && (
+            <button type="button" className="btn btn-primary btn-sm" onClick={handleConfigura} disabled={saving || isDirty} title={isDirty ? "Salva prima le modifiche" : "Verifica i requisiti e marca l'articolo come configurato (irreversibile)"}>
+              Imposta a configurato
+            </button>
+          )}
+          {article?.configurato && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)" }}>
+              <span className="user-status-dot attivo" /> Configurato
+            </span>
+          )}
+        </div>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={handleClose} style={{ width: 80, justifyContent: "center" }}>Annulla</button>
         <button type="button" className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !article || !isDirty}>
           {saving ? "Salvataggio…" : "Salva Modifiche"}
         </button>
@@ -925,7 +850,7 @@ export default function ArticoloEditModal({
             id: editingImage,
             url: img.url,
             css: d?.css || img.css || "",
-            tipo: img.tipo,
+            tipo: immaginiTipo[editingImage] ?? img.tipo,
             inGalleria: immaginiGalleria?.[img.id] ?? img.inGalleria,
             copertina: img.copertina,
             ordinamento: img.ordinamento,
@@ -945,7 +870,7 @@ export default function ArticoloEditModal({
         codiceLinea={article?.codiceLinea ?? ""}
         onPersisted={() => { fetch(); }}
         onDeleteImage={(id) => { setPendingDeleteImages((prev) => [...prev, id]); setEditingImage(null); }}
-        onResetImage={(id) => { setImmaginiDisplay((prev) => { const n = { ...prev }; delete n[id]; return n; }); setImmaginiGalleria((prev) => { if (!prev) return prev; const n = { ...prev }; delete n[id]; return n; }); setPendingDeleteImages((prev) => prev.filter((x) => x !== id)); }}
+        onResetImage={(id) => { setImmaginiDisplay((prev) => { const n = { ...prev }; delete n[id]; return n; }); setImmaginiGalleria((prev) => { if (!prev) return prev; const n = { ...prev }; delete n[id]; return n; }); setImmaginiTipo((prev) => { const n = { ...prev }; delete n[id]; return n; }); setPendingDeleteImages((prev) => prev.filter((x) => x !== id)); }}
         onChange={(id, props) => {
           if ("css" in props) {
             setImmaginiDisplay((prev) => ({ ...prev, [id]: { css: props.css as string } }));
@@ -959,6 +884,9 @@ export default function ArticoloEditModal({
               const copy = base.filter((x) => x !== id);
               return [id, ...copy];
             });
+          }
+          if ("tipo" in props) {
+            setImmaginiTipo((prev) => ({ ...prev, [id]: props.tipo as string }));
           }
         }}
       />

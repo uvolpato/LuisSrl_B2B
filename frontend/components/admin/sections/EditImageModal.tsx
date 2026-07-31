@@ -119,6 +119,7 @@ const InfoIcon = ({ id, onClick, className }: { id: string; onClick: (id: string
 
 export default function EditImageModal({ open, image, onClose, onChange, onDeleteImage, onResetImage, codiceLinea, onPersisted }: EditImageModalProps) {
   const [tab, setTab] = useState<"dettagli" | "posizionamento" | "ambienta-ai" | "ai-params">("dettagli");
+  const isAiGen = image?.tipo === "AI";
   const [editPrompt, setEditPrompt] = useState("");
   const confirm = useConfirm();
   // Stato generatore AI ("ambienta")
@@ -146,8 +147,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
     if (!open) return;
     api.get<PromptTemplate[]>("/api/integrazione/prompt-templates").then(setPromptTemplates).catch(() => {});
   }, [open]);
-  // tab di default in base al tipo (evita tab "morto" cambiando immagine)
-  useEffect(() => { if (image) setTab(image.tipo === "AI" ? "ai-params" : "dettagli"); }, [image?.id, image?.tipo]);
+  useEffect(() => { if (image) setTab("dettagli"); }, [image?.id]);
   if (!image) return null;
   // il narrowing della guard non si propaga nelle funzioni annidate sotto: alias non-null
   const img = image;
@@ -157,6 +157,10 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   function handleChange(props: Record<string, unknown>) {
     if ("inGalleria" in props || "copertina" in props) {
       onChange(img.id, { inGalleria: props.inGalleria, copertina: props.copertina });
+      return;
+    }
+    if ("tipo" in props) {
+      onChange(img.id, { tipo: props.tipo });
       return;
     }
     const next = { ...parseImgCss(img.css) };
@@ -262,12 +266,12 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
           <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
             <button className={`subtab-btn ${tab === "dettagli" ? "active" : ""}`} onClick={() => setTab("dettagli")}>Dettagli</button>
             <button className={`subtab-btn ${tab === "posizionamento" ? "active" : ""}`} onClick={() => setTab("posizionamento")}>Posizionamento</button>
-            {image.tipo === "CARICATA" && <button className={`subtab-btn ${tab === "ambienta-ai" ? "active" : ""}`} onClick={() => setTab("ambienta-ai")}>Ambienta AI</button>}
-            {image.tipo === "AI" && <button className={`subtab-btn ${tab === "ai-params" ? "active" : ""}`} onClick={() => setTab("ai-params")}>AI</button>}
+            <button className={`subtab-btn ${tab === "ambienta-ai" ? "active" : ""}`} onClick={() => setTab("ambienta-ai")}>Ambienta AI</button>
+            {isAiGen && <button className={`subtab-btn ${tab === "ai-params" ? "active" : ""}`} onClick={() => setTab("ai-params")}>AI</button>}
           </div>
 
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            {tab === "ai-params" && image.tipo === "AI" && (
+            {tab === "ai-params" && isAiGen && (
               <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>
                 <div className="ai-section-header">
                   <div className="ai-icon">
@@ -297,6 +301,19 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                 )}
               </div>
             )}
+            {tab === "ai-params" && !isAiGen && (
+              <div className="ai-section" style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>
+                <div className="ai-section-header">
+                  <div className="ai-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z"/></svg>
+                  </div>
+                  <div>
+                    <h3>Parametri di generazione</h3>
+                    <p>Questa immagine non è stata generata con AI. Vai alla scheda Ambienta AI per generare una versione ambientata.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {tab === "dettagli" && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", alignContent: "start" }}>
                 <div className="readonly-field" style={{ marginBottom: 0 }}>
@@ -313,10 +330,13 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, gridColumn: "1 / -1", alignSelf: "start" }}>
                   <label style={{ margin: 0, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--fg)", cursor: "pointer" }}>
-                    <input type="checkbox" checked={image.copertina ?? false} onChange={(e) => handleChange({ copertina: e.target.checked })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0 }} /> Copertina
+                    <input type="checkbox" checked={image.copertina ?? false} onChange={(e) => handleChange({ copertina: e.target.checked })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0, outline: "none" }} /> Copertina
                   </label>
                   <label style={{ margin: 0, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--fg)", cursor: "pointer" }}>
-                    <input type="checkbox" checked={image.inGalleria ?? true} onChange={(e) => handleChange({ inGalleria: e.target.checked })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0 }} /> In galleria
+                    <input type="checkbox" checked={image.inGalleria ?? true} onChange={(e) => handleChange({ inGalleria: e.target.checked })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0, outline: "none" }} /> In galleria
+                  </label>
+                  <label style={{ margin: 0, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--fg)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={isAiGen} onChange={(e) => handleChange({ tipo: e.target.checked ? "AI" : "CARICATA" })} style={{ width: "auto", margin: 0, padding: 0, flexShrink: 0, outline: "none" }} /> Generata con AI
                   </label>
                 </div>
               </div>

@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { api } from "../../../lib/api";
+import { api, ApiError } from "../../../lib/api";
 import { useConfirm } from "../../common/ConfirmProvider";
+import Notice from "../../common/Notice";
+import AnalisiFotoModal from "./AnalisiFotoModal";
 
 interface StepDef {
   step: number;
@@ -23,7 +25,8 @@ const STEPS: StepDef[] = [
 interface WizardResult {
   descrizioneDettagliata: string;
   descrizioneBreve: string;
-  raw: string;
+  tokenIn?: number;
+  tokenOut?: number;
 }
 
 export interface StepTesto {
@@ -41,9 +44,10 @@ interface Props {
   promptAi?: string | null;
   onSave: (descrizione: string | null, descrizioneDettagliata: string | null, stepTesti?: StepTesto[], promptAi?: string | null) => void;
   onCopia?: (stepTesti: StepTesto[]) => void;
+  onRefreshImmagini?: () => void;
 }
 
-export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, promptAi, onSave, onCopia }: Props) {
+export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione: savedDescrizione, descrizioneDettagliata: savedDettagliata, initialStepTesti, promptAi, onSave, onCopia, onRefreshImmagini }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
   const hasExistingContent = !!(savedDettagliata && savedDettagliata.length > 0);
   const [stepTesti, setStepTesti] = useState<StepTesto[]>(
@@ -56,7 +60,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const recognitionRef = useRef<any>(null);
   const [result, setResult] = useState<WizardResult | null>(
     hasExistingContent
-      ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "", raw: "" }
+      ? { descrizioneDettagliata: savedDettagliata ?? "", descrizioneBreve: savedDescrizione ?? "" }
       : null,
   );
   const [loading, setLoading] = useState(false);
@@ -67,6 +71,28 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const promptDirty = customPrompt !== initialPromptRef.current;
   const [showGuida, setShowGuida] = useState(false);
   const [mdView, setMdView] = useState(true);
+  const [showAnalisiModal, setShowAnalisiModal] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [useCompactSteps, setUseCompactSteps] = useState(false);
+  const fullStepsWidthRef = useRef(0);
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const check = () => {
+      setUseCompactSteps((prev) => {
+        if (prev) {
+          return fullStepsWidthRef.current > el.clientWidth + 2;
+        }
+        const overflows = el.scrollWidth > el.clientWidth + 2;
+        if (overflows) fullStepsWidthRef.current = el.scrollWidth;
+        return overflows;
+      });
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const progressMsgs = ["Analizzo le tue parole…", "Strutturo la descrizione…", "Curo lo stile…", "Quasi fatto…"];
   const latestStepTesti = useRef(stepTesti);
   latestStepTesti.current = stepTesti;
@@ -182,7 +208,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       setProgressMsg(progressMsgs[Math.floor(Math.random() * progressMsgs.length)]);
     }, 800);
     try {
-      const res = await api.post<WizardResult>(`/api/integrazione/articoli/${codiceLinea}/descrizione/wizard`, {
+      const res = await api.post<WizardResult>(`/wizard-proxy/${codiceLinea}`, {
         stepTesti,
         azione: "genera",
         promptPersonalizzato: customPrompt || undefined,
@@ -190,12 +216,20 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     onSave(null, null, stepTesti);
       setResult(res);
     } catch (e) {
-      setResult(null); setProgressMsg("Errore: " + String(e));
+      setProgressMsg("Errore: " + (e instanceof ApiError ? e.code : String(e)));
     } finally {
       clearInterval(msgInterval);
-      setProgressMsg("");
       setLoading(false);
     }
+  }
+
+  function handleAnalisiAccepted(st: StepTesto[]) {
+    setStepTesti(st);
+    setCurrentStep(0);
+    setShowAnalisiModal(false);
+    api.put(`/api/integrazione/articoli/${codiceLinea}`, { wizardStepTesti: st }).catch(() => {});
+    onSave(null, null, st);
+    onRefreshImmagini?.();
   }
 
   async function handleShowDescrizioni() {
@@ -203,7 +237,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
       setResult({
         descrizioneDettagliata: savedDettagliata ?? "",
         descrizioneBreve: savedDescrizione ?? "",
-        raw: "",
       });
       return;
     }
@@ -225,7 +258,6 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
     setResult({
       descrizioneDettagliata: savedDettagliata ?? "",
       descrizioneBreve: savedDescrizione ?? "",
-      raw: "",
     });
   }
 
@@ -246,7 +278,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   if (result) {
     return (
       <div className="wizard-result">
-        {wizardError && <div className="wizard-error">{wizardError}</div>}
+      {wizardError && <Notice variant="error" onClose={() => setProgressMsg("")}>{wizardError.replace(/^Errore: /, '')}</Notice>}
         <div className="wizard-result-panels">
           {/* Colonna sinistra: preview/edit descrizione dettagliata (full height) */}
           <div className="wizard-result-col wizard-col-md">
@@ -314,6 +346,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
               <button className="btn btn-ghost btn-sm" onClick={() => setShowPromptEditor(!showPromptEditor)}>
                 {showPromptEditor ? "Nascondi" : "Prompt AI"}
               </button>
+              {result?.tokenIn != null && (
+                <span className="wizard-token-info" title={`Token di input: ${result.tokenIn}, Token di output: ${result.tokenOut ?? '?'}`}>
+                  ⚡ {result.tokenIn} / {result.tokenOut ?? '?'}
+                </span>
+              )}
             </div>
             {showPromptEditor && (
               <div className="wizard-prompt-editor">
@@ -336,33 +373,41 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   return (
       <div className="wizard">
       {wizardError && <div className="wizard-error">{wizardError}</div>}
-      <div className="wizard-header">
-        <div className="wizard-steps">
-          {STEPS.map((s, idx) => (
-            <button
-              key={s.step}
-              className={`wizard-step-dot ${idx === currentStep ? "active" : idx < currentStep ? "done" : ""} ${hasExistingContent && idx === currentStep ? "existing" : ""}`}
-              onClick={() => { if (idx <= currentStep || canGoNext()) setCurrentStep(idx); }}
-              disabled={idx > currentStep && !canGoNext()}
-              title={s.label}
-            >
-              <span className="wizard-dot-icon">{s.icon}</span>
-              <span className="wizard-dot-label">{s.label}</span>
-            </button>
-          ))}
+      <div className="wizard-header" ref={headerRef}>
+        {!useCompactSteps && STEPS.map((s, idx) => (
+          <button key={s.step} className={`wizard-step-tab${idx === currentStep ? " active" : ""}${idx < currentStep ? " done" : ""}`} onClick={() => { if (idx <= currentStep || canGoNext()) setCurrentStep(idx); }} disabled={idx > currentStep && !canGoNext()}>
+            <span className="wizard-step-icon">{s.icon}</span>
+            <span className="wizard-step-label">{s.label}</span>
+          </button>
+        ))}
+        {useCompactSteps && (
+          <select className="input wizard-step-select" value={currentStep} onChange={(e) => { const v = Number(e.target.value); if (v <= currentStep || canGoNext()) setCurrentStep(v); }} style={{ flex: 1, maxWidth: 240, fontSize: 14 }}>
+            {STEPS.map((s, idx) => (
+              <option key={s.step} value={idx}>{s.icon} {s.label}</option>
+            ))}
+          </select>
+        )}
+        <div className="wizard-header-right">
           {hasExistingContent && (
-            <button
-              className={`wizard-step-dot descrizioni ${result ? "active" : ""}`}
-              onClick={handleShowDescrizioni}
-              title="Visualizza descrizioni"
-            >
-              <span className="wizard-dot-icon">✦</span>
-              <span className="wizard-dot-label">Descrizioni</span>
+            <button className={`btn btn-ghost btn-sm ${result ? "active" : ""}`} onClick={handleShowDescrizioni} title="Visualizza descrizioni">
+              ✦ Descrizioni
             </button>
           )}
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowAnalisiModal(true)} title="Analisi AI da foto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 14, height: 14 }}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowGuida(!showGuida)} title="Guida sensoriale">?</button>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowGuida(!showGuida)} title="Guida sensoriale">?</button>
       </div>
+
+      {showAnalisiModal && (
+        <AnalisiFotoModal
+          codiceLinea={codiceLinea}
+          existingImages={immagini}
+          onClose={() => setShowAnalisiModal(false)}
+          onAccept={handleAnalisiAccepted}
+        />
+      )}
 
       {showGuida && (
         <div className="wizard-guida">
@@ -448,11 +493,10 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
             <button className="btn btn-secondary btn-sm" onClick={goBack} disabled={currentStep === 0}>
               Indietro
             </button>
-            <div className="row" style={{ gap: 12 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <button className="btn btn-secondary btn-sm" onClick={async () => { if (await confirm({ message: "Cancellare il testo inserito per questo step?", title: "Cancella testo", tone: "danger" })) updateTesto(""); }} disabled={!currentTesto}>
                 Cancella
               </button>
-
               {currentStep < STEPS.length - 1 ? (
                 <button className="btn btn-primary btn-sm" onClick={goNext} disabled={!canGoNext()}>
                   Avanti

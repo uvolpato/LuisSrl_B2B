@@ -164,6 +164,17 @@ export class IntegrazioneController {
     return this.integrazione.wizardDescrizione(codiceLinea, body);
   }
 
+  @Post('articoli/:codiceLinea/descrizione/analizza')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async analizzaDescrizione(
+    @Param('codiceLinea') codiceLinea: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body('imageIds') imageIds?: string,
+  ) {
+    const ids = imageIds ? imageIds.split(',').map(Number).filter((n) => !isNaN(n)) : undefined;
+    return this.integrazione.analizzaDescrizioneDaFoto(codiceLinea, files ?? [], ids);
+  }
+
   @Post('articoli/:codiceLinea/immagini/ai/persisti')
   async persistAi(
     @Param('codiceLinea') codiceLinea: string,
@@ -190,9 +201,8 @@ export class IntegrazioneController {
   async uploadImmagini(
     @Param('codiceLinea') codiceLinea: string,
     @UploadedFiles() files: Express.Multer.File[],
-    @Body('tipo') tipo?: string,
   ) {
-    return this.integrazione.uploadImmagini(codiceLinea, files, tipo || 'CARICATA');
+    return this.integrazione.uploadImmagini(codiceLinea, files);
   }
 
   @Delete('articoli/:codiceLinea')
