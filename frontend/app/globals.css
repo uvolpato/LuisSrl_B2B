@@ -8,6 +8,8 @@
   --accent: oklch(55% 0.14 45);
   --accent-soft: oklch(95% 0.03 45);
   --danger: oklch(55% 0.18 25);
+  --red: oklch(55% 0.18 25);
+  --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
   --ok: oklch(55% 0.12 150);
 
   --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
@@ -448,20 +450,29 @@ tr:last-child td { border-bottom: none; }
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 20px;
+  gap: 8px;
+  padding: 9px 18px;
   border-radius: 8px;
+  border: 1px solid transparent;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
-  border: none;
+  text-decoration: none;
   font-family: var(--font-body);
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { filter: brightness(1.1); }
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--fg);
-}
-.btn-ghost:hover { background: var(--accent-soft); border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover { background: color-mix(in oklch, var(--red) 88%, black); }
+.btn-danger-outline { background: transparent; color: var(--red); border-color: var(--red); }
+.btn-danger-outline:hover { background: var(--red-soft); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
