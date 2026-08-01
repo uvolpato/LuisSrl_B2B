@@ -322,7 +322,7 @@ async function handleDelete(codice: string) {
                       onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }}
                     />
                     {r.immagineAI && (
-                      <span style={{ position: "absolute", bottom: 6, right: 6, zIndex: 3, fontSize: 10, fontWeight: 600, letterSpacing: "0.5px", padding: "2px 6px", borderRadius: 6, background: "rgba(0,0,0,0.6)", color: "#fff", cursor: "help", pointerEvents: "auto" }} title="Immagine generata con AI">AI</span>
+                      <span className="ai-badge" title="Immagine generata con AI">AI</span>
                     )}
                   </div>
                   <div className="raccolte-card-body">

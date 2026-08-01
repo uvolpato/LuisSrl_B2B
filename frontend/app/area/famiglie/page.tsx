@@ -62,13 +62,6 @@ export default function FamigliePage() {
           display: flex; align-items: center; justify-content: space-between;
         }
         .fam-card-cta { color: var(--accent); font-weight: 600; }
-        .famiglie-page .ai-badge {
-          position: absolute; bottom: 6px; right: 6px; z-index: 3;
-          font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
-          padding: 2px 6px; border-radius: 6px;
-          background: rgba(0,0,0,0.6); color: #fff;
-          cursor: help; pointer-events: auto;
-        }
       `}</style>
 
       <main>

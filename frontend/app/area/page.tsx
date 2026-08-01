@@ -411,16 +411,6 @@ export default function AreaClientePage() {
           align-items: center;
           gap: 8px;
         }
-        .ai-badge {
-          font-family: var(--font-mono);
-          font-size: 10px;
-          letter-spacing: 0.04em;
-          background: var(--accent-soft);
-          color: var(--accent);
-          padding: 3px 8px;
-          border-radius: 999px;
-          font-weight: 600;
-        }
         .modal-close-btn {
           width: 32px;
           height: 32px;

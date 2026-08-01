@@ -781,7 +781,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
           </button>
           <div className="lightbox-counter">{lightboxIdx + 1} / {allImages.length}</div>
           {allImages[lightboxIdx]?.tipo === "AI" && (
-            <span className="ai-badge ai-badge-lightbox" title="Immagine generata con AI">AI</span>
+            <span className="ai-badge ai-badge-lg" title="Immagine generata con AI">AI</span>
           )}
         </div>
       )}

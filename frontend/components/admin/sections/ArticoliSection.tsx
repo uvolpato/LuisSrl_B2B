@@ -129,13 +129,18 @@ export default function ArticoliSection() {
       cell: (a) => (
         <div className="cell-entity">
           <span className={`user-status-dot ${a.configurato ? "attivo" : "bloccato"}`} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="cell-entity-thumb"
-            src={thumbUrl(a.img, 100) || PLACEHOLDER}
-            alt={a.name}
-            onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
-          />
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="cell-entity-thumb"
+              src={thumbUrl(a.img, 100) || PLACEHOLDER}
+              alt={a.name}
+              onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
+            />
+            {a.imgTipo === "AI" && (
+              <span className="ai-badge ai-badge-sm" title="Immagine generata con AI">AI</span>
+            )}
+          </div>
           <div className="cell-entity-text">
             <span className="cell-entity-sub mono">{a.id}</span>
             <span className="cell-entity-title">{a.name}</span>
@@ -266,8 +271,13 @@ export default function ArticoliSection() {
             <div className="article-grid">
               {artRows.map((a) => (
                 <div key={a.id} className="article-card">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="article-card-img" src={thumbUrl(a.img, 400) || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
+                  <div style={{ position: "relative" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="article-card-img" src={thumbUrl(a.img, 400) || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
+                    {a.imgTipo === "AI" && (
+                      <span className="ai-badge" title="Immagine generata con AI">AI</span>
+                    )}
+                  </div>
                   <div className="article-card-body">
                     <div className="article-card-top">
                       <span className="article-card-id">{a.id}</span>
