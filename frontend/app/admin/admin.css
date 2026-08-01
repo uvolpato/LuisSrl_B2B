@@ -592,45 +592,6 @@
 /* Vista a griglia (gallery Articoli): scrolla anch'essa a tutta altezza. */
 .data-cards-scroll { flex: 1; min-height: 0; overflow: auto; }
 
-/* ── Buttons ── */
-.btn,
-.admin-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 18px;
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.btn:active,
-.admin-btn:active { transform: translateY(1px); }
-.btn-primary,
-.admin-btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-.btn-primary:hover,
-.admin-btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
-.btn-secondary,
-.admin-btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
-.btn-secondary:hover,
-.admin-btn-secondary:hover { border-color: var(--fg); }
-.btn-danger,
-.admin-btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
-.btn-danger:hover,
-.admin-btn-danger:hover { background: color-mix(in oklch, var(--red) 88%, black); }
-.btn-ghost,
-.admin-btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
-.btn-ghost:hover,
-.admin-btn-ghost:hover { color: var(--fg); background: var(--fg-soft); }
-.btn-sm,
-.admin-btn-sm { padding: 6px 12px; font-size: 13px; }
-.btn svg,
-.admin-btn svg { width: 16px; height: 16px; }
-
 /* ── Article grid ── */
 .article-grid {
   display: grid;
@@ -1668,26 +1629,6 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   font-size: 13px;
   color: var(--fg);
 }
-
-/* Danger outline button */
-.btn-danger-outline {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 9px 18px;
-  border-radius: var(--radius);
-  border: 1px solid var(--red);
-  background: transparent;
-  color: var(--red);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  transition: transform 0.05s ease, background 0.15s ease;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.btn-danger-outline:hover { background: var(--red-soft); }
-.btn-danger-outline:active { transform: translateY(1px); }
-.btn-danger-outline.btn-sm { padding: 6px 12px; font-size: 13px; }
-
 
 .info-trigger {
   display: inline-flex;

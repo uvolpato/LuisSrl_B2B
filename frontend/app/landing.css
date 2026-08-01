@@ -63,23 +63,7 @@
 .landing .topnav nav { display: flex; gap: var(--gap-lg); }
 .landing .topnav nav a { font-size: 14px; color: var(--muted); text-decoration: none; }
 .landing .topnav nav a:hover { color: var(--fg); }
-.landing .btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 11px 20px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  font-size: 15px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.landing .btn:active { transform: translateY(1px); }
-.landing .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-.landing .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
-.landing .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
-.landing .btn-secondary:hover { border-color: var(--fg); }
-.landing .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
-.landing .btn-ghost:hover { color: var(--accent); }
+.landing .btn { padding: 11px 20px; border-radius: 10px; font-size: 15px; }
 .landing .btn-arrow::after { content: '→'; transition: transform 0.15s ease; }
 .landing .btn-arrow:hover::after { transform: translateX(2px); }
 .landing .card {
