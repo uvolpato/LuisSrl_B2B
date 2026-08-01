@@ -171,8 +171,9 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
         ) : (
           <button className="btn btn-primary" onClick={handleAnalyze}
             disabled={analyzing || (files.length === 0 && selectedIds.size === 0)}
-            style={{ width: "100%" }}
+            style={{ width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
           >
+            {analyzing && <span className="wizard-spinner" style={{ width: 14, height: 14, borderWidth: 2, flexShrink: 0 }} />}
             {analyzing ? "Analisi in corso…" : "Analizza con AI"}
           </button>
         )}
