@@ -272,7 +272,7 @@ function AccountTab({
       <div className="account-actions">
         {error && <span className="account-save-msg account-save-err">{error}</span>}
         {saved && <span className="account-save-msg account-save-ok">Salvato ✓</span>}
-        <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={save} disabled={saving}>
+        <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
           {saving ? "Salvataggio…" : "Salva"}
         </button>
       </div>
@@ -382,7 +382,7 @@ all other recipients of the licensed work to be provided by Licensor:
 4. Not to modify this License in any other way.`}
           </pre>
         </div>
-        <button className="admin-btn" onClick={onClose}>Chiudi</button>
+        <button className="btn" onClick={onClose}>Chiudi</button>
       </div>
     </Modal>
   );

@@ -289,11 +289,11 @@ export default function ClientiSection() {
           { value: "da-invitare", label: "Da invitare" },
         ]}
       >
-        <button className="admin-btn admin-btn-secondary" onClick={doSyncClienti} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
+        <button className="btn btn-secondary" onClick={doSyncClienti} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
           <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
           <span>{syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}</span>
         </button>
-        <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => setImportOpen(true)}>
+        <button className="btn btn-primary btn-sm" onClick={() => setImportOpen(true)}>
           {IconPlus}
           {t("newClient")}
         </button>
@@ -304,7 +304,7 @@ export default function ClientiSection() {
             <span className="meta">{t("total", { count: total })}</span>
           </div>
           {selectedIds.size > 0 && (
-            <button className="admin-btn admin-btn-primary" onClick={onInvitaBulk} disabled={inviting}>
+            <button className="btn btn-primary" onClick={onInvitaBulk} disabled={inviting}>
               {IconMail}
               {inviting ? "Invio in corso…" : `Invita selezionati (${selectedIds.size})`}
             </button>

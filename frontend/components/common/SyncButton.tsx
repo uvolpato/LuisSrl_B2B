@@ -13,7 +13,7 @@ interface SyncButtonProps {
 export default function SyncButton({
   onClick,
   label = "Sincronizza",
-  className = "admin-btn admin-btn-secondary",
+  className = "btn btn-secondary",
   icon,
 }: SyncButtonProps) {
   const [syncing, setSyncing] = useState(false);

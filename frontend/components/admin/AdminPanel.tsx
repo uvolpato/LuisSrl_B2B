@@ -361,7 +361,7 @@ export default function AdminPanel() {
                     />
                   </div>
                   <button
-                    className="admin-btn admin-btn-primary admin-btn-sm"
+                    className="btn btn-primary btn-sm"
                     onClick={() => setCustomerEditorTarget({ mode: "create" })}
                   >
                     {IconPlus}
@@ -413,7 +413,7 @@ export default function AdminPanel() {
                     />
                   </div>
                   <button
-                    className="admin-btn admin-btn-primary admin-btn-sm"
+                    className="btn btn-primary btn-sm"
                     onClick={() => setUserEditorTarget({ mode: "create" })}
                   >
                     {IconPlus}
@@ -581,7 +581,7 @@ function GroupsSection() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => setEditor("create")}>
+          <button className="btn btn-primary btn-sm" onClick={() => setEditor("create")}>
             {IconPlus} Nuovo gruppo
           </button>
         </div>

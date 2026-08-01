@@ -196,7 +196,7 @@ export default function SyncPanel() {
                 <td className="mono" style={{ fontSize: 13 }}>{formatDateTime(row.prossima_esecuzione)}</td>
                 <td>
                   <button
-                    className="admin-btn admin-btn-secondary"
+                    className="btn btn-secondary"
                     style={{ minWidth: 110, justifyContent: "center" }}
                     disabled={triggering === row.tipo}
                     onClick={() => triggerSync(row.tipo)}

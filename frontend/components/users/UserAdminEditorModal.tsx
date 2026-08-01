@@ -140,7 +140,7 @@ export default function UserAdminEditorModal({
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
               type="button"
-              className="admin-btn admin-btn-sm admin-btn-secondary"
+              className="btn btn-sm btn-secondary"
               disabled={!!busyAction}
               onClick={() => doAction("reset", async () => {
                 const res = await api.post<{ user: UserProfile; provisionalPassword: string }>(
@@ -155,7 +155,7 @@ export default function UserAdminEditorModal({
             {editing.stato === "ATTIVO" ? (
               <button
                 type="button"
-                className="admin-btn admin-btn-sm admin-btn-secondary"
+                className="btn btn-sm btn-secondary"
                 disabled={!!busyAction}
                 onClick={() => doAction("block", async () => {
                   await api.post(`/api/users/${editing.id}/block`);
@@ -166,7 +166,7 @@ export default function UserAdminEditorModal({
             ) : (
               <button
                 type="button"
-                className="admin-btn admin-btn-sm admin-btn-secondary"
+                className="btn btn-sm btn-secondary"
                 disabled={!!busyAction}
                 onClick={() => doAction("unblock", async () => {
                   await api.post(`/api/users/${editing.id}/unblock`);
@@ -179,7 +179,7 @@ export default function UserAdminEditorModal({
             {editing.ruolo !== "SUPERUSER" && (
               <button
                 type="button"
-                className="admin-btn admin-btn-sm admin-btn-ghost"
+                className="btn btn-sm btn-ghost"
                 style={{ color: "var(--red)" }}
                 disabled={!!busyAction}
                 onClick={() => doAction("delete", async () => {

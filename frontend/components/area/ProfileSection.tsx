@@ -162,7 +162,7 @@ export default function ProfileSection({
               <div style={{ fontWeight: 500 }}>Cambio password</div>
               <div className="detail">Ultima modifica: 15/06/2026</div>
             </div>
-            <button className="btn btn-ghost" style={{ padding: "6px 14px", fontSize: 13 }} onClick={() => setPwOpen(true)}>Modifica</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPwOpen(true)}>Modifica</button>
           </div>
 
           <div className="sec-item">
