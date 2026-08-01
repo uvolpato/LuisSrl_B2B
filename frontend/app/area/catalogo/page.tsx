@@ -185,13 +185,26 @@ export default function CatalogoPage() {
   // Ripristina lo stato dall'URL: deep-link da /area/famiglie (?famiglia=),
   // ritorno da un prodotto o "torna indietro" del browser (l'URL è la fonte di verità).
   useEffect(() => {
+    // StrictMode (dev) esegue l'effect due volte: il secondo passaggio non deve
+    // ripartire (sessionStorage già consumato o fallback doppio).
+    if (restored.current) return;
     const p = new URLSearchParams(window.location.search);
     const fam = p.get("famiglia"); if (fam) setFamiglieSel(new Set(fam.split(",").filter(Boolean)));
     const rac = p.get("raccolte"); if (rac) setRaccolteSel(new Set(rac.split(",").filter(Boolean)));
     const tab = p.get("tab"); if (tab) setActiveTab(tab);
     const so = p.get("sort"); if (so) setSort(so);
     const q = p.get("q"); if (q) setSearch(q);
-    const ai = p.get("ai"); if (ai) { setAiQuery(ai); void runAiSearch(ai); }
+    // Ricerca AI testuale dalla dashboard: risultati già calcolati (sessionStorage).
+    // Fallback: query diretta (deep link / torna-indietro) -> esegue qui la ricerca.
+    const ai = p.get("ai"); if (ai) {
+      const raw = sessionStorage.getItem("ai-text-results");
+      if (raw) {
+        try { setAiResults({ query: ai, kind: "text", articoli: JSON.parse(raw) }); } catch { /* ignora */ }
+        sessionStorage.removeItem("ai-text-results");
+      } else {
+        setAiQuery(ai); void runAiSearch(ai);
+      }
+    }
     // Ricerca per immagine avviata dalla dashboard: risultati passati via sessionStorage.
     if (p.get("imgsearch")) {
       const raw = sessionStorage.getItem("ai-image-results");
@@ -219,11 +232,12 @@ export default function CatalogoPage() {
   }, [aiResults, famiglieSel, raccolteSel, activeTab, sort, search, router]);
 
   // Al cambio di filtri/ricerca (fuori dalla modalità AI): ricarica dalla pagina 1 (debounce per il testo).
+  // In attesa di una ricerca AI testuale non carica il catalogo completo: evita il "flash" di articoli non filtrati.
   useEffect(() => {
-    if (!restored.current || aiResults) return;
+    if (!restored.current || aiResults || (aiQuery.trim() && aiLoading)) return;
     const t = setTimeout(() => { void fetchPage(1, true); }, 250);
     return () => clearTimeout(t);
-  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, fetchPage]);
+  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, aiQuery, aiLoading, fetchPage]);
 
   // Infinite scroll: carica la pagina successiva quando il sentinella entra in viewport.
   useEffect(() => {

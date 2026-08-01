@@ -98,11 +98,26 @@ export default function AreaClientePage() {
     router.push(`${SCOPES[activeTab].href}?q=${encodeURIComponent(q)}`);
   };
 
-  // La ricerca AI vera vive nel catalogo: navighiamo lì con la query, che il
-  // catalogo esegue e conserva nell'URL (torna-indietro riporta ai risultati).
-  const handleSearchAi = (query: string) => {
-    closeAiModal();
-    router.push(`/area/catalogo?ai=${encodeURIComponent(query)}`);
+  // Ricerca AI testuale: eseguita qui (come per l'immagine), risultati passati
+  // al catalogo via sessionStorage: si arriva con gli articoli già filtrati.
+  const handleSearchAi = async (query: string) => {
+    const q = query.trim();
+    if (!q) return;
+    setAiLoading(true); setAiError(null);
+    try {
+      const res = await api.post<{ articoli: unknown[]; error?: string }>("/api/catalogo/ricerca", { q });
+      if (res.error) {
+        setAiError("La ricerca intelligente non è al momento disponibile.");
+        return;
+      }
+      sessionStorage.setItem("ai-text-results", JSON.stringify(res.articoli));
+      closeAiModal();
+      router.push(`/area/catalogo?ai=${encodeURIComponent(q)}`);
+    } catch {
+      setAiError("Ricerca non riuscita. Riprova.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // Ricerca per immagine: eseguita qui, risultati passati al catalogo via
