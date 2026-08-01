@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "../../common/Modal";
 import { api } from "../../../lib/api";
+import { thumbUrl } from "../../../lib/thumb";
 import type { StepTesto } from "./DescrizioneAiWizard";
 import { STEPS } from "./DescrizioneAiWizard";
 
@@ -124,7 +125,7 @@ export default function AnalisiFotoModal({ codiceLinea, existingImages, onClose,
                       opacity: sel ? 1 : 0.45, transition: "opacity .15s, border-color .15s",
                     }}
                   >
-                    <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={thumbUrl(img.url, 200)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     {sel && <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#fff", fontSize: 8, textAlign: "center", lineHeight: "14px" }}>✓</span>}
                   </div>
                 );
