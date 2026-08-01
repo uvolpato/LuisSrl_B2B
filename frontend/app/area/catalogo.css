@@ -484,17 +484,21 @@
   top: 12px; right: 12px;
   width: 32px; height: 32px;
   padding: 0;
-  background: transparent;
-  border: 1px solid var(--border);
+  background: oklch(100% 0 0);  /* bianco opaco */
+  border: 1px solid oklch(80% 0 0);  /* grigio chiaro opaco */
   border-radius: 8px;
   display: grid; place-items: center;
   cursor: pointer;
   z-index: 2;
-  transition: background 0.12s ease, color 0.12s ease;
-  color: var(--muted);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  color: var(--fg);
   line-height: 0;
 }
-.catalogo-page.scheda-prodotto .gallery-share:hover { background: var(--fg-soft); color: var(--fg); }
+.catalogo-page.scheda-prodotto .gallery-share:hover {
+  background: oklch(92% 0 0);  /* grigio chiaro opaco */
+  border-color: oklch(70% 0 0);
+  color: var(--fg);
+}
 .catalogo-page.scheda-prodotto .gallery-share svg { width: 16px; height: 16px; display: block; }
 .catalogo-page.scheda-prodotto .gallery-hint {
   text-align: center;
