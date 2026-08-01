@@ -17,7 +17,9 @@
   display: flex;
   flex-direction: column;
 }
-.catalogo-page a { color: inherit; text-decoration: none; }
+.catalogo-page a:not(.btn) { color: inherit; text-decoration: none; }
+/* I link-bottone usano il colore della propria variante (.btn-primary bianco,
+   .btn-ghost/.btn-secondary fg): il reset "inherit" sopra non li tocca. */
 .catalogo-page button { font: inherit; cursor: pointer; }
 .catalogo-page .container {
   max-width: var(--container);
