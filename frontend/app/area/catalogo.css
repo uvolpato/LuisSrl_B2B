@@ -483,6 +483,7 @@
   position: absolute;
   top: 12px; right: 12px;
   width: 36px; height: 36px;
+  padding: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -490,6 +491,7 @@
   cursor: pointer;
   z-index: 2;
   transition: background 0.15s;
+  color: var(--fg);
 }
 .catalogo-page.scheda-prodotto .gallery-share:hover { background: var(--fg-soft); }
 .catalogo-page.scheda-prodotto .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
@@ -1904,3 +1906,126 @@
 }
 .catalogo-page .data-table-footer { position: relative; z-index: 11; }
 .catalogo-page .data-table-actions { text-align: right; white-space: nowrap; }
+
+/* ============================================================
+   ShareModal (condivisione scheda articolo)
+   ============================================================ */
+
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: oklch(0% 0 0 / 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2000;
+  animation: share-fade-in 0.15s ease-out;
+}
+@keyframes share-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.share-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: share-slide-up 0.2s ease-out;
+  box-shadow: 0 20px 40px oklch(0% 0 0 / 0.25);
+}
+@keyframes share-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.share-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.share-modal-close {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  background: var(--fg-soft);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.share-modal-close:hover { background: var(--accent-soft); color: var(--accent); }
+.share-modal-close svg { width: 18px; height: 18px; }
+
+.share-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px;
+}
+@media (max-width: 480px) {
+  .share-modal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.share-modal-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.share-modal-btn:hover {
+  background: var(--fg-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.share-modal-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.share-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  color: currentColor;
+}
+.share-modal-icon svg { width: 22px; height: 22px; }
+
+.share-modal-label {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Colori brand per i servizi (sottili, solo hover) */
+.share-modal-btn.facebook:hover { border-color: #1877F2; color: #1877F2; }
+.share-modal-btn.x:hover { border-color: #000; color: #000; }
+.share-modal-btn.linkedin:hover { border-color: #0A66C2; color: #0A66C2; }
+.share-modal-btn.whatsapp:hover { border-color: #25D366; color: #25D366; }
+.share-modal-btn.email:hover { border-color: var(--accent); color: var(--accent); }
+.share-modal-btn.copy:hover { border-color: var(--accent); color: var(--accent); }

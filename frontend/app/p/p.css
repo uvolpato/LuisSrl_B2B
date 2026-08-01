@@ -1,0 +1,40 @@
+/* Anteprima pubblica scheda articolo — raggiungibile dal link Condividi (/p/<codiceLinea>).
+   Riusa le classi della scheda cliente (catalogo.css, caricato nel root layout). */
+
+.anteprima-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  background: oklch(96% 0.03 75 / 0.65);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--fg);
+  text-align: center;
+}
+.anteprima-banner .btn { flex-shrink: 0; }
+
+.catalogo-page.scheda-prodotto .preview-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: flex-start;
+  position: sticky;
+  top: 80px;
+}
+.catalogo-page.scheda-prodotto .preview-box h3 { margin: 0; font-size: 16px; }
+.catalogo-page.scheda-prodotto .preview-box p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
+.catalogo-page.scheda-prodotto .preview-box .btn { justify-content: center; width: 100%; }
+
+@media (max-width: 920px) {
+  .catalogo-page.scheda-prodotto .preview-box { position: static; }
+}
+
+/* In anteprima niente lightbox: la foto non è "zoomabile" */
+.catalogo-page.scheda-prodotto .gallery-main { cursor: default; }

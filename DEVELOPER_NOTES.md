@@ -195,5 +195,35 @@ Se trovi un bug:
 
 ---
 
+## 🔗 Condivisione scheda articolo (`/p/<codiceLinea>`)
+
+Il pulsante **Condividi** sulla scheda cliente (`.gallery-share`) genera un link
+pubblico di anteprima: chi non è loggato vede descrizioni + varianti ma **senza
+prezzi, disponibilità e azioni**; un cliente già loggato viene rimandato alla
+scheda completa.
+
+- **Endpoint pubblico**: `GET /api/catalogo/pubblico/:codiceLinea`
+  (`catalogo-public.controller.ts`, senza guard). Ritorna sempre 404 se il
+  flag è spento. Non espone mai `prezzo`, `giacenza`, `sconto` raccolte,
+  `promptAi`, `wizardStepTesti` né i metadati AI delle immagini.
+- **Blocco in un colpo**: `PUBLIC_ARTICLE_SHARING=false` in `backend/.env`
+  (default `true`). Endpoint → 404, pagina `/p/...` mostra "Anteprima non
+  disponibile" + link Accedi. Il link resta così solo per chi può loggarsi.
+- **Rotta frontend**: `frontend/app/p/[codiceLinea]/page.tsx` + `app/p/p.css`
+  (riusa le classi di `catalogo.css`, caricato globalmente). Non mostra
+  lightbox, correlati, quantità né carrello.
+- **Web Share**: `navigator.share` se disponibile (secure context), altrimenti
+  copia link negli appunti con feedback "Link copiato".
+- **Modale condivisione stile Amazon** (`ShareModal.tsx`): click su Condividi apre
+  un modale con 6 opzioni — Email (mailto), Facebook, X/Twitter, LinkedIn,
+  WhatsApp, Copia link. Ogni opzione usa l'URL diretto del servizio
+  (es. `facebook.com/sharer/sharer.php?u=...`). Su mobile griglia 2 colonne,
+  ESC/click fuori chiude. La copia link usa `navigator.clipboard.writeText`
+  con feedback visivo "Link copiato".
+- Test: da anonimo aprire `http://localhost:3000/p/<codiceLinea>` → anteprima
+  senza prezzi; da cliente loggato → redirect alla scheda completa.
+
+---
+
 **Ultima modifica:** 3 luglio 2026  
 **Autore:** Claude (sviluppo iterativo)
