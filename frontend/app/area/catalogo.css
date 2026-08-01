@@ -60,21 +60,8 @@
 .search-box .ai-trigger:hover { color: var(--accent); background: var(--accent-soft); }
 .search-box .ai-trigger svg { width: 18px; height: 18px; color: inherit; }
 
-/* ── Bottoni ── */
-.catalogo-page .btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 9px 16px;
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  font-size: 14px;
-  font-weight: 500;
-  transition: transform 0.05s ease, background 0.15s ease;
-}
-.catalogo-page .btn:active { transform: translateY(1px); }
-.catalogo-page .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-.catalogo-page .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
-.catalogo-page .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
-.catalogo-page .btn-ghost:hover { color: var(--accent); }
+/* ── Bottoni ── varianti da globals.css; qui solo il ritmo compatto del catalogo */
+.catalogo-page .btn { padding: 9px 16px; }
 
 /* ── Layout catalogo ── */
 .catalogo-page .catalog-layout {
@@ -1139,12 +1126,7 @@
   background: oklch(0% 0 0 / 0.5); padding: 6px 16px; border-radius: 999px;
 }
 
-/* btn-secondary used in buy box */
-.catalogo-page.scheda-prodotto .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
-.catalogo-page.scheda-prodotto .btn-secondary:hover { border-color: var(--fg); }
-/* btn-progetto in cart riepilogo: stesso look */
-.catalogo-page.cart-page .order-summary .btn-progetto { background: transparent; color: var(--fg); border-color: var(--border); }
-.catalogo-page.cart-page .order-summary .btn-progetto:hover { border-color: var(--fg); }
+/* btn-secondary/btn-progetto: look identico alla variante canonica in globals.css */
 
 /* Eyebrow shared */
 .catalogo-page.scheda-prodotto .eyebrow {
