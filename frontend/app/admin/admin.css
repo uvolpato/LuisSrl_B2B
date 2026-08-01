@@ -273,6 +273,99 @@
   to { transform: rotate(360deg); }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   SyncPanel (Sincronizzazione Integra)
+   Le due DataTable sono in colonna (config + log): niente flex:1 sulla
+   tabella, altrimenti si contendono l'altezza e sparisce tutto.
+   ════════════════════════════════════════════════════════════════════════ */
+.sync-panel { display: flex; flex-direction: column; gap: 5px; }
+.sync-panel .data-table { flex: none; min-height: 0; }
+.sync-panel .data-table-scroll { max-height: 420px; }
+
+/* Header compatto dei log (titolo + filtri pillole): meno aria sopra/sotto */
+.sync-logs-header { margin-bottom: 2px; }
+.sync-panel > .admin-panel-header { margin-bottom: 10px; }
+.sync-panel .data-table-footer { padding: 5px 16px; }
+.sync-logs-header .admin-panel-title { font-size: 15px; line-height: 1.3; }
+.sync-logs-header .admin-panel-count-badge { padding: 0 6px; line-height: 1.5; }
+.sync-logs-header .filter-pill {
+  padding: 4px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.sync-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.sync-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.sync-stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sync-stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sync-stat-value.ok { color: var(--ok); }
+.sync-stat-value.err { color: var(--danger); }
+.sync-stat-value .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* Toggle Attivo (switch compatto stile admin) */
+.sync-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 38px;
+  height: 22px;
+  cursor: pointer;
+}
+.sync-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.sync-switch .track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.15s ease;
+}
+.sync-switch .thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+.sync-switch input:checked ~ .track { background: var(--ok); }
+.sync-switch input:checked ~ .thumb { transform: translateX(16px); }
+
 /* Search */
 .admin-search {
   position: relative;
