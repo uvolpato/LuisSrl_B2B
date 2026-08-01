@@ -272,6 +272,20 @@ export default function CatalogoPage() {
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
+  // "Tutti" (barra raccolte): azzera tutti i filtri tranne la famiglia.
+  function resetExceptFamily() {
+    setRaccolteSel(new Set());
+    setColoreRgb("");
+    setColoreTolleranza(15);
+    setSearch("");
+    setActiveTab("tutti");
+    if (facets.dimensioni.diametro) setDiametroRange([facets.dimensioni.diametro.min, facets.dimensioni.diametro.max]);
+    if (facets.dimensioni.altezza) setAltezzaRange([facets.dimensioni.altezza.min, facets.dimensioni.altezza.max]);
+    if (facets.prezzo) setPrezzoRange([facets.prezzo.min, facets.prezzo.max]);
+    setAiResults(null);
+    setAiQuery("");
+  }
+
   // Contenuto filtri: reso sia nella sidebar (desktop) sia nel pannello (mobile)
   const filtersContent = (
     <>
@@ -399,7 +413,7 @@ export default function CatalogoPage() {
               </div>
 
               <div className="raccolte-bar">
-                <button className={`raccolte-tab ${activeTab === "tutti" ? "active" : ""}`} onClick={() => setActiveTab("tutti")}>Tutti</button>
+                <button className={`raccolte-tab ${activeTab === "tutti" ? "active" : ""}`} onClick={resetExceptFamily}>Tutti</button>
                 {facets.raccolte.map((r) => (
                   <button key={r.slug} className={`raccolte-tab ${activeTab === r.slug ? "active" : ""}`} onClick={() => setActiveTab(r.slug)}>
                     {r.nome}
