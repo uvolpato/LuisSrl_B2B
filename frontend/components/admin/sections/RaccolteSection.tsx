@@ -318,7 +318,7 @@ export default function RaccolteSection() {
                       <button className="btn btn-ghost btn-sm" onClick={() => toggleStatus(r)} title={r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}>
                         {r.stato === "ATTIVO" ? IconEyeOff : IconEye} {r.stato === "ATTIVO" ? "Nascondi" : "Mostra"}
                       </button>
-                      <button className="btn btn-ghost btn-sm btn-danger" onClick={() => handleDelete(r.id, r.nome)} title="Elimina">{IconTrash} Elimina</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--red)" }} onClick={() => handleDelete(r.id, r.nome)} title="Elimina">{IconTrash} Elimina</button>
                     </div>
                   </div>
                 </div>

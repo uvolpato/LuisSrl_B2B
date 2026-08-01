@@ -85,10 +85,6 @@ export default function AiSearchModal({
         .aism-tag:hover { border-color: var(--accent); color: var(--accent); }
         .aism-note { margin: 14px 0 0; padding: 10px 14px; background: var(--accent-soft); border-radius: 8px; font-size: 13px; }
         .aism-error { margin: 14px 0 0; padding: 10px 14px; background: var(--danger-soft, #fde8e8); border-radius: 8px; font-size: 13px; }
-        .aism-btn { border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
-        .aism-btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-        .aism-btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
-        .aism-btn-primary:disabled { opacity: .6; cursor: default; }
         .aism-modal { position: relative; }
         .aism-spin { animation: aismSpin .8s linear infinite; }
         @keyframes aismSpin { to { transform: rotate(360deg); } }
@@ -164,8 +160,8 @@ export default function AiSearchModal({
           {error && <p className="aism-error">{error}</p>}
         </div>
         <div className="aism-foot">
-          <button className="aism-btn aism-btn-ghost" onClick={onClose} disabled={loading}>Annulla</button>
-          <button className="aism-btn aism-btn-primary" onClick={submit} disabled={loading || !query.trim()}>
+          <button className="btn btn-ghost" onClick={onClose} disabled={loading}>Annulla</button>
+          <button className="btn btn-primary" onClick={submit} disabled={loading || !query.trim()}>
             {loading ? "Cerco…" : "Cerca"}
           </button>
         </div>

@@ -222,7 +222,7 @@ export default function ArticoliSection() {
         ]}
       >
         <div className="action-buttons">
-          <button className="admin-btn admin-btn-secondary" onClick={doSync} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
+          <button className="btn btn-secondary" onClick={doSync} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
             <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
             {syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}
           </button>

@@ -343,7 +343,7 @@ export default function UserEditorModal({
                       {editing && (
                         <button
                           type="button"
-                          className="admin-btn admin-btn-sm admin-btn-secondary"
+                          className="btn btn-sm btn-secondary"
                           disabled={resetting}
                           onClick={onResetPassword}
                           style={{ whiteSpace: "nowrap", flexShrink: 0 }}
