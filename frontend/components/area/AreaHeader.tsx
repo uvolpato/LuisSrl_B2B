@@ -37,6 +37,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
     return () => window.removeEventListener("cart-updated", handler);
   }, [fetchCartCount]);
   const menuRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
 
   // Stable breakpoint via matchMedia — no ResizeObserver flicker
@@ -74,9 +75,10 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      const t = e.target as Node;
+      const inTrigger = menuRef.current?.contains(t) ?? false;
+      const inPop = popRef.current?.contains(t) ?? false;
+      if (!inTrigger && !inPop) setMenuOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -158,7 +160,7 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
         .area-header nav a:hover { color: var(--fg); }
         .area-header nav a.active { color: var(--fg); font-weight: 500; }
 
-        .area-header .avatar-circle {
+        .area-header .avatar-circle, .user-menu-dropdown-fixed .avatar-circle {
           width: 32px; height: 32px;
           border-radius: 50%;
           background: var(--accent-soft);
@@ -171,11 +173,13 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           font-weight: 600;
           flex-shrink: 0;
         }
-        .area-header .user-menu-dropdown {
-          position: absolute;
-          top: calc(100% + 8px);
-          right: 0;
-          z-index: 101;
+        /* Dropdown profilo reso fuori dall'header: .area-header ha overflow:hidden
+           e backdrop-filter (contiene-block) che clipperebbero il menu in basso. */
+        .user-menu-dropdown-fixed {
+          position: fixed;
+          top: 72px;
+          right: 20px;
+          z-index: 150;
           min-width: 220px;
           background: var(--surface);
           border: 1px solid var(--border);
@@ -183,18 +187,18 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           box-shadow: 0 8px 30px rgba(0,0,0,.12);
           overflow: hidden;
         }
-        .area-header .user-menu-header {
+        .user-menu-header {
           display: flex;
           align-items: center;
           gap: 10px;
           padding: 14px 16px;
         }
-        .area-header .user-menu-divider {
+        .user-menu-divider {
           height: 1px;
           background: var(--border);
           margin: 0;
         }
-        .area-header .user-menu-item {
+        .user-menu-item {
           display: flex;
           align-items: center;
           gap: 10px;
@@ -209,10 +213,10 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           text-align: left;
           transition: background 0.12s;
         }
-        .area-header .user-menu-item:hover {
+        .user-menu-item:hover {
           background: var(--accent-soft);
         }
-        .area-header .user-menu-item svg {
+        .user-menu-item svg {
           color: var(--muted);
         }
 
@@ -397,7 +401,6 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
               <div
                 ref={menuRef}
                 style={{
-                  position: "relative",
                   display: isCompact ? "none" : "block",
                 }}
               >
@@ -423,41 +426,44 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </div>
-                {menuOpen && (
-                  <div className="user-menu-dropdown">
-                    <div className="user-menu-header">
-                      <div className="avatar-circle" style={{ width: 36, height: 36, fontSize: 14 }}>
-                        {initials}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{nomeCompleto}</div>
-                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{email}</div>
-                      </div>
-                    </div>
-                    <div className="user-menu-divider" />
-                    <Link href="/area/profilo" className="user-menu-item" onClick={() => setMenuOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      Profilo
-                    </Link>
-                    <button className="user-menu-item" onClick={logout}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Esci
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>
         </div>
 
       </header>
+
+      {/* Dropdown profilo fuori dall'header: l'overflow:hidden dell'header lo
+          clipperebbe (menu che sparisce sotto il contenuto che scorre). */}
+      {menuOpen && (
+        <div ref={popRef} className="user-menu-dropdown-fixed">
+          <div className="user-menu-header">
+            <div className="avatar-circle" style={{ width: 36, height: 36, fontSize: 14 }}>
+              {initials}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{nomeCompleto}</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{email}</div>
+            </div>
+          </div>
+          <div className="user-menu-divider" />
+          <Link href="/area/profilo" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Profilo
+          </Link>
+          <button className="user-menu-item" onClick={logout}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Esci
+          </button>
+        </div>
+      )}
 
       {/* Mobile overlay + drawer — outside header to avoid backdrop-filter containing block */}
       <div
