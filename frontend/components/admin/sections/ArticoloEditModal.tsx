@@ -184,6 +184,16 @@ export default function ArticoloEditModal({
     }
   }, [codiceLinea]);
 
+  // Aggiorna solo le immagini senza toccare loading/stato edit: evita che
+  // il wizard si smonti (la GET non deve gareggiare col PUT dei testi).
+  const refreshImagesSilently = useCallback(async () => {
+    if (!codiceLinea) return;
+    try {
+      const a = await api.get<ArticoloDetail>(`/api/integrazione/articoli/${codiceLinea}`);
+      setArticle((prev) => prev ? { ...prev, immagini: a.immagini } : prev);
+    } catch { /* aggiornamento immagini non critico */ }
+  }, [codiceLinea]);
+
   const fetchRaccolte = useCallback(async () => {
     try {
       const data = await api.get<RaccoltaSlim[]>("/api/admin/raccolte");
@@ -537,7 +547,7 @@ export default function ArticoloEditModal({
                   descrizioneDettagliata={article.descrizioneDettagliata}
                   initialStepTesti={article.wizardStepTesti}
                   promptAi={article.promptAi}
-                  onRefreshImmagini={() => fetch()}
+                  onRefreshImmagini={refreshImagesSilently}
                   onSave={(descrizione, descrizioneDettagliata, stepTesti, promptAi) => {
                     setArticle((prev) => prev ? ({
                       ...prev,
