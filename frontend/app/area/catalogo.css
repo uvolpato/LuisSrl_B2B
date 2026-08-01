@@ -493,7 +493,7 @@
   transition: background 0.15s;
   color: var(--fg);
 }
-.catalogo-page.scheda-prodotto .gallery-share:hover { background: var(--fg-soft); }
+.catalogo-page.scheda-prodotto .gallery-share:hover { background: var(--fg-soft); color: var(--fg); }
 .catalogo-page.scheda-prodotto .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
 .catalogo-page.scheda-prodotto .gallery-hint {
   text-align: center;
