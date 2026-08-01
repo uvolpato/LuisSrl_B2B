@@ -1958,17 +1958,18 @@
 }
 .share-modal-close {
   width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
+  display: grid; place-items: center;
   padding: 0;
   background: transparent;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--muted);
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
+  line-height: 0;
 }
 .share-modal-close:hover { background: var(--fg-soft); color: var(--fg); }
-.share-modal-close svg { width: 18px; height: 18px; display: block; }
+.share-modal-close svg { width: 16px; height: 16px; display: block; }
 
 .share-modal-grid {
   display: grid;
