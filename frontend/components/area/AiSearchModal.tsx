@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import ClearButton from "../common/ClearButton";
 
 /** Modale "Ricerca intelligente" riutilizzabile (dashboard + catalogo).
- *  onSubmit riceve la query testuale. La ricerca per immagine/file è "in arrivo". */
+ *  onSubmit riceve la query testuale; onSubmitImage avvia la ricerca per
+ *  immagine. L'intera area del body accetta drag-and-drop di una foto. */
 export default function AiSearchModal({
   open,
   onClose,
@@ -24,13 +25,27 @@ export default function AiSearchModal({
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [imgNotice, setImgNotice] = useState(false);
+  const [imgNotice, setImgNotice] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) { setQuery(initialQuery); setImgNotice(false); setTimeout(() => inputRef.current?.focus(), 50); }
+    if (open) { setQuery(initialQuery); setImgNotice(null); setDragOver(false); setTimeout(() => inputRef.current?.focus(), 50); }
   }, [open, initialQuery]);
+
+  /** Resetta il drag-over se il trascinamento esce dalla finestra o termina. */
+  useEffect(() => {
+    if (!open) return;
+    const onWindowLeave = (e: DragEvent) => { if (!e.relatedTarget) setDragOver(false); };
+    const onWindowEnd = () => setDragOver(false);
+    document.addEventListener("dragleave", onWindowLeave);
+    document.addEventListener("dragend", onWindowEnd);
+    return () => {
+      document.removeEventListener("dragleave", onWindowLeave);
+      document.removeEventListener("dragend", onWindowEnd);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +56,35 @@ export default function AiSearchModal({
   }, [open, onClose, loading]);
 
   const submit = () => { if (query.trim() && !loading) void onSubmit(query.trim()); };
+
+  /** Legge un file di testo e ne mette il contenuto nel campo di ricerca. */
+  const loadTextFile = (f: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const txt = String(reader.result ?? "").trim();
+      setImgNotice(null);
+      if (txt) setQuery(txt);
+      else setImgNotice("Il file è vuoto.");
+    };
+    reader.onerror = () => setImgNotice("Impossibile leggere il file.");
+    reader.readAsText(f);
+  };
+
+  /** Gestisce il drop nell'intera area: foto -> ricerca per immagine, testo -> query. */
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (loading) return;
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    if (f.type.startsWith("image/")) {
+      if (onSubmitImage) void onSubmitImage(f);
+      else setImgNotice("Trascina una foto per la ricerca per immagine.");
+      return;
+    }
+    if (f.type.startsWith("text/") || /\.(txt|csv|md|rtf)$/i.test(f.name)) { loadTextFile(f); return; }
+    setImgNotice("Formato non supportato: trascina una foto (JPG, PNG, WEBP) o un file di testo.");
+  };
 
   return (
     <div
@@ -77,7 +121,11 @@ export default function AiSearchModal({
         .aism-input-wrap input::placeholder { color: var(--muted); }
         .aism-input-wrap .aism-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
         .aism-upload-row { display: flex; gap: 12px; flex-wrap: wrap; }
-        .aism-upload-btn { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 10px 18px; border: 1.5px dashed var(--border); border-radius: var(--radius, 12px); background: transparent; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s, background .15s; position: relative; overflow: hidden; }
+        .aism-upload-row .aism-upload-btn { flex: 1 1 0; min-width: 0; }
+        .aism-body.dragover { outline: 2px dashed var(--accent); outline-offset: -6px; border-radius: 12px; background: var(--accent-soft); }
+        .aism-upload-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px 16px; border: 1.5px dashed var(--border); border-radius: var(--radius, 12px); background: transparent; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s, background .15s; position: relative; overflow: hidden; }
+        .aism-upload-btn .aism-upload-label { display: inline-flex; align-items: center; gap: 8px; }
+        .aism-upload-btn small { display: block; font-size: 11px; opacity: .85; line-height: 1.35; text-align: center; }
         .aism-upload-btn input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
         .aism-upload-btn:hover { background: var(--fg); color: var(--surface); }
         .aism-hint { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 16px; font-size: 13px; color: var(--muted); }
@@ -103,8 +151,14 @@ export default function AiSearchModal({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
-        <div className="aism-body">
-          <p className="aism-desc">Descrivi a parole quello che cerchi e l&apos;AI troverà i prodotti più simili nel catalogo. La ricerca per immagine arriverà a breve.</p>
+        <div
+          className={`aism-body${dragOver ? " dragover" : ""}`}
+          onDragEnter={(e) => { e.preventDefault(); if (!loading) setDragOver(true); }}
+          onDragOver={(e) => { e.preventDefault(); if (!loading && !dragOver) setDragOver(true); }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false); }}
+          onDrop={handleDrop}
+        >
+          <p className="aism-desc">Descrivi a parole quello che cerchi oppure trascina una foto: l&apos;AI troverà i prodotti più simili nel catalogo.</p>
           <div className="aism-input-wrap">
             <svg className="aism-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
             <input
@@ -123,8 +177,11 @@ export default function AiSearchModal({
           </div>
           <div className="aism-upload-row">
             <label className="aism-upload-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-              <span>Carica un&apos;immagine</span><small>{onSubmitImage ? "clicca o trascina" : "in arrivo"}</small>
+              <span className="aism-upload-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                <span>Carica un&apos;immagine</span>
+              </span>
+              <small>{onSubmitImage ? "clicca o trascina" : "seleziona"}</small>
               <input
                 type="file"
                 accept="image/*"
@@ -133,14 +190,21 @@ export default function AiSearchModal({
                   const f = e.target.files?.[0];
                   e.target.value = "";
                   if (!f) return;
-                  if (onSubmitImage) void onSubmitImage(f); else setImgNotice(true);
+                  if (onSubmitImage) void onSubmitImage(f); else setImgNotice("Trascina una foto per la ricerca per immagine.");
                 }}
               />
             </label>
             <label className="aism-upload-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-              <span>Carica un file</span><small>in arrivo</small>
-              <input type="file" accept=".txt,.csv,.pdf,.doc,.docx" onChange={() => setImgNotice(true)} />
+              <span className="aism-upload-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                <span>Carica un file di testo</span>
+              </span>
+              <small>lo usa come descrizione</small>
+              <input type="file" accept=".txt,.csv,.md,.rtf" disabled={loading} onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) loadTextFile(f);
+              }} />
             </label>
           </div>
           {onSubmitImage && (
@@ -156,7 +220,7 @@ export default function AiSearchModal({
             <button className="aism-tag" onClick={() => setQuery("fioriera rettangolare cotto color avana")} disabled={loading}>fioriera rettangolare</button>
             <button className="aism-tag" onClick={() => setQuery("cesto intrecciato per pianta da interno")} disabled={loading}>cesto da interno</button>
           </div>
-          {imgNotice && <p className="aism-note">La ricerca per immagine sarà disponibile a breve.</p>}
+          {imgNotice && <p className="aism-note">{imgNotice}</p>}
           {error && <p className="aism-error">{error}</p>}
         </div>
         <div className="aism-foot">
