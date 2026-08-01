@@ -16,6 +16,20 @@ export class CatalogoController {
     private readonly prisma: PrismaService,
   ) {}
 
+  /** Codice listino del cliente autenticato (fallback: primo listino attivo). */
+  private async listinoDi(req?: AuthenticatedRequest): Promise<string> {
+    let codiceListino: string | null = null;
+    if (req?.user?.id) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
+      codiceListino = customer?.codiceListino ?? null;
+    }
+    if (!codiceListino) {
+      const fallback = await this.integrazione.getFirstListino();
+      codiceListino = fallback?.codice_listino ?? 'LIS1';
+    }
+    return codiceListino;
+  }
+
   /** Lista paginata (infinite-scroll): filtri, ricerca testo, sort lato server. */
   @Get()
   async getCatalogo(
@@ -37,15 +51,7 @@ export class CatalogoController {
     @Query('coloreTolleranza') coloreTolleranza?: string,
     @Req() req?: AuthenticatedRequest,
   ) {
-    let codiceListino: string | null = null;
-    if (req?.user?.id) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
-      codiceListino = customer?.codiceListino ?? null;
-    }
-    if (!codiceListino) {
-      const fallback = await this.integrazione.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? 'LIS1';
-    }
+    const codiceListino = await this.listinoDi(req);
     return this.integrazione.getCatalogoPaginato({
       page: page ? parseInt(page, 10) : 1,
       pageSize: pageSize ? parseInt(pageSize, 10) : 24,
@@ -70,32 +76,23 @@ export class CatalogoController {
   /** Filtri sidebar (famiglie/raccolte con conteggi). */
   @Get('facets')
   async getFacets(@Req() req: AuthenticatedRequest) {
-    let codiceListino: string | null = null;
-    if (req?.user?.id) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
-      codiceListino = customer?.codiceListino ?? null;
-    }
-    if (!codiceListino) {
-      const fallback = await this.integrazione.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? 'LIS1';
-    }
-    return this.integrazione.getCatalogoFacets(codiceListino);
+    return this.integrazione.getCatalogoFacets(await this.listinoDi(req));
   }
 
   /** Ricerca semantica: frase in linguaggio naturale → articoli per similarità. */
   @Post('ricerca')
-  ricercaSemantica(@Body('q') q: string, @Query('k') k?: string) {
-    return this.integrazione.searchSemantica(q ?? '', k ? parseInt(k, 10) : 24);
+  async ricercaSemantica(@Body('q') q: string, @Query('k') k?: string, @Req() req?: AuthenticatedRequest) {
+    return this.integrazione.searchSemantica(q ?? '', k ? parseInt(k, 10) : 24, await this.listinoDi(req));
   }
 
   /** Ricerca per immagine: foto del cliente → attributi (Gemini Vision) → articoli simili. */
   @Post('ricerca-immagine')
   @UseInterceptors(FileInterceptor('file'))
-  ricercaImmagine(@UploadedFile() file: Express.Multer.File, @Query('k') k?: string) {
+  async ricercaImmagine(@UploadedFile() file: Express.Multer.File, @Query('k') k?: string, @Req() req?: AuthenticatedRequest) {
     if (!file) throw new BadRequestException('Nessuna immagine caricata.');
     if (!file.mimetype?.startsWith('image/')) throw new BadRequestException('Il file deve essere un\'immagine.');
     if (file.size > 10 * 1024 * 1024) throw new BadRequestException('Immagine troppo grande (max 10MB).');
-    return this.integrazione.searchByImage(file.buffer, file.mimetype, k ? parseInt(k, 10) : 24);
+    return this.integrazione.searchByImage(file.buffer, file.mimetype, k ? parseInt(k, 10) : 24, await this.listinoDi(req));
   }
 
   @Get(':codiceLinea')

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "../../../lib/api";
@@ -23,6 +23,7 @@ interface CatalogoArticolo {
   imgTipo: string | null;
   variantiCount: number;
   prezzo: number | null;
+  dimensioni?: Record<string, { min: number; max: number }> | null;
   createdAt: string;
 }
 interface Catalogo {
@@ -46,6 +47,29 @@ const SORT_OPTIONS = [
 const IconStella = (
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l2.47 6.53L21 10.5l-6.53 2.47L12 19.5l-2.47-6.53L3 10.5l6.53-2.47z" /></svg>
 );
+
+// Distanza colore CIELAB (ΔE76) — stessa formula usata dal backend per il filtro colore.
+function hexToLab(hex: string): { L: number; a: number; b: number } | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const r = lin(parseInt(m[1].slice(0, 2), 16) / 255);
+  const g = lin(parseInt(m[1].slice(2, 4), 16) / 255);
+  const b = lin(parseInt(m[1].slice(4, 6), 16) / 255);
+  const x = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+  const y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
+  const z = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
+  const fx = x / 0.95047;
+  const fz = z / 1.08883;
+  const p = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  return { L: 116 * p(y) - 16, a: 500 * (p(fx) - p(y)), b: 200 * (p(y) - p(fz)) };
+}
+function colorDistance(hexA: string, hexB: string): number {
+  const A = hexToLab(hexA);
+  const B = hexToLab(hexB);
+  if (!A || !B) return Infinity;
+  return Math.sqrt((A.L - B.L) ** 2 + (A.a - B.a) ** 2 + (A.b - B.b) ** 2);
+}
 
 export default function CatalogoPage() {
   const { user, loading: authLoading } = useAuth("customer");
@@ -198,9 +222,8 @@ export default function CatalogoPage() {
     // Fallback: query diretta (deep link / torna-indietro) -> esegue qui la ricerca.
     const ai = p.get("ai"); if (ai) {
       const raw = sessionStorage.getItem("ai-text-results");
-      if (raw) {
+      if (raw && sessionStorage.getItem("ai-text-query") === ai) {
         try { setAiResults({ query: ai, kind: "text", articoli: JSON.parse(raw) }); } catch { /* ignora */ }
-        sessionStorage.removeItem("ai-text-results");
       } else {
         setAiQuery(ai); void runAiSearch(ai);
       }
@@ -210,18 +233,32 @@ export default function CatalogoPage() {
       const raw = sessionStorage.getItem("ai-image-results");
       if (raw) {
         try { setAiResults({ query: "immagine caricata", kind: "image", articoli: JSON.parse(raw) }); } catch { /* ignora */ }
-        sessionStorage.removeItem("ai-image-results");
       }
     }
     restored.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mantiene in sessione gli ultimi risultati AI testuali: il "back" da un
+  // prodotto li ripristina istantaneamente senza richiamare Gemini.
+  useEffect(() => {
+    if (aiResults?.kind === "text") {
+      sessionStorage.setItem("ai-text-results", JSON.stringify(aiResults.articoli));
+      sessionStorage.setItem("ai-text-query", aiResults.query);
+    }
+  }, [aiResults]);
+
   // Mantiene l'URL allineato allo stato (filtri + ricerca AI testuale).
+  // Il primo run dopo il restore non riscrive l'URL: la closure di mount è
+  // ancora "vuota" e riscriverla butterebbe i parametri (es. ?ai= di un deep link).
+  const alignReady = useRef(false);
   useEffect(() => {
     if (!restored.current) return;
+    if (!alignReady.current) { alignReady.current = true; return; }
     const p = new URLSearchParams();
     if (aiResults?.kind === "text") p.set("ai", aiResults.query);
+    else if (aiResults?.kind === "image") p.set("imgsearch", "1");
+    else if (aiQuery.trim()) p.set("ai", aiQuery);
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
     if (activeTab !== "tutti") p.set("tab", activeTab);
@@ -229,7 +266,7 @@ export default function CatalogoPage() {
     if (search.trim()) p.set("q", search.trim());
     const qs = p.toString();
     router.replace(qs ? `/area/catalogo?${qs}` : "/area/catalogo", { scroll: false });
-  }, [aiResults, famiglieSel, raccolteSel, activeTab, sort, search, router]);
+  }, [aiResults, aiQuery, famiglieSel, raccolteSel, activeTab, sort, search, router]);
 
   // Al cambio di filtri/ricerca (fuori dalla modalità AI): ricarica dalla pagina 1 (debounce per il testo).
   // In attesa di una ricerca AI testuale non carica il catalogo completo: evita il "flash" di articoli non filtrati.
@@ -267,8 +304,46 @@ export default function CatalogoPage() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Lista mostrata: risultati AI (top-k) oppure catalogo paginato accumulato.
-  const displayed = aiResults ? aiResults.articoli : articoli;
+  // Lista mostrata: risultati AI (top-k, eventualmente filtrati lato client) oppure catalogo paginato accumulato.
+  const filteredAi = useMemo(() => {
+    if (!aiResults) return null;
+    const inRange = (range: [number, number], fac: { min: number; max: number } | undefined, val: [number, number] | undefined) => {
+      if (!fac || (range[0] <= fac.min && range[1] >= fac.max)) return true;
+      return !!val && val[1] >= range[0] && val[0] <= range[1];
+    };
+    const list = aiResults.articoli.filter((a) => {
+      if (famiglieSel.size && !famiglieSel.has(a.famiglia.codice)) return false;
+      if (raccolteSel.size && !a.raccolte.some((r) => raccolteSel.has(r.slug))) return false;
+      if (activeTab !== "tutti" && !a.raccolte.some((r) => r.slug === activeTab)) return false;
+      if (coloreRgb && (!a.coloreRgb || colorDistance(a.coloreRgb, coloreRgb) > coloreTolleranza)) return false;
+      if (!inRange(diametroRange, facets.dimensioni?.diametro, a.dimensioni?.diametro as [number, number] | undefined)) return false;
+      if (!inRange(altezzaRange, facets.dimensioni?.altezza, a.dimensioni?.altezza as [number, number] | undefined)) return false;
+      if (!inRange(prezzoRange, facets.prezzo ?? undefined, a.prezzo != null ? [a.prezzo, a.prezzo] : undefined)) return false;
+      return true;
+    });
+    if (sort === "prezzo-asc") list.sort((x, y) => (x.prezzo ?? Infinity) - (y.prezzo ?? Infinity));
+    else if (sort === "prezzo-desc") list.sort((x, y) => (y.prezzo ?? -Infinity) - (x.prezzo ?? -Infinity));
+    else if (sort === "nome-asc") list.sort((x, y) => x.nome.localeCompare(y.nome));
+    else if (sort === "nome-desc") list.sort((x, y) => y.nome.localeCompare(x.nome));
+    return { ...aiResults, articoli: list };
+  }, [aiResults, famiglieSel, raccolteSel, activeTab, coloreRgb, coloreTolleranza, diametroRange, altezzaRange, prezzoRange, sort, facets]);
+
+  const displayed = filteredAi ? filteredAi.articoli : articoli;
+
+  // Query corrente del catalogo: usata dai link prodotto (?back=) per tornare alla ricerca.
+  const catalogQs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (aiResults?.kind === "text") p.set("ai", aiResults.query);
+    else if (aiResults?.kind === "image") p.set("imgsearch", "1");
+    else if (aiQuery.trim()) p.set("ai", aiQuery);
+    if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
+    if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
+    if (activeTab !== "tutti") p.set("tab", activeTab);
+    if (sort !== "novita") p.set("sort", sort);
+    if (search.trim()) p.set("q", search.trim());
+    return p.toString();
+  }, [aiResults, aiQuery, famiglieSel, raccolteSel, activeTab, sort, search]);
+
   const tabLabel = activeTab !== "tutti" ? facets.raccolte.find((r) => r.slug === activeTab)?.nome : null;
 
   function toggleSet(set: Set<string>, val: string, setter: (s: Set<string>) => void) {
@@ -449,7 +524,7 @@ export default function CatalogoPage() {
 
               <div className="product-grid">
                 {displayed.map((a) => (
-                  <Link href={`/area/catalogo/${a.id}`} key={a.id} className="product-card">
+                  <Link href={`/area/catalogo/${a.id}${catalogQs ? `?back=${encodeURIComponent(catalogQs)}` : ""}`} key={a.id} className="product-card">
                     <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
                       {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
                     </PositionedImage>
@@ -476,9 +551,8 @@ export default function CatalogoPage() {
                 ))}
               </div>
 
-              {listLoading && displayed.length === 0 && <div className="catalog-empty">Caricamento…</div>}
-              {!listLoading && displayed.length === 0 && (
-                <div className="catalog-empty">Nessun articolo trovato. Prova a modificare filtri o ricerca.</div>
+              {displayed.length === 0 && (
+                <div className="catalog-empty">{listLoading || aiLoading ? "Caricamento…" : "Nessun articolo trovato. Prova a modificare filtri o ricerca."}</div>
               )}
 
               {/* Infinite scroll: sentinella + indicatore (solo catalogo, non in modalità AI) */}

@@ -742,6 +742,32 @@ export class IntegrazioneService {
     return map;
   }
 
+  /** Range diametro/altezza (min-max sulle varianti) per ogni articolo. */
+  private async getDimensioniArticoli(artIds: number[]): Promise<Map<number, { diametro?: [number, number]; altezza?: [number, number] } | null>> {
+    const map = new Map<number, { diametro?: [number, number]; altezza?: [number, number] }>();
+    if (!artIds.length) return map;
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; dim: string; min_val: number; max_val: number }>>(
+      `SELECT v.articolo_id AS art_id, d.dim,
+              min((v.dimensioni->d.dim->>'valore')::numeric) AS min_val,
+              max((v.dimensioni->d.dim->>'valore')::numeric) AS max_val
+       FROM varianti v
+       CROSS JOIN (SELECT 'diametro' AS dim UNION ALL SELECT 'altezza' AS dim) d
+       WHERE v.articolo_id = ANY($1::int[])
+         AND v.dimensioni IS NOT NULL
+         AND v.dimensioni ? d.dim
+         AND (v.dimensioni->d.dim->>'valore') IS NOT NULL
+         AND (v.dimensioni->d.dim->>'valore') <> ''
+       GROUP BY v.articolo_id, d.dim`,
+      artIds,
+    );
+    for (const r of rows) {
+      const cur = map.get(r.art_id) ?? {};
+      if (r.dim === 'diametro' || r.dim === 'altezza') cur[r.dim] = [Number(r.min_val), Number(r.max_val)];
+      map.set(r.art_id, cur);
+    }
+    return map;
+  }
+
   /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
   private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>) {
     const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];
@@ -847,19 +873,19 @@ Richiesta del cliente: "${q}"`;
   }
 
   /** Ricerca semantica testuale: riscrive la query e ordina il catalogo. */
-  async searchSemantica(q: string, k = 24) {
+  async searchSemantica(q: string, k = 24, codiceListino?: string | null) {
     const query = (q || '').trim();
     if (!query) return { articoli: [], provider: this.embedding.provider };
     const rewriteOn = (process.env.SEARCH_QUERY_REWRITE || 'on') !== 'off';
     const rw = rewriteOn ? await this.rewriteQuery(query) : { attributi: [] as string[], keywords: query };
-    return this.rankArticoli(rw.attributi, rw.keywords, k);
+    return this.rankArticoli(rw.attributi, rw.keywords, k, codiceListino);
   }
 
   /**
    * Core di ranking condiviso da ricerca testo e immagine:
    * embedda keywords (+ attributi in testa) e ordina per coseno + boost attributi.
    */
-  private async rankArticoli(attributi: string[], keywords: string, k = 24) {
+  private async rankArticoli(attributi: string[], keywords: string, k = 24, codiceListino?: string | null) {
     // Attributi in testa e ripetuti nel testo embeddato per dargli peso semantico.
     const toEmbed = attributi.length ? `${attributi.join(' ')} ${attributi.join(' ')} ${keywords}` : keywords;
     const attrBoost = parseFloat(process.env.SEARCH_ATTR_BOOST || '0.10');
@@ -921,8 +947,18 @@ Richiesta del cliente: "${q}"`;
         _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
       },
     });
+    // Prezzo minimo (listino del cliente) e range dimensioni per articolo: servono
+    // ai filtri client-side applicati sopra i risultati della ricerca.
+    const [prezzi, dimensioni] = await Promise.all([
+      this.getPrezziMinimiArticoli(arts.map((a) => a.id), codiceListino ?? 'LIS1'),
+      this.getDimensioniArticoli(arts.map((a) => a.id)),
+    ]);
     const articoli = arts
-      .map((a) => ({ ...this.mapArticoloCard(a), score: scoreByCodice.get(a.codiceLinea) ?? 0 }))
+      .map((a) => ({
+        ...this.mapArticoloCard(a, prezzi),
+        dimensioni: dimensioni.get(a.id) ?? null,
+        score: scoreByCodice.get(a.codiceLinea) ?? 0,
+      }))
       .sort((x, y) => y.score - x.score); // findMany non preserva l'ordine dell'IN
     return { articoli, provider: this.embedding.provider, keywords, attributi };
   }
@@ -965,13 +1001,13 @@ Rispondi SOLO con JSON valido, senza testo attorno:
   }
 
   /** Ricerca per immagine: estrae attributi dalla foto e riusa il ranking testuale. */
-  async searchByImage(buffer: Buffer, mime: string, k = 24) {
+  async searchByImage(buffer: Buffer, mime: string, k = 24, codiceListino?: string | null) {
     const a = await this.analyzeImage(buffer.toString('base64'), mime);
     if (!a.pertinente) return { articoli: [], provider: this.embedding.provider, error: 'immagine_non_pertinente' };
     if (!a.keywords && !a.attributi.length) {
       return { articoli: [], provider: this.embedding.provider, error: 'immagine_non_riconosciuta' };
     }
-    const res = await this.rankArticoli(a.attributi, a.keywords || a.attributi.join(' '), k);
+    const res = await this.rankArticoli(a.attributi, a.keywords || a.attributi.join(' '), k, codiceListino);
     return { ...res, keywords: a.keywords, attributi: a.attributi };
   }
 
