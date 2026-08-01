@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { api } from "../../lib/api";
-import { IconRefresh } from "./icons";
+import { IconEye, IconRefresh } from "./icons";
+import Notice from "../common/Notice";
+import DataTable, { type Column } from "./DataTable";
+import Modal from "../common/Modal";
 
 interface SyncConfigRow {
   tipo: string;
@@ -51,33 +54,41 @@ function formatDuration(start: string, end: string | null): string {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="badge" style={{ background: "var(--fg-soft)", color: "var(--muted)" }}>Mai eseguito</span>;
-  if (status === "ok") return <span className="badge" style={{ background: "oklch(94% 0.04 150)", color: "var(--ok)" }}>OK</span>;
-  return <span className="badge" style={{ background: "oklch(94% 0.05 25)", color: "var(--danger)" }}>ERRORE</span>;
+  if (!status) return <span className="badge">Mai eseguito</span>;
+  if (status === "ok") return <span className="badge active">OK</span>;
+  return <span className="badge blocked">Errore</span>;
 }
 
 function LogStatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; bg: string; fg: string }> = {
-    ok: { label: "OK", bg: "oklch(94% 0.04 150)", fg: "var(--ok)" },
-    error: { label: "ERRORE", bg: "oklch(94% 0.05 25)", fg: "var(--danger)" },
-    running: { label: "IN CORSO", bg: "oklch(94% 0.06 250)", fg: "var(--accent)" },
-    stale: { label: "INTERROTTO", bg: "var(--fg-soft)", fg: "var(--muted)" },
+  const map: Record<string, { label: string; cls: string }> = {
+    ok: { label: "OK", cls: "active" },
+    error: { label: "Errore", cls: "blocked" },
+    running: { label: "In corso", cls: "pending" },
+    stale: { label: "Interrotto", cls: "" },
   };
-  const s = map[status] ?? { label: status, bg: "var(--fg-soft)", fg: "var(--muted)" };
-  return <span className="badge" style={{ background: s.bg, color: s.fg }}>{s.label}</span>;
+  const s = map[status] ?? { label: status, cls: "" };
+  return <span className={`badge ${s.cls}`}>{s.label}</span>;
 }
+
+const LOG_PAGE_SIZE = 10;
 
 export default function SyncPanel() {
   const [configs, setConfigs] = useState<SyncConfigRow[]>([]);
   const [logs, setLogs] = useState<SyncLogRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [triggering, setTriggering] = useState<string | null>(null);
   const [editingCron, setEditingCron] = useState<string | null>(null);
   const [cronDraft, setCronDraft] = useState("");
+  const [logPage, setLogPage] = useState(1);
+  const [logFilter, setLogFilter] = useState<string>("tutti");
+  const [activeTab, setActiveTab] = useState<"sync" | "logs">("sync");
+  const [detailLog, setDetailLog] = useState<SyncLogRow | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (manual = false) => {
+    if (manual) setRefreshing(true);
     try {
       const [cfg, log] = await Promise.all([
         api.get<SyncConfigRow[]>("/api/integrazione/sync-config"),
@@ -90,14 +101,19 @@ export default function SyncPanel() {
       setError(err instanceof Error ? err.message : "Errore caricamento");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
-    intervalRef.current = setInterval(fetchData, 5000);
+    intervalRef.current = setInterval(() => fetchData(), 5000);
     return () => clearInterval(intervalRef.current);
   }, [fetchData]);
+
+  useEffect(() => {
+    setLogPage(1);
+  }, [logFilter, logs.length]);
 
   async function toggleActive(row: SyncConfigRow) {
     const prev = configs;
@@ -130,152 +146,356 @@ export default function SyncPanel() {
     setTriggering(null);
   }
 
-  if (loading) return <div className="admin-panel-loading">Caricamento...</div>;
-  if (error) return <div className="admin-panel-error">{error}</div>;
+  const stats = useMemo(() => {
+    const attive = configs.filter((c) => c.attivo).length;
+    const inErrore = configs.filter((c) => c.ultimo_esito === "error").length;
+    const inCorso = logs.filter((l) => l.status === "running").length;
+    const erroriLog = logs.reduce((n, l) => n + (l.rows_error ?? 0), 0);
+    return { attive, inErrore, inCorso, erroriLog };
+  }, [configs, logs]);
+
+  const filteredLogs = useMemo(
+    () => logFilter === "tutti" ? logs : logs.filter((l) => l.status === logFilter),
+    [logs, logFilter],
+  );
+
+  const configColumns: Column<SyncConfigRow>[] = [
+    {
+      key: "label",
+      header: "Entità",
+      grow: true,
+      cell: (r) => <span style={{ fontWeight: 500 }}>{r.label}</span>,
+    },
+    {
+      key: "stato",
+      header: "Stato",
+      width: "130px",
+      cell: (r) => <StatusBadge status={r.ultimo_esito} />,
+    },
+    {
+      key: "attivo",
+      header: "Attivo",
+      width: "80px",
+      align: "center",
+      cell: (r) => (
+        <label className="sync-switch" title={r.attivo ? "Disattiva sincronizzazione" : "Attiva sincronizzazione"}>
+          <input type="checkbox" checked={r.attivo} onChange={() => toggleActive(r)} />
+          <span className="track" />
+          <span className="thumb" />
+        </label>
+      ),
+    },
+    {
+      key: "cron",
+      header: "Cron",
+      width: "170px",
+      mono: true,
+      cell: (r) =>
+        editingCron === r.tipo ? (
+          <input
+            autoFocus
+            type="text"
+            value={cronDraft}
+            onChange={(e) => setCronDraft(e.target.value)}
+            onBlur={() => saveCron(r)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveCron(r); if (e.key === "Escape") setEditingCron(null); }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: 13, padding: "2px 6px", width: "100%" }}
+          />
+        ) : (
+          <span
+            onClick={() => { setEditingCron(r.tipo); setCronDraft(r.cron_expression); }}
+            style={{ cursor: "pointer", padding: "2px 6px", borderRadius: 4, border: "1px solid transparent" }}
+            title="Clicca per modificare"
+          >
+            {r.cron_expression}
+          </span>
+        ),
+    },
+    {
+      key: "ultima_esecuzione",
+      header: "Ultima esecuzione",
+      width: "150px",
+      mono: true,
+      cell: (r) => formatDateTime(r.ultima_esecuzione),
+    },
+    {
+      key: "prossima_esecuzione",
+      header: "Prossima esecuzione",
+      width: "150px",
+      mono: true,
+      cell: (r) => formatDateTime(r.prossima_esecuzione),
+    },
+    {
+      key: "esegui",
+      header: "",
+      width: "120px",
+      align: "right",
+      cell: (r) => (
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          style={{ justifyContent: "center", width: "100%" }}
+          disabled={triggering === r.tipo}
+          onClick={() => triggerSync(r.tipo)}
+        >
+          <span className={`sync-icon ${triggering === r.tipo ? "spin" : ""}`}>{IconRefresh}</span>
+          <span>{triggering === r.tipo ? "Esecuzione…" : "Esegui"}</span>
+        </button>
+      ),
+    },
+  ];
+
+  const logColumns: Column<SyncLogRow>[] = [
+    {
+      key: "entity",
+      header: "Entità",
+      grow: true,
+      cell: (r) => <span style={{ fontWeight: 500 }}>{r.entity}</span>,
+    },
+    {
+      key: "status",
+      header: "Stato",
+      width: "120px",
+      cell: (r) => <LogStatusBadge status={r.status} />,
+    },
+    {
+      key: "rows_total",
+      header: "Righe",
+      width: "70px",
+      align: "right",
+      mono: true,
+      cell: (r) => r.rows_total ?? "-",
+    },
+    {
+      key: "rows_ok",
+      header: "OK",
+      width: "60px",
+      align: "right",
+      mono: true,
+      cell: (r) => r.rows_ok ?? "-",
+    },
+    {
+      key: "rows_error",
+      header: "Errori",
+      width: "70px",
+      align: "right",
+      mono: true,
+      cell: (r) => (r.rows_error ?? 0) > 0 ? <span style={{ color: "var(--danger)" }}>{r.rows_error ?? "-"}</span> : (r.rows_error ?? "-"),
+    },
+    {
+      key: "started_at",
+      header: "Inizio",
+      width: "150px",
+      mono: true,
+      cell: (r) => formatDateTime(r.started_at),
+    },
+    {
+      key: "completed_at",
+      header: "Fine",
+      width: "150px",
+      mono: true,
+      cell: (r) => formatDateTime(r.completed_at),
+    },
+    {
+      key: "durata",
+      header: "Durata",
+      width: "90px",
+      mono: true,
+      cell: (r) => formatDuration(r.started_at, r.completed_at),
+    },
+    {
+      key: "dettagli",
+      header: "",
+      width: "120px",
+      align: "right",
+      cell: (r) => r.error_text ? (
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          style={{ justifyContent: "center", width: "100%" }}
+          onClick={() => setDetailLog(r)}
+        >
+          <span>{IconEye}</span>
+          <span>Dettagli</span>
+        </button>
+      ) : null,
+    },
+  ];
+
+  if (loading && configs.length === 0) return <div className="admin-panel-loading">Caricamento...</div>;
+  if (error && configs.length === 0) return <div className="admin-panel-error">{error}</div>;
 
   return (
-    <>
+    <div className="sync-panel">
       <div className="admin-panel-header">
         <div className="admin-panel-header-left">
           <h2 className="admin-panel-title">Sincronizzazione Integra</h2>
           <span className="admin-panel-count-badge">{configs.length}</span>
         </div>
+        <div className="admin-panel-actions">
+          <span className="meta" style={{ fontSize: 12 }}>
+            {refreshing ? "Aggiornamento…" : "Auto-aggiorna ogni 5s"}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+          >
+            <span className={`sync-icon ${refreshing ? "spin" : ""}`}>{IconRefresh}</span>
+            <span>Aggiorna</span>
+          </button>
+        </div>
       </div>
 
-      <div className="data-table-scroll" style={{ marginBottom: 32 }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Entit&agrave;</th>
-              <th>Stato</th>
-              <th>Attivo</th>
-              <th>Cron</th>
-              <th>Ultima esecuzione</th>
-              <th>Prossima esecuzione</th>
-              <th style={{ width: 100 }} />
-            </tr>
-          </thead>
-          <tbody>
-            {configs.map((row) => (
-              <tr key={row.tipo}>
-                <td style={{ fontWeight: 500 }}>{row.label}</td>
-                <td><StatusBadge status={row.ultimo_esito} /></td>
-                <td>
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={row.attivo}
-                      onChange={() => toggleActive(row)}
-                      style={{ width: 16, height: 16 }}
-                    />
-                    <span style={{ fontSize: 13, color: "var(--muted)" }}>{row.attivo ? "Sì" : "No"}</span>
-                  </label>
-                </td>
-                <td className="mono" style={{ fontSize: 13 }}>
-                  {editingCron === row.tipo ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={cronDraft}
-                      onChange={(e) => setCronDraft(e.target.value)}
-                      onBlur={() => saveCron(row)}
-                      onKeyDown={(e) => { if (e.key === "Enter") saveCron(row); if (e.key === "Escape") setEditingCron(null); }}
-                      style={{ fontFamily: "var(--font-mono)", fontSize: 13, padding: "2px 6px", width: 160 }}
-                    />
-                  ) : (
-                    <span
-                      onClick={() => { setEditingCron(row.tipo); setCronDraft(row.cron_expression); }}
-                      style={{ cursor: "pointer", padding: "2px 6px", borderRadius: 4, border: "1px solid transparent" }}
-                      title="Clicca per modificare"
-                    >
-                      {row.cron_expression}
-                    </span>
-                  )}
-                </td>
-                <td className="mono" style={{ fontSize: 13 }}>{formatDateTime(row.ultima_esecuzione)}</td>
-                <td className="mono" style={{ fontSize: 13 }}>{formatDateTime(row.prossima_esecuzione)}</td>
-                <td>
+      {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+
+      <div className="sync-stats">
+        <div className="sync-stat">
+          <span className="sync-stat-label">Entità attive</span>
+          <span className="sync-stat-value">{stats.attive}<span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 500 }}>/{configs.length}</span></span>
+        </div>
+        <div className="sync-stat">
+          <span className="sync-stat-label">In errore</span>
+          <span className={`sync-stat-value ${stats.inErrore > 0 ? "err" : "ok"}`}>
+            {stats.inErrore > 0 && <span className="dot" />}
+            {stats.inErrore}
+          </span>
+        </div>
+        <div className="sync-stat">
+          <span className="sync-stat-label">Sincronizzazioni in corso</span>
+          <span className={`sync-stat-value ${stats.inCorso > 0 ? "ok" : ""}`}>
+            {stats.inCorso > 0 && <span className="dot" />}
+            {stats.inCorso}
+          </span>
+        </div>
+        <div className="sync-stat">
+          <span className="sync-stat-label">Errori negli ultimi log</span>
+          <span className={`sync-stat-value ${stats.erroriLog > 0 ? "err" : "ok"}`}>
+            {stats.erroriLog > 0 && <span className="dot" />}
+            {stats.erroriLog}
+          </span>
+        </div>
+      </div>
+
+      <div className="admin-panel-tabs" style={{ marginBottom: 5 }}>
+        <button
+          type="button"
+          className={`admin-panel-tab ${activeTab === "sync" ? "active" : ""}`}
+          onClick={() => setActiveTab("sync")}
+        >
+          Sincronizzazioni
+        </button>
+        <button
+          type="button"
+          className={`admin-panel-tab ${activeTab === "logs" ? "active" : ""}`}
+          onClick={() => setActiveTab("logs")}
+        >
+          Log
+        </button>
+      </div>
+
+      {activeTab === "sync" && (
+        <>
+          <DataTable
+            columns={configColumns}
+            rows={configs}
+            rowKey={(r) => r.tipo}
+            emptyText="Nessuna entità di sincronizzazione configurata"
+            loading={loading}
+            page={1}
+            pageSize={Math.max(configs.length, 1)}
+            total={configs.length}
+            onPageChange={() => {}}
+          />
+        </>
+      )}
+
+      {activeTab === "logs" && (
+        <>
+          <div className="admin-panel-header sync-logs-header">
+            <div className="admin-panel-header-left">
+              <h2 className="admin-panel-title" style={{ fontSize: 15 }}>Log sincronizzazioni</h2>
+              <span className="admin-panel-count-badge">{filteredLogs.length}</span>
+            </div>
+            <div className="admin-panel-actions">
+              <div className="filter-pills">
+                {[{ value: "tutti", label: "Tutti" }, { value: "ok", label: "OK" }, { value: "error", label: "Errori" }, { value: "running", label: "In corso" }].map((f) => (
                   <button
-                    className="btn btn-secondary"
-                    style={{ minWidth: 110, justifyContent: "center" }}
-                    disabled={triggering === row.tipo}
-                    onClick={() => triggerSync(row.tipo)}
+                    key={f.value}
+                    type="button"
+                    className={`filter-pill ${logFilter === f.value ? "active" : ""}`}
+                    onClick={() => setLogFilter(f.value)}
                   >
-                    <span className={`sync-icon ${triggering === row.tipo ? "spin" : ""}`}>{IconRefresh}</span>
-                    <span>{triggering === row.tipo ? "Esecuzione…" : "Esegui"}</span>
+                    {f.label}
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {configs.some((c) => c.ultimo_errore) && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "var(--danger)" }}>Ultimi errori</h3>
-          {configs.filter((c) => c.ultimo_errore).map((c) => (
-            <div key={c.tipo} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontWeight: 500, marginRight: 8 }}>{c.label}:</span>
-              <span style={{ color: "var(--danger)" }}>{c.ultimo_errore}</span>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+
+          <DataTable
+            columns={logColumns}
+            rows={filteredLogs.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE)}
+            rowKey={(r) => r.id}
+            emptyText={logFilter === "tutti" ? "Nessun log disponibile" : "Nessun log con questo stato"}
+            loading={loading}
+            page={logPage}
+            pageSize={LOG_PAGE_SIZE}
+            total={filteredLogs.length}
+            onPageChange={setLogPage}
+          />
+        </>
       )}
 
-      <div className="admin-panel-header" style={{ marginTop: 8 }}>
-        <div className="admin-panel-header-left">
-          <h2 className="admin-panel-title" style={{ fontSize: 15 }}>Log sincronizzazioni</h2>
-        </div>
-      </div>
-
-      {logs.length === 0 ? (
-        <div className="data-table-empty">Nessun log disponibile</div>
-      ) : (
-        <div className="data-table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Entit&agrave;</th>
-                <th>Stato</th>
-                <th>Righe</th>
-                <th>OK</th>
-                <th>Errori</th>
-                <th>Inizio</th>
-                <th>Fine</th>
-                <th>Durata</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id}>
-                  <td style={{ fontWeight: 500 }}>{log.entity}</td>
-                  <td><LogStatusBadge status={log.status} /></td>
-                  <td className="mono" style={{ fontSize: 13 }}>{log.rows_total ?? "-"}</td>
-                  <td className="mono" style={{ fontSize: 13 }}>{log.rows_ok ?? "-"}</td>
-                  <td className="mono" style={{ fontSize: 13, color: (log.rows_error ?? 0) > 0 ? "var(--danger)" : undefined }}>{log.rows_error ?? "-"}</td>
-                  <td className="mono" style={{ fontSize: 13 }}>{formatDateTime(log.started_at)}</td>
-                  <td className="mono" style={{ fontSize: 13 }}>{formatDateTime(log.completed_at)}</td>
-                  <td className="mono" style={{ fontSize: 13 }}>{formatDuration(log.started_at, log.completed_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {logs.some((l) => l.error_text) && (
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "var(--danger)" }}>Dettagli errori recenti</h3>
-          {logs.filter((l) => l.error_text).slice(0, 10).map((l) => (
-            <div key={l.id} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontWeight: 500, marginRight: 8 }}>{l.entity}</span>
-              <span className="mono" style={{ fontSize: 12, color: "var(--muted)", marginRight: 8 }}>{formatDateTime(l.started_at)}</span>
-              <span style={{ color: "var(--danger)" }}>{l.error_text}</span>
+      <Modal
+        open={!!detailLog}
+        size="md"
+        title={detailLog ? `Errore — ${detailLog.entity}` : ""}
+        onClose={() => setDetailLog(null)}
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <button type="button" className="btn btn-primary" onClick={() => setDetailLog(null)}>Chiudi</button>
+          </div>
+        }
+      >
+        {detailLog && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Stato</div>
+                <div><LogStatusBadge status={detailLog.status} /></div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Righe</div>
+                <div className="mono" style={{ fontSize: 14 }}>{detailLog.rows_total ?? "-"} totali · {detailLog.rows_ok ?? "-"} ok · <span style={{ color: "var(--danger)" }}>{detailLog.rows_error ?? "-"} errori</span></div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Inizio</div>
+                <div className="mono" style={{ fontSize: 14 }}>{formatDateTime(detailLog.started_at)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Fine · Durata</div>
+                <div className="mono" style={{ fontSize: 14 }}>{formatDateTime(detailLog.completed_at)} · {formatDuration(detailLog.started_at, detailLog.completed_at)}</div>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </>
+            <div>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 6 }}>Messaggio d'errore</div>
+              <pre
+                style={{
+                  margin: 0, padding: "10px 12px", borderRadius: 8,
+                  background: "color-mix(in srgb, var(--danger) 8%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--danger) 30%, transparent)",
+                  color: "var(--danger)", whiteSpace: "pre-wrap", wordBreak: "break-word",
+                  fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.5,
+                }}
+              >
+                {detailLog.error_text}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 }
