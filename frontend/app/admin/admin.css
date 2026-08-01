@@ -2426,8 +2426,17 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 @media (max-width: 768px) {
   .wizard-body { grid-template-columns: 1fr; }
   .wizard-gallery-main { min-height: 200px; }
-  /* Prompt guida: nel flusso, si nasconde dopo 8s su mobile */
+  /* Prompt guida su mobile: flottante sopra la textarea (absolute, fuori dal
+     flusso), allineato con la textarea = colonna microfono 44px + gap 12px.
+     Non sposta piu' il layout: copre la textarea e si chiude al click. */
   .wizard-prompt {
+    position: absolute;
+    top: 0;
+    left: 56px;
+    right: 0;
+    z-index: 6;
+    margin: 0;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
     opacity: 1;
     visibility: visible;
     transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -2436,11 +2445,11 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
     opacity: 0;
     visibility: hidden;
     height: 0;
-    margin: 0;
     padding: 0;
     overflow: hidden;
     border-radius: 0;
     background: transparent;
+    box-shadow: none;
   }
 }
 .wizard-prompt {
@@ -2605,6 +2614,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .wizard-thumb { width: 44px; height: 44px; }
   .wizard-mic-btn { width: 52px; height: 52px; }
   .wizard-textarea { height: auto; min-height: 130px; }
+  .wizard-prompt { left: 64px; } /* microfono 52px + gap 12px: resta allineato alla textarea */
   .wizard-nav { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
   .wizard-nav > div { display: contents !important; }
   .wizard-nav .btn { flex: 1 1 0%; justify-content: center; white-space: nowrap; }
