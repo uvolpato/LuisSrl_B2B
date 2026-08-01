@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../../lib/use-auth";
 import { api } from "../../../../lib/api";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
@@ -103,6 +104,56 @@ function variantExamplePrice(codice: string) {
   const disc = 15 + (h % 30); // 15% – 44%
   const list = Math.round((net / (1 - disc / 100)) * 100) / 100;
   return { net, list, disc };
+}
+
+function ProductBreadcrumb({ articolo }: { articolo: Articolo | null }) {
+  const sp = useSearchParams();
+  const back = sp.get("back") ?? "";
+  const backHref = back ? `/area/catalogo?${back}` : null;
+  return (
+    <div className="breadcrumb">
+      <Link href={backHref ?? "/area/catalogo"}>Catalogo</Link>
+      <span>›</span>
+      {backHref ? (
+        <Link href={backHref}>{articolo?.famiglia.nome ?? "Caricamento…"}</Link>
+      ) : (
+        <Link href={`/area/catalogo?famiglia=${articolo?.famiglia.codice ?? ""}`}>{articolo?.famiglia.nome ?? "Caricamento…"}</Link>
+      )}
+      <span>›</span>
+      {articolo?.nome ?? "…"}
+    </div>
+  );
+}
+
+function RelatedSection({ loading, items }: { loading: boolean; items: CorrelatoCard[] }) {
+  const sp = useSearchParams();
+  const back = sp.get("back") ?? "";
+  return (
+    <section className="related-section">
+      <div className="container">
+        <h2>Articoli correlati</h2>
+        {loading ? (
+          <div className="login-loading-area" style={{ padding: "40px 0", textAlign: "center" }}>
+            <div className="spinner" />
+          </div>
+        ) : items.length === 0 ? (
+          <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>Nessun articolo correlato trovato.</p>
+        ) : (
+          <div className="related-grid">
+            {items.map((c) => (
+              <Link key={c.id} href={`/area/catalogo/${c.id}${back ? `?back=${encodeURIComponent(back)}` : ""}`} className="related-card">
+                <PositionedImage className="rel-img" src={c.img} css={c.imgCss} aspect={4/3} alt={c.nome} thumbWidth={400} />
+                <div className="rel-body">
+                  <p className="rel-name">{c.nome}</p>
+                  <span className="rel-price">{c.prezzo != null ? formatPrice(c.prezzo) : "—"}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 export default function SchedaArticoloPage({ params }: { params: Promise<{ codiceLinea: string }> }) {
@@ -374,15 +425,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   return (
     <div className="catalogo-page scheda-prodotto">
       <main id="content">
-        <div className="breadcrumb">
-          <Link href="/area/catalogo">Catalogo</Link>
-          <span>›</span>
-          <Link href={`/area/catalogo?famiglia=${articolo?.famiglia.codice ?? ""}`}>
-            {articolo?.famiglia.nome ?? "Caricamento…"}
-          </Link>
-          <span>›</span>
-          {articolo?.nome ?? "…"}
-        </div>
+        <Suspense fallback={null}>
+          <ProductBreadcrumb articolo={articolo} />
+        </Suspense>
 
         {loading && <div className="container" style={{ paddingBlock: 48, textAlign: "center", color: "var(--muted)" }}>Caricamento…</div>}
         {!loading && !articolo && <div className="container" style={{ paddingBlock: 48, textAlign: "center", color: "var(--muted)" }}>Articolo non trovato.</div>}
@@ -679,30 +724,9 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
               </div>
             </section>
 
-            <section className="related-section">
-              <div className="container">
-                <h2>Articoli correlati</h2>
-                {loadingCorrelati ? (
-                  <div className="login-loading-area" style={{ padding: "40px 0", textAlign: "center" }}>
-                    <div className="spinner" />
-                  </div>
-                ) : correlati.length === 0 ? (
-                  <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>Nessun articolo correlato trovato.</p>
-                ) : (
-                  <div className="related-grid">
-                    {correlati.map((c) => (
-                      <Link key={c.id} href={`/area/catalogo/${c.id}`} className="related-card">
-                        <PositionedImage className="rel-img" src={c.img} css={c.imgCss} aspect={4/3} alt={c.nome} thumbWidth={400} />
-                        <div className="rel-body">
-                          <p className="rel-name">{c.nome}</p>
-                          <span className="rel-price">{c.prezzo != null ? formatPrice(c.prezzo) : "—"}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
+            <Suspense fallback={null}>
+              <RelatedSection loading={loadingCorrelati} items={correlati} />
+            </Suspense>
           </>
         )}
       </main>

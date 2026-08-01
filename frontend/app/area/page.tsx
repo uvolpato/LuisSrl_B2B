@@ -111,6 +111,7 @@ export default function AreaClientePage() {
         return;
       }
       sessionStorage.setItem("ai-text-results", JSON.stringify(res.articoli));
+      sessionStorage.setItem("ai-text-query", q);
       closeAiModal();
       router.push(`/area/catalogo?ai=${encodeURIComponent(q)}`);
     } catch {
