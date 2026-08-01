@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { thumbUrl } from "../../lib/thumb";
 
 /** Dropzone immagine con anteprima, zoom e rimozione.
  *  Condivisa dai modali di modifica famiglia e raccolta: lo stato del file
@@ -40,7 +41,7 @@ export default function ImageDropzone({
         {url ? (
           <div style={{ position: "relative" }}>
             <img
-              src={url}
+              src={thumbUrl(url, 400)}
               alt="Anteprima"
               style={{ width: "100%", maxHeight: 100, objectFit: "contain", borderRadius: "var(--radius)", display: "block", cursor: "pointer" }}
               onClick={(e) => { e.stopPropagation(); setZoomed(true); }}

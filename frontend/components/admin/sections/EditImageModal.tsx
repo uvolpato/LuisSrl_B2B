@@ -7,6 +7,7 @@ import Notice from "../../common/Notice";
 import { api, ApiError } from "../../../lib/api";
 import PositionedImage from "../../common/PositionedImage";
 import { parseImgCss } from "../../../lib/img-css";
+import { thumbUrl } from "../../../lib/thumb";
 
 interface PromptTemplate {
   id: number;
@@ -252,6 +253,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
             src={image.url}
             css={buildCss(objectFit, toPositionStr(posX, posY), zoom, rotation)}
             aspect={4 / 3}
+            thumbWidth={800}
             onClick={handlePositionClick}
             style={{ width: 320, margin: 0 }}
           >
@@ -296,7 +298,7 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
                   <div>
                     <div className="label" style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Immagine di origine{image.immaginePadreId ? ` (#${image.immaginePadreId})` : ""}</div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.immaginePadreUrl} alt="" onClick={() => setLightbox(image.immaginePadreUrl!)} style={{ width: 150, height: 150, objectFit: "cover", borderRadius: "var(--radius)", cursor: "zoom-in", border: "1px solid var(--border)" }} />
+                    <img src={thumbUrl(image.immaginePadreUrl, 300)} alt="" onClick={() => setLightbox(image.immaginePadreUrl!)} style={{ width: 150, height: 150, objectFit: "cover", borderRadius: "var(--radius)", cursor: "zoom-in", border: "1px solid var(--border)" }} />
                   </div>
                 )}
               </div>

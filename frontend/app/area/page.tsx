@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../../lib/use-auth";
+import { thumbUrl } from "../../lib/thumb";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import ChangePasswordCard from "../../components/auth/ChangePasswordCard";
 
@@ -652,7 +653,7 @@ export default function AreaClientePage() {
                     <div className="product-grid">
                       {box.images.map((src, ii) => (
                         <Link key={ii} href="/area/famiglie" className="product-mini">
-                          <img className="product-mini-img" src={img(src)} alt={box.title} />
+                          <img className="product-mini-img" src={thumbUrl(img(src), 400)} alt={box.title} />
                         </Link>
                       ))}
                     </div>

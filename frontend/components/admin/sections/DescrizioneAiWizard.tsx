@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { api, ApiError } from "../../../lib/api";
+import { thumbUrl } from "../../../lib/thumb";
 import { useConfirm } from "../../common/ConfirmProvider";
 import Notice from "../../common/Notice";
 import AnalisiFotoModal from "./AnalisiFotoModal";
@@ -442,7 +443,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
           {imgCorrente ? (
             <>
               <div className="wizard-gallery-main">
-                <img src={imgCorrente.url} alt="Prodotto" onClick={() => setLightbox(true)} />
+                <img src={thumbUrl(imgCorrente.url, 800)} alt="Prodotto" onClick={() => setLightbox(true)} />
                 <button type="button" className="wizard-gallery-zoom" onClick={() => setLightbox(true)} aria-label="Ingrandisci foto">⛶</button>
                 {immagini.length > 1 && (
                   <>
@@ -462,7 +463,7 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
                       onClick={() => setCurrentImg(i)}
                       aria-label={`Foto ${i + 1}`}
                     >
-                      <img src={f.url} alt="" />
+                      <img src={thumbUrl(f.url, 200)} alt="" />
                     </button>
                   ))}
                 </div>

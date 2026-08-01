@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
+import { thumbUrl } from "../../../lib/thumb";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
@@ -162,7 +163,7 @@ export default function RaccolteSection() {
       cell: (r) => (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img
-            src={r.immagine ?? PLACEHOLDER}
+            src={thumbUrl(r.immagine, 100) || PLACEHOLDER}
             alt=""
             style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", background: "var(--bg)" }}
           />
@@ -296,7 +297,7 @@ export default function RaccolteSection() {
                 <div key={r.id} className="raccolte-card">
                   <img
                     className="raccolte-card-img"
-                    src={r.immagine ?? PLACEHOLDER}
+                    src={thumbUrl(r.immagine, 400) || PLACEHOLDER}
                     alt={r.nome}
                     onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }}
                   />
@@ -530,7 +531,7 @@ function RaccoltaEditModal({
                         <span className={`user-status-dot ${a.configurato ? "attivo" : "bloccato"}`} />
                         <img
                           className="cell-entity-thumb"
-                          src={a.img || PLACEHOLDER}
+                          src={thumbUrl(a.img, 100) || PLACEHOLDER}
                           alt={a.name}
                           onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
                         />
