@@ -1006,6 +1006,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         raccolte: raccolte.map((r) => r.nome),
         stato: (a.stato === 'NASCOSTO' ? 'nascosto' : 'attivo') as 'attivo' | 'nascosto',
         img: a.immagini[0]?.url ?? null,
+        imgTipo: a.immagini[0]?.tipo ?? null,
         variantiCount: a._count.varianti,
         variantiVisibiliCount: visMap.get(a.id) ?? 0,
         configurato: a.configurato ?? false,

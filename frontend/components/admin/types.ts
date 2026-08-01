@@ -12,6 +12,7 @@ export interface Article {
   raccolte?: string[];
   stato: "attivo" | "nascosto";
   img?: string;
+  imgTipo?: string | null;
   variantiCount?: number;
   variantiVisibiliCount?: number;
   configurato?: boolean;
