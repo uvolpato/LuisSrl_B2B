@@ -71,7 +71,11 @@ export default function DescrizioneAiWizard({ codiceLinea, immagini, descrizione
   const [customPrompt, setCustomPrompt] = useState(promptAi ?? "");
   const promptDirty = customPrompt !== initialPromptRef.current;
   const [showGuida, setShowGuida] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(true);
+  // Su mobile il prompt guida resta chiuso di default (si apre dal pulsante);
+  // su desktop sempre aperto.
+  const [showPrompt, setShowPrompt] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? false : true,
+  );
   // Su mobile i passi del wizard diventano un menu a tendina (solo ≤768px)
   const [useCompactSteps, setUseCompactSteps] = useState(false);
   useEffect(() => {
