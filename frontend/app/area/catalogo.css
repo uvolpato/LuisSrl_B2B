@@ -482,19 +482,20 @@
 .catalogo-page.scheda-prodotto .gallery-share {
   position: absolute;
   top: 12px; right: 12px;
-  width: 36px; height: 36px;
+  width: 32px; height: 32px;
   padding: 0;
-  background: var(--surface);
+  background: transparent;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 8px;
   display: grid; place-items: center;
   cursor: pointer;
   z-index: 2;
-  transition: background 0.15s;
-  color: var(--fg);
+  transition: background 0.12s ease, color 0.12s ease;
+  color: var(--muted);
+  line-height: 0;
 }
-.catalogo-page.scheda-prodotto .gallery-share:hover { background: oklch(85% 0 0); color: var(--fg); }
-.catalogo-page.scheda-prodotto .gallery-share svg { width: 16px; height: 16px; color: var(--fg); }
+.catalogo-page.scheda-prodotto .gallery-share:hover { background: var(--fg-soft); color: var(--fg); }
+.catalogo-page.scheda-prodotto .gallery-share svg { width: 16px; height: 16px; display: block; }
 .catalogo-page.scheda-prodotto .gallery-hint {
   text-align: center;
   padding: 6px 12px;
