@@ -16,12 +16,13 @@ import SyncButton from "../common/SyncButton";
 import { useConfirm } from "../common/ConfirmProvider";
 import ProvisionalPasswordModal from "./ProvisionalPasswordModal";
 import OrdineDetailModal from "./OrdineDetailModal";
+import CustomerTimeline from "../admin/CustomerTimeline";
 
 export type UserEditorTarget =
   | { mode: "create" }
   | { mode: "edit"; user: CustomerProfile };
 
-type Tab = "anagrafica" | "indirizzi" | "contatti" | "ordini";
+type Tab = "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -299,6 +300,7 @@ export default function UserEditorModal({
           <button className={`modal-tab-btn ${tab === "indirizzi" ? "active" : ""}`} onClick={() => setTab("indirizzi")}>Indirizzi</button>
           <button className={`modal-tab-btn ${tab === "contatti" ? "active" : ""}`} onClick={() => setTab("contatti")}>Contatti</button>
           <button className={`modal-tab-btn ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")}>Ordini</button>
+          {editing && <button className={`modal-tab-btn ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")}>Attività</button>}
         </div>
       )}
 
@@ -520,6 +522,8 @@ export default function UserEditorModal({
             )}
           </div>
         )}
+
+        {tab === "attivita" && editing && <CustomerTimeline customerId={editing.id} />}
 
         {tab === "ordini" && editing && (
           <div className="ordini-tab">
