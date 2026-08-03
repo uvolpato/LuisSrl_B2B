@@ -54,12 +54,28 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
   const [insight, setInsight] = useState<Insight | null>(null);
   const [comp, setComp] = useState<Comportamento | null>(null);
   const [gen, setGen] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const PAGE = 100;
 
   useEffect(() => {
-    api.get<Evento[]>(`/api/customers/${customerId}/eventi`).then(setEventi).catch(() => setEventi([]));
+    api.get<Evento[]>(`/api/customers/${customerId}/eventi?limit=${PAGE}&offset=0`)
+      .then((r) => { setEventi(r); setHasMore(r.length === PAGE); })
+      .catch(() => setEventi([]));
     api.get<Insight | null>(`/api/customers/${customerId}/insight`).then(setInsight).catch(() => setInsight(null));
     api.get<Comportamento>(`/api/customers/${customerId}/comportamento`).then(setComp).catch(() => setComp(null));
   }, [customerId]);
+
+  async function loadMore() {
+    if (loadingMore || !eventi) return;
+    setLoadingMore(true);
+    try {
+      const r = await api.get<Evento[]>(`/api/customers/${customerId}/eventi?limit=${PAGE}&offset=${eventi.length}`);
+      setEventi((prev) => [...(prev ?? []), ...r]);
+      setHasMore(r.length === PAGE);
+    } finally { setLoadingMore(false); }
+  }
 
   async function generaSintesi() {
     setGen(true);
@@ -124,6 +140,11 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
           <span style={{ fontSize: 14 }}>{label(e)}</span>
         </div>
       ))}
+      {hasMore && (
+        <button className="btn btn-secondary btn-sm" onClick={loadMore} disabled={loadingMore} style={{ alignSelf: "center", marginTop: 12 }}>
+          {loadingMore ? "Carico…" : "Carica altri"}
+        </button>
+      )}
     </div>
   );
 }

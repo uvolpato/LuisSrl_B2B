@@ -113,12 +113,13 @@ export class EventsService {
     };
   }
 
-  /** Timeline eventi di un cliente (per l'admin). */
-  async timeline(customerId: number, limit = 200) {
+  /** Timeline eventi di un cliente (per l'admin), paginata. */
+  async timeline(customerId: number, limit = 100, offset = 0) {
     return this.prisma.customerEvent.findMany({
       where: { customerId },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(Math.max(limit, 1), 1000),
+      take: Math.min(Math.max(limit, 1), 500),
+      skip: Math.max(offset, 0),
     });
   }
 }

@@ -37,8 +37,8 @@ export class CustomersController {
   /** Timeline eventi comportamentali del cliente (tracking). */
   @Get(':id/eventi')
   @RequirePermission('admin.users.view')
-  eventi(@Param('id', ParseIntPipe) id: number, @Query('limit') limit?: string) {
-    return this.events.timeline(id, limit ? parseInt(limit, 10) : 200);
+  eventi(@Param('id', ParseIntPipe) id: number, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.events.timeline(id, limit ? parseInt(limit, 10) : 100, offset ? parseInt(offset, 10) : 0);
   }
 
   @Get(':id/comportamento')
