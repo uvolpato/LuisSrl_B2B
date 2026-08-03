@@ -796,6 +796,16 @@ export class IntegrazioneService {
     return arts.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
   }
 
+  /** Card (prezzo + disponibilità) per gli articoli dati — usata dai box dashboard. */
+  async arricchisciBoxArticoli(artIds: number[], codiceListino?: string | null) {
+    if (!artIds.length) return [];
+    const arts = await this.prisma.articolo.findMany({
+      where: { id: { in: artIds } },
+      include: this.cardInclude,
+    });
+    return this.enrichWithPrezzi(arts, codiceListino ?? null);
+  }
+
   /** Range diametro/altezza (min-max sulle varianti) per ogni articolo. */
   private async getDimensioniArticoli(artIds: number[]): Promise<Map<number, { diametro?: [number, number]; altezza?: [number, number] } | null>> {
     const map = new Map<number, { diametro?: [number, number]; altezza?: [number, number] }>();

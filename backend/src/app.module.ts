@@ -16,6 +16,7 @@ import { OrdiniModule } from './ordini/ordini.module';
 import { ProgettiModule } from './progetti/progetti.module';
 import { EventsModule } from './events/events.module';
 import { InsightModule } from './insight/insight.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { ImgModule } from './img/img.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
@@ -39,6 +40,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     ProgettiModule,
     EventsModule,
     InsightModule,
+    DashboardModule,
     ImgModule,
   ],
   controllers: [HealthController],
