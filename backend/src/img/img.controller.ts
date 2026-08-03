@@ -1,4 +1,5 @@
 import { Controller, Get, Query, Res, BadRequestException } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -24,6 +25,7 @@ function snapWidth(w: number): number {
  * Pubblico (come i file statici serviti da Caddy). Esempio:
  *   /api/img?p=linea_ARGO_NOCCIOLA/xxx.jpg&w=200
  */
+@SkipThrottle() // esente dal rate limit globale: asset pubblici con cache immutabile
 @Controller('img')
 export class ImgController {
   @Get()
