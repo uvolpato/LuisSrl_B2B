@@ -128,7 +128,7 @@ export class CarrelloService {
     if (!item) throw new NotFoundException('Item non trovato nel carrello');
     await this.prisma.cartItem.delete({ where: { id: item.id } });
     void this.events.track('carrello.remove', { entita: 'variante', entitaId: varianteCodice });
-    return { rimossi: true };
+    return { removed: item.quantita };
   }
 
   async toggleSaved(clienteId: number, varianteCodice: string) {

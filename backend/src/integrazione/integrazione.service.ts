@@ -309,6 +309,13 @@ export class IntegrazioneService {
       }
     }
 
+    // Varianti (nuove o aggiornate) → riallinea l'embedding degli articoli coinvolti.
+    // Idempotente: reembedArticolo salta gli articoli non configurati/attivi e quelli
+    // con blob invariato (fonte_hash).
+    for (const codiceLinea of new Set(result.map((a) => a.codiceLinea))) {
+      void this.reembedArticolo(codiceLinea).catch(() => {});
+    }
+
     return { creati: result.length, articoli: result };
   }
 
@@ -527,6 +534,7 @@ export class IntegrazioneService {
       and.push({ OR: [
         { nome: { contains: q, mode: 'insensitive' } },
         { codiceLinea: { contains: q, mode: 'insensitive' } },
+        { varianti: { some: { codice: { contains: q, mode: 'insensitive' } } } },
         { famiglia: { is: { OR: [{ nome: { contains: q, mode: 'insensitive' } }, { nomePortale: { contains: q, mode: 'insensitive' } }] } } },
         { raccolte: { some: { raccolta: { nome: { contains: q, mode: 'insensitive' } } } } },
       ] });
@@ -599,7 +607,7 @@ export class IntegrazioneService {
       let qCond = Prisma.sql``;
       if (params.q?.trim()) {
         const q = params.q.trim();
-        qCond = Prisma.sql`AND (a."nome" ILIKE ${'%' + q + '%'} OR a."codice_linea" ILIKE ${'%' + q + '%'} OR f."nome" ILIKE ${'%' + q + '%'} OR COALESCE(f."nome_portale", '') ILIKE ${'%' + q + '%'})`;
+        qCond = Prisma.sql`AND (a."nome" ILIKE ${'%' + q + '%'} OR a."codice_linea" ILIKE ${'%' + q + '%'} OR EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id AND v.codice ILIKE ${'%' + q + '%'}) OR f."nome" ILIKE ${'%' + q + '%'} OR COALESCE(f."nome_portale", '') ILIKE ${'%' + q + '%'})`;
       }
 
       // Un singolo EXISTS che verifica dimensioni + prezzo sulla STESSA variante
@@ -666,9 +674,13 @@ export class IntegrazioneService {
       const artMap = new Map(arts.map((a) => [a.id, a]));
       const ordered = ids.map((id) => artMap.get(id)).filter(Boolean) as typeof arts;
 
-      const prezzi = await this.getPrezziMinimiArticoli(ids, params.codiceListino ?? 'LIS1');
+      const [prezzi, disponibilita] = await Promise.all([
+        this.getPrezziMinimiArticoli(ids, params.codiceListino ?? 'LIS1'),
+        this.getDisponibilitaArticoli(ids),
+      ]);
+      const articoli = ordered.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
       return {
-        articoli: ordered.map((a) => this.mapArticoloCard(a, prezzi)),
+        articoli: await this.prioritizeExactCode(articoli, params.q),
         total,
         hasMore: page * pageSize < total,
       };
@@ -694,9 +706,13 @@ export class IntegrazioneService {
     ]);
 
     const artIds = arts.map((a) => a.id);
-    const prezzi = await this.getPrezziMinimiArticoli(artIds, params.codiceListino ?? 'LIS1');
+    const [prezzi, disponibilita] = await Promise.all([
+      this.getPrezziMinimiArticoli(artIds, params.codiceListino ?? 'LIS1'),
+      this.getDisponibilitaArticoli(artIds),
+    ]);
+    const articoli = arts.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
     return {
-      articoli: arts.map((a) => this.mapArticoloCard(a, prezzi)),
+      articoli: await this.prioritizeExactCode(articoli, params.q),
       total,
       hasMore: page * pageSize < total,
     };
@@ -744,6 +760,42 @@ export class IntegrazioneService {
     return map;
   }
 
+  /** Disponibilità aggregata dell'articolo sulle varianti attive (stessa vista del cliente).
+   *  esaurito = nessuna variante in giacenza; scorte_limitate = almeno una sotto soglia. */
+  private async getDisponibilitaArticoli(artIds: number[]): Promise<Map<number, 'disponibile' | 'scorte_limitate' | 'esaurito'>> {
+    const map = new Map<number, 'disponibile' | 'scorte_limitate' | 'esaurito'>();
+    if (!artIds.length) return map;
+    const soglia = parseInt(process.env.STOCK_LOW_THRESHOLD || '10', 10);
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; in_stock: number; low: number }>>(
+      `SELECT v.articolo_id AS art_id,
+              count(*) FILTER (WHERE v.giacenza > 0)::int AS in_stock,
+              count(*) FILTER (WHERE v.giacenza < $2)::int AS low
+       FROM varianti v
+       WHERE v.articolo_id = ANY($1::int[])
+         AND v.stato <> 'NASCOSTO'
+       GROUP BY v.articolo_id`,
+      artIds, soglia,
+    );
+    for (const r of rows) {
+      if (r.in_stock <= 0) map.set(r.art_id, 'esaurito');
+      else if (r.low > 0) map.set(r.art_id, 'scorte_limitate');
+      else map.set(r.art_id, 'disponibile');
+    }
+    return map;
+  }
+
+  /** Arricchisce articoli già caricati (include famiglia/immagini/raccolte/_count) con
+   *  prezzo minimo e disponibilità, nel formato card del catalogo. */
+  private async enrichWithPrezzi(arts: any[], codiceListino?: string | null) {
+    if (!arts.length) return [];
+    const ids = arts.map((a) => a.id);
+    const [prezzi, disponibilita] = await Promise.all([
+      this.getPrezziMinimiArticoli(ids, codiceListino ?? 'LIS1'),
+      this.getDisponibilitaArticoli(ids),
+    ]);
+    return arts.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
+  }
+
   /** Range diametro/altezza (min-max sulle varianti) per ogni articolo. */
   private async getDimensioniArticoli(artIds: number[]): Promise<Map<number, { diametro?: [number, number]; altezza?: [number, number] } | null>> {
     const map = new Map<number, { diametro?: [number, number]; altezza?: [number, number] }>();
@@ -771,7 +823,7 @@ export class IntegrazioneService {
   }
 
   /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
-  private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>) {
+  private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>, disponibilitaPerArticolo?: Map<number, 'disponibile' | 'scorte_limitate' | 'esaurito'>) {
     const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];
     let prezzoMin: number | null = null;
     if (prezziPerArticolo) {
@@ -791,29 +843,93 @@ export class IntegrazioneService {
       imgTipo: cover?.tipo ?? null,
       variantiCount: a._count.varianti,
       prezzo: prezzoMin,
+      disponibilita: disponibilitaPerArticolo?.get(a.id) ?? 'esaurito',
       createdAt: a.createdAt,
     };
   }
 
+  /** Include comune delle card (famiglia, immagini galleria, raccolte attive, conteggio varianti). */
+  private readonly cardInclude: Prisma.ArticoloInclude = {
+    famiglia: true,
+    immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }] },
+    raccolte: { include: { raccolta: { select: { nome: true, slug: true, stato: true } } } },
+    _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
+  };
+
+  /** Articolo visibile al cliente con codiceLinea == `code`, oppure l'articolo della
+   *  variante (attiva) con codice == `code`. Null se nessuno dei due è visibile. */
+  private async resolveCodiceArticolo(code: string) {
+    const visibile = (a: any) => a && a.stato === 'ATTIVO' && a.configurato && a.famiglia?.stato === 'ATTIVO';
+    const art = await this.prisma.articolo.findUnique({ where: { codiceLinea: code }, include: this.cardInclude });
+    if (visibile(art)) return art;
+    const viaVar = await this.prisma.variante.findFirst({
+      where: { codice: code, stato: { not: 'NASCOSTO' } },
+      select: { articoloId: true },
+    });
+    if (!viaVar) return null;
+    const art2 = await this.prisma.articolo.findUnique({ where: { id: viaVar.articoloId }, include: this.cardInclude });
+    return visibile(art2) ? art2 : null;
+  }
+
+  /** In una lista di card, porta in testa l'articolo con codice esatto uguale a `q`
+   *  (codice articolo o codice variante, es. LU3258). */
+  private async prioritizeExactCode<T extends { id: string }>(list: T[], q?: string): Promise<T[]> {
+    const query = q?.trim();
+    if (!query || !/^[A-Z]{2,}[0-9]{3,}$/i.test(query)) return list;
+    let target = query.toUpperCase();
+    if (!list.some((x) => x.id.toUpperCase() === target)) {
+      const viaVar = await this.prisma.variante.findFirst({
+        where: { codice: target, stato: { not: 'NASCOSTO' } },
+        select: { articolo: { select: { codiceLinea: true } } },
+      });
+      if (viaVar?.articolo) target = viaVar.articolo.codiceLinea;
+    }
+    const exact = list.find((x) => x.id.toUpperCase() === target);
+    if (!exact) return list;
+    return [exact, ...list.filter((x) => x !== exact)];
+  }
+
   // ── Ricerca semantica (pgvector + embedding testuale) ─────────────────────
 
-  /** Blob testo indicizzato per un articolo (deve combaciare col backfill). */
+  /** Blob testo indicizzato per un articolo (deve combaciare col backfill).
+   *  Include le varianti attive (descrizione + dimensioni) perché il cliente le vede:
+   *  così aggiungere/modificare varianti cambia l'hash e rigenera l'embedding. */
   private buildEmbeddingBlob(a: {
     nome: string; colore?: string | null; descrizioneAI?: string | null;
     descrizione?: string | null; descrizioneDettagliata?: string | null;
     famiglia?: { nome: string; nomePortale?: string | null } | null;
+    varianti?: { descrizione: string; dimensioni?: unknown; multiplo?: number }[];
   }): string {
     const fam = a.famiglia?.nomePortale || a.famiglia?.nome || '';
-    return [a.nome, fam, a.colore, a.descrizioneAI, a.descrizione, a.descrizioneDettagliata]
-      .filter((s) => s && String(s).trim())
-      .join('\n');
+    const parts = [a.nome, fam, a.colore, a.descrizioneAI, a.descrizione, a.descrizioneDettagliata];
+    if (a.varianti?.length) {
+      const variantiTxt = a.varianti
+        .map((v) => [v.descrizione, this.dimText(v.dimensioni)].filter(Boolean).join(' '))
+        .join('; ');
+      if (variantiTxt) parts.push(`Varianti: ${variantiTxt}`);
+    }
+    return parts.filter((s) => s && String(s).trim()).join('\n');
+  }
+
+  /** Dimensioni JSON variante (es. {diametro:{valore:30,unita:'cm'}}) → testo "Ø30 cm H40 cm". */
+  private dimText(dim: unknown): string {
+    if (!dim || typeof dim !== 'object') return '';
+    const parts: string[] = [];
+    for (const [k, v] of Object.entries(dim as Record<string, any>)) {
+      const val = v?.valore != null ? String(v.valore) : '';
+      const unita = v?.unita ? String(v.unita) : '';
+      const label = k === 'diametro' ? 'Ø' : k === 'altezza' ? 'H' : `${k} `;
+      const s = `${label}${val}${unita}`.trim();
+      if (s) parts.push(s);
+    }
+    return parts.join(' ');
   }
 
   /** (Ri)genera l'embedding di un articolo se il blob e' cambiato. Fire-and-forget. */
   async reembedArticolo(codiceLinea: string): Promise<void> {
     const a = await this.prisma.articolo.findUnique({
       where: { codiceLinea },
-      include: { famiglia: true },
+      include: { famiglia: true, varianti: { where: { stato: { not: 'NASCOSTO' } }, orderBy: { codice: 'asc' } } },
     });
     // Indicizziamo solo cio' che il cliente puo' vedere.
     if (!a || !a.configurato || a.stato !== 'ATTIVO' || a.famiglia.stato !== 'ATTIVO') {
@@ -874,10 +990,38 @@ Richiesta del cliente: "${q}"`;
     }
   }
 
-  /** Ricerca semantica testuale: riscrive la query e ordina il catalogo. */
+  /** Ricerca semantica testuale: riscrive la query e ordina il catalogo.
+   *  Prima tenta match esatti per codici articolo (LU3161) o famiglie (linea ROGERS). */
   async searchSemantica(q: string, k = 24, codiceListino?: string | null) {
     const query = (q || '').trim();
     if (!query) return { articoli: [], provider: this.embedding.provider };
+
+    // 1) Match esatto codice articolo o variante (es. LU3161, LU3258)
+    const codeMatch = query.match(/^[A-Z]{2,}[0-9]{3,}$/i);
+    if (codeMatch) {
+      const exact = await this.resolveCodiceArticolo(codeMatch[0].toUpperCase());
+      if (exact) {
+        const arts = await this.enrichWithPrezzi([exact], codiceListino);
+        return { articoli: arts, provider: 'exact-code' };
+      }
+    }
+
+    // 2) Match "linea XXX" / "famiglia XXX" / "fammi vedere la linea XXX"
+    const familyMatch = query.match(/(?:linea|famiglia|fammi vedere la linea)\s+([A-Z0-9_\-]+)/i);
+    if (familyMatch) {
+      const famCode = familyMatch[1].toUpperCase();
+      const fam = await this.prisma.famiglia.findUnique({ where: { codice: famCode } });
+      if (fam && fam.stato === 'ATTIVO') {
+        const arts = await this.prisma.articolo.findMany({
+          where: { famigliaCodice: famCode, configurato: true, stato: 'ATTIVO' },
+          include: this.cardInclude,
+        });
+        const enriched = await this.enrichWithPrezzi(arts, codiceListino);
+        return { articoli: enriched, provider: 'exact-family' };
+      }
+    }
+
+    // 3) Fallback: ricerca semantica normale
     const rewriteOn = (process.env.SEARCH_QUERY_REWRITE || 'on') !== 'off';
     const rw = rewriteOn ? await this.rewriteQuery(query) : { attributi: [] as string[], keywords: query };
     const res = await this.rankArticoli(rw.attributi, rw.keywords, k, codiceListino);
@@ -951,15 +1095,16 @@ Richiesta del cliente: "${q}"`;
         _count: { select: { varianti: { where: { stato: { not: 'NASCOSTO' } } } } },
       },
     });
-    // Prezzo minimo (listino del cliente) e range dimensioni per articolo: servono
-    // ai filtri client-side applicati sopra i risultati della ricerca.
-    const [prezzi, dimensioni] = await Promise.all([
+    // Prezzo minimo (listino del cliente), range dimensioni e disponibilità per
+    // articolo: servono ai filtri client-side applicati sopra i risultati.
+    const [prezzi, dimensioni, disponibilita] = await Promise.all([
       this.getPrezziMinimiArticoli(arts.map((a) => a.id), codiceListino ?? 'LIS1'),
       this.getDimensioniArticoli(arts.map((a) => a.id)),
+      this.getDisponibilitaArticoli(arts.map((a) => a.id)),
     ]);
     const articoli = arts
       .map((a) => ({
-        ...this.mapArticoloCard(a, prezzi),
+        ...this.mapArticoloCard(a, prezzi, disponibilita),
         dimensioni: dimensioni.get(a.id) ?? null,
         score: scoreByCodice.get(a.codiceLinea) ?? 0,
       }))

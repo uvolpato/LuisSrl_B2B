@@ -23,6 +23,7 @@ interface CatalogoArticolo {
   imgTipo: string | null;
   variantiCount: number;
   prezzo: number | null;
+  disponibilita?: "disponibile" | "scorte_limitate" | "esaurito";
   dimensioni?: Record<string, { min: number; max: number }> | null;
   createdAt: string;
 }
@@ -107,7 +108,7 @@ export default function CatalogoPage() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
         <input
           type="text"
-          placeholder="Cerca articoli, famiglie, raccolte…"
+          placeholder="Cerca per nome, codice (LU3161), linea (ROGERS)…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={search ? { paddingRight: 68 } : undefined}
@@ -544,7 +545,9 @@ export default function CatalogoPage() {
                           <span className="product-price">{a.variantiCount > 1 ? `da ` : ''}{a.prezzo.toFixed(2)}&nbsp;&euro;</span>
                         )}
                         <span className="product-variants">{a.variantiCount} varianti</span>
-                        <span className="product-stock stock-ok">Disponibile</span>
+                        <span className={`product-stock ${a.disponibilita === "esaurito" ? "stock-out" : a.disponibilita === "scorte_limitate" ? "stock-low" : "stock-ok"}`}>
+                          {a.disponibilita === "esaurito" ? "Esaurito" : a.disponibilita === "scorte_limitate" ? "Scorte limitate" : "Disponibile"}
+                        </span>
                       </div>
                     </div>
                   </Link>
