@@ -104,6 +104,21 @@ model Progetto {
   @@map("progetti")
 }
 
+/// Sintesi AI del comportamento di un cliente (riassunto + metriche + embedding).
+model CustomerInsight {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  periodo    String
+  testo      String
+  metriche   Json?
+  embedding  Json?
+  generatoIl DateTime @default(now()) @map("generato_il")
+
+  @@unique([customerId, periodo])
+  @@index([customerId])
+  @@map("customer_insight")
+}
+
 /// Eventi comportamentali dei clienti (append-only). Volumi alti: tabella dedicata.
 model CustomerEvent {
   id         Int      @id @default(autoincrement())
