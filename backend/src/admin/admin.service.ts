@@ -7,6 +7,8 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { CreatePromozioneDto } from './dto/create-promozione.dto';
+import { UpdatePromozioneDto } from './dto/update-promozione.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 import { toUserProfile } from '../common/auth-types';
 import type { UserProfile } from '../common/auth-types';
@@ -366,6 +368,60 @@ export class AdminService {
 
     await this.prisma.raccolta.delete({ where: { id } });
     await this.audit.log({ actorId, azione: 'admin.raccolta_delete', entita: 'raccolte', entitaId: String(id), ip });
+  }
+
+  // ── Promozioni / offerte ──
+
+  async listPromozioni() {
+    return this.prisma.promozione.findMany({
+      orderBy: [{ attiva: 'desc' }, { priorita: 'desc' }, { dataFine: 'desc' }],
+    });
+  }
+
+  async createPromozione(dto: CreatePromozioneDto, actorId: number, ip?: string) {
+    const promo = await this.prisma.promozione.create({
+      data: {
+        titolo: dto.titolo,
+        tipo: dto.tipo,
+        valore: dto.valore ?? null,
+        dataInizio: new Date(dto.dataInizio),
+        dataFine: new Date(dto.dataFine),
+        famiglie: dto.famiglie ?? [],
+        articoli: dto.articoli ?? [],
+        priorita: dto.priorita ?? 0,
+        attiva: dto.attiva ?? true,
+      },
+    });
+    await this.audit.log({ actorId, azione: 'admin.promozione_create', entita: 'promozioni', entitaId: String(promo.id), ip });
+    return promo;
+  }
+
+  async updatePromozione(id: number, dto: UpdatePromozioneDto, actorId: number, ip?: string) {
+    const promo = await this.prisma.promozione.findUnique({ where: { id } });
+    if (!promo) throw new NotFoundException('admin.promozione_not_found');
+    const updated = await this.prisma.promozione.update({
+      where: { id },
+      data: {
+        ...(dto.titolo !== undefined && { titolo: dto.titolo }),
+        ...(dto.tipo !== undefined && { tipo: dto.tipo }),
+        ...(dto.valore !== undefined && { valore: dto.valore }),
+        ...(dto.dataInizio !== undefined && { dataInizio: new Date(dto.dataInizio) }),
+        ...(dto.dataFine !== undefined && { dataFine: new Date(dto.dataFine) }),
+        ...(dto.famiglie !== undefined && { famiglie: dto.famiglie }),
+        ...(dto.articoli !== undefined && { articoli: dto.articoli }),
+        ...(dto.priorita !== undefined && { priorita: dto.priorita }),
+        ...(dto.attiva !== undefined && { attiva: dto.attiva }),
+      },
+    });
+    await this.audit.log({ actorId, azione: 'admin.promozione_update', entita: 'promozioni', entitaId: String(id), ip });
+    return updated;
+  }
+
+  async deletePromozione(id: number, actorId: number, ip?: string) {
+    const promo = await this.prisma.promozione.findUnique({ where: { id } });
+    if (!promo) throw new NotFoundException('admin.promozione_not_found');
+    await this.prisma.promozione.delete({ where: { id } });
+    await this.audit.log({ actorId, azione: 'admin.promozione_delete', entita: 'promozioni', entitaId: String(id), ip });
   }
 
   async setRaccoltaArticoli(id: number, articoliIds: number[], actorId: number, ip?: string) {
