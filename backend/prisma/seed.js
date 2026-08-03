@@ -120,6 +120,87 @@ function randomAvatarColor() {
     console.log(`Admin ${email} impostato come SUPERUSER + gruppo Amministratore`);
   }
 
+  // ── SuggestionBox: seed dei 6 box dashboard (gli attuali hardcoded) ──
+  const DEFAULT_PESI = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15 };
+  const boxSeeds = [
+    {
+      titolo: 'Riprendi da dove hai lasciato',
+      prompt:
+        'prendi gli articoli che il cliente ha visto o salvato di recente o che ha nei suoi progetti, in ordine di interesse, con giacenza disponibile',
+      nArticoli: 10,
+      pesi: { acquisti: 0.2, tracking: 0.4, progetti: 0.3, affinita: 0.1 },
+      soloInOfferta: false,
+      escludiAcquistati: true,
+      ordinamento: 1,
+    },
+    {
+      titolo: 'I tuoi prodotti in offerta',
+      prompt: 'prendi gli articoli in offerta che corrispondono alle famiglie preferite del cliente',
+      nArticoli: 10,
+      pesi: DEFAULT_PESI,
+      soloInOfferta: true,
+      escludiAcquistati: true,
+      ordinamento: 2,
+    },
+    {
+      titolo: 'Offerte relative ai prodotti salvati',
+      prompt:
+        'prendi gli articoli in offerta simili a quelli che il cliente ha salvato o ha nei progetti',
+      nArticoli: 10,
+      pesi: { acquisti: 0.3, tracking: 0.3, progetti: 0.25, affinita: 0.15 },
+      soloInOfferta: true,
+      escludiAcquistati: true,
+      ordinamento: 3,
+    },
+    {
+      titolo: 'Offerte Top',
+      prompt: 'prendi gli articoli in offerta più venduti, adatti agli interessi del cliente',
+      nArticoli: 10,
+      pesi: DEFAULT_PESI,
+      soloInOfferta: true,
+      escludiAcquistati: true,
+      ordinamento: 4,
+    },
+    {
+      titolo: 'Offerte di oggi',
+      prompt: 'prendi gli articoli in offerta con la scadenza più vicina',
+      nArticoli: 10,
+      pesi: DEFAULT_PESI,
+      soloInOfferta: true,
+      escludiAcquistati: true,
+      ordinamento: 5,
+    },
+    {
+      titolo: 'Offerte stagionali',
+      prompt: 'prendi gli articoli in offerta stagionali in linea con gli acquisti del cliente',
+      nArticoli: 10,
+      pesi: DEFAULT_PESI,
+      soloInOfferta: true,
+      escludiAcquistati: true,
+      ordinamento: 6,
+    },
+  ];
+
+  for (const b of boxSeeds) {
+    const esistente = await prisma.suggestionBox.findFirst({ where: { titolo: b.titolo } });
+    if (!esistente) {
+      await prisma.suggestionBox.create({
+        data: {
+          titolo: b.titolo,
+          prompt: b.prompt,
+          nArticoli: b.nArticoli,
+          pesi: b.pesi,
+          soloInOfferta: b.soloInOfferta,
+          escludiAcquistati: b.escludiAcquistati,
+          ordinamento: b.ordinamento,
+        },
+      });
+      console.log(`SuggestionBox creato: "${b.titolo}"`);
+    } else {
+      console.log(`SuggestionBox gia' presente: "${b.titolo}" (id ${esistente.id})`);
+    }
+  }
+
   // ── Clienti seed ──
   const customerSeeds = [
     { email: 'uvolpato+cliente1@gmail.com', password: 'Cliente2026!', nome: 'Marco', ragioneSociale: 'Fiorista Rossi SNC', partitaIva: '01234567890', telefono: '0351234567' },
