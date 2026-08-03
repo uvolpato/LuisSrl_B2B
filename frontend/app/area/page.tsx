@@ -652,7 +652,7 @@ export default function AreaClientePage() {
               {boxes && boxes.length > 0 && (
                 <div className="product-boxes">
                   {boxes.map((box) => {
-                    const boxHref = `/area/catalogo?codiceLinea=${box.articoli.map((a) => a.id).join(",")}`;
+                    const boxHref = `/area/catalogo?codiceLinea=${box.articoli.map((a) => a.id).join(",")}&boxTitolo=${encodeURIComponent(box.titolo)}`;
                     return (
                     <div className="product-box" key={box.boxId}>
                       <div className="product-box-header">
