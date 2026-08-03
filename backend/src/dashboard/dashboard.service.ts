@@ -24,8 +24,8 @@ import { InsightService } from '../insight/insight.service';
  *
  * Regole non negoziabili (DASHBOARD-SUGGERIMENTI-AI.md §4):
  *  - il modello non decide mai esclusioni/conteggi: sono SQL;
- *  - la dashboard non si rompe mai: fallback deterministico su best-seller;
- *  - un box senza candidati semplicemente non appare.
+ *  - la dashboard non si rompe mai: fallback deterministico su best-seller, poi random;
+ *  - un box senza candidati mostra articoli random invece di sparire;
  */
 
 interface PesiSegnali {
@@ -248,7 +248,10 @@ export class DashboardService {
       this.poolVincoli(box, customerId),
       this.segnaliCliente(customerId),
     ]);
-    if (!pool.length) return [];
+    if (!pool.length) {
+      // Fallback: pool vuoto → elementi random
+      return this.randomFallback(box, codiceListino);
+    }
 
     // Intento semantico del prompt: filtro soft dentro il pool (pgvector, coseno).
     // Se il prompt è generico i coseni sono piatti e il filtro non taglia nulla.
@@ -558,5 +561,41 @@ export class DashboardService {
       if (!map.has(r.cl)) map.set(r.cl, { titolo: r.titolo, tipo: r.tipo, valore: r.valore ? Number(r.valore) : null });
     }
     return map;
+  }
+
+  /** Fallback random: restituisce N articoli attivi/configurati a caso. */
+  private async randomFallback(
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    codiceListino?: string | null,
+  ) {
+    const n = box.nArticoli;
+    const conds: string[] = [`a.configurato = true`, `a.stato = 'ATTIVO'`, `f.stato = 'ATTIVO'`];
+    if (box.soloInOfferta) {
+      conds.push(`EXISTS (
+        SELECT 1 FROM promozioni p
+        WHERE p.attiva = true AND p.data_inizio <= now() AND p.data_fine >= now()
+          AND (array_length(p.articoli, 1) IS NULL OR a.codice_linea = ANY(p.articoli) OR EXISTS (
+            SELECT 1 FROM varianti v WHERE v.articolo_id = a.id AND v.codice = ANY(p.articoli)))
+          AND (array_length(p.famiglie, 1) IS NULL OR a.famiglia_codice = ANY(p.famiglie))
+      )`);
+    }
+    if (box.scopeFamiglia?.trim()) conds.push(`a.famiglia_codice = '${box.scopeFamiglia.trim()}'`);
+    if (box.scopeRaccolta?.trim()) {
+      conds.push(`EXISTS (
+        SELECT 1 FROM articoli_raccolte ar JOIN raccolte r ON r.id = ar.raccolta_id
+        WHERE ar.articolo_id = a.id AND r.codice = '${box.scopeRaccolta.trim()}'
+      )`);
+    }
+    const where = conds.join(' AND ');
+    const rows = await this.prisma.$queryRawUnsafe<Candidato[]>(
+      `SELECT a.id, a.codice_linea AS "codiceLinea", a.famiglia_codice AS "famigliaCodice"
+       FROM articoli a
+       JOIN famiglie f ON f.codice = a.famiglia_codice
+       WHERE ${where}
+       ORDER BY random()
+       LIMIT ${n}`,
+    );
+    if (!rows.length) return [];
+    return this.arricchisci(box, rows, codiceListino);
   }
 }
