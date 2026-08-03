@@ -493,3 +493,59 @@ model PromptTemplate {
 
   @@map("prompt_templates")
 }
+
+/// Promozioni/offerte (admin o sync). Prerequisito dei box "offerta".
+model Promozione {
+  id         Int      @id @default(autoincrement())
+  titolo     String
+  tipo       String   // SCONTO | PERCENTUALE | OMAGGIO | VETRINA
+  valore     Decimal?
+  dataInizio DateTime @map("data_inizio")
+  dataFine   DateTime @map("data_fine")
+  famiglie   String[]
+  articoli   String[]
+  priorita   Int      @default(0)
+  attiva     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("creato_il")
+  updatedAt  DateTime @updatedAt @map("aggiornato_il")
+
+  @@index([attiva, dataFine])
+  @@map("promozioni")
+}
+
+/// Definizione dei box di suggerimento della dashboard (titolo + prompt + pesi + vincoli).
+/// Seed di default = i 6 box attuali hardcoded in frontend/app/area/page.tsx.
+model SuggestionBox {
+  id                Int      @id @default(autoincrement())
+  titolo            String
+  prompt            String
+  nArticoli         Int      @default(10) @map("n_articoli")
+  /// Pesi segnali: {"acquisti":0.40,"tracking":0.25,"progetti":0.20,"affinita":0.15}
+  pesi              Json     @default("{\"acquisti\":0.40,\"tracking\":0.25,\"progetti\":0.20,\"affinita\":0.15}")
+  soloInOfferta     Boolean  @default(false) @map("solo_in_offerta")
+  escludiAcquistati Boolean  @default(true) @map("escludi_acquistati")
+  scopeFamiglia     String   @default("") @map("scope_famiglia")
+  scopeRaccolta     String   @default("") @map("scope_raccolta")
+  attiva            Boolean  @default(true)
+  ordinamento       Int      @default(0)
+  createdAt         DateTime @default(now()) @map("creato_il")
+  updatedAt         DateTime @updatedAt @map("aggiornato_il")
+
+  @@map("suggestion_boxes")
+}
+
+/// Cache per-cliente dei box generati (batch notturno + trigger on-demand).
+model DashboardBox {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  boxId      Int      @map("box_id")
+  titolo     String
+  rationale  String?
+  /// [{codiceLinea, nome, immagine, prezzo, giacenza, promo?}]
+  prodotti   Json
+  generatoIl DateTime @default(now()) @map("generato_il")
+
+  @@unique([customerId, boxId])
+  @@index([customerId])
+  @@map("dashboard_boxes")
+}
