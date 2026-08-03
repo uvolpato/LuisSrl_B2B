@@ -518,13 +518,18 @@ export class IntegrazioneService {
     prezzoMin?: number; prezzoMax?: number;
     coloreRgb?: string; coloreTolleranza?: number;
     codiceListino?: string;
+    codiceLinea?: string[];
   }) {
     const page = Math.max(1, params.page ?? 1);
-    const pageSize = Math.min(Math.max(params.pageSize ?? 24, 1), 60);
+    // I box passano fino a 24 codici: se filtriamo per codiceLinea serviamo tutto in una pagina.
+    const pageSize = params.codiceLinea?.length
+      ? Math.min(Math.max(params.codiceLinea.length, 1), 60)
+      : Math.min(Math.max(params.pageSize ?? 24, 1), 60);
 
     const and: Prisma.ArticoloWhereInput[] = [
       { configurato: true, stato: 'ATTIVO', famiglia: { stato: 'ATTIVO' } },
     ];
+    if (params.codiceLinea?.length) and.push({ codiceLinea: { in: params.codiceLinea } });
     if (params.famiglia?.length) and.push({ famigliaCodice: { in: params.famiglia } });
     if (params.tab) and.push({ raccolte: { some: { raccolta: { slug: params.tab, stato: 'ATTIVO' } } } });
     if (params.raccolte?.length) and.push({ raccolte: { some: { raccolta: { slug: { in: params.raccolte }, stato: 'ATTIVO' } } } });
@@ -546,6 +551,12 @@ export class IntegrazioneService {
     if (hasRawFilters) {
       // Costruiamo WHERE Prisma, poi lo serializziamo in SQL con il dialetto Prisma
       const baseWhere = Prisma.sql`WHERE a."configurato" = true AND a."stato" = 'ATTIVO' AND f."stato" = 'ATTIVO'`;
+
+      let clCond = Prisma.sql``;
+      if (params.codiceLinea?.length) {
+        const clIn = Prisma.join(params.codiceLinea.map((c) => Prisma.sql`${c}`), ', ');
+        clCond = Prisma.sql`AND a."codice_linea" IN (${clIn})`;
+      }
 
       let famCond = Prisma.sql``;
       if (params.famiglia?.length) {
@@ -633,7 +644,7 @@ export class IntegrazioneService {
         variantExistsSql = Prisma.sql`AND EXISTS (SELECT 1 FROM varianti v WHERE ${allVariantConds})`;
       }
 
-      const allConds = Prisma.join([baseWhere, famCond, racCond, coloreCond, coloreRgbCond, qCond, variantExistsSql], ' ');
+      const allConds = Prisma.join([baseWhere, clCond, famCond, racCond, coloreCond, coloreRgbCond, qCond, variantExistsSql], ' ');
 
       const countSql = Prisma.sql`SELECT count(*)::int AS n FROM articoli a JOIN "famiglie" f ON f.codice = a."famiglia_codice" ${allConds}`;
       const orderSql = params.sort === 'prezzo-asc' || params.sort === 'prezzo-desc'

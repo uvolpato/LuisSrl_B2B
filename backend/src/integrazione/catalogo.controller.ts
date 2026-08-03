@@ -51,6 +51,7 @@ export class CatalogoController {
     @Query('prezzoMax') prezzoMax?: string,
     @Query('coloreRgb') coloreRgb?: string,
     @Query('coloreTolleranza') coloreTolleranza?: string,
+    @Query('codiceLinea') codiceLinea?: string,
     @Req() req?: AuthenticatedRequest,
   ) {
     const codiceListino = await this.listinoDi(req);
@@ -71,6 +72,7 @@ export class CatalogoController {
       prezzoMax: prezzoMax ? parseFloat(prezzoMax) : undefined,
       coloreRgb: coloreRgb || undefined,
       coloreTolleranza: coloreTolleranza ? parseFloat(coloreTolleranza) : undefined,
+      codiceLinea: codiceLinea ? codiceLinea.split(',').filter(Boolean) : undefined,
       codiceListino,
     });
   }
