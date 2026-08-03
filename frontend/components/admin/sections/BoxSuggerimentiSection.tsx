@@ -314,12 +314,12 @@ function BoxEditModal({
 
           <div style={{ borderLeft: "1px solid var(--border)", paddingLeft: 24 }}>
             <label className="label" style={{ marginBottom: 8 }}>Vincoli</label>
-            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, fontSize: 14 }}>
-              <input type="checkbox" checked={soloInOfferta} onChange={(e) => setSoloInOfferta(e.target.checked)} />
+            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, fontSize: 14, whiteSpace: "nowrap" }}>
+              <input type="checkbox" checked={soloInOfferta} onChange={(e) => setSoloInOfferta(e.target.checked)} style={{ width: 16, height: 16 }} />
               Solo articoli in offerta (richiede promozioni attive)
             </label>
-            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 18, fontSize: 14 }}>
-              <input type="checkbox" checked={escludiAcquistati} onChange={(e) => setEscludiAcquistati(e.target.checked)} />
+            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 18, fontSize: 14, whiteSpace: "nowrap" }}>
+              <input type="checkbox" checked={escludiAcquistati} onChange={(e) => setEscludiAcquistati(e.target.checked)} style={{ width: 16, height: 16 }} />
               Escludi articoli già acquistati
             </label>
 
