@@ -183,13 +183,22 @@ export default function CatalogoPage() {
     if (facets.dimensioni.altezza && altezzaRange[1] < facets.dimensioni.altezza.max) p.set("altezzaMax", String(altezzaRange[1]));
     if (facets.prezzo && prezzoRange[0] > facets.prezzo.min) p.set("prezzoMin", String(prezzoRange[0]));
     if (facets.prezzo && prezzoRange[1] < facets.prezzo.max) p.set("prezzoMax", String(prezzoRange[1]));
-    try {
-      const res = await api.get<{ articoli: CatalogoArticolo[]; total: number; hasMore: boolean }>(`/api/catalogo?${p.toString()}`);
-      setTotal(res.total);
-      setHasMore(res.hasMore);
-      setArticoli((prev) => (reset ? res.articoli : [...prev, ...res.articoli]));
-      setPage(pageN);
-    } catch {
+try {
+        const res = await api.get<{ articoli: CatalogoArticolo[]; total: number; hasMore: boolean }>(`/api/catalogo?${p.toString()}`);
+        setTotal(res.total);
+        setHasMore(res.hasMore);
+        setArticoli((prev) => {
+          const next = reset ? res.articoli : [...prev, ...res.articoli];
+          // Deduplica per id (sicurezza: paginazione potrebbe sovrapporre)
+          const seen = new Set<string>();
+          return next.filter((a) => {
+            if (seen.has(a.id)) return false;
+            seen.add(a.id);
+            return true;
+          });
+        });
+        setPage(pageN);
+      } catch {
       if (reset) { setArticoli([]); setTotal(0); setHasMore(false); }
     } finally {
       setListLoading(false);
@@ -336,7 +345,14 @@ export default function CatalogoPage() {
   // Filtro per codiceLinea (dalla dashboard: "Vedi tutto" di un box).
   const filteredByBox = useMemo(() => {
     if (!codiceLineaSel.size) return displayed;
-    return displayed.filter((a) => codiceLineaSel.has(a.id));
+    const filtered = displayed.filter((a) => codiceLineaSel.has(a.id));
+    // Deduplica per id (sicurezza: API o paginazione potrebbero duplicare)
+    const seen = new Set<string>();
+    return filtered.filter((a) => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
   }, [displayed, codiceLineaSel]);
 
   // Query corrente del catalogo: usata dai link prodotto (?back=) per tornare alla ricerca.
