@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
@@ -13,6 +14,13 @@ import { InsightService } from '../insight/insight.service';
  *  2. intento semantico dal prompt → coseno su articolo_embedding (filtro soft)
  *  3. score pesato per box: acquisti·w1 + tracking·w2 + progetti·w3 + affinità·w4
  *  4. top N + arricchimento (prezzo/disponibilità/promo)
+ *
+ * Fase 2 (cache + batch):
+ *  - i box generati on-demand vengono salvati in dashboard_boxes (upsert per
+ *    customerId+boxId) e riletti finché freschi (TTL configurabile);
+ *  - batch notturno @Cron che rigenera i box dei clienti ATTIVI;
+ *  - i box vuoti NON vengono cachati (non devono apparire);
+ *  - i box non più attivi vengono rimossi dalla cache.
  *
  * Regole non negoziabili (DASHBOARD-SUGGERIMENTI-AI.md §4):
  *  - il modello non decide mai esclusioni/conteggi: sono SQL;
@@ -45,6 +53,7 @@ interface Segnali {
 @Injectable()
 export class DashboardService {
   private readonly log = new Logger(DashboardService.name);
+  private batchRunning = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -53,23 +62,142 @@ export class DashboardService {
     private readonly insight: InsightService,
   ) {}
 
-  /** Box attivi per un cliente, calcolati on-the-fly (il batch/cache arriva in Fase 4). */
+  /** Freschezza della cache in minuti (default 60). */
+  private ttlMinutes(): number {
+    const v = parseInt(process.env.DASHBOARD_CACHE_TTL_MINUTES || '60', 10);
+    return Number.isFinite(v) && v > 0 ? v : 60;
+  }
+
+  /** Box attivi per un cliente: cache se fresca, altrimenti rigenera on-demand e aggiorna. */
   async getSuggerimenti(customerId: number, codiceListino?: string | null) {
     const boxes = await this.prisma.suggestionBox.findMany({
       where: { attiva: true },
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
+    const cached = await this.prisma.dashboardBox.findMany({ where: { customerId } });
+
+    // Box non più attivi (o cambiati) → rimuovi dalla cache.
+    const attivi = new Set(boxes.map((b) => b.id));
+    const orfane = cached.filter((c) => !attivi.has(c.boxId));
+    if (orfane.length) {
+      await this.prisma.dashboardBox.deleteMany({
+        where: { customerId, boxId: { in: orfane.map((o) => o.boxId) } },
+      });
+    }
+
+    const cutoff = new Date(Date.now() - this.ttlMinutes() * 60_000);
     const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
     for (const box of boxes) {
+      const row = cached.find((c) => c.boxId === box.id);
+      if (row && row.generatoIl >= cutoff) {
+        result.push({ boxId: box.id, titolo: row.titolo, rationale: row.rationale, articoli: row.prodotti as unknown[] });
+        continue;
+      }
       try {
         const articoli = await this.generaBox(box, customerId, codiceListino);
-        if (articoli.length) result.push({ boxId: box.id, titolo: box.titolo, rationale: null, articoli });
+        if (articoli.length) {
+          await this.upsertCache(customerId, box, articoli);
+          result.push({ boxId: box.id, titolo: box.titolo, rationale: null, articoli });
+        }
       } catch (e) {
         // Un box rotto non deve mai far cadere la dashboard.
         this.log.warn(`box #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
       }
     }
     return { boxes: result };
+  }
+
+  /** Rigenerazione forzata di tutti i box di un cliente (ignora la cache). */
+  async rigeneraCliente(customerId: number, codiceListino?: string | null) {
+    const boxes = await this.prisma.suggestionBox.findMany({
+      where: { attiva: true },
+      orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
+    });
+    await this.prisma.dashboardBox.deleteMany({ where: { customerId } });
+    const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
+    for (const box of boxes) {
+      try {
+        const articoli = await this.generaBox(box, customerId, codiceListino);
+        if (articoli.length) {
+          await this.upsertCache(customerId, box, articoli);
+          result.push({ boxId: box.id, titolo: box.titolo, rationale: null, articoli });
+        }
+      } catch (e) {
+        this.log.warn(`box #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
+      }
+    }
+    return { boxes: result };
+  }
+
+  /** Batch notturno: rigenera i box di tutti i clienti ATTIVI. */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async rigeneraTutti() {
+    if (this.batchRunning) {
+      this.log.warn('Batch dashboard_boxes già in esecuzione, salto il run');
+      return;
+    }
+    this.batchRunning = true;
+    const logId = await this.startBatchLog();
+    try {
+      const customers = await this.prisma.customer.findMany({
+        where: { stato: 'ATTIVO' },
+        select: { id: true, codiceListino: true },
+      });
+      const fallback = (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+      let ok = 0;
+      let errori = 0;
+      for (const c of customers) {
+        try {
+          await this.rigeneraCliente(c.id, c.codiceListino ?? fallback);
+          ok++;
+        } catch (e) {
+          errori++;
+          this.log.warn(`Rigenerazione cliente #${c.id} fallita: ${(e as Error).message}`);
+        }
+      }
+      this.log.log(`Batch dashboard_boxes: ${ok} ok, ${errori} errori su ${customers.length} clienti`);
+      await this.completeBatchLog(logId, customers.length, ok, errori);
+    } catch (e) {
+      await this.failBatchLog(logId, (e as Error).message);
+      throw e;
+    } finally {
+      this.batchRunning = false;
+    }
+  }
+
+  private async upsertCache(
+    customerId: number,
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    articoli: Prisma.InputJsonValue,
+  ) {
+    await this.prisma.dashboardBox.upsert({
+      where: { customerId_boxId: { customerId, boxId: box.id } },
+      create: { customerId, boxId: box.id, titolo: box.titolo, rationale: null, prodotti: articoli },
+      update: { titolo: box.titolo, rationale: null, prodotti: articoli, generatoIl: new Date() },
+    });
+  }
+
+  // ── Log del batch (tabella sync_log, entity='dashboard_boxes') ─────────────
+
+  private async startBatchLog(): Promise<number> {
+    const rows = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      `INSERT INTO sync_log (entity, status) VALUES ('dashboard_boxes', 'running') RETURNING id`,
+    );
+    return rows[0].id;
+  }
+
+  private async completeBatchLog(logId: number, totali: number, ok: number, errori: number) {
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE sync_log SET status = 'ok', rows_total = $1, rows_ok = $2, rows_error = $3, completed_at = now() WHERE id = $4`,
+      totali, ok, errori, logId,
+    );
+  }
+
+  private async failBatchLog(logId: number, errore: string) {
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE sync_log SET status = 'errore', error_text = $1, completed_at = now() WHERE id = $2`,
+      errore, logId,
+    );
   }
 
   /** Genera i candidati di un box per un cliente (engine deterministico). */
