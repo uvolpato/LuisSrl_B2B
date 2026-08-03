@@ -225,5 +225,67 @@ scheda completa.
 
 ---
 
+## 🐛 Bug segnalati — stato risolto
+
+### Carrello: duplicazione righe invece di incrementare quantità ✅ RISOLTO
+**Sintomo**: Aggiungendo 2 pezzi dello stesso articolo (variante) al carrello,
+venivano create **due righe separate** invece di una sola con quantità sommata.
+
+**Fix verificato**: `CarrelloService.addItem()` usa `upsert` sulla chiave unica
+`carrelloId_varianteCodice` (`@@unique([carrelloId, varianteCodice])` nel modello
+`CartItem`) con `quantita: { increment: qty }` (carrello.service.ts:99-103).
+
+### Carrello: rimozione non segnala quanti articoli rimossi ✅ RISOLTO
+**Sintomo**: La risposta non indicava quanti pezzi venivano tolti.
+
+**Fix**: `CarrelloService.removeItem()` elimina l'intera riga e restituisce
+`{ removed: item.quantita }` (carrello.service.ts:131). La UI rimuove la riga dal
+carrello (la riga sparisce, quindi il feedback è visivo). Nessun toast system: si
+è deciso di non introdurne uno solo per questo.
+
+### Catalogo: disponibilità articolo non considera tutte le varianti ✅ RISOLTO
+**Sintomo**: La card mostrava sempre "Disponibile" anche se tutte le varianti
+erano esaurite.
+
+**Fix**:
+- Backend: `getDisponibilitaArticoli(artIds)` aggrega `giacenza` di tutte le
+  varianti attive (`stato != 'NASCOSTO'`): `esaurito` se nessuna in giacenza,
+  `scorte_limitate` se almeno una sotto soglia (`STOCK_LOW_THRESHOLD`, default 10),
+  altrimenti `disponibile`. Esposto come `disponibilita` in `mapArticoloCard` per
+  catalogo, risultati AI e ricerca esatta.
+- Frontend: card `.product-stock` usa `stock-ok`/`stock-low`/`stock-out` in base
+  a `a.disponibilita` (classi CSS già esistenti in catalogo.css).
+
+### Ricerca: match esatto codici/famiglie ✅ RISOLTO
+**Obiettivo raggiunto**:
+1. **AI search** (`searchSemantica`):
+   - Codice articolo (`LU3161`) → lookup diretto + arricchimento prezzo (provider `exact-code`)
+   - "linea/famiglia ROGERS" → articoli della famiglia (provider `exact-family`)
+   - Prima del rewrite/embedding Gemini.
+2. **Ricerca normale**: `getCatalogoPaginato` — il match esatto codice viene
+   portato in testa ai risultati (`prioritizeExactCode`).
+3. **Placeholder** aggiornato: "Cerca per nome, codice (LU3161), linea (ROGERS)…".
+
+Nota: la funzione `enrichWithPrezzi` mancava (chiamata da `searchSemantica` e
+rompeva il type-check): aggiunta come helper che mappa le card con prezzo minimo
++ disponibilità.
+
+### Articolo: embedding automatico su aggiunta/modifica varianti ✅ RISOLTO
+**Decisione**: descrizione AI **resta manuale** (via wizard); l'**embedding è
+automatico** quando cambiano le varianti.
+
+**Stato finale**:
+- `buildEmbeddingBlob` ora include le **varianti attive** (descrizione + dimensioni
+  leggibili es. "Ø30 cm H40 cm") → l'hash (`fonte_hash`) cambia quando cambiano.
+- `reembedArticolo` carica le varianti attive (`stato != 'NASCOSTO'`).
+- `importaVarianti` richiama `reembedArticolo` (fire-and-forget) per tutti gli
+  articoli coinvolti: idempotente, salta i non configurati/attivi e i blob invariati.
+- `updateArticolo` (riga ~1419) già richiama `reembedArticolo` a ogni salvataggio:
+  ora attivando/disattivando una variante l'embedding si aggiorna.
+- Limite noto: le **immagini** non entrano nel blob (nessun re-embed al cambio
+  immagini) — accettato per ora.
+
+---
+
 **Ultima modifica:** 3 luglio 2026  
 **Autore:** Claude (sviluppo iterativo)
