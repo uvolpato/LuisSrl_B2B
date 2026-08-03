@@ -651,15 +651,17 @@ export default function AreaClientePage() {
               {/* Product boxes — suggerimenti dall'engine (deterministico + cache) */}
               {boxes && boxes.length > 0 && (
                 <div className="product-boxes">
-                  {boxes.map((box) => (
+                  {boxes.map((box) => {
+                    const boxHref = `/area/catalogo?codiceLinea=${box.articoli.map((a) => a.id).join(",")}`;
+                    return (
                     <div className="product-box" key={box.boxId}>
                       <div className="product-box-header">
                         <h2>{box.titolo}</h2>
-                        <Link href={`/area/catalogo?codiceLinea=${box.articoli.map((a) => a.id).join(",")}`}>Vedi tutto</Link>
+                        <Link href={boxHref}>Vedi tutto</Link>
                       </div>
                       <div className="product-grid">
                         {box.articoli.slice(0, 4).map((a) => (
-                          <Link key={a.id} href={`/area/catalogo/${a.id}`} className="product-mini" title={a.nome}>
+                          <Link key={a.id} href={boxHref} className="product-mini" title={a.nome}>
                             {a.img
                               ? <img className="product-mini-img" src={thumbUrl(a.img, 400)} alt={a.nome} />
                               : <span className="product-mini-img" />}
@@ -667,7 +669,8 @@ export default function AreaClientePage() {
                         ))}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

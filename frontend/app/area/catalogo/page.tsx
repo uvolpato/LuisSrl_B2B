@@ -181,6 +181,7 @@ export default function CatalogoPage() {
     const p = new URLSearchParams();
     p.set("page", String(pageN));
     p.set("pageSize", String(PAGE_SIZE));
+    if (codiceLineaSel.size) p.set("codiceLinea", [...codiceLineaSel].join(","));
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
     if (coloreRgb) { p.set("coloreRgb", coloreRgb); p.set("coloreTolleranza", String(coloreTolleranza)); }
@@ -213,7 +214,7 @@ try {
     } finally {
       setListLoading(false);
     }
-  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
+  }, [codiceLineaSel, famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
 
   // Facet (sidebar) — una volta.
   useEffect(() => {
@@ -376,16 +377,19 @@ try {
   const displayed = filteredAi ? filteredAi.articoli : articoli;
 
   // Filtro per codiceLinea (dalla dashboard: "Vedi tutto" di un box).
+  // Ordine preservato = ordine del box (sequenza dei codici nell'URL), non del catalogo.
   const filteredByBox = useMemo(() => {
     if (!codiceLineaSel.size) return displayed;
-    const filtered = displayed.filter((a) => codiceLineaSel.has(a.id));
-    // Deduplica per id (sicurezza: API o paginazione potrebbero duplicare)
+    const order = [...codiceLineaSel];
+    const rank = new Map(order.map((id, i) => [id, i]));
     const seen = new Set<string>();
-    return filtered.filter((a) => {
-      if (seen.has(a.id)) return false;
-      seen.add(a.id);
-      return true;
-    });
+    return displayed
+      .filter((a) => {
+        if (!rank.has(a.id) || seen.has(a.id)) return false;
+        seen.add(a.id);
+        return true;
+      })
+      .sort((x, y) => (rank.get(x.id) ?? 0) - (rank.get(y.id) ?? 0));
   }, [displayed, codiceLineaSel]);
 
   // Ritorno da una scheda: appena la lista ha contenuto, riporta lo scroll al punto salvato.
