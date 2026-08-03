@@ -42,32 +42,18 @@ function GridIcon({ size = 22 }: { size?: number }) {
   );
 }
 
-const PRODUCT_BOXES = [
-  {
-    title: "Riprendi da dove hai lasciato",
-    images: ["catalogo-cotto-esterni.webp", "catalogo-fiberstone.webp", "catalogo-cesti.webp", "catalogo-metallo.webp"],
-  },
-  {
-    title: "I tuoi prodotti in offerta",
-    images: ["catalogo-cotto-interni.webp", "vasi-bianchi.webp", "catalogo-capi-europe.webp", "catalogo-pottery-pots.webp"],
-  },
-  {
-    title: "Offerte relative ai prodotti salvati",
-    images: ["catalogo-metallo.webp", "catalogo-cesti.webp", "catalogo-fiberstone.webp", "catalogo-cotto-esterni.webp"],
-  },
-  {
-    title: "Offerte Top",
-    images: ["catalogo-capi-europe.webp", "catalogo-pottery-pots.webp", "vasi-bianchi.webp", "catalogo-fiberstone.webp"],
-  },
-  {
-    title: "Offerte di oggi",
-    images: ["catalogo-cotto-interni.webp", "catalogo-cesti.webp", "catalogo-metallo.webp", "catalogo-cotto-esterni.webp"],
-  },
-  {
-    title: "Offerte stagionali",
-    images: ["catalogo-cotto-esterni.webp", "catalogo-fiberstone.webp", "catalogo-pottery-pots.webp", "catalogo-cesti.webp"],
-  },
-];
+interface BoxArticolo {
+  id: string;
+  nome: string;
+  img: string | null;
+  prezzo: number | null;
+}
+interface SuggestionBoxView {
+  boxId: number;
+  titolo: string;
+  rationale: string | null;
+  articoli: BoxArticolo[];
+}
 
 export default function AreaClientePage() {
   const t = useTranslations("area");
@@ -76,6 +62,7 @@ export default function AreaClientePage() {
   const { user, loading, setUser } = useAuth("customer");
 
   const [activeTab, setActiveTab] = useState(0);
+  const [boxes, setBoxes] = useState<SuggestionBoxView[] | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [heroSearch, setHeroSearch] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -87,6 +74,15 @@ export default function AreaClientePage() {
     { label: "Progetti", href: "/area/progetti", placeholder: "Cerca nei tuoi progetti…" },
   ];
   const tabs = SCOPES.map((s) => s.label);
+
+  // Box suggerimento dashboard: engine deterministico lato backend (cache).
+  // Atteso che la sessione cliente sia pronta, altrimenti l'endpoint dà 401.
+  useEffect(() => {
+    if (user?.userType !== "customer") return;
+    api.get<{ boxes: SuggestionBoxView[] }>("/api/dashboard/suggerimenti")
+      .then((r) => setBoxes(r.boxes ?? []))
+      .catch(() => setBoxes([]));
+  }, [user]);
 
   const openAiModal = () => setAiModalOpen(true);
   const closeAiModal = () => setAiModalOpen(false);
@@ -147,8 +143,6 @@ export default function AreaClientePage() {
 
   const c = user as CustomerProfile;
   const firstName = c.nome.split(/\s+/)[0];
-
-  const img = (name: string) => `/images/b2b/${name}`;
 
   return (
     <>
@@ -648,24 +642,28 @@ export default function AreaClientePage() {
                 </Link>
               </div>
 
-              {/* Product boxes */}
-              <div className="product-boxes">
-                {PRODUCT_BOXES.map((box, bi) => (
-                  <div className="product-box" key={bi}>
-                    <div className="product-box-header">
-                      <h2>{box.title}</h2>
-                      <Link href="/area/famiglie">Vedi tutto</Link>
+              {/* Product boxes — suggerimenti dall'engine (deterministico + cache) */}
+              {boxes && boxes.length > 0 && (
+                <div className="product-boxes">
+                  {boxes.map((box) => (
+                    <div className="product-box" key={box.boxId}>
+                      <div className="product-box-header">
+                        <h2 title={box.rationale ?? undefined}>{box.titolo}</h2>
+                        <Link href="/area/catalogo">Vedi tutto</Link>
+                      </div>
+                      <div className="product-grid">
+                        {box.articoli.slice(0, 4).map((a) => (
+                          <Link key={a.id} href={`/area/catalogo/${a.id}`} className="product-mini" title={a.nome}>
+                            {a.img
+                              ? <img className="product-mini-img" src={thumbUrl(a.img, 400)} alt={a.nome} />
+                              : <span className="product-mini-img" />}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                    <div className="product-grid">
-                      {box.images.map((src, ii) => (
-                        <Link key={ii} href="/area/famiglie" className="product-mini">
-                          <img className="product-mini-img" src={thumbUrl(img(src), 400)} alt={box.title} />
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Bottom CTA */}
               {activeTab !== 0 && (
