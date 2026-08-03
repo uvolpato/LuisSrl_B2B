@@ -657,7 +657,6 @@ export default function AreaClientePage() {
                         <h2>{box.titolo}</h2>
                         <Link href="/area/catalogo">Vedi tutto</Link>
                       </div>
-                      {box.rationale && <p className="product-box-rationale">{box.rationale}</p>}
                       <div className="product-grid">
                         {box.articoli.slice(0, 4).map((a) => (
                           <Link key={a.id} href={`/area/catalogo/${a.id}`} className="product-mini" title={a.nome}>

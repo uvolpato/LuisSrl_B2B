@@ -1,6 +1,6 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: 5.0 — 29 luglio 2026 (allineata al cross‑check completato tra specifiche, roadmap e codice)
+Versione: 5.3 — 3 agosto 2026 (aggiunto Blocco 14 "Assistente commerciale: catalogo ad hoc" → `DASHBOARD-SUGGERIMENTI-AI.md` §14)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
@@ -20,16 +20,20 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento |
 | **8** — Ordini | ⚠️ Parziale | ❌ admin gestione ordini (cambio stato, note); ❌ notifiche email |
 | **9** — Export ordini verso Integra | ❌ NON IMPLEMENTATO | Assente — blocco fondamentale |
-| **10** — AI lato cliente | ⚠️ Parziale | ❌ banner AI con prompt admin; ❌ cronologia visite; ❌ cache Redis |
+| **10** — AI lato cliente | ⚠️ Parziale | ❌ cronologia visite; ❌ cache Redis; ❌ banner AI → vedi **Blocco 13** |
 | **11** — Collaudo, formazione, go‑live | ❌ NON INIZIATO | — |
 | **12** — Tracciamento clienti | ❌ NON INIZIATO | Progettato in `CUSTOMER-TRACKING.md` |
+| **13** — Dashboard AI: box suggerimenti personalizzati | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` |
+| **14** — Assistente commerciale: catalogo ad hoc | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` §14 |
 
 ### Gap critici
 1. **Export Excel AGOMIR (Blocco 9)** — assente, non si possono esportare ordini verso Integra
 2. **Admin gestione ordini (Blocco 8)** — nessuna UI/API per cambiare stato ordini
 3. **Notifiche email ordini** — MailModule esiste ma non collegato a ordini
-4. **Banner AI configurabile (Blocco 10)** — dashboard con box hardcoded, nessun prompt admin
+4. **Box dashboard con suggerimenti AI (Blocco 13)** — i 6 box sono hardcoded in
+   `area/page.tsx` (`PRODUCT_BOXES`), nessun dato reale; manca anche il modello `Promozione`
 5. **Codice morto** — `variantExamplePrice()` in scheda prodotto mai chiamata, commento fuorviante
+6. **Assistente commerciale catalogo ad hoc (Blocco 14)** — non iniziato; agente che costruisce cataloghi personalizzati interagendo con l'AI
 
 ---
 
@@ -384,13 +388,88 @@ Tutto in italiano o inglese.
 |----------|-----------|-------|
 | Ricerca semantica | Input linguaggio naturale → pgvector `text_vec` → risultati | ✅ `POST /api/catalogo/ricerca` |
 | Ricerca per immagini | Upload foto → Gemini Vision → pgvector → articoli simili | ✅ `POST /api/catalogo/ricerca-immagine` |
-| Banner homepage | "Articoli interessanti" basati su cronologia cliente | ❌ dashboard con box hardcoded |
-| Cronologia visite | "Ripresi da dove hai lasciato" | ❌ sezione statica |
+| Banner homepage | "Articoli interessanti" basati su cronologia cliente | ➡️ spostato al **Blocco 13** (`DASHBOARD-SUGGERIMENTI-AI.md`) |
+| Cronologia visite | "Ripresi da dove hai lasciato" | ❌ sezione statica (in Blocco 13) |
 | Cache embedding | Redis per query frequenti | ❌ mancante |
 
 **Cosa si vede:** cliente cerca "vasi rettangolari grandi per esterno" e trova risultati; carica foto e trova articoli simili.
 
-**Valore: €1.050 (3 giorni × €350)**
+**Valore: €1.400 (4 giorni × €350)**
+
+---
+
+## Blocco 13 — Dashboard AI: box di suggerimenti personalizzati (5 giorni) ❌ NON INIZIATO
+
+> Progettazione completa in **`DASHBOARD-SUGGERIMENTI-AI.md`**.
+
+I 6 box della dashboard cliente sono oggi hardcoded (`PRODUCT_BOXES` in `area/page.tsx`).
+Obiettivo: box **configurabili dall'admin** (titolo + prompt, es. "Provali" → "10 articoli
+mai acquistati che possono interessargli"; "Natale" → "10 articoli natalizi in linea con
+gli acquisti"). Un'agente AI aggrega **consumi reali + tracking + progetti del cliente +
+affinità (clienti simili) + giacenza + listino + promo**, con **pesi configurabili per box**
+(la proporzione progetti/tracking è un parametro, non una costante). Pipeline ibrida:
+motore deterministico (vincoli SQL + intento semantico via pgvector) → candidati → Gemini
+structured output (selezione/ordine/rationale). **Il LLM non inventa mai prodotti.**
+
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Modello `Promozione` | Tabella + CRUD admin + fonte dati (prerequisito dei box "offerta") | ❌ da fare |
+| Motore deterministico | Vincoli duri in SQL (in offerta/escludi acquistati/giacenza/scope) + intento semantico dal prompt (pgvector) | ❌ da fare |
+| Score pesato | Acquisti/tracking/**progetti**/affinità con pesi editabili per box (default 40/25/20/15) | ❌ da fare |
+| LLM structured output | Gemini JSON schema: selezione, ordine, rationale (fallback deterministico) | ❌ da fare |
+| **Admin UI box** | CRUD "titolo+prompt+pesi+vincoli" (pattern `PromptTemplate`) + **LLM-planner a edit-time** (il prompt genera un piano di query revisionabile) + **anteprima test** | ❌ da fare |
+| Endpoint + cache | `GET /dashboard/suggerimenti` + tabella `DashboardBox` (cache per cliente) | ❌ da fare |
+| Batch notturno + trigger | Rigenerazione schedulata (`@nestjs/schedule`) + on-demand su ordine/promo/esaurito | ❌ da fare |
+| Frontend + misurazione | Box da dati reali, nascosti se vuoti; tracciamento click-per-box per tarare i pesi | ❌ da fare |
+
+**Cosa si vede:** l'admin definisce i box (titolo+prompt) senza codice e ne vede
+l'anteprima; il cliente in dashboard vede box personalizzati con prodotti reali, prezzi del
+suo listino e giacenza, rigenerati a batch notturno.
+
+**Note:**
+- **Niente framework agentico (LangChain/LangGraph) per i box**: pipeline deterministica +
+  LLM-planner a edit-time; LangGraph è riservato a un eventuale chatbot consulente.
+- Richiede i dati del Blocco 12 (tracciamento) per i segnali tracking/affinità; i box
+  "offerta" richiedono la tabella `Promozione`.
+- Costi LLM contenuti: caching a batch, ≤10 box attivi, monitorati da `AiUsage`.
+- GDPR: prompt con candidati minimizzati, mai dati di altri clienti; log rigenerazioni.
+
+**Valore: €1.750 (5 giorni × €350)**
+
+---
+
+## Blocco 14 — Assistente commerciale: catalogo ad hoc (5 giorni) ❌ NON INIZIATO
+
+> Progettazione completa in **`DASHBOARD-SUGGERIMENTI-AI.md` §14**.
+
+Scenario: un **agente di commercio** costruisce un **catalogo personalizzato** per un
+cliente **interagendo con l'AI** (chat): "creami un catalogo per Rossi con terracotta
+primaverile, escludi ciò che ha già comprato" → "aggiungi i fiberstone ordinati per margine"
+→ "salva". Qui **sì che serve un agente** (conversazionale, stateful, tool-calling), a
+differenza dei box del Blocco 13 (batch e deterministici). L'agente consuma gli **stessi
+tool** del motore (ricerca semantica, articolo, giacenza, listino cliente, promo, progetti).
+
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| Modello `BozzaCatalogo` | Tabella (criteri, righe, stato, conversazione) + API CRUD | ❌ da fare |
+| Agente conversazionale | Gemini function-calling: ricerca/articolo/giacenza/listino/promo/progetti + aggiungi/rimuovi da bozza + salva | ❌ da fare |
+| Human-in-the-loop | Conferma prima del salvataggio, storico modifiche (annulla/riprendi) | ❌ da fare |
+| UI commerciale | Pannello "Crea catalogo" con chat, anteprima righe, prezzi dal listino cliente | ❌ da fare |
+| Export/condivisione | Catalogo ad hoc → PDF/Excel / link condiviso | ❌ da fare |
+| Integrazione MCP | Tool esposti per agenti esterni (Claude/opencode) via `MCP-B2B.md` | ❌ da fare |
+
+**Cosa si vede:** il commerciale crea e modifica un catalogo personalizzato parlando con
+l'AI; i prezzi e la disponibilità restano reali (layer deterministico); salva solo dopo
+conferma; può esportarlo o condividerlo.
+
+**Note:**
+- Riusa il motore del Blocco 13 + dati Blocco 12 (tracking/progetti) e Blocco 3 (listini).
+- **Framework**: partire dal function-calling nativo di Gemini + tabella stato;
+  **LangGraph solo se** servono multi-agente/branching/interrupt formali.
+- Costi agentici per sessione utente (non a batch) → monitorare `AiUsage`.
+- GDPR: bozza con dati cliente → permessi per operatore, audit salvataggio, retention.
+
+**Valore: €1.750 (5 giorni × €350)**
 
 ---
 
@@ -465,7 +544,9 @@ Tutto in italiano o inglese.
 | 10 | AI lato cliente | 3 | €350 | **€1.050** |
 | 11 | Collaudo, formazione, go-live | 3 | €350 | **€1.050** |
 | 12 | Tracciamento comportamento clienti | 4 | €350 | **€1.400** |
-| | **Totale** | **36 giorni** | | **€12.600** |
+| 13 | Dashboard AI: box suggerimenti personalizzati | 5 | €350 | **€1.750** |
+| 14 | Assistente commerciale: catalogo ad hoc | 5 | €350 | **€1.750** |
+| | **Totale** | **46 giorni** | | **€16.100** |
 
 ### Opzioni di fatturazione
 
@@ -480,11 +561,11 @@ Tutto in italiano o inglese.
 A titolo informativo, il benchmark di mercato Italia 2026 per un profilo full-stack senior
 (Next.js + NestJS + PostgreSQL + AI) è:
 
-| Figura | Tariffa/giorno | Su 36 giorni |
+| Figura | Tariffa/giorno | Su 46 giorni |
 |--------|---------------|--------------|
-| **Consulente senior diretto** | €450–550/giorno | **€16.200–19.800** |
-| **Agenzia di sviluppo** | €600–800/giorno | **€21.600–28.800** |
-| **Prezzo applicato (€350/giorno)** | **€350/giorno** | **€12.600** |
+| **Consulente senior diretto** | €450–550/giorno | **€20.700–25.300** |
+| **Agenzia di sviluppo** | €600–800/giorno | **€27.600–36.800** |
+| **Prezzo applicato (€350/giorno)** | **€350/giorno** | **€16.100** |
 
 Il prezzo applicato è circa il **30% sotto il mercato** per un senior diretto
 e circa la **metà di un'agenzia**. Il risparmio riflette:
