@@ -27,6 +27,8 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { CreatePromozioneDto } from './dto/create-promozione.dto';
+import { UpdatePromozioneDto } from './dto/update-promozione.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 
 @Controller('admin')
@@ -222,6 +224,40 @@ export class AdminController {
     @Req() req: AuthenticatedRequest,
   ) {
     await this.admin.deleteRaccolta(id, req.user.id, req.ip);
+  }
+
+  // ── Promozioni / offerte (stessa area marketing delle raccolte) ──
+
+  @Get('promozioni')
+  @RequirePermission('catalog.raccolte.view')
+  listPromozioni() {
+    return this.admin.listPromozioni();
+  }
+
+  @Post('promozioni')
+  @RequirePermission('catalog.raccolte.edit')
+  createPromozione(@Body() dto: CreatePromozioneDto, @Req() req: AuthenticatedRequest) {
+    return this.admin.createPromozione(dto, req.user.id, req.ip);
+  }
+
+  @Put('promozioni/:id')
+  @RequirePermission('catalog.raccolte.edit')
+  updatePromozione(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePromozioneDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.admin.updatePromozione(id, dto, req.user.id, req.ip);
+  }
+
+  @Delete('promozioni/:id')
+  @HttpCode(204)
+  @RequirePermission('catalog.raccolte.edit')
+  async deletePromozione(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.admin.deletePromozione(id, req.user.id, req.ip);
   }
 
   // ── Articoli in una Raccolta ──

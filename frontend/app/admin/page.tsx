@@ -10,6 +10,7 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import ArticoliSection from "../../components/admin/sections/ArticoliSection";
 import ClientiSection from "../../components/admin/sections/ClientiSection";
 import RaccolteSection from "../../components/admin/sections/RaccolteSection";
+import PromozioniSection from "../../components/admin/sections/PromozioniSection";
 import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 import ListiniSection from "../../components/admin/sections/ListiniSection";
 
@@ -18,6 +19,7 @@ const SECTION_TITLES: Record<string, string> = {
   articoli: "Gestione Articoli",
   famiglie: "Famiglie (da Integra)",
   raccolte: "Raccolte di portale",
+  promozioni: "Promozioni e offerte",
   listini: "Listini",
   ordini: "Ordini",
   import: "Import / Export",
@@ -47,6 +49,8 @@ export default function AdminPage() {
       {section === "famiglie" && <FamiglieSection />}
 
       {section === "raccolte" && <RaccolteSection />}
+
+      {section === "promozioni" && <PromozioniSection />}
 
       {section === "listini" && <ListiniSection />}
 
