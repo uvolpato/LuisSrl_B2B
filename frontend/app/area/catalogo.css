@@ -179,6 +179,7 @@
   overflow: hidden;
   transition: border-color 0.15s ease;
   color: inherit;
+  isolation: isolate;
 }
 .catalogo-page .product-card:hover { border-color: var(--accent); }
 .catalogo-page .product-card .product-img {
