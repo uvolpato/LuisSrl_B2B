@@ -37,6 +37,12 @@ interface Catalogo {
 }
 
 const PAGE_SIZE = 12;
+
+// Chiave stabile dei filtri (ordine-indipendente): identifica una lista di catalogo.
+function normKey(qs: string): string {
+  const p = new URLSearchParams(qs);
+  return [...p.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("&");
+}
 const SORT_OPTIONS = [
   { value: "novita", label: "Novità" },
   { value: "prezzo-asc", label: "Prezzo: basso → alto" },
@@ -100,6 +106,10 @@ export default function CatalogoPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResults, setAiResults] = useState<{ query: string; kind: "text" | "image"; articoli: CatalogoArticolo[] } | null>(null);
   const restored = useRef(false);
+  const [facetsLoaded, setFacetsLoaded] = useState(false);
+  // Ritorno da una scheda prodotto: ripristino pagine caricate + scroll (vedi saveCatalogState).
+  const pendingRestore = useRef<{ articoli: CatalogoArticolo[]; page: number; hasMore: boolean; total: number } | null>(null);
+  const pendingScrollY = useRef<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { setContent: setHeaderCenter } = useHeaderCenter();
 
@@ -214,7 +224,8 @@ try {
         if (data.dimensioni?.altezza) setAltezzaRange([data.dimensioni.altezza.min, data.dimensioni.altezza.max]);
         if (data.prezzo) setPrezzoRange([data.prezzo.min, data.prezzo.max]);
       })
-      .catch(() => setFacets({ famiglie: [], raccolte: [], colori: [], dimensioni: {}, prezzo: null }));
+      .catch(() => setFacets({ famiglie: [], raccolte: [], colori: [], dimensioni: {}, prezzo: null }))
+      .finally(() => setFacetsLoaded(true));
   }, []);
 
   // Ripristina lo stato dall'URL: deep-link da /area/famiglie (?famiglia=),
@@ -247,6 +258,21 @@ try {
         try { setAiResults({ query: "immagine caricata", kind: "image", articoli: JSON.parse(raw) }); } catch { /* ignora */ }
       }
     }
+    // Ritorno da una scheda: se la chiave salvata combacia coi filtri correnti,
+    // riprendo pagine caricate + scroll invece di ripartire dalla pagina 1.
+    try {
+      const raw = sessionStorage.getItem("catalogo-restore");
+      if (raw) {
+        sessionStorage.removeItem("catalogo-restore");
+        const saved = JSON.parse(raw);
+        if (saved.key === normKey(window.location.search)) {
+          if (Array.isArray(saved.articoli)) {
+            pendingRestore.current = { articoli: saved.articoli, page: saved.page, hasMore: saved.hasMore, total: saved.total };
+          }
+          pendingScrollY.current = typeof saved.scrollY === "number" ? saved.scrollY : null;
+        }
+      }
+    } catch { /* ignora */ }
     restored.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -283,10 +309,17 @@ try {
   // Al cambio di filtri/ricerca (fuori dalla modalità AI): ricarica dalla pagina 1 (debounce per il testo).
   // In attesa di una ricerca AI testuale non carica il catalogo completo: evita il "flash" di articoli non filtrati.
   useEffect(() => {
-    if (!restored.current || aiResults || (aiQuery.trim() && aiLoading)) return;
+    if (!restored.current || !facetsLoaded || aiResults || (aiQuery.trim() && aiLoading)) return;
+    // Ritorno da una scheda: ripristina la lista accumulata senza refetch (una volta sola).
+    if (pendingRestore.current) {
+      const r = pendingRestore.current;
+      pendingRestore.current = null;
+      setArticoli(r.articoli); setTotal(r.total); setHasMore(r.hasMore); setPage(r.page);
+      return;
+    }
     const t = setTimeout(() => { void fetchPage(1, true); }, 250);
     return () => clearTimeout(t);
-  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, aiQuery, aiLoading, fetchPage]);
+  }, [famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, aiResults, aiQuery, aiLoading, facetsLoaded, fetchPage]);
 
   // Infinite scroll: carica la pagina successiva quando il sentinella entra in viewport.
   useEffect(() => {
@@ -355,6 +388,15 @@ try {
     });
   }, [displayed, codiceLineaSel]);
 
+  // Ritorno da una scheda: appena la lista ha contenuto, riporta lo scroll al punto salvato.
+  useEffect(() => {
+    if (pendingScrollY.current == null || filteredByBox.length === 0) return;
+    const y = pendingScrollY.current;
+    pendingScrollY.current = null;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+    return () => cancelAnimationFrame(id);
+  }, [filteredByBox]);
+
   // Query corrente del catalogo: usata dai link prodotto (?back=) per tornare alla ricerca.
   const catalogQs = useMemo(() => {
     const p = new URLSearchParams();
@@ -369,6 +411,15 @@ try {
     if (search.trim()) p.set("q", search.trim());
     return p.toString();
   }, [aiResults, aiQuery, famiglieSel, raccolteSel, codiceLineaSel, activeTab, sort, search]);
+
+  // Salva lista + scroll prima di aprire una scheda, per ripristinarli al ritorno.
+  const saveCatalogState = useCallback(() => {
+    try {
+      sessionStorage.setItem("catalogo-restore", JSON.stringify({
+        key: normKey(catalogQs), scrollY: window.scrollY, articoli, page, hasMore, total,
+      }));
+    } catch { /* ignora */ }
+  }, [catalogQs, articoli, page, hasMore, total]);
 
   const tabLabel = activeTab !== "tutti" ? facets.raccolte.find((r) => r.slug === activeTab)?.nome : null;
 
@@ -551,7 +602,7 @@ try {
 
               <div className="product-grid">
                 {filteredByBox.map((a) => (
-                  <Link href={`/area/catalogo/${a.id}${catalogQs ? `?back=${encodeURIComponent(catalogQs)}` : ""}`} key={a.id} className="product-card">
+                  <Link href={`/area/catalogo/${a.id}${catalogQs ? `?back=${encodeURIComponent(catalogQs)}` : ""}`} key={a.id} className="product-card" onClick={saveCatalogState}>
                     <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
                       {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
                     </PositionedImage>
