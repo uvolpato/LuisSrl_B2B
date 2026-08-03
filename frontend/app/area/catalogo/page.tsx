@@ -84,6 +84,7 @@ export default function CatalogoPage() {
   const [search, setSearch] = useState("");
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
+  const [codiceLineaSel, setCodiceLineaSel] = useState<Set<string>>(new Set());
   const [coloreRgb, setColoreRgb] = useState<string>("");
   const [coloreTolleranza, setColoreTolleranza] = useState<number>(15);
   const [diametroRange, setDiametroRange] = useState<[number, number]>([0, 999]);
@@ -216,6 +217,7 @@ export default function CatalogoPage() {
     const p = new URLSearchParams(window.location.search);
     const fam = p.get("famiglia"); if (fam) setFamiglieSel(new Set(fam.split(",").filter(Boolean)));
     const rac = p.get("raccolte"); if (rac) setRaccolteSel(new Set(rac.split(",").filter(Boolean)));
+    const cl = p.get("codiceLinea"); if (cl) setCodiceLineaSel(new Set(cl.split(",").filter(Boolean)));
     const tab = p.get("tab"); if (tab) setActiveTab(tab);
     const so = p.get("sort"); if (so) setSort(so);
     const q = p.get("q"); if (q) setSearch(q);
@@ -331,6 +333,12 @@ export default function CatalogoPage() {
 
   const displayed = filteredAi ? filteredAi.articoli : articoli;
 
+  // Filtro per codiceLinea (dalla dashboard: "Vedi tutto" di un box).
+  const filteredByBox = useMemo(() => {
+    if (!codiceLineaSel.size) return displayed;
+    return displayed.filter((a) => codiceLineaSel.has(a.id));
+  }, [displayed, codiceLineaSel]);
+
   // Query corrente del catalogo: usata dai link prodotto (?back=) per tornare alla ricerca.
   const catalogQs = useMemo(() => {
     const p = new URLSearchParams();
@@ -339,11 +347,12 @@ export default function CatalogoPage() {
     else if (aiQuery.trim()) p.set("ai", aiQuery);
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
+    if (codiceLineaSel.size) p.set("codiceLinea", [...codiceLineaSel].join(","));
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (sort !== "novita") p.set("sort", sort);
     if (search.trim()) p.set("q", search.trim());
     return p.toString();
-  }, [aiResults, aiQuery, famiglieSel, raccolteSel, activeTab, sort, search]);
+  }, [aiResults, aiQuery, famiglieSel, raccolteSel, codiceLineaSel, activeTab, sort, search]);
 
   const tabLabel = activeTab !== "tutti" ? facets.raccolte.find((r) => r.slug === activeTab)?.nome : null;
 
@@ -362,10 +371,11 @@ export default function CatalogoPage() {
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
-  // "Tutti" (barra raccolte): azzera tutti i filtri tranne la famiglia.
-  function resetExceptFamily() {
-    setRaccolteSel(new Set());
-    setColoreRgb("");
+   // "Tutti" (barra raccolte): azzera tutti i filtri tranne la famiglia.
+   function resetExceptFamily() {
+     setRaccolteSel(new Set());
+     setCodiceLineaSel(new Set());
+     setColoreRgb("");
     setColoreTolleranza(15);
     setSearch("");
     setActiveTab("tutti");
@@ -489,7 +499,7 @@ export default function CatalogoPage() {
               <div className="catalog-header">
                 <div>
                   <h2>{aiResults ? "Ricerca intelligente" : (tabLabel ?? "Catalogo")}</h2>
-                  <p className="meta">{aiResults ? displayed.length : total} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
+                  <p className="meta">{aiResults ? filteredByBox.length : total} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <button type="button" className="filters-toggle" onClick={() => setFiltersOpen(true)}>
@@ -524,7 +534,7 @@ export default function CatalogoPage() {
               )}
 
               <div className="product-grid">
-                {displayed.map((a) => (
+                {filteredByBox.map((a) => (
                   <Link href={`/area/catalogo/${a.id}${catalogQs ? `?back=${encodeURIComponent(catalogQs)}` : ""}`} key={a.id} className="product-card">
                     <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
                       {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
@@ -554,18 +564,18 @@ export default function CatalogoPage() {
                 ))}
               </div>
 
-              {displayed.length === 0 && (
-                <div className="catalog-empty">{listLoading || aiLoading ? "Caricamento…" : "Nessun articolo trovato. Prova a modificare filtri o ricerca."}</div>
-              )}
+               {filteredByBox.length === 0 && (
+                 <div className="catalog-empty">{listLoading || aiLoading ? "Caricamento…" : "Nessun articolo trovato. Prova a modificare filtri o ricerca."}</div>
+               )}
 
-              {/* Infinite scroll: sentinella + indicatore (solo catalogo, non in modalità AI) */}
-              {!aiResults && (
-                <>
-                  <div ref={sentinelRef} style={{ height: 1 }} />
-                  {listLoading && displayed.length > 0 && (
-                    <div className="catalog-empty" style={{ padding: "16px 0" }}>Carico altri articoli…</div>
+               {/* Infinite scroll: sentinella + indicatore (solo catalogo, non in modalità AI) */}
+               {!aiResults && (
+                 <>
+                   <div ref={sentinelRef} style={{ height: 1 }} />
+                   {listLoading && filteredByBox.length > 0 && (
+                     <div className="catalog-empty" style={{ padding: "16px 0" }}>Carico altri articoli…</div>
                   )}
-                  {!hasMore && displayed.length > 0 && (
+                  {!hasMore && filteredByBox.length > 0 && (
                     <p style={{ textAlign: "center", color: "var(--muted)", fontSize: 13, margin: "16px 0" }}>
                       Hai visto tutti i {total} articoli.
                     </p>
