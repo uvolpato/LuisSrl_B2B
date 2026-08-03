@@ -333,15 +333,24 @@ export default function AreaClientePage() {
         }
         .product-box-header {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
+          gap: 12px;
           margin-bottom: var(--gap-md, 20px);
         }
+        .product-box-header > a { flex-shrink: 0; white-space: nowrap; }
         .product-box-header h2 {
           font-family: var(--font-display);
           font-size: 18px;
           margin: 0;
           letter-spacing: -0.01em;
+        }
+        .product-box-rationale {
+          margin: 3px 0 0;
+          font-size: 12.5px;
+          line-height: 1.35;
+          color: var(--muted);
+          max-width: 42ch;
         }
         .product-box-header a {
           font-size: 13px;
@@ -648,7 +657,10 @@ export default function AreaClientePage() {
                   {boxes.map((box) => (
                     <div className="product-box" key={box.boxId}>
                       <div className="product-box-header">
-                        <h2 title={box.rationale ?? undefined}>{box.titolo}</h2>
+                        <div>
+                          <h2>{box.titolo}</h2>
+                          {box.rationale && <p className="product-box-rationale">{box.rationale}</p>}
+                        </div>
                         <Link href="/area/catalogo">Vedi tutto</Link>
                       </div>
                       <div className="product-grid">
