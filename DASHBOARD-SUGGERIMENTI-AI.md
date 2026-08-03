@@ -47,10 +47,12 @@ giustifica. **Il modello non inventa mai prodotti: sceglie solo tra candidati re
 > (schema + migration `20260803000000_dashboard_ai`).
 > **Implementato** (agosto 2026): Fase 2 (LLM `rationale` per box via
 > `IntegrazioneService.generaSintesiAI`, disattivabile con `DASHBOARD_RATIONALE=off`),
-> Fase 3 (CRUD admin **promozioni** — sezione "Promozioni"), Fase 5 (wiring frontend:
-> la dashboard consuma `GET /dashboard/suggerimenti`, box vuoti nascosti).
-> **Manca ancora**: CRUD admin dei `SuggestionBox` (i 6 box sono seedati, non ancora
-> editabili da UI); selezione/riordino LLM (l'AI spiega ma non sceglie — deterministico).
+> Fase 3 (**CRUD admin dei `SuggestionBox`** — sezione "Box dashboard": titolo, prompt,
+> n° articoli, pesi, scope famiglia/raccolta, `soloInOfferta`, ordine, attivo), Fase 5
+> (wiring frontend: la dashboard consuma `GET /dashboard/suggerimenti`, box vuoti nascosti).
+> **Manca ancora**: selezione/riordino LLM (l'AI spiega ma non sceglie — deterministico);
+> CRUD promozioni (il modello `Promozione` esiste ma senza UI — i box `soloInOfferta`
+> restano vuoti finché non ci sono promozioni a DB).
 
 | Area | Stato |
 |------|-------|
@@ -64,8 +66,8 @@ giustifica. **Il modello non inventa mai prodotti: sceglie solo tra candidati re
 | Giacenza | ✅ view `b2b_giacenze` (ultimo inventario attivo) |
 | Listini/prezzi per cliente | ✅ `enrichWithPrezzi(codiceListino)` |
 | Prompt admin-editabili | ✅ pattern esistente (`PromptTemplate` per wizard descrizioni) — riutilizzabile |
-| Promozioni/offerte | ✅ CRUD admin completo (sezione "Promozioni": targeting famiglie/articoli, stato, priorità) |
-| Box configurabili | ✅ engine + LLM `rationale` + frontend; ❌ CRUD admin dei `SuggestionBox` (seedati, non editabili da UI) |
+| Promozioni/offerte | modello `Promozione` presente; ❌ nessuna UI admin (i box `soloInOfferta` restano vuoti senza promozioni a DB) |
+| Box configurabili | ✅ CRUD admin `SuggestionBox` (sezione "Box dashboard") + engine + LLM `rationale` + frontend |
 
 ---
 

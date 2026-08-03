@@ -7,6 +7,8 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { CreateSuggestionBoxDto } from './dto/create-suggestion-box.dto';
+import { UpdateSuggestionBoxDto } from './dto/update-suggestion-box.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 import { toUserProfile } from '../common/auth-types';
 import type { UserProfile } from '../common/auth-types';
@@ -366,6 +368,65 @@ export class AdminService {
 
     await this.prisma.raccolta.delete({ where: { id } });
     await this.audit.log({ actorId, azione: 'admin.raccolta_delete', entita: 'raccolte', entitaId: String(id), ip });
+  }
+
+  // ── Box suggerimento dashboard (SuggestionBox) ──
+
+  listSuggestionBoxes() {
+    return this.prisma.suggestionBox.findMany({
+      orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
+    });
+  }
+
+  async createSuggestionBox(dto: CreateSuggestionBoxDto, actorId: number, ip?: string) {
+    const box = await this.prisma.suggestionBox.create({
+      data: {
+        titolo: dto.titolo,
+        prompt: dto.prompt ?? '',
+        ...(dto.nArticoli !== undefined && { nArticoli: dto.nArticoli }),
+        ...(dto.pesi !== undefined && { pesi: dto.pesi as Prisma.InputJsonValue }),
+        ...(dto.soloInOfferta !== undefined && { soloInOfferta: dto.soloInOfferta }),
+        ...(dto.escludiAcquistati !== undefined && { escludiAcquistati: dto.escludiAcquistati }),
+        ...(dto.scopeFamiglia !== undefined && { scopeFamiglia: dto.scopeFamiglia }),
+        ...(dto.scopeRaccolta !== undefined && { scopeRaccolta: dto.scopeRaccolta }),
+        ...(dto.attiva !== undefined && { attiva: dto.attiva }),
+        ...(dto.ordinamento !== undefined && { ordinamento: dto.ordinamento }),
+      },
+    });
+    await this.audit.log({ actorId, azione: 'admin.suggestion_box_create', entita: 'suggestion_boxes', entitaId: String(box.id), ip });
+    return box;
+  }
+
+  async updateSuggestionBox(id: number, dto: UpdateSuggestionBoxDto, actorId: number, ip?: string) {
+    const box = await this.prisma.suggestionBox.findUnique({ where: { id } });
+    if (!box) throw new NotFoundException('admin.suggestion_box_not_found');
+    const updated = await this.prisma.suggestionBox.update({
+      where: { id },
+      data: {
+        ...(dto.titolo !== undefined && { titolo: dto.titolo }),
+        ...(dto.prompt !== undefined && { prompt: dto.prompt }),
+        ...(dto.nArticoli !== undefined && { nArticoli: dto.nArticoli }),
+        ...(dto.pesi !== undefined && { pesi: dto.pesi as Prisma.InputJsonValue }),
+        ...(dto.soloInOfferta !== undefined && { soloInOfferta: dto.soloInOfferta }),
+        ...(dto.escludiAcquistati !== undefined && { escludiAcquistati: dto.escludiAcquistati }),
+        ...(dto.scopeFamiglia !== undefined && { scopeFamiglia: dto.scopeFamiglia }),
+        ...(dto.scopeRaccolta !== undefined && { scopeRaccolta: dto.scopeRaccolta }),
+        ...(dto.attiva !== undefined && { attiva: dto.attiva }),
+        ...(dto.ordinamento !== undefined && { ordinamento: dto.ordinamento }),
+      },
+    });
+    // La configurazione è cambiata: invalida la cache di questo box per tutti i clienti.
+    await this.prisma.dashboardBox.deleteMany({ where: { boxId: id } });
+    await this.audit.log({ actorId, azione: 'admin.suggestion_box_update', entita: 'suggestion_boxes', entitaId: String(id), ip });
+    return updated;
+  }
+
+  async deleteSuggestionBox(id: number, actorId: number, ip?: string) {
+    const box = await this.prisma.suggestionBox.findUnique({ where: { id } });
+    if (!box) throw new NotFoundException('admin.suggestion_box_not_found');
+    await this.prisma.dashboardBox.deleteMany({ where: { boxId: id } });
+    await this.prisma.suggestionBox.delete({ where: { id } });
+    await this.audit.log({ actorId, azione: 'admin.suggestion_box_delete', entita: 'suggestion_boxes', entitaId: String(id), ip });
   }
 
   async setRaccoltaArticoli(id: number, articoliIds: number[], actorId: number, ip?: string) {

@@ -27,6 +27,8 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateUserPermissionsDto } from './dto/update-user-permissions.dto';
 import { CreateRaccoltaDto } from './dto/create-raccolta.dto';
 import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
+import { CreateSuggestionBoxDto } from './dto/create-suggestion-box.dto';
+import { UpdateSuggestionBoxDto } from './dto/update-suggestion-box.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 
 @Controller('admin')
@@ -222,6 +224,40 @@ export class AdminController {
     @Req() req: AuthenticatedRequest,
   ) {
     await this.admin.deleteRaccolta(id, req.user.id, req.ip);
+  }
+
+  // ── Box suggerimento dashboard (SuggestionBox) ──
+
+  @Get('suggestion-boxes')
+  @RequirePermission('catalog.raccolte.view')
+  listSuggestionBoxes() {
+    return this.admin.listSuggestionBoxes();
+  }
+
+  @Post('suggestion-boxes')
+  @RequirePermission('catalog.raccolte.edit')
+  createSuggestionBox(@Body() dto: CreateSuggestionBoxDto, @Req() req: AuthenticatedRequest) {
+    return this.admin.createSuggestionBox(dto, req.user.id, req.ip);
+  }
+
+  @Put('suggestion-boxes/:id')
+  @RequirePermission('catalog.raccolte.edit')
+  updateSuggestionBox(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSuggestionBoxDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.admin.updateSuggestionBox(id, dto, req.user.id, req.ip);
+  }
+
+  @Delete('suggestion-boxes/:id')
+  @HttpCode(204)
+  @RequirePermission('catalog.raccolte.edit')
+  async deleteSuggestionBox(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.admin.deleteSuggestionBox(id, req.user.id, req.ip);
   }
 
   // ── Articoli in una Raccolta ──
