@@ -30,11 +30,15 @@ import { UpdateRaccoltaDto } from './dto/update-raccolta.dto';
 import { CreateSuggestionBoxDto } from './dto/create-suggestion-box.dto';
 import { UpdateSuggestionBoxDto } from './dto/update-suggestion-box.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
+import { CustomerProfileService } from '../customer-profile/customer-profile.service';
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly customerProfile: CustomerProfileService,
+  ) {}
 
   // ── Gruppi di permessi ──
 
@@ -280,5 +284,29 @@ export class AdminController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.admin.uploadRaccoltaImage(id, file);
+  }
+
+  // ── Customer profiles (intelligence commerciale) ──
+
+  @Get('customers/:id/profilo')
+  @RequirePermission('admin.customers.view')
+  async getCustomerProfile(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.customerProfile.getProfilo(id);
+  }
+
+  @Post('customers/:id/regenerate-profile')
+  @RequirePermission('admin.customers.view')
+  async regenerateCustomerProfile(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.customerProfile.generaProfilo(id);
+  }
+
+  @Post('customers/regenerate-profiles')
+  @RequirePermission('admin.customers.view')
+  async regenerateAllProfiles() {
+    return this.customerProfile.generaTutti();
   }
 }

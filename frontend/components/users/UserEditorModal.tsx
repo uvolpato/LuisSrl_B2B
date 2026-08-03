@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 import type {
   CustomerProfile,
+  CustomerIntelligenceProfile,
   IndirizzoCliente,
   ContattoCliente,
   OrdineCliente,
@@ -22,7 +23,7 @@ export type UserEditorTarget =
   | { mode: "create" }
   | { mode: "edit"; user: CustomerProfile };
 
-type Tab = "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita";
+type Tab = "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita" | "profilo";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -79,6 +80,8 @@ export default function UserEditorModal({
     preferredLanguage: editing?.preferredLanguage ?? "it",
   });
   const [tab, setTab] = useState<Tab>("anagrafica");
+  const [profilo, setProfilo] = useState<CustomerIntelligenceProfile | null>(null);
+  const [profiloLoading, setProfiloLoading] = useState(false);
   const [indirizzi, setIndirizzi] = useState<IndirizzoCliente[]>([]);
   const [contatti, setContatti] = useState<ContattoCliente[]>([]);
   const [ordini, setOrdini] = useState<OrdineCliente[]>([]);
@@ -208,9 +211,22 @@ export default function UserEditorModal({
     } finally {
       setOrdiniLoading(false);
     }
-  }
+   }
 
-  function handleSort(field: string) {
+   async function loadProfilo() {
+     if (!editing) return;
+     setProfiloLoading(true);
+     try {
+       const res = await api.get<CustomerIntelligenceProfile>(`/admin/customers/${editing.id}/profilo`);
+       setProfilo(res);
+     } catch {
+       setProfilo(null);
+     } finally {
+       setProfiloLoading(false);
+     }
+   }
+
+   function handleSort(field: string) {
     const same = ordiniSortBy === field;
     const newDir = same && ordiniSortDir === "asc" ? "desc" : "asc";
     setOrdiniSortBy(field);
@@ -223,6 +239,7 @@ export default function UserEditorModal({
     if (tab === "indirizzi" && indirizzi.length === 0) void loadIndirizzi();
     if (tab === "contatti" && contatti.length === 0) void loadContatti();
     if (tab === "ordini") void loadOrdini("", 1);
+    if (tab === "profilo" && editing && !profilo && !profiloLoading) void loadProfilo();
   }, [tab, editing]);
 
   async function onSubmit(e: FormEvent) {
@@ -301,6 +318,7 @@ export default function UserEditorModal({
           <button className={`modal-tab-btn ${tab === "contatti" ? "active" : ""}`} onClick={() => setTab("contatti")}>Contatti</button>
           <button className={`modal-tab-btn ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")}>Ordini</button>
           {editing && <button className={`modal-tab-btn ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")}>Attività</button>}
+          {editing && <button className={`modal-tab-btn ${tab === "profilo" ? "active" : ""}`} onClick={() => setTab("profilo")}>Profilo</button>}
         </div>
       )}
 
@@ -525,6 +543,27 @@ export default function UserEditorModal({
 
         {tab === "attivita" && editing && <CustomerTimeline customerId={editing.id} />}
 
+        {tab === "profilo" && editing && (
+          <ProfiloTab
+            customerId={editing.id}
+            profilo={profilo}
+            loading={profiloLoading}
+            onGenerate={async () => {
+              setProfiloLoading(true);
+              try {
+                const res = await api.post<CustomerIntelligenceProfile>(
+                  `/admin/customers/${editing.id}/regenerate-profile`,
+                );
+                setProfilo(res);
+              } catch (e) {
+                setProfilo(null);
+              } finally {
+                setProfiloLoading(false);
+              }
+            }}
+          />
+        )}
+
         {tab === "ordini" && editing && (
           <div className="ordini-tab">
             {linkedError && <div style={{ flexShrink: 0 }}><Notice variant="error" onClose={() => setLinkedError(null)}>{tServer(linkedError)}</Notice></div>}
@@ -685,5 +724,123 @@ export default function UserEditorModal({
           onClose={() => setProvisional(null)}
         />
       )}
-  </>);
+   </>);
+}
+
+function ProfiloTab({
+  customerId,
+  profilo,
+  loading,
+  onGenerate,
+}: {
+  customerId: number;
+  profilo: CustomerIntelligenceProfile | null;
+  loading: boolean;
+  onGenerate: () => void;
+}) {
+  const t = useTranslations("admin");
+  if (loading) return <div className="catalog-empty">Generazione profilo in corso…</div>;
+  if (!profilo) {
+    return (
+      <div className="catalog-empty">
+        Nessun profilo generato yet.
+        <button className="btn btn-primary btn-sm" onClick={onGenerate} style={{ marginLeft: 12 }}>
+          Genera ora
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Sintesi</h3>
+        <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>
+          {profilo.sintesi ?? "—"}
+        </p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <Section title="Settore">
+          <span style={{ fontSize: 14 }}>{profilo.settore ?? "—"}</span>
+        </Section>
+        <Section title="Dimensione">
+          <span style={{ fontSize: 14 }}>{profilo.dimensione ?? "—"}</span>
+        </Section>
+        <Section title="Fatturato stimato">
+          <span style={{ fontSize: 14 }}>{profilo.fatturatoStimato ?? "—"}</span>
+        </Section>
+        <Section title="Stagionalità">
+          <span style={{ fontSize: 14 }}>{profilo.stagionalita ?? "—"}</span>
+        </Section>
+      </div>
+      {profilo.composizioneBusiness && (
+        <Section title="Composizione business">
+          <p style={{ margin: 0, fontSize: 14 }}>{profilo.composizioneBusiness}</p>
+        </Section>
+      )}
+      {profilo.sedi && profilo.sedi.length > 0 && (
+        <Section title="Sedi">
+          <p style={{ margin: 0, fontSize: 14 }}>{profilo.sedi.join(', ')}</p>
+        </Section>
+      )}
+      {profilo.contattiChiave && profilo.contattiChiave.length > 0 && (
+        <Section title="Contatti chiave">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Ruolo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profilo.contattiChiave.map((c, i) => (
+                <tr key={i}>
+                  <td>{c.nome}</td>
+                  <td>{c.ruolo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Section>
+      )}
+      {profilo.interessiPrincipali && profilo.interessiPrincipali.length > 0 && (
+        <Section title="Interessi principali">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {profilo.interessiPrincipali.map((i, idx) => (
+              <span key={idx} className="product-tag">{i}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+      {profilo.interessiSecondari && profilo.interessiSecondari.length > 0 && (
+        <Section title="Interessi secondari">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {profilo.interessiSecondari.map((i, idx) => (
+              <span key={idx} className="product-tag">{i}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+      {profilo.nonCompreraMai && profilo.nonCompreraMai.length > 0 && (
+        <Section title="Non comprerà mai">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {profilo.nonCompreraMai.map((i, idx) => (
+              <span key={idx} className="product-tag" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{i}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+      {profilo.opportunitaCrossSell && profilo.opportunitaCrossSell.length > 0 && (
+        <Section title="Opportunità cross-sell">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {profilo.opportunitaCrossSell.map((i, idx) => (
+              <span key={idx} className="product-tag">{i}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+      <div style={{ fontSize: 12, color: "var(--muted)" }}>
+        Aggiornato: {new Date(profilo.aggiornatoIl).toLocaleString("it-IT")}
+      </div>
+    </div>
+   );
 }

@@ -82,6 +82,7 @@ model Customer {
   contatti           ContattoCliente[]
   ordini             OrdineCliente[]
   progetti           Progetto[]
+  customerProfile    CustomerProfile?
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
@@ -548,4 +549,26 @@ model DashboardBox {
   @@unique([customerId, boxId])
   @@index([customerId])
   @@map("dashboard_boxes")
+}
+
+/// Profilo di intelligence commerciale per cliente B2B.
+/// Generato periodicamente da un LLM che arricchisce i dati esistenti
+/// (ordini, tracking, progetti, indirizzi) con informazioni pubbliche.
+model CustomerProfile {
+  id               Int      @id @default(autoincrement())
+  customerId       Int      @unique @map("customer_id")
+  settore          String?
+  fatturatoStimato Decimal? @map("fatturato_stimato")
+  composizione     String?
+  sedi             String?
+  contatti         Json?
+  segmento         String?  // piccolo | medio | grande
+  sintesi          String?
+  fonti            Json?
+  generatoIl       DateTime @default(now()) @map("generato_il")
+  aggiornatoIl     DateTime @updatedAt @map("aggiornato_il")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_profiles")
 }

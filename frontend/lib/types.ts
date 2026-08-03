@@ -46,6 +46,26 @@ export interface CustomerProfile {
   invitatoAt?: string | null;
 }
 
+export interface CustomerIntelligenceProfile {
+  id: number;
+  customerId: number;
+  generatoIl: string;
+  aggiornatoIl: string;
+  settore: string | null;
+  dimensione: string | null;
+  fatturatoStimato: string | null;
+  composizioneBusiness: string | null;
+  sedi: string[];
+  contattiChiave: Array<{ nome: string; ruolo: string }>;
+  interessiPrincipali: string[];
+  interessiSecondari: string[];
+  nonCompreraMai: string[];
+  stagionalita: string | null;
+  opportunitaCrossSell: string[];
+  sintesiBreve: string | null;
+  sintesi: string | null;
+}
+
 export interface IndirizzoCliente {
   id: number;
   customerId: number;
