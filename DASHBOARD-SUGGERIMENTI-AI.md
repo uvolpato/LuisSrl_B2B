@@ -45,14 +45,17 @@ giustifica. **Il modello non inventa mai prodotti: sceglie solo tra candidati re
 > `DashboardBox` + batch `@Cron` notturno + endpoint `GET /dashboard/suggerimenti`,
 > `POST …/rigenera`). I **modelli** `Promozione`/`SuggestionBox`/`DashboardBox` esistono
 > (schema + migration `20260803000000_dashboard_ai`).
-> **Manca ancora**: layer LLM (Fase 2 — `rationale` è tuttora `null`), **admin CRUD**
-> dei box/promozioni (Fase 3), **wiring frontend** (la dashboard mostra ancora
-> `PRODUCT_BOXES` statici, Fase 5).
+> **Implementato** (agosto 2026): Fase 2 (LLM `rationale` per box via
+> `IntegrazioneService.generaSintesiAI`, disattivabile con `DASHBOARD_RATIONALE=off`),
+> Fase 3 (CRUD admin **promozioni** — sezione "Promozioni"), Fase 5 (wiring frontend:
+> la dashboard consuma `GET /dashboard/suggerimenti`, box vuoti nascosti).
+> **Manca ancora**: CRUD admin dei `SuggestionBox` (i 6 box sono seedati, non ancora
+> editabili da UI); selezione/riordino LLM (l'AI spiega ma non sceglie — deterministico).
 
 | Area | Stato |
 |------|-------|
-| 6 box dashboard | `PRODUCT_BOXES` statico in `frontend/app/area/page.tsx:45` — **ancora da collegare** ai box reali |
-| Engine box (deterministico) | ✅ `src/dashboard/dashboard.service.ts` (candidati + score + cache + cron) |
+| 6 box dashboard | ✅ collegati: `frontend/app/area/page.tsx` consuma `GET /dashboard/suggerimenti` (box vuoti nascosti, `rationale` mostrato) |
+| Engine box (deterministico) | ✅ `src/dashboard/dashboard.service.ts` (candidati + score + cache + cron + `rationale` LLM) |
 | Ricerca semantica AI | ✅ `POST /api/catalogo/ricerca` (+ ricerca per immagine) |
 | Tracciamento comportamentale | ✅ `CustomerEvent` (beacon, sessioni, funnel) — Blocco 12 |
 | Sintesi AI cliente | ✅ `CustomerInsight` (testo + metriche JSONB + embedding) + `insight.simili()` (coseno) |
@@ -61,8 +64,8 @@ giustifica. **Il modello non inventa mai prodotti: sceglie solo tra candidati re
 | Giacenza | ✅ view `b2b_giacenze` (ultimo inventario attivo) |
 | Listini/prezzi per cliente | ✅ `enrichWithPrezzi(codiceListino)` |
 | Prompt admin-editabili | ✅ pattern esistente (`PromptTemplate` per wizard descrizioni) — riutilizzabile |
-| Promozioni/offerte | ✅ modello `Promozione` creato (schema+migration) — manca il CRUD admin |
-| Box configurabili | ✅ modelli `SuggestionBox`/`DashboardBox` + engine; ❌ CRUD admin + LLM (rationale) + frontend |
+| Promozioni/offerte | ✅ CRUD admin completo (sezione "Promozioni": targeting famiglie/articoli, stato, priorità) |
+| Box configurabili | ✅ engine + LLM `rationale` + frontend; ❌ CRUD admin dei `SuggestionBox` (seedati, non editabili da UI) |
 
 ---
 

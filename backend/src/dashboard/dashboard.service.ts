@@ -96,8 +96,9 @@ export class DashboardService {
       try {
         const articoli = await this.generaBox(box, customerId, codiceListino);
         if (articoli.length) {
-          await this.upsertCache(customerId, box, articoli);
-          result.push({ boxId: box.id, titolo: box.titolo, rationale: null, articoli });
+          const rationale = await this.generaRationale(box, articoli);
+          await this.upsertCache(customerId, box, articoli, rationale);
+          result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
       } catch (e) {
         // Un box rotto non deve mai far cadere la dashboard.
@@ -119,8 +120,9 @@ export class DashboardService {
       try {
         const articoli = await this.generaBox(box, customerId, codiceListino);
         if (articoli.length) {
-          await this.upsertCache(customerId, box, articoli);
-          result.push({ boxId: box.id, titolo: box.titolo, rationale: null, articoli });
+          const rationale = await this.generaRationale(box, articoli);
+          await this.upsertCache(customerId, box, articoli, rationale);
+          result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
       } catch (e) {
         this.log.warn(`box #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
@@ -169,12 +171,45 @@ export class DashboardService {
     customerId: number,
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     articoli: Prisma.InputJsonValue,
+    rationale: string | null,
   ) {
     await this.prisma.dashboardBox.upsert({
       where: { customerId_boxId: { customerId, boxId: box.id } },
-      create: { customerId, boxId: box.id, titolo: box.titolo, rationale: null, prodotti: articoli },
-      update: { titolo: box.titolo, rationale: null, prodotti: articoli, generatoIl: new Date() },
+      create: { customerId, boxId: box.id, titolo: box.titolo, rationale, prodotti: articoli },
+      update: { titolo: box.titolo, rationale, prodotti: articoli, generatoIl: new Date() },
     });
+  }
+
+  /**
+   * Frase di contesto del box (Fase 2, LLM). Deterministica nella selezione:
+   * l'AI spiega soltanto, non sceglie né conta. Errori → null (il box resta).
+   * Disattivabile con DASHBOARD_RATIONALE=off (batch notturno = 1 chiamata/box/cliente).
+   */
+  private async generaRationale(
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    articoli: unknown[],
+  ): Promise<string | null> {
+    if (process.env.DASHBOARD_RATIONALE === 'off') return null;
+    const nomi = (articoli as { nome?: string }[])
+      .map((a) => a.nome)
+      .filter(Boolean)
+      .slice(0, 6)
+      .join(', ');
+    if (!nomi) return null;
+    try {
+      const prompt =
+        `Sei l'assistente di un e-commerce B2B di vasi e complementi da giardino.\n` +
+        `Box "${box.titolo}" (obiettivo: ${box.prompt || box.titolo}).\n` +
+        `Prodotti proposti al cliente: ${nomi}.\n` +
+        `Scrivi UNA sola frase in italiano (max 20 parole) che spieghi al cliente ` +
+        `perché questi prodotti gli interessano. Nessun elenco, nessun markdown, niente virgolette.`;
+      const txt = await this.integrazione.generaSintesiAI(prompt);
+      const clean = txt?.trim().replace(/^["'\s]+|["'\s]+$/g, '').split('\n')[0];
+      return clean || null;
+    } catch (e) {
+      this.log.warn(`rationale box #${box.id} fallita: ${(e as Error).message}`);
+      return null;
+    }
   }
 
   // ── Log del batch (tabella sync_log, entity='dashboard_boxes') ─────────────
