@@ -23,12 +23,23 @@ import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermission } from '../auth/decorators/permission.decorator';
+import { EventsService } from '../events/events.service';
 
 @Controller('customers')
 @UseGuards(AuthenticatedGuard, RolesGuard, PermissionsGuard)
 @Roles('admin')
 export class CustomersController {
-  constructor(private readonly customers: CustomersService) {}
+  constructor(
+    private readonly customers: CustomersService,
+    private readonly events: EventsService,
+  ) {}
+
+  /** Timeline eventi comportamentali del cliente (tracking). */
+  @Get(':id/eventi')
+  @RequirePermission('admin.users.view')
+  eventi(@Param('id', ParseIntPipe) id: number, @Query('limit') limit?: string) {
+    return this.events.timeline(id, limit ? parseInt(limit, 10) : 200);
+  }
 
   @Get()
   @RequirePermission('admin.users.view')

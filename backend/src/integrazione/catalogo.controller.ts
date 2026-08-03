@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
+import { EventsService } from '../events/events.service';
 
 /** Catalogo lato cliente: articoli configurati e attivi, prezzi IVA esclusa. */
 @Controller('catalogo')
@@ -14,6 +15,7 @@ export class CatalogoController {
   constructor(
     private readonly integrazione: IntegrazioneService,
     private readonly prisma: PrismaService,
+    private readonly events: EventsService,
   ) {}
 
   /** Codice listino del cliente autenticato (fallback: primo listino attivo). */
@@ -123,6 +125,7 @@ export class CatalogoController {
         return { ...v, prezzo };
       }),
     );
+    void this.events.track('articolo.view', { entita: 'articolo', entitaId: codiceLinea, dettagli: { nome: pubblico.nome } });
     return { ...pubblico, varianti: variantiConPrezzi, variantiCount: variantiConPrezzi.length };
   }
 

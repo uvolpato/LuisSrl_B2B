@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
+import { EventsService } from '../events/events.service';
 
 export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE' | 'MEZZI_PROPRI';
 
@@ -45,6 +46,7 @@ export class CheckoutService {
   constructor(
     private prisma: PrismaService,
     private integrazione: IntegrazioneService,
+    private events: EventsService,
   ) {}
 
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
@@ -235,6 +237,7 @@ export class CheckoutService {
       },
       include: { righe: true },
     });
+    void this.events.track('ordine.create', { entita: 'ordine', entitaId: numeroOrdine, dettagli: { importo: importoTotale, righe: righe.length } });
 
     // Svuota il carrello
     await this.prisma.cartItem.deleteMany({ where: { carrelloId: carrello.id } });

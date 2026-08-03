@@ -104,6 +104,23 @@ model Progetto {
   @@map("progetti")
 }
 
+/// Eventi comportamentali dei clienti (append-only). Volumi alti: tabella dedicata.
+model CustomerEvent {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  sessionId  String?  @map("session_id")
+  tipo       String
+  entita     String?
+  entitaId   String?  @map("entita_id")
+  dettagli   Json?
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([customerId, createdAt])
+  @@index([tipo, createdAt])
+  @@map("customer_event")
+}
+
 /// Traccia ogni chiamata AI (Gemini) con attribuzione all'attore e costo stimato.
 model AiUsage {
   id           Int      @id @default(autoincrement())
