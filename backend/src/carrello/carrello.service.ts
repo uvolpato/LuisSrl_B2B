@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class CarrelloService {
   constructor(
     private prisma: PrismaService,
     private integrazione: IntegrazioneService,
+    private events: EventsService,
   ) {}
 
   private async getOrCreate(clienteId: number) {
@@ -93,6 +95,7 @@ export class CarrelloService {
     if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
     const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
+    void this.events.track('carrello.add', { entita: 'variante', entitaId: varianteCodice, dettagli: { quantita: qty } });
     return this.prisma.cartItem.upsert({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
       create: { carrelloId: carrello.id, varianteCodice, quantita: qty },
@@ -110,6 +113,7 @@ export class CarrelloService {
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
     });
     if (!item) throw new NotFoundException('Item non trovato nel carrello');
+    void this.events.track('carrello.update', { entita: 'variante', entitaId: varianteCodice, dettagli: { quantita: qty } });
     return this.prisma.cartItem.update({
       where: { id: item.id },
       data: { quantita: qty },
@@ -123,6 +127,7 @@ export class CarrelloService {
     });
     if (!item) throw new NotFoundException('Item non trovato nel carrello');
     await this.prisma.cartItem.delete({ where: { id: item.id } });
+    void this.events.track('carrello.remove', { entita: 'variante', entitaId: varianteCodice });
     return { rimossi: true };
   }
 

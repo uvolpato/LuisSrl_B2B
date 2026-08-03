@@ -21,12 +21,14 @@ import { AuthenticatedGuard } from './guards/authenticated.guard';
 import type { AuthenticatedRequest } from './guards/authenticated.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { toUserProfile, toCustomerProfile } from '../common/auth-types';
+import { EventsService } from '../events/events.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly prisma: PrismaService,
+    private readonly events: EventsService,
   ) {}
 
   private async buildCustomerProfile(customer: Customer) {
@@ -66,6 +68,7 @@ export class AuthController {
       ? toUserProfile(await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
       : await this.buildCustomerProfile(await this.prisma.customer.findUniqueOrThrow({ where: { id: user.id } }));
 
+    if (user.userType === 'customer') void this.events.trackFor(user.id, 'login', undefined, req.ip);
     return { user: profile, csrfToken: req.session.csrfToken };
   }
 
@@ -77,6 +80,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.auth.logLogout(req.user.id, req.user.userType, req.ip);
+    if (req.user.userType === 'customer') void this.events.trackFor(req.user.id, 'logout', undefined, req.ip);
     await new Promise<void>((resolve, reject) =>
       req.session.destroy((err) => (err ? reject(err) : resolve())),
     );

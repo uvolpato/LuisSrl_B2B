@@ -14,6 +14,7 @@ import { CarrelloModule } from './carrello/carrello.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { OrdiniModule } from './ordini/ordini.module';
 import { ProgettiModule } from './progetti/progetti.module';
+import { EventsModule } from './events/events.module';
 import { ImgModule } from './img/img.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
@@ -35,6 +36,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     CheckoutModule,
     OrdiniModule,
     ProgettiModule,
+    EventsModule,
     ImgModule,
   ],
   controllers: [HealthController],

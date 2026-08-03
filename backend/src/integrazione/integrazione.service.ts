@@ -7,6 +7,7 @@ import { randomUUID, createHash } from 'crypto';
 import { hashPassword } from '../common/password';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
+import { EventsService } from '../events/events.service';
 
 function hexToSrgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
@@ -99,6 +100,7 @@ export class IntegrazioneService {
     private readonly prisma: PrismaService,
     private readonly embedding: EmbeddingService,
     private readonly aiUsage: AiUsageService,
+    private readonly events: EventsService,
   ) {}
 
   /** Mappa una riga della vista sui nomi di portale del CONFIG (BigInt → Number: non serializzabile in JSON). */
@@ -878,7 +880,9 @@ Richiesta del cliente: "${q}"`;
     if (!query) return { articoli: [], provider: this.embedding.provider };
     const rewriteOn = (process.env.SEARCH_QUERY_REWRITE || 'on') !== 'off';
     const rw = rewriteOn ? await this.rewriteQuery(query) : { attributi: [] as string[], keywords: query };
-    return this.rankArticoli(rw.attributi, rw.keywords, k, codiceListino);
+    const res = await this.rankArticoli(rw.attributi, rw.keywords, k, codiceListino);
+    void this.events.track('ricerca', { dettagli: { q: query, n: res.articoli.length } });
+    return res;
   }
 
   /**
@@ -1008,6 +1012,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       return { articoli: [], provider: this.embedding.provider, error: 'immagine_non_riconosciuta' };
     }
     const res = await this.rankArticoli(a.attributi, a.keywords || a.attributi.join(' '), k, codiceListino);
+    void this.events.track('ricerca', { dettagli: { tipo: 'immagine', n: res.articoli.length } });
     return { ...res, keywords: a.keywords, attributi: a.attributi };
   }
 
