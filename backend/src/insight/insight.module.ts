@@ -7,5 +7,6 @@ import { IntegrazioneModule } from '../integrazione/integrazione.module';
   imports: [IntegrazioneModule],
   controllers: [InsightController],
   providers: [InsightService],
+  exports: [InsightService],
 })
 export class InsightModule {}
