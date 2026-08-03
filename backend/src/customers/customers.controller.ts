@@ -41,6 +41,12 @@ export class CustomersController {
     return this.events.timeline(id, limit ? parseInt(limit, 10) : 200);
   }
 
+  @Get(':id/comportamento')
+  @RequirePermission('admin.users.view')
+  comportamento(@Param('id', ParseIntPipe) id: number) {
+    return this.events.comportamento(id);
+  }
+
   @Get()
   @RequirePermission('admin.users.view')
   list(

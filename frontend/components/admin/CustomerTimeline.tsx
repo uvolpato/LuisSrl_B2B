@@ -43,15 +43,22 @@ function fmt(ts: string): string {
 }
 
 interface Insight { testo: string; generatoIl: string }
+interface Comportamento {
+  totali: { pagine: number; tempoMedioPagina: number };
+  funnel: { articoliVisti: number; aggiuntiCarrello: number; ordini: number; vistoAdd: number; addOrdine: number };
+  vistiMaiInCarrello: { entitaId: string; nome: string; viste: number }[];
+}
 
 export default function CustomerTimeline({ customerId }: { customerId: number }) {
   const [eventi, setEventi] = useState<Evento[] | null>(null);
   const [insight, setInsight] = useState<Insight | null>(null);
+  const [comp, setComp] = useState<Comportamento | null>(null);
   const [gen, setGen] = useState(false);
 
   useEffect(() => {
     api.get<Evento[]>(`/api/customers/${customerId}/eventi`).then(setEventi).catch(() => setEventi([]));
     api.get<Insight | null>(`/api/customers/${customerId}/insight`).then(setInsight).catch(() => setInsight(null));
+    api.get<Comportamento>(`/api/customers/${customerId}/comportamento`).then(setComp).catch(() => setComp(null));
   }, [customerId]);
 
   async function generaSintesi() {
@@ -82,12 +89,34 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
     </div>
   );
 
-  if (!eventi) return <>{aiPanel}<p style={{ color: "var(--muted)" }}>Caricamento…</p></>;
-  if (eventi.length === 0) return <>{aiPanel}<p style={{ color: "var(--muted)" }}>Nessuna attività registrata.</p></>;
+  const compPanel = comp && comp.funnel.articoliVisti > 0 && (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+      {[
+        { l: "Articoli visti", v: comp.funnel.articoliVisti },
+        { l: "→ Carrello", v: `${comp.funnel.aggiuntiCarrello} (${comp.funnel.vistoAdd}%)` },
+        { l: "→ Ordini", v: `${comp.funnel.ordini} (${comp.funnel.addOrdine}%)` },
+        { l: "Tempo/pagina", v: `${comp.totali.tempoMedioPagina}s` },
+      ].map((s) => (
+        <div key={s.l} style={{ flex: "1 1 120px", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px", background: "var(--surface)" }}>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>{s.v}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>{s.l}</div>
+        </div>
+      ))}
+      {comp.vistiMaiInCarrello.length > 0 && (
+        <div style={{ flexBasis: "100%", fontSize: 13, color: "var(--muted)" }}>
+          Visti ma mai nel carrello: {comp.vistiMaiInCarrello.map((a) => `${a.nome} (${a.viste})`).join(" · ")}
+        </div>
+      )}
+    </div>
+  );
+  const header = <>{aiPanel}{compPanel}</>;
+
+  if (!eventi) return <>{header}<p style={{ color: "var(--muted)" }}>Caricamento…</p></>;
+  if (eventi.length === 0) return <>{header}<p style={{ color: "var(--muted)" }}>Nessuna attività registrata.</p></>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {aiPanel}
+      {header}
       {eventi.map((e) => (
         <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--border)" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: DOT[e.tipo] ?? "var(--muted)", flexShrink: 0 }} />
