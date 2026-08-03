@@ -91,6 +91,7 @@ export default function CatalogoPage() {
   const [famiglieSel, setFamiglieSel] = useState<Set<string>>(new Set());
   const [raccolteSel, setRaccolteSel] = useState<Set<string>>(new Set());
   const [codiceLineaSel, setCodiceLineaSel] = useState<Set<string>>(new Set());
+  const [boxTitolo, setBoxTitolo] = useState<string>("");
   const [coloreRgb, setColoreRgb] = useState<string>("");
   const [coloreTolleranza, setColoreTolleranza] = useState<number>(15);
   const [diametroRange, setDiametroRange] = useState<[number, number]>([0, 999]);
@@ -239,6 +240,7 @@ try {
     const fam = p.get("famiglia"); if (fam) setFamiglieSel(new Set(fam.split(",").filter(Boolean)));
     const rac = p.get("raccolte"); if (rac) setRaccolteSel(new Set(rac.split(",").filter(Boolean)));
     const cl = p.get("codiceLinea"); if (cl) setCodiceLineaSel(new Set(cl.split(",").filter(Boolean)));
+    const bt = p.get("boxTitolo"); if (bt) setBoxTitolo(bt);
     const tab = p.get("tab"); if (tab) setActiveTab(tab);
     const so = p.get("sort"); if (so) setSort(so);
     const q = p.get("q"); if (q) setSearch(q);
@@ -300,12 +302,14 @@ try {
     else if (aiQuery.trim()) p.set("ai", aiQuery);
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
+    if (codiceLineaSel.size) p.set("codiceLinea", [...codiceLineaSel].join(","));
+    if (boxTitolo) p.set("boxTitolo", boxTitolo);
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (sort !== "novita") p.set("sort", sort);
     if (search.trim()) p.set("q", search.trim());
     const qs = p.toString();
     router.replace(qs ? `/area/catalogo?${qs}` : "/area/catalogo", { scroll: false });
-  }, [aiResults, aiQuery, famiglieSel, raccolteSel, activeTab, sort, search, router]);
+  }, [aiResults, aiQuery, famiglieSel, raccolteSel, codiceLineaSel, boxTitolo, activeTab, sort, search, router]);
 
   // Al cambio di filtri/ricerca (fuori dalla modalità AI): ricarica dalla pagina 1 (debounce per il testo).
   // In attesa di una ricerca AI testuale non carica il catalogo completo: evita il "flash" di articoli non filtrati.
@@ -410,11 +414,12 @@ try {
     if (famiglieSel.size) p.set("famiglia", [...famiglieSel].join(","));
     if (raccolteSel.size) p.set("raccolte", [...raccolteSel].join(","));
     if (codiceLineaSel.size) p.set("codiceLinea", [...codiceLineaSel].join(","));
+    if (boxTitolo) p.set("boxTitolo", boxTitolo);
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (sort !== "novita") p.set("sort", sort);
     if (search.trim()) p.set("q", search.trim());
     return p.toString();
-  }, [aiResults, aiQuery, famiglieSel, raccolteSel, codiceLineaSel, activeTab, sort, search]);
+  }, [aiResults, aiQuery, famiglieSel, raccolteSel, codiceLineaSel, boxTitolo, activeTab, sort, search]);
 
   // Salva lista + scroll prima di aprire una scheda, per ripristinarli al ritorno.
   const saveCatalogState = useCallback(() => {
@@ -569,7 +574,7 @@ try {
             <div>
               <div className="catalog-header">
                 <div>
-                  <h2>{aiResults ? "Ricerca intelligente" : (tabLabel ?? "Catalogo")}</h2>
+                  <h2>{aiResults ? "Ricerca intelligente" : (codiceLineaSel.size && boxTitolo ? boxTitolo : (tabLabel ?? "Catalogo"))}</h2>
                   <p className="meta">{aiResults ? filteredByBox.length : total} articoli{tabLabel && !aiResults ? " · Raccolta" : ""} · Prezzi IVA esclusa</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
