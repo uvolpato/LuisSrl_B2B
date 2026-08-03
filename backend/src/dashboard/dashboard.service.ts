@@ -12,7 +12,7 @@ import { InsightService } from '../insight/insight.service';
  * Fase 1 (deterministico, senza LLM):
  *  1. vincoli duri in SQL (soloInOfferta, escludiAcquistati, giacenza>0, scope)
  *  2. intento semantico dal prompt → coseno su articolo_embedding (filtro soft)
- *  3. score pesato per box: acquisti·w1 + tracking·w2 + progetti·w3 + affinità·w4
+  *  3. score pesato per box: acquisti·w1 + tracking·w2 + progetti·w3 + affinità·w4 + profilo·w5
  *  4. top N + arricchimento (prezzo/disponibilità/promo)
  *
  * Fase 2 (cache + batch):
@@ -33,9 +33,10 @@ interface PesiSegnali {
   tracking: number;
   progetti: number;
   affinita: number;
+  profilo: number;
 }
 
-const DEFAULT_PESI: PesiSegnali = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15 };
+const DEFAULT_PESI: PesiSegnali = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15, profilo: 0 };
 
 interface Candidato {
   id: number;
@@ -48,6 +49,7 @@ interface Segnali {
   tracking: { famiglie: Map<string, number>; articoli: Map<string, number> };
   progetti: Map<string, number>;
   affinita: Map<string, number>;
+  profilo: Map<string, number>;
 }
 
 @Injectable()
@@ -333,15 +335,16 @@ export class DashboardService {
 
   // ── Segnali ────────────────────────────────────────────────────────────────
 
-  private async segnaliCliente(customerId: number): Promise<Segnali> {
-    const [acquisti, tracking, progetti, affinita] = await Promise.all([
-      this.acquistiCliente(customerId),
-      this.trackingCliente(customerId),
-      this.progettiCliente(customerId),
-      this.affinitaCliente(customerId),
-    ]);
-    return { acquisti, tracking, progetti, affinita };
-  }
+   private async segnaliCliente(customerId: number): Promise<Segnali> {
+     const [acquisti, tracking, progetti, affinita, profilo] = await Promise.all([
+       this.acquistiCliente(customerId),
+       this.trackingCliente(customerId),
+       this.progettiCliente(customerId),
+       this.affinitaCliente(customerId),
+       this.profiloCliente(customerId),
+     ]);
+     return { acquisti, tracking, progetti, affinita, profilo };
+   }
 
   /** Famiglie preferite dagli acquisti del cliente (peso = righe ordinate). */
   private async acquistiCliente(customerId: number): Promise<Map<string, number>> {
@@ -427,14 +430,19 @@ export class DashboardService {
   }
 
   /** Affinità: famiglie preferite dai clienti simili, pesate per il coseno. */
-  private async affinitaCliente(customerId: number): Promise<Map<string, number>> {
-    const simi = await this.insight.simili(customerId, 5);
-    const combined = new Map<string, number>();
-    for (const s of simi) {
-      const prefs = await this.acquistiCliente(s.customerId);
-      for (const [fc, w] of prefs) combined.set(fc, (combined.get(fc) ?? 0) + s.score * w);
-    }
-    return this.normalizza(combined);
+   private async affinitaCliente(customerId: number): Promise<Map<string, number>> {
+     const simi = await this.insight.simili(customerId, 5);
+     const combined = new Map<string, number>();
+     for (const s of simi) {
+       const prefs = await this.acquistiCliente(s.customerId);
+       for (const [fc, w] of prefs) combined.set(fc, (combined.get(fc) ?? 0) + s.score * w);
+     }
+     return this.normalizza(combined);
+   }
+
+  /** Segnale dal profilo intelligence: pesi le famiglie menzionate negli interessi principali. */
+  private async profiloCliente(customerId: number): Promise<Map<string, number>> {
+    return new Map();
   }
 
   /** Ordine di ripiego quando il cliente non ha segnali: famiglie più vendute in assoluto. */
@@ -487,28 +495,30 @@ export class DashboardService {
 
   // ── Score e arricchimento ──────────────────────────────────────────────────
 
-  private pesiNormalizzati(raw: Prisma.JsonValue | null): PesiSegnali {
-    const base = { ...DEFAULT_PESI, ...(raw && typeof raw === 'object' ? (raw as unknown as PesiSegnali) : {}) };
-    const tot = base.acquisti + base.tracking + base.progetti + base.affinita;
-    if (!(tot > 0)) return DEFAULT_PESI;
-    return {
-      acquisti: base.acquisti / tot,
-      tracking: base.tracking / tot,
-      progetti: base.progetti / tot,
-      affinita: base.affinita / tot,
-    };
-  }
+   private pesiNormalizzati(raw: Prisma.JsonValue | null): PesiSegnali {
+     const base = { ...DEFAULT_PESI, ...(raw && typeof raw === 'object' ? (raw as unknown as PesiSegnali) : {}) };
+     const tot = base.acquisti + base.tracking + base.progetti + base.affinita + base.profilo;
+     if (!(tot > 0)) return DEFAULT_PESI;
+     return {
+       acquisti: base.acquisti / tot,
+       tracking: base.tracking / tot,
+       progetti: base.progetti / tot,
+       affinita: base.affinita / tot,
+       profilo: base.profilo / tot,
+     };
+   }
 
-  private scoreCandidato(c: Candidato, pesi: PesiSegnali, s: Segnali): number {
-    const trackFam = s.tracking.famiglie.get(c.famigliaCodice) ?? 0;
-    const trackArt = s.tracking.articoli.get(c.codiceLinea) ?? 0;
-    return (
-      pesi.acquisti * (s.acquisti.get(c.famigliaCodice) ?? 0) +
-      pesi.tracking * Math.max(trackFam, trackArt) +
-      pesi.progetti * (s.progetti.get(c.famigliaCodice) ?? 0) +
-      pesi.affinita * (s.affinita.get(c.famigliaCodice) ?? 0)
-    );
-  }
+   private scoreCandidato(c: Candidato, pesi: PesiSegnali, s: Segnali): number {
+     const trackFam = s.tracking.famiglie.get(c.famigliaCodice) ?? 0;
+     const trackArt = s.tracking.articoli.get(c.codiceLinea) ?? 0;
+     return (
+       pesi.acquisti * (s.acquisti.get(c.famigliaCodice) ?? 0) +
+       pesi.tracking * Math.max(trackFam, trackArt) +
+       pesi.progetti * (s.progetti.get(c.famigliaCodice) ?? 0) +
+       pesi.affinita * (s.affinita.get(c.famigliaCodice) ?? 0) +
+       pesi.profilo * (s.profilo.get(c.famigliaCodice) ?? 0)
+     );
+   }
 
   private normalizza(map: Map<string, number>): Map<string, number> {
     if (!map.size) return map;
