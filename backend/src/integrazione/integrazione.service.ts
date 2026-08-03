@@ -904,7 +904,7 @@ export class IntegrazioneService {
     const parts = [a.nome, fam, a.colore, a.descrizioneAI, a.descrizione, a.descrizioneDettagliata];
     if (a.varianti?.length) {
       const variantiTxt = a.varianti
-        .map((v) => [v.descrizione, this.dimText(v.dimensioni)].filter(Boolean).join(' '))
+        .map((v) => [v.descrizione, this.dimText(v.dimensioni), this.dimFormaText(v.dimensioni)].filter(Boolean).join(' '))
         .join('; ');
       if (variantiTxt) parts.push(`Varianti: ${variantiTxt}`);
     }
@@ -923,6 +923,25 @@ export class IntegrazioneService {
       if (s) parts.push(s);
     }
     return parts.join(' ');
+  }
+
+  /** Forma derivata dal rapporto dimensioni della variante, in linguaggio naturale.
+   *  Serve alla ricerca semantica: "basso e largo" / "alto e stretto" non stanno
+   *  nelle misure grezze ma nel RAPPORTO Ø/H. Ritorna stringa (o ''). */
+  private dimFormaText(dim: unknown): string {
+    if (!dim || typeof dim !== 'object') return '';
+    const get = (k: string): number | null => {
+      const v = (dim as Record<string, any>)[k]?.valore;
+      const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(',', '.'));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const d = get('diametro') ?? get('larghezza') ?? get('lato');
+    const h = get('altezza');
+    if (d == null || h == null) return '';
+    const r = d / h;
+    if (r >= 1.1) return 'forma bassa e larga, più largo che alto, basso e largo';
+    if (r <= 0.8) return 'forma slanciata, alto e stretto, più alto che largo';
+    return 'forma equilibrata, proporzionata, né basso né alto';
   }
 
   /** (Ri)genera l'embedding di un articolo se il blob e' cambiato. Fire-and-forget. */
@@ -990,6 +1009,21 @@ Richiesta del cliente: "${q}"`;
     }
   }
 
+  /** Rileva dalla query (attributi del rewrite + keywords grezze) se l'utente
+   *  cerca una forma dimensionale e in che direzione (largo vs alto).
+   *  Ritorna { versaLargo, boost } o null se nessun termine di forma è presente. */
+  private formaDaAttributi(attributi: string[], keywords: string): { versaLargo: boolean; boost: number } | null {
+    const terminiLarghi = ['basso', 'bassa', 'larg', 'svasat', 'tond', 'ampio', 'ampia', 'robust', 'tozzo', 'tozza', 'rastremat'];
+    const terminiAlti = ['alto', 'alta', 'strett', 'slanciat', 'snell', 'affusolat', 'sottil', 'tir', 'elevat'];
+    const haystack = `${attributi.join(' ')} ${keywords}`.toLowerCase();
+    const boost = parseFloat(process.env.SEARCH_FORM_BOOST || '0.15');
+    const versaLargo = terminiLarghi.some((t) => haystack.includes(t));
+    const versoAlto = terminiAlti.some((t) => haystack.includes(t));
+    if (versaLargo && !versoAlto) return { versaLargo: true, boost };
+    if (versoAlto && !versaLargo) return { versaLargo: false, boost };
+    return null; // assente o ambigua
+  }
+
   /** Ricerca semantica testuale: riscrive la query e ordina il catalogo.
    *  Prima tenta match esatti per codici articolo (LU3161) o famiglie (linea ROGERS). */
   async searchSemantica(q: string, k = 24, codiceListino?: string | null) {
@@ -1045,14 +1079,29 @@ Richiesta del cliente: "${q}"`;
     // Solo articoli visibili al cliente; coseno + boost attributi calcolati in Node.
     // objtext = dati oggettivi dell'articolo: nome, colore, materiale/linea (famiglia),
     // descrizione AI (contiene forma/dimensioni/colore a parole) + misure delle varianti.
-    const rows = await this.prisma.$queryRawUnsafe<{ codice_linea: string; objtext: string; text_vec: number[] | null }[]>(
+    // forma_ratio = rapporto Ø/H medio delle varianti (per il boost dimensionale).
+    const rows = await this.prisma.$queryRawUnsafe<
+      { codice_linea: string; objtext: string; forma_ratio: number | null; text_vec: number[] | null }[]
+    >(
       `SELECT a.codice_linea,
               lower(
                 coalesce(a.nome,'') || ' ' || coalesce(a.colore,'') || ' ' ||
                 coalesce(f.nome_portale, f.nome, '') || ' ' ||
                 coalesce(a.descrizione_ai,'') || ' ' || coalesce(a.descrizione,'') || ' ' ||
-                coalesce((SELECT string_agg(v.dimensioni::text, ' ') FROM varianti v WHERE v.articolo_id = a.id), '')
+                coalesce((SELECT string_agg(v.dimensioni::text, ' ') FROM varianti v WHERE v.articolo_id = a.id AND v.stato <> 'NASCOSTO'), '')
               ) AS objtext,
+              (
+                SELECT avg(
+                  CASE
+                    WHEN (v.dimensioni->>'diametro') IS NOT NULL AND (v.dimensioni->>'altezza') IS NOT NULL
+                      AND (v.dimensioni->'diametro'->>'valore') ~ '^[0-9]+([.,][0-9]+)?$'
+                      AND (v.dimensioni->'altezza'->>'valore') ~ '^[0-9]+([.,][0-9]+)?$'
+                    THEN (replace(v.dimensioni->'diametro'->>'valore', ',', '.'))::numeric
+                         / NULLIF((replace(v.dimensioni->'altezza'->>'valore', ',', '.'))::numeric, 0)
+                    ELSE NULL
+                  END
+                ) FROM varianti v WHERE v.articolo_id = a.id AND v.stato <> 'NASCOSTO'
+              ) AS forma_ratio,
               e.text_vec
          FROM articolo_embedding e
          JOIN articoli a  ON a.id = e.articolo_id
@@ -1066,11 +1115,22 @@ Richiesta del cliente: "${q}"`;
       const matched = attributi.filter((a) => objtext.includes(a)).length;
       return Math.min(matched * attrBoost, boostCap);
     };
+    // Boost dimensionale: se la query chiede "basso/largo" preferisce Ø/H>=1.1,
+    // "alto/stretto" Ø/H<=0.8. Si applica solo quando l'attributo è davvero di forma.
+    const formaRequest = this.formaDaAttributi(attributi, keywords);
+    const formaBoostFor = (ratio: number | null): number => {
+      if (!formaRequest || ratio == null) return 0;
+      const match = formaRequest.versaLargo ? ratio >= 1.1 : ratio <= 0.8;
+      return match ? formaRequest.boost : 0;
+    };
     const ranked = rows
       .filter((r) => r.text_vec?.length)
       .map((r) => ({
         codice: r.codice_linea,
-        score: EmbeddingService.cosine(vec, r.text_vec as number[]) + boostFor(r.objtext || ''),
+        score:
+          EmbeddingService.cosine(vec, r.text_vec as number[]) +
+          boostFor(r.objtext || '') +
+          formaBoostFor(r.forma_ratio),
       }))
       .sort((x, y) => y.score - x.score);
 

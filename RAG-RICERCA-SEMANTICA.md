@@ -246,6 +246,35 @@ Ordinati per gravità. Il rischio è quasi tutto sul canale **immagine**, non su
     e va "addestrato". Verificare `SELECT extversion FROM pg_extension WHERE extname='vector';`
     prima della migration.
 
+---
+
+## 10bis. Ricerca per FORMA dimensionale ("basso e largo" / "alto e stretto")
+
+Problema: la ricerca testuale trovava "vaso" ma ordinava senza rispetto delle dimensioni
+relative → tra i top vasi anche alti e stretti. Le misure (Ø, H) erano nel blob solo come
+valori grezzi ("Ø30 cm H40 cm"), senza semantica del rapporto.
+
+Soluzione applicata in `integrazione.service.ts` (A + B):
+
+- **A — Forma nel blob (semantica, ri-backfill).** `dimFormaText(dim)` calcola il rapporto
+  Ø/H di ogni variante e aggiunge al blob un'etichetta in linguaggio naturale:
+  - Ø/H ≥ 1.1 → *"forma bassa e larga, più largo che alto, basso e largo"*
+  - Ø/H ≤ 0.8 → *"forma slanciata, alto e stretto, più alto che largo"*
+  - altrimenti → *"forma equilibrata, proporzionata, né basso né alto"*
+  Le varianti (che portano le dimensioni) entrano già nel blob; ora aggiungono anche la forma.
+- **B — Boost dimensionale nel ranking.** `formaDaAttributi()` riconosce nella query
+  (attributi rewrite + keywords) termini di forma e direzione:
+  - termini "larghi": basso, larg*, svasat*, tond*, ampio, robust*, tozz*, rastremat*
+  - termini "alti": alto, strett*, slanciat*, snell*, affusolat*, sottil*, elevat*
+  Se presente solo una direzione, la query SQL estrae il **rapporto Ø/H medio** delle
+  varianti (`forma_ratio`) e chi lo soddisfa (≥1.1 largo, ≤0.8 alto) riceve un bonus
+  (`SEARCH_FORM_BOOST`, default **0.15**, cumulabile col boost attributi e cap `SEARCH_BOOST_CAP`).
+  Se la query è ambigua (entrambe le direzioni) o assente → nessun boost.
+
+Manopole env: `SEARCH_FORM_BOOST` (default 0.15), soglie rapporto Ø/H fisse 1.1/0.8.
+Dopo la modifica del blob è necessario rilanciare `npm run embeddings:backfill`
+(il `fonte_hash` cambia perché il testo contiene ora la forma).
+
 ### Pilota di validazione (mezza giornata, prima di impegnarsi sul Blocco 10)
 Obiettivo: sapere se il canale immagine regge **prima** di costruirlo.
 - Raccogliere **20-30 foto reali** scattate col telefono dai rivenditori (sfondo vario,
