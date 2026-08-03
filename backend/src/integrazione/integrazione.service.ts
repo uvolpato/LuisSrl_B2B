@@ -1784,6 +1784,11 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   // ── AI: wizard descrizione sensoriale ──
 
+  /** Generazione testo AI riutilizzabile (es. sintesi comportamentale cliente). */
+  async generaSintesiAI(prompt: string): Promise<string> {
+    return this.callGeminiText(prompt, undefined, 'insight');
+  }
+
   private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione', images?: { mime: string; b64: string }[], outputTokens?: { tokenIn?: number; tokenOut?: number }): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
