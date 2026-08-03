@@ -123,7 +123,8 @@
     },
     "errors": {
       "generic": "Si è verificato un errore. Riprova.",
-      "too_many_requests": "Troppi tentativi. Attendi un minuto e riprova."
+      "too_many_requests": "Troppi tentativi. Attendi un minuto e riprova.",
+      "HTTP 500": "Errore interno del server. Riprova più tardi."
     }
   }
 }
