@@ -150,6 +150,13 @@ export default function ClientiSection() {
     });
   }
 
+  async function onRigeneraBox(u: CustomerProfile) {
+    void run(async () => {
+      await api.post(`/api/dashboard/suggerimenti/rigenera?clienteId=${u.id}`);
+      setInviteResult(`Box dashboard rigenerati per ${u.ragioneSociale ?? u.nome}`);
+    });
+  }
+
   async function onInvita(u: CustomerProfile) {
     const reinvio = !!u.invitatoAt;
     if (!(await confirm({
@@ -265,6 +272,7 @@ export default function ClientiSection() {
     { icon: () => IconEdit, tooltip: () => t("edit"), onClick: (u) => setEditor({ mode: "edit", user: u }) },
     { icon: () => IconMail, tooltip: (u) => (u.invitatoAt ? "Reinvia invito B2B" : "Invia invito B2B"), onClick: onInvita },
     { icon: () => IconReset, tooltip: () => t("resetPassword"), onClick: onResetPassword },
+    { icon: () => IconRefresh, tooltip: () => "Rigenera box dashboard", onClick: onRigeneraBox },
     {
       icon: (u) => (u.stato === "ATTIVO" ? IconLock : IconUnlock),
       tooltip: (u) => (u.stato === "ATTIVO" ? t("block") : t("unblock")),

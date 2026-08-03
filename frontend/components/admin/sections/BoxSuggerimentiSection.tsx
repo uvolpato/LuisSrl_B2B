@@ -48,6 +48,8 @@ export default function BoxSuggerimentiSection() {
   const [modalOpen, setModalOpen] = useState(false);
   const [famiglie, setFamiglie] = useState<Famiglia[]>([]);
   const [raccolte, setRaccolte] = useState<Raccolta[]>([]);
+  const [rigenAll, setRigenAll] = useState<"idle" | "loading">("idle");
+  const [rigenMsg, setRigenMsg] = useState<string | null>(null);
 
   const filtered = useMemo(() => items.filter((b) => {
     if (filter === "attivi" && !b.attiva) return false;
@@ -74,6 +76,20 @@ export default function BoxSuggerimentiSection() {
       api.get<Raccolta[]>("/api/admin/raccolte").catch(() => []),
     ]);
     setFamiglie(fam); setRaccolte(rac);
+  }
+
+  async function rigeneraTutti() {
+    if (!(await confirm({
+      title: "Rigenera tutti i box",
+      message: <>Rigenerare i box dashboard di <strong>tutti i clienti attivi</strong>? Può richiedere qualche minuto.</>,
+      confirmLabel: "Rigenera tutti",
+    }))) return;
+    setRigenAll("loading"); setRigenMsg(null);
+    try {
+      await api.post("/api/dashboard/suggerimenti/rigenera");
+      setRigenMsg("Rigenerazione avviata: i box di tutti i clienti attivi sono stati aggiornati.");
+    } catch { setError("Errore nella rigenerazione complessiva"); }
+    finally { setRigenAll("idle"); }
   }
 
   async function openCreate() { await loadRefs(); setEdit(null); setModalOpen(true); }
@@ -147,6 +163,9 @@ export default function BoxSuggerimentiSection() {
         ]}
       >
         <div className="action-buttons">
+          <button className="btn btn-secondary btn-sm" onClick={rigeneraTutti} disabled={rigenAll === "loading"}>
+            {rigenAll === "loading" ? "Rigenero…" : "Rigenera tutti i clienti"}
+          </button>
           <button className="btn btn-primary btn-sm" onClick={openCreate}>{IconPlus} Nuovo Box</button>
         </div>
       </AdminTopBar>
@@ -155,6 +174,7 @@ export default function BoxSuggerimentiSection() {
         <div className="content-header"><div><span className="meta">{meta}</span></div></div>
 
         {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {rigenMsg && <Notice variant="success" onClose={() => setRigenMsg(null)}>{rigenMsg}</Notice>}
 
         <DataTable
           columns={columns}
