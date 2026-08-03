@@ -285,6 +285,16 @@ automatico** quando cambiano le varianti.
 - Limite noto: le **immagini** non entrano nel blob (nessun re-embed al cambio
   immagini) — accettato per ora.
 
+## ⏳ Aperti — in attesa di chiarimento
+
+### Multiplo d'ordine da Integra (posizione individuata, DA CONFERMARE dai gestori DB)
+Secondo indicazione dei gestori, il multiplo di vendita sta in **`prosoggetti.psg_liberon1`**
+(es. = 6 per LU3210 / fornitore 00002). Chiave: `azi_cdazi='001'` + `psg_proid` + `psg_clatipo='F'`
++ `psg_clacod`. Da chiarire: quale riga F scegliere se ce ne sono più di una. L'utente
+read-only `integrams` NON vede `prosoggetti`/`prodotti`: per importarlo servirebbe estendere
+la vista `b2b_prodotti` (dblink, utente privilegiato) e mapparlo in sync (ora `multiplo_qta`=null).
+Dettagli in `richiesta-dati-integra.md` §4.1.
+
 ---
 
 **Ultima modifica:** 3 luglio 2026  

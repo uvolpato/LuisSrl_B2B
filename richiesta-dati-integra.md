@@ -65,6 +65,13 @@ Tutte le entità di questa sezione sono richieste come **vista Postgres in sola 
 
 > Le **immagini** (file) e le **descrizioni AI** sono gestite sul portale; da Integra ci basta, se disponibile, il **riferimento/nome file** per agganciarle. Indicateci quali tra **colore** e **descrizione** sono affidabili in Integra.
 
+> **Multiplo d'ordine — posizione individuata (DA CONFERMARE dai gestori DB).**
+> Secondo indicazione dei gestori, la quantità multipla di vendita risiede nella tabella **`prosoggetti`**, campo **`psg_liberon1`**
+> (es. = 6 per il codice LU3210 / fornitore 00002). Chiave: `azi_cdazi = '001'` + `psg_proid` (id prodotto) + `psg_clatipo = 'F'`
+> + `psg_clacod` (codice fornitore). Da chiarire con i gestori: se un prodotto ha **più righe fornitore (F)**, quale fornisce il
+> multiplo (flag "fornitore principale" / obsoleto?). Nota: l'utente read-only `integrams` **non ha permessi** su `prosoggetti`/`prodotti`;
+> per esporre il dato servirebbe estendere la vista `b2b_prodotti` (creata via dblink con utente privilegiato) e mappare il campo in sync.
+
 ### 4.2 Prezzi e condizioni commerciali
 
 **Listini** — ★
