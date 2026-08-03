@@ -655,7 +655,7 @@ export default function AreaClientePage() {
                     <div className="product-box" key={box.boxId}>
                       <div className="product-box-header">
                         <h2>{box.titolo}</h2>
-                        <Link href="/area/catalogo">Vedi tutto</Link>
+                        <Link href={`/area/catalogo?codiceLinea=${box.articoli.map((a) => a.id).join(",")}`}>Vedi tutto</Link>
                       </div>
                       <div className="product-grid">
                         {box.articoli.slice(0, 4).map((a) => (
