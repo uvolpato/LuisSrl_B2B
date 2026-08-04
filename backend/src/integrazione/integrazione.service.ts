@@ -2806,7 +2806,7 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
     let idx = 2;
     const conds: string[] = [`r.codice_listino = $1`];
 
-    const joinDesc = ` LEFT JOIN vista_integra_prodotti p ON p.pro_cod = r.codice_prodotto`;
+    const joinDesc = ` LEFT JOIN integra_articoli p ON p.pro_cod = r.codice_prodotto`;
 
     if (search) {
       conds.push(`(r.codice_prodotto ILIKE $${idx} OR CAST(r.id_variante AS TEXT) ILIKE $${idx} OR COALESCE(p.pro_descr, '') ILIKE $${idx})`);
