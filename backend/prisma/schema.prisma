@@ -520,6 +520,8 @@ model SuggestionBox {
   id                Int      @id @default(autoincrement())
   titolo            String
   prompt            String
+  /// cliente = calcolato sui dati del singolo cliente; generale = sui dati di vendita globali (condiviso)
+  ambito            String   @default("cliente")
   nArticoli         Int      @default(10) @map("n_articoli")
   /// Pesi segnali: {"acquisti":0.40,"tracking":0.25,"progetti":0.20,"affinita":0.15}
   pesi              Json     @default("{\"acquisti\":0.40,\"tracking\":0.25,\"progetti\":0.20,\"affinita\":0.15}")

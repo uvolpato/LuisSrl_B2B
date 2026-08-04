@@ -38,6 +38,9 @@ interface PesiSegnali {
 
 const DEFAULT_PESI: PesiSegnali = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15, profilo: 0 };
 
+/** customerId sentinella per i box "generale" (cache condivisa da tutti i clienti). */
+const GENERALE_ID = 0;
+
 interface Candidato {
   id: number;
   codiceLinea: string;
@@ -64,59 +67,69 @@ export class DashboardService {
     private readonly insight: InsightService,
   ) {}
 
-  /** Freschezza della cache in minuti (default 60). */
-  private ttlMinutes(): number {
-    const v = parseInt(process.env.DASHBOARD_CACHE_TTL_MINUTES || '60', 10);
-    return Number.isFinite(v) && v > 0 ? v : 60;
+  private freqGiorni(): number {
+    const v = parseInt(process.env.DASHBOARD_FREQUENZA_GIORNI || '7', 10);
+    return Number.isFinite(v) && v > 0 ? v : 7;
   }
 
-  /** Box attivi per un cliente: cache se fresca, altrimenti rigenera on-demand e aggiorna. */
+  private maxClientiNotte(): number {
+    const v = parseInt(process.env.DASHBOARD_MAX_CLIENTI_NOTTE || '200', 10);
+    return Number.isFinite(v) && v > 0 ? v : 200;
+  }
+
+  /**
+   * Box attivi per un cliente. Sola lettura: i box restano congelati fino alla
+   * prossima generazione schedulata. Un box senza cache (primo accesso del cliente,
+   * o box nuovo) viene generato al volo una tantum; i generale leggono la cache condivisa.
+   */
   async getSuggerimenti(customerId: number, codiceListino?: string | null) {
     const boxes = await this.prisma.suggestionBox.findMany({
       where: { attiva: true },
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
-    const cached = await this.prisma.dashboardBox.findMany({ where: { customerId } });
+    const [clienteCached, generaleCached] = await Promise.all([
+      this.prisma.dashboardBox.findMany({ where: { customerId } }),
+      this.prisma.dashboardBox.findMany({ where: { customerId: GENERALE_ID } }),
+    ]);
 
-    // Box non più attivi (o cambiati) → rimuovi dalla cache.
-    const attivi = new Set(boxes.map((b) => b.id));
-    const orfane = cached.filter((c) => !attivi.has(c.boxId));
+    // Cache cliente orfana (box non più attivo o diventato generale) → rimuovi.
+    const clienteAttivi = new Set(boxes.filter((b) => b.ambito !== 'generale').map((b) => b.id));
+    const orfane = clienteCached.filter((c) => !clienteAttivi.has(c.boxId));
     if (orfane.length) {
-      await this.prisma.dashboardBox.deleteMany({
-        where: { customerId, boxId: { in: orfane.map((o) => o.boxId) } },
-      });
+      await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: orfane.map((o) => o.boxId) } } });
     }
 
-    const cutoff = new Date(Date.now() - this.ttlMinutes() * 60_000);
     const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
     for (const box of boxes) {
-      const row = cached.find((c) => c.boxId === box.id);
-      if (row && row.generatoIl >= cutoff) {
+      const generale = box.ambito === 'generale';
+      const row = (generale ? generaleCached : clienteCached).find((c) => c.boxId === box.id);
+      if (row) {
         result.push({ boxId: box.id, titolo: row.titolo, rationale: row.rationale, articoli: row.prodotti as unknown[] });
         continue;
       }
       try {
-        const articoli = await this.generaBox(box, customerId, codiceListino);
+        const articoli = generale
+          ? await this.generaBoxGenerale(box, codiceListino)
+          : await this.generaBox(box, customerId, codiceListino);
         if (articoli.length) {
           const rationale = await this.generaRationale(box, articoli);
-          await this.upsertCache(customerId, box, articoli, rationale);
+          await this.upsertCache(generale ? GENERALE_ID : customerId, box, articoli, rationale);
           result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
       } catch (e) {
-        // Un box rotto non deve mai far cadere la dashboard.
         this.log.warn(`box #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
       }
     }
     return { boxes: result };
   }
 
-  /** Rigenerazione forzata di tutti i box di un cliente (ignora la cache). */
+  /** Rigenerazione immediata dei soli box `cliente` di un cliente (i generale non si toccano). */
   async rigeneraCliente(customerId: number, codiceListino?: string | null) {
     const boxes = await this.prisma.suggestionBox.findMany({
-      where: { attiva: true },
+      where: { attiva: true, ambito: { not: 'generale' } },
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
-    await this.prisma.dashboardBox.deleteMany({ where: { customerId } });
+    await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: boxes.map((b) => b.id) } } });
     const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
     for (const box of boxes) {
       try {
@@ -133,9 +146,41 @@ export class DashboardService {
     return { boxes: result };
   }
 
-  /** Batch notturno: rigenera i box di tutti i clienti ATTIVI. */
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  /** Rigenera i box `generale` (cache condivisa customerId=0). */
+  async rigeneraGenerale(codiceListino?: string | null) {
+    const boxes = await this.prisma.suggestionBox.findMany({
+      where: { attiva: true, ambito: 'generale' },
+      orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
+    });
+    await this.prisma.dashboardBox.deleteMany({ where: { customerId: GENERALE_ID } });
+    for (const box of boxes) {
+      try {
+        const articoli = await this.generaBoxGenerale(box, codiceListino);
+        if (articoli.length) {
+          const rationale = await this.generaRationale(box, articoli);
+          await this.upsertCache(GENERALE_ID, box, articoli, rationale);
+        }
+      } catch (e) {
+        this.log.warn(`box generale #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
+      }
+    }
+  }
+
+  /** Reset totale (admin): svuota la cache e rigenera i box generale. I box cliente
+   *  si rigenerano al prossimo accesso di ciascun cliente (o alla prossima notte). */
   async rigeneraTutti() {
+    await this.prisma.dashboardBox.deleteMany({});
+    const codiceListino = (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+    await this.rigeneraGenerale(codiceListino);
+  }
+
+  /**
+   * Notturno: rigenera i box generale + una finestra di clienti con cache più vecchia
+   * di FREQUENZA_GIORNI (o senza cache), max MAX_CLIENTI_NOTTE, i più stantii per primi.
+   * Spalma il carico su più notti senza mai processare tutti i clienti insieme.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async generazioneNotturna() {
     if (this.batchRunning) {
       this.log.warn('Batch dashboard_boxes già in esecuzione, salto il run');
       return;
@@ -143,24 +188,33 @@ export class DashboardService {
     this.batchRunning = true;
     const logId = await this.startBatchLog();
     try {
+      const fallback = (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+      await this.rigeneraGenerale(fallback);
+
       const customers = await this.prisma.customer.findMany({
         where: { stato: 'ATTIVO' },
         select: { id: true, codiceListino: true },
       });
-      const fallback = (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+      const mins = await this.prisma.dashboardBox.groupBy({
+        by: ['customerId'],
+        _min: { generatoIl: true },
+        where: { customerId: { not: GENERALE_ID } },
+      });
+      const minMap = new Map(mins.map((m) => [m.customerId, m._min.generatoIl]));
+      const cutoff = new Date(Date.now() - this.freqGiorni() * 86_400_000);
+      const stale = customers
+        .filter((c) => { const g = minMap.get(c.id); return !g || g < cutoff; })
+        .sort((a, b) => (minMap.get(a.id)?.getTime() ?? 0) - (minMap.get(b.id)?.getTime() ?? 0))
+        .slice(0, this.maxClientiNotte());
+
       let ok = 0;
       let errori = 0;
-      for (const c of customers) {
-        try {
-          await this.rigeneraCliente(c.id, c.codiceListino ?? fallback);
-          ok++;
-        } catch (e) {
-          errori++;
-          this.log.warn(`Rigenerazione cliente #${c.id} fallita: ${(e as Error).message}`);
-        }
+      for (const c of stale) {
+        try { await this.rigeneraCliente(c.id, c.codiceListino ?? fallback); ok++; }
+        catch (e) { errori++; this.log.warn(`Rigenerazione cliente #${c.id} fallita: ${(e as Error).message}`); }
       }
-      this.log.log(`Batch dashboard_boxes: ${ok} ok, ${errori} errori su ${customers.length} clienti`);
-      await this.completeBatchLog(logId, customers.length, ok, errori);
+      this.log.log(`Notturno box: generale ok, ${ok} clienti rigenerati, ${errori} errori (finestra ${stale.length})`);
+      await this.completeBatchLog(logId, stale.length, ok, errori);
     } catch (e) {
       await this.failBatchLog(logId, (e as Error).message);
       throw e;
@@ -248,30 +302,42 @@ export class DashboardService {
       this.poolVincoli(box, customerId),
       this.segnaliCliente(customerId),
     ]);
-    if (!pool.length) {
-      // Fallback: pool vuoto → elementi random
-      return this.randomFallback(box, codiceListino);
-    }
+    if (!pool.length) return this.randomFallback(box, codiceListino);
+    return this.selezionaEArricchisci(box, pool, (c) => this.scoreCandidato(c, pesi, segnali), codiceListino);
+  }
 
-    // Intento semantico del prompt: filtro soft dentro il pool (pgvector, coseno).
-    // Se il prompt è generico i coseni sono piatti e il filtro non taglia nulla.
+  /** Box "generale": stessa pipeline ma ranking sui dati di vendita globali (best-seller). */
+  async generaBoxGenerale(
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    codiceListino?: string | null,
+  ) {
+    const pool = await this.poolVincoli(box, GENERALE_ID);
+    if (!pool.length) return this.randomFallback(box, codiceListino);
+    const best = await this.famiglieBestSeller();
+    return this.selezionaEArricchisci(box, pool, (c) => best.get(c.famigliaCodice) ?? 0, codiceListino);
+  }
+
+  /**
+   * Filtro semantico soft + ranking (scoreOf) + slice + arricchimento.
+   * Se il ranking è piatto (nessun segnale / nessuna vendita) → selezione casuale
+   * vera, indipendente per box e nuova a ogni rigenerazione.
+   */
+  private async selezionaEArricchisci(
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    pool: Candidato[],
+    scoreOf: (c: Candidato) => number,
+    codiceListino?: string | null,
+  ) {
     let candidati = pool;
     const sem = await this.intentoSemantico(box.prompt, pool);
     if (sem) {
       const semSet = new Set(sem.keys());
       const inSem = pool.filter((c) => semSet.has(c.codiceLinea));
-      // Se l'intento taglia ma restano meno di nArticoli, riempi dal resto del pool.
       if (inSem.length >= box.nArticoli) candidati = inSem;
       else if (inSem.length) candidati = [...inSem, ...pool.filter((c) => !semSet.has(c.codiceLinea))];
     }
 
-    let ordinati = candidati
-      .map((c) => ({ c, score: this.scoreCandidato(c, pesi, segnali) }))
-      .sort((a, b) => b.score - a.score);
-
-    // Cliente senza storia (nessun segnale): selezione casuale VERA, indipendente
-    // per ogni box e nuova a ogni rigenerazione. Evita che tutti i box mostrino
-    // lo stesso identico ranking (best-seller) quando non c'è nulla da personalizzare.
+    let ordinati = candidati.map((c) => ({ c, score: scoreOf(c) })).sort((a, b) => b.score - a.score);
     const maxScore = ordinati.reduce((m, x) => Math.max(m, x.score), 0);
     if (maxScore <= 0) {
       const shuffled = [...candidati];
@@ -284,6 +350,26 @@ export class DashboardService {
 
     const top = ordinati.slice(0, box.nArticoli).map((x) => x.c);
     return this.arricchisci(box, top, codiceListino);
+  }
+
+  /** Famiglie più vendute in assoluto (ranking dei box generale). */
+  private async famiglieBestSeller(): Promise<Map<string, number>> {
+    const rows = await this.prisma.$queryRawUnsafe<{ fam: string; n: bigint }[]>(
+      `SELECT x.fam, sum(x.n)::bigint AS n FROM (
+         SELECT f.codice AS fam, count(*) AS n
+           FROM righe_ordini ro JOIN varianti v ON v.codice = ro.codice_prodotto
+           JOIN articoli a ON a.id = v.articolo_id JOIN famiglie f ON f.codice = a.famiglia_codice
+          GROUP BY f.codice
+         UNION ALL
+         SELECT f.codice AS fam, count(*) AS n
+           FROM righe_ordini ro JOIN articoli a ON a.codice_linea = ro.codice_prodotto
+           JOIN famiglie f ON f.codice = a.famiglia_codice
+          GROUP BY f.codice
+       ) x GROUP BY x.fam`,
+    );
+    const map = new Map<string, number>();
+    for (const r of rows) map.set(r.fam, Number(r.n));
+    return this.normalizza(map);
   }
 
   // ── Vincoli (SQL) ──────────────────────────────────────────────────────────
