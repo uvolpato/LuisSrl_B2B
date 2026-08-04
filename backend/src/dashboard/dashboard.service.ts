@@ -269,13 +269,17 @@ export class DashboardService {
       .map((c) => ({ c, score: this.scoreCandidato(c, pesi, segnali) }))
       .sort((a, b) => b.score - a.score);
 
-    // Cliente senza storia (nessun segnale): ordina per famiglie più vendute.
+    // Cliente senza storia (nessun segnale): selezione casuale VERA, indipendente
+    // per ogni box e nuova a ogni rigenerazione. Evita che tutti i box mostrino
+    // lo stesso identico ranking (best-seller) quando non c'è nulla da personalizzare.
     const maxScore = ordinati.reduce((m, x) => Math.max(m, x.score), 0);
     if (maxScore <= 0) {
-      const best = await this.famiglieBestSeller();
-      ordinati = candidati
-        .map((c) => ({ c, score: best.get(c.famigliaCodice) ?? 0 }))
-        .sort((a, b) => b.score - a.score);
+      const shuffled = [...candidati];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      ordinati = shuffled.map((c) => ({ c, score: 0 }));
     }
 
     const top = ordinati.slice(0, box.nArticoli).map((x) => x.c);
@@ -448,25 +452,6 @@ export class DashboardService {
     return new Map();
   }
 
-  /** Ordine di ripiego quando il cliente non ha segnali: famiglie più vendute in assoluto. */
-  private async famiglieBestSeller(): Promise<Map<string, number>> {
-    const rows = await this.prisma.$queryRawUnsafe<{ fam: string; n: bigint }[]>(
-      `SELECT x.fam, sum(x.n)::bigint AS n FROM (
-         SELECT f.codice AS fam, count(*) AS n
-           FROM righe_ordini ro JOIN varianti v ON v.codice = ro.codice_prodotto
-           JOIN articoli a ON a.id = v.articolo_id JOIN famiglie f ON f.codice = a.famiglia_codice
-          GROUP BY f.codice
-         UNION ALL
-         SELECT f.codice AS fam, count(*) AS n
-           FROM righe_ordini ro JOIN articoli a ON a.codice_linea = ro.codice_prodotto
-           JOIN famiglie f ON f.codice = a.famiglia_codice
-          GROUP BY f.codice
-       ) x GROUP BY x.fam`,
-    );
-    const map = new Map<string, number>();
-    for (const r of rows) map.set(r.fam, Number(r.n));
-    return this.normalizza(map);
-  }
 
   // ── Intento semantico del prompt ───────────────────────────────────────────
 
