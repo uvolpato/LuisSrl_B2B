@@ -3,8 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
+import { DatiImpresaService, type DatiImpresa } from '../dati-impresa/dati-impresa.service';
 
 interface CustomerProfileData {
+  datiImpresa: DatiImpresa | null;
   ragioneSociale: string | null;
   partitaIva: string | null;
   indirizzo: string | null;
@@ -50,6 +52,7 @@ export class CustomerProfileService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly integrazione: IntegrazioneService,
+    private readonly datiImpresa: DatiImpresaService,
   ) {}
 
   async getProfilo(customerId: number): Promise<CustomerProfileResult | null> {
@@ -81,7 +84,7 @@ export class CustomerProfileService {
     if (!data) return null;
 
     const prompt = this.buildPrompt(data);
-    const raw = await this.integrazione.generaSintesiAI(prompt);
+    const raw = await this.integrazione.generaSintesiAIConRicerca(prompt);
     if (!raw) return null;
 
     const json = this.estraiJson(raw);
@@ -91,9 +94,11 @@ export class CustomerProfileService {
     }
 
     const result: CustomerProfileResult = {
-      settore: json.settore ?? null,
+      settore: data.datiImpresa?.settore ?? json.settore ?? null,
       dimensione: json.dimensione ?? null,
-      fatturatoStimato: json.fatturatoStimato ?? null,
+      fatturatoStimato: data.datiImpresa?.fatturato != null
+        ? `€${data.datiImpresa.fatturato.toLocaleString('it-IT')} (registro imprese)`
+        : json.fatturatoStimato ?? null,
       composizioneBusiness: json.composizioneBusiness ?? null,
       sedi: Array.isArray(json.sedi) ? json.sedi : [],
       contattiChiave: Array.isArray(json.contattiChiave) ? json.contattiChiave : [],
@@ -268,7 +273,11 @@ export class CustomerProfileService {
       .filter(Boolean)
       .join('; ');
 
+    // B) Dati ufficiali per P.IVA (registro imprese), se il provider è configurato.
+    const datiImpresa = await this.datiImpresa.lookup(customer.partitaIva);
+
     return {
+      datiImpresa,
       ragioneSociale: customer.ragioneSociale,
       partitaIva: customer.partitaIva,
       indirizzo: customer.indirizzo,
@@ -295,10 +304,21 @@ export class CustomerProfileService {
     return [
       'Sei un assistente di intelligence commerciale B2B per un\'azienda di vasi e complementi da giardino.',
       '',
-      'Genera un profilo di sintesi del cliente seguente, basandoti sui dati forniti.',
+      'Genera un profilo di sintesi del cliente seguente. Usa i DATI UFFICIALI e di vendita qui sotto,',
+      'e COMPLETALI cercando sul web informazioni sull\'azienda (ragione sociale + città/P.IVA):',
+      'cosa produce/vende, settore, dimensione, stagionalità. Preferisci sempre i dati ufficiali quando presenti.',
       'La descrizione deve essere utile a un commerciale per capire chi è il cliente,',
-      'cosa gli interessa e cosa probabilmente NON gli interesserà mai.',
+      'cosa gli interessa e cosa probabilmente NON gli interesserà mai. Se un dato non è verificabile, dillo.',
       '',
+      ...(data.datiImpresa ? [
+        'DATI UFFICIALI (registro imprese, fonte affidabile — usali come verità):',
+        `- Denominazione: ${data.datiImpresa.ragioneSociale ?? '—'}`,
+        `- Codice ATECO: ${data.datiImpresa.ateco ?? '—'}`,
+        `- Settore: ${data.datiImpresa.settore ?? '—'}`,
+        `- Fatturato: ${data.datiImpresa.fatturato != null ? '€' + data.datiImpresa.fatturato.toLocaleString('it-IT') : '—'}`,
+        `- Addetti: ${data.datiImpresa.addetti ?? '—'}`,
+        '',
+      ] : []),
       'DATI ANAGRAFICI DEL CLIENTE (da Integra):',
       `- Ragione sociale: ${data.ragioneSociale ?? '—'}`,
       `- Partita IVA: ${data.partitaIva ?? '—'}`,

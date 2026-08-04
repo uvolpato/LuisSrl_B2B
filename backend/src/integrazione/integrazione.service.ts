@@ -1870,7 +1870,13 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     return this.callGeminiText(prompt, undefined, 'insight');
   }
 
-  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione', images?: { mime: string; b64: string }[], outputTokens?: { tokenIn?: number; tokenOut?: number }): Promise<string> {
+  /** Come generaSintesiAI ma con ricerca web (Google Search grounding): una sola chiamata,
+   *  nessun loop agentico. Il modello arricchisce la risposta con dati dal web. */
+  async generaSintesiAIConRicerca(prompt: string, usageTipo = 'profilo'): Promise<string> {
+    return this.callGeminiText(prompt, undefined, usageTipo, undefined, undefined, { grounding: true });
+  }
+
+  private async callGeminiText(prompt: string, image?: { mime: string; b64: string }, usageTipo = 'descrizione', images?: { mime: string; b64: string }[], outputTokens?: { tokenIn?: number; tokenOut?: number }, opts?: { grounding?: boolean }): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new BadRequestException('Configurazione AI mancante: imposta GEMINI_API_KEY.');
     const aiCfg = await this.getAiConfig('testi');
@@ -1891,6 +1897,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         body: JSON.stringify({
           contents: [{ parts }],
           generationConfig: { temperature: aiCfg.temperature, maxOutputTokens: aiCfg.maxTokens },
+          ...(opts?.grounding ? { tools: [{ google_search: {} }] } : {}),
           safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
             { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
