@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { api } from "../../lib/api";
+import { useConfirm } from "../common/ConfirmProvider";
 
 interface Evento {
   id: number;
@@ -55,6 +56,7 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
   const [comp, setComp] = useState<Comportamento | null>(null);
   const [gen, setGen] = useState(false);
   const [rigen, setRigen] = useState<"idle" | "loading" | "done">("idle");
+  const confirm = useConfirm();
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -85,6 +87,11 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
   }
 
   async function rigeneraBox() {
+    if (!(await confirm({
+      title: "Rigenera box",
+      message: "Rigenerare i box dashboard di questo cliente?",
+      confirmLabel: "Rigenera",
+    }))) return;
     setRigen("loading");
     try {
       await api.post(`/api/dashboard/suggerimenti/rigenera?clienteId=${customerId}`);
