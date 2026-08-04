@@ -196,7 +196,7 @@ export class CustomerProfileService {
       }),
       this.prisma.$queryRawUnsafe<{ n: bigint; importoTotale: string | null }[]>(
         `SELECT count(*)::bigint AS n, sum(importo_totale) AS importoTotale
-           FROM ordini_cliente WHERE customer_id = $1
+           FROM ordini_clienti WHERE customer_id = $1
            AND data_ordine >= now() - make_interval(months => 12)`,
         customerId,
       ),
