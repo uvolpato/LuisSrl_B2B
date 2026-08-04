@@ -3,11 +3,12 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { CustomerProfileService } from '../customer-profile/customer-profile.service';
 import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
+import { CustomerIntelligenceService } from '../customer-intelligence/customer-intelligence.service';
 import { IntegrazioneModule } from '../integrazione/integrazione.module';
 
 @Module({
   imports: [IntegrazioneModule],
   controllers: [AdminController],
-  providers: [AdminService, CustomerProfileService, DatiImpresaService],
+  providers: [AdminService, CustomerProfileService, DatiImpresaService, CustomerIntelligenceService],
 })
 export class AdminModule {}
