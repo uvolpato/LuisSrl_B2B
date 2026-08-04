@@ -254,6 +254,12 @@ export class AdminController {
     return this.admin.updateSuggestionBox(id, dto, req.user.id, req.ip);
   }
 
+  @Post('suggestion-boxes/:id/rigenera')
+  @RequirePermission('catalog.raccolte.edit')
+  rigeneraSuggestionBox(@Param('id', ParseIntPipe) id: number, @Req() req: AuthenticatedRequest) {
+    return this.admin.rigeneraSuggestionBox(id, req.user.id, req.ip);
+  }
+
   @Delete('suggestion-boxes/:id')
   @HttpCode(204)
   @RequirePermission('catalog.raccolte.edit')
