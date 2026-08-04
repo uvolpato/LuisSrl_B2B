@@ -59,9 +59,11 @@ export class InsightService {
   /** Storico ordini reali da ordini_clienti/righe_ordini (import gestionale + checkout B2B). */
   private async ordiniDigest(customerId: number, days: number) {
     const [agg] = await this.prisma.$queryRawUnsafe<{ n: number; recenti: number; importo: string | null; ultimo: Date | null }[]>(
+      // importo: header importo_totale se valorizzato, altrimenti somma delle righe (prezzo*quantita).
       `SELECT count(*)::int AS n,
               count(*) FILTER (WHERE o.data_ordine >= now() - make_interval(days => $2::int))::int AS recenti,
-              coalesce(sum(o.importo_totale), 0)::numeric AS importo,
+              coalesce(sum(coalesce(nullif(o.importo_totale, 0),
+                (SELECT sum(ro.prezzo * ro.quantita) FROM righe_ordini ro WHERE ro.ordine_id = o.id))), 0)::numeric AS importo,
               max(o.data_ordine) AS ultimo
          FROM ordini_clienti o WHERE o.customer_id = $1`,
       customerId, days,

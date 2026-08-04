@@ -195,9 +195,14 @@ export class CustomerProfileService {
         select: { id: true },
       }),
       this.prisma.$queryRawUnsafe<{ n: bigint; importoTotale: string | null }[]>(
-        `SELECT count(*)::bigint AS n, sum(importo_totale) AS importoTotale
-           FROM ordini_clienti WHERE customer_id = $1
-           AND data_ordine >= now() - make_interval(months => 12)`,
+        // importo: header importo_totale se valorizzato, altrimenti somma righe (prezzo*quantita).
+        // L'import gestionale può lasciare importo_totale a 0/NULL, ma le righe hanno i prezzi.
+        `SELECT count(*)::bigint AS n, coalesce(sum(imp), 0) AS importoTotale FROM (
+           SELECT coalesce(nullif(o.importo_totale, 0),
+                           (SELECT sum(ro.prezzo * ro.quantita) FROM righe_ordini ro WHERE ro.ordine_id = o.id)) AS imp
+             FROM ordini_clienti o
+            WHERE o.customer_id = $1 AND o.data_ordine >= now() - make_interval(months => 12)
+         ) t`,
         customerId,
       ),
       this.prisma.progetto.findMany({
