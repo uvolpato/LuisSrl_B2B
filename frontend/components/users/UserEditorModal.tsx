@@ -18,12 +18,13 @@ import { useConfirm } from "../common/ConfirmProvider";
 import ProvisionalPasswordModal from "./ProvisionalPasswordModal";
 import OrdineDetailModal from "./OrdineDetailModal";
 import CustomerTimeline from "../admin/CustomerTimeline";
+import CustomerDossier from "../admin/CustomerDossier";
 
 export type UserEditorTarget =
   | { mode: "create" }
   | { mode: "edit"; user: CustomerProfile };
 
-type Tab = "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita" | "profilo";
+type Tab = "dossier" | "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita" | "profilo";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -79,7 +80,7 @@ export default function UserEditorModal({
     telefono: editing?.telefono ?? "",
     preferredLanguage: editing?.preferredLanguage ?? "it",
   });
-  const [tab, setTab] = useState<Tab>("anagrafica");
+  const [tab, setTab] = useState<Tab>(editing ? "dossier" : "anagrafica");
   const [profilo, setProfilo] = useState<CustomerIntelligenceProfile | null>(null);
   const [profiloLoading, setProfiloLoading] = useState(false);
   const [indirizzi, setIndirizzi] = useState<IndirizzoCliente[]>([]);
@@ -313,6 +314,7 @@ export default function UserEditorModal({
 
       {editing && (
         <div className="modal-tabs-bar">
+          {editing && <button className={`modal-tab-btn ${tab === "dossier" ? "active" : ""}`} onClick={() => setTab("dossier")}>Dossier</button>}
           <button className={`modal-tab-btn ${tab === "anagrafica" ? "active" : ""}`} onClick={() => setTab("anagrafica")}>Anagrafica</button>
           <button className={`modal-tab-btn ${tab === "indirizzi" ? "active" : ""}`} onClick={() => setTab("indirizzi")}>Indirizzi</button>
           <button className={`modal-tab-btn ${tab === "contatti" ? "active" : ""}`} onClick={() => setTab("contatti")}>Contatti</button>
@@ -541,6 +543,7 @@ export default function UserEditorModal({
           </div>
         )}
 
+        {tab === "dossier" && editing && <CustomerDossier customerId={editing.id} />}
         {tab === "attivita" && editing && <CustomerTimeline customerId={editing.id} />}
 
         {tab === "profilo" && editing && (
