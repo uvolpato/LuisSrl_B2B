@@ -88,6 +88,17 @@ REM --- Con dominio: HTTPS automatico Let's Encrypt (la 80 reindirizza alla 443)
 REM /images/* servito da disco (Next non serve i file public aggiunti dopo il build)
 (
   echo !DOMAIN! {
+  echo     @maintenance file {
+  echo         root "%ROOT:\=/%/maintenance"
+  echo         try_files /maintenance.flag
+  echo     }
+  echo     handle @maintenance {
+  echo         root * "%ROOT:\=/%/maintenance"
+  echo         rewrite * /index.html
+  echo         file_server
+  echo         header Retry-After 120
+  echo         header Cache-Control "no-store"
+  echo     }
   echo     handle_path /images/* {
   echo         root * "%ROOT:\=/%/frontend/public/images"
   echo         file_server
@@ -112,6 +123,17 @@ REM /images/* servito da disco (Next non serve i file public aggiunti dopo il bu
 (
   echo https://!LAN_HOST!:!HTTPS_PORT! {
   echo     tls internal
+  echo     @maintenance file {
+  echo         root "%ROOT:\=/%/maintenance"
+  echo         try_files /maintenance.flag
+  echo     }
+  echo     handle @maintenance {
+  echo         root * "%ROOT:\=/%/maintenance"
+  echo         rewrite * /index.html
+  echo         file_server
+  echo         header Retry-After 120
+  echo         header Cache-Control "no-store"
+  echo     }
   echo     handle_path /images/* {
   echo         root * "%ROOT:\=/%/frontend/public/images"
   echo         file_server
