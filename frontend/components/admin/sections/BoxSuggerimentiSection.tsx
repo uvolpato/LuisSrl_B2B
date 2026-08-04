@@ -16,6 +16,7 @@ interface Box {
   id: number;
   titolo: string;
   prompt: string;
+  ambito: string;
   nArticoli: number;
   pesi: Pesi | null;
   soloInOfferta: boolean;
@@ -129,7 +130,12 @@ export default function BoxSuggerimentiSection() {
       key: "titolo", header: "Titolo", grow: true, sortable: true, sortValue: (b) => b.titolo,
       cell: (b) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{b.titolo}</div>
+          <div style={{ fontWeight: 500 }}>
+            {b.titolo}
+            <span className={`status ${b.ambito === "generale" ? "status-config" : "status-active"}`} style={{ marginLeft: 8, fontSize: 11 }}>
+              {b.ambito === "generale" ? "generale" : "cliente"}
+            </span>
+          </div>
           {b.prompt && <div style={{ fontSize: 12, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 360 }}>{b.prompt}</div>}
         </div>
       ),
@@ -229,6 +235,7 @@ function BoxEditModal({
   const isEditing = !!box;
   const [titolo, setTitolo] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [ambito, setAmbito] = useState("cliente");
   const [nArticoli, setNArticoli] = useState("8");
   const [ordinamento, setOrdinamento] = useState("0");
   const [attiva, setAttiva] = useState(true);
@@ -243,13 +250,13 @@ function BoxEditModal({
   useEffect(() => {
     if (!open) return;
     if (box) {
-      setTitolo(box.titolo); setPrompt(box.prompt);
+      setTitolo(box.titolo); setPrompt(box.prompt); setAmbito(box.ambito || "cliente");
       setNArticoli(String(box.nArticoli)); setOrdinamento(String(box.ordinamento));
       setAttiva(box.attiva); setSoloInOfferta(box.soloInOfferta); setEscludiAcquistati(box.escludiAcquistati);
       setScopeFamiglia(box.scopeFamiglia ?? ""); setScopeRaccolta(box.scopeRaccolta ?? "");
       setPesi({ ...DEFAULT_PESI, ...(box.pesi ?? {}) });
     } else {
-      setTitolo(""); setPrompt(""); setNArticoli("8"); setOrdinamento("0");
+      setTitolo(""); setPrompt(""); setAmbito("cliente"); setNArticoli("8"); setOrdinamento("0");
       setAttiva(true); setSoloInOfferta(false); setEscludiAcquistati(true);
       setScopeFamiglia(""); setScopeRaccolta(""); setPesi(DEFAULT_PESI);
     }
@@ -266,6 +273,7 @@ function BoxEditModal({
     const body = {
       titolo: titolo.trim(),
       prompt: prompt.trim(),
+      ambito,
       nArticoli: Math.min(24, Math.max(1, parseInt(nArticoli, 10) || 8)),
       ordinamento: parseInt(ordinamento, 10) || 0,
       attiva, soloInOfferta, escludiAcquistati,
@@ -300,6 +308,13 @@ function BoxEditModal({
             <div className="field" style={{ marginBottom: 10 }}>
               <label className="label">Titolo *</label>
               <input className="input" value={titolo} onChange={(e) => setTitolo(e.target.value)} placeholder="Es. Novità per esterni" />
+            </div>
+            <div className="field" style={{ marginBottom: 10 }}>
+              <label className="label">Ambito</label>
+              <select className="input" value={ambito} onChange={(e) => setAmbito(e.target.value)}>
+                <option value="cliente">Per cliente (dati del singolo)</option>
+                <option value="generale">Generale (vendite globali, uguale per tutti)</option>
+              </select>
             </div>
             <div className="field" style={{ marginBottom: 10 }}>
               <label className="label">Prompt (intento semantico)</label>

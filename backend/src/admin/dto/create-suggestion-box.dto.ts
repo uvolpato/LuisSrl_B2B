@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateSuggestionBoxDto {
   @IsString()
@@ -7,6 +7,11 @@ export class CreateSuggestionBoxDto {
   @IsOptional()
   @IsString()
   prompt?: string;
+
+  /** cliente = sui dati del cliente; generale = sui dati di vendita globali. */
+  @IsOptional()
+  @IsIn(['cliente', 'generale'])
+  ambito?: 'cliente' | 'generale';
 
   @IsOptional()
   @IsInt()

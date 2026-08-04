@@ -383,6 +383,7 @@ export class AdminService {
       data: {
         titolo: dto.titolo,
         prompt: dto.prompt ?? '',
+        ...(dto.ambito !== undefined && { ambito: dto.ambito }),
         ...(dto.nArticoli !== undefined && { nArticoli: dto.nArticoli }),
         ...(dto.pesi !== undefined && { pesi: dto.pesi as Prisma.InputJsonValue }),
         ...(dto.soloInOfferta !== undefined && { soloInOfferta: dto.soloInOfferta }),
@@ -405,6 +406,7 @@ export class AdminService {
       data: {
         ...(dto.titolo !== undefined && { titolo: dto.titolo }),
         ...(dto.prompt !== undefined && { prompt: dto.prompt }),
+        ...(dto.ambito !== undefined && { ambito: dto.ambito }),
         ...(dto.nArticoli !== undefined && { nArticoli: dto.nArticoli }),
         ...(dto.pesi !== undefined && { pesi: dto.pesi as Prisma.InputJsonValue }),
         ...(dto.soloInOfferta !== undefined && { soloInOfferta: dto.soloInOfferta }),
