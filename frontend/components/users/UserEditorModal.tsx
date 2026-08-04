@@ -217,7 +217,7 @@ export default function UserEditorModal({
      if (!editing) return;
      setProfiloLoading(true);
      try {
-       const res = await api.get<CustomerIntelligenceProfile>(`/admin/customers/${editing.id}/profilo`);
+       const res = await api.get<CustomerIntelligenceProfile>(`/api/admin/customers/${editing.id}/profilo`);
        setProfilo(res);
      } catch {
        setProfilo(null);
@@ -552,7 +552,7 @@ export default function UserEditorModal({
               setProfiloLoading(true);
               try {
                 const res = await api.post<CustomerIntelligenceProfile>(
-                  `/admin/customers/${editing.id}/regenerate-profile`,
+                  `/api/admin/customers/${editing.id}/regenerate-profile`,
                 );
                 setProfilo(res);
               } catch (e) {
