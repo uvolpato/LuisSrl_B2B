@@ -560,7 +560,7 @@ model CustomerProfile {
   id               Int      @id @default(autoincrement())
   customerId       Int      @unique @map("customer_id")
   settore          String?
-  fatturatoStimato Decimal? @map("fatturato_stimato")
+  fatturatoStimato String?  @map("fatturato_stimato")
   composizione     String?
   sedi             String?
   contatti         Json?
