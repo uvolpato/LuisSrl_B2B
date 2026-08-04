@@ -151,6 +151,11 @@ export default function ClientiSection() {
   }
 
   async function onRigeneraBox(u: CustomerProfile) {
+    if (!(await confirm({
+      title: "Rigenera box",
+      message: <>Rigenerare i box dashboard di <strong>{u.ragioneSociale ?? u.nome}</strong>?</>,
+      confirmLabel: "Rigenera",
+    }))) return;
     void run(async () => {
       await api.post(`/api/dashboard/suggerimenti/rigenera?clienteId=${u.id}`);
       setInviteResult(`Box dashboard rigenerati per ${u.ragioneSociale ?? u.nome}`);

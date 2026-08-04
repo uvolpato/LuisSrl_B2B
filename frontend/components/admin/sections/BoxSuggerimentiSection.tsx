@@ -112,6 +112,11 @@ export default function BoxSuggerimentiSection() {
   }
 
   async function rigeneraBox(b: Box) {
+    if (!(await confirm({
+      title: "Rigenera box",
+      message: <>Svuotare la cache del box <strong>{b.titolo}</strong> per tutti i clienti? Si rigenera al loro prossimo accesso.</>,
+      confirmLabel: "Rigenera",
+    }))) return;
     setRigenMsg(null);
     try {
       await api.post(`/api/admin/suggestion-boxes/${b.id}/rigenera`);
