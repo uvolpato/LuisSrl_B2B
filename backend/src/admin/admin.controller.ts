@@ -31,6 +31,7 @@ import { CreateSuggestionBoxDto } from './dto/create-suggestion-box.dto';
 import { UpdateSuggestionBoxDto } from './dto/update-suggestion-box.dto';
 import { UpdateFamigliaDto } from './dto/update-famiglia.dto';
 import { CustomerProfileService } from '../customer-profile/customer-profile.service';
+import { CustomerIntelligenceService } from '../customer-intelligence/customer-intelligence.service';
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
@@ -38,6 +39,7 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly customerProfile: CustomerProfileService,
+    private readonly intelligence: CustomerIntelligenceService,
   ) {}
 
   // ── Gruppi di permessi ──
@@ -300,6 +302,14 @@ export class AdminController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.customerProfile.getProfilo(id);
+  }
+
+  @Get('customers/:id/dossier')
+  @RequirePermission('admin.customers.view')
+  async getCustomerDossier(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.intelligence.dossier(id);
   }
 
   @Post('customers/:id/regenerate-profile')
