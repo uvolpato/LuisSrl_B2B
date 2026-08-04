@@ -421,6 +421,15 @@ export class AdminService {
     return updated;
   }
 
+  /** Invalida la cache di questo box per tutti i clienti: si rigenera al prossimo accesso. */
+  async rigeneraSuggestionBox(id: number, actorId: number, ip?: string) {
+    const box = await this.prisma.suggestionBox.findUnique({ where: { id } });
+    if (!box) throw new NotFoundException('admin.suggestion_box_not_found');
+    const { count } = await this.prisma.dashboardBox.deleteMany({ where: { boxId: id } });
+    await this.audit.log({ actorId, azione: 'admin.suggestion_box_rigenera', entita: 'suggestion_boxes', entitaId: String(id), ip });
+    return { esito: 'ok', invalidati: count };
+  }
+
   async deleteSuggestionBox(id: number, actorId: number, ip?: string) {
     const box = await this.prisma.suggestionBox.findUnique({ where: { id } });
     if (!box) throw new NotFoundException('admin.suggestion_box_not_found');

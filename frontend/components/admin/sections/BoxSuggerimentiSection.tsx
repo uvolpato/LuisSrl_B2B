@@ -7,7 +7,7 @@ import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
 import { PAGE_SIZE } from "../types";
-import { IconEdit, IconEye, IconEyeOff, IconPlus, IconTrash } from "../icons";
+import { IconEdit, IconEye, IconEyeOff, IconPlus, IconRefresh, IconTrash } from "../icons";
 import AdminTopBar from "../AdminTopBar";
 
 interface Pesi { acquisti: number; tracking: number; progetti: number; affinita: number }
@@ -111,6 +111,14 @@ export default function BoxSuggerimentiSection() {
     catch { setError("Errore aggiornamento stato"); }
   }
 
+  async function rigeneraBox(b: Box) {
+    setRigenMsg(null);
+    try {
+      await api.post(`/api/admin/suggestion-boxes/${b.id}/rigenera`);
+      setRigenMsg(`Cache del box "${b.titolo}" svuotata: si rigenera al prossimo accesso dei clienti.`);
+    } catch { setError("Errore nella rigenerazione del box"); }
+  }
+
   const columns = useMemo((): Column<Box>[] => [
     {
       key: "titolo", header: "Titolo", grow: true, sortable: true, sortValue: (b) => b.titolo,
@@ -141,6 +149,7 @@ export default function BoxSuggerimentiSection() {
 
   const actions = useMemo((): RowAction<Box>[] => [
     { icon: () => IconEdit, tooltip: () => "Modifica", onClick: (b) => openEdit(b) },
+    { icon: () => IconRefresh, tooltip: () => "Rigenera questo box", onClick: (b) => rigeneraBox(b) },
     { icon: (b) => b.attiva ? IconEyeOff : IconEye, tooltip: (b) => b.attiva ? "Disattiva" : "Attiva", onClick: (b) => toggleAttiva(b) },
     { icon: () => IconTrash, tooltip: () => "Elimina", variant: "danger", onClick: (b) => handleDelete(b) },
   ], [toggleAttiva, handleDelete]);
