@@ -739,6 +739,15 @@ function ProfiloTab({
   onGenerate: () => void;
 }) {
   const t = useTranslations("admin");
+  const confirm = useConfirm();
+  async function handleRigenera() {
+    if (!(await confirm({
+      title: "Rigenera profilo",
+      message: "Rigenerare il profilo AI di questo cliente? Quello attuale verrà sostituito.",
+      confirmLabel: "Rigenera",
+    }))) return;
+    onGenerate();
+  }
   if (loading) return <div className="catalog-empty">Generazione profilo in corso…</div>;
   if (!profilo) {
     return (
@@ -752,6 +761,9 @@ function ProfiloTab({
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button className="btn btn-secondary btn-sm" onClick={handleRigenera}>Rigenera profilo</button>
+      </div>
       <div>
         <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Sintesi</h3>
         <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>
