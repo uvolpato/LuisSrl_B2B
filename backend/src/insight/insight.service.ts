@@ -32,20 +32,74 @@ export class InsightService {
     const ordini = events.filter((e) => e.tipo === 'ordine.create').length;
     const topViste = [...viste.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-    const metriche = { eventi: events.length, ricerche: ricerche.length, viste: [...viste.values()].reduce((s, n) => s + n, 0), articoliDistinti: viste.size, aggiuntiCarrello: carrello.length, ordini };
+    // Storico ordini reale (gestionale + B2B), non solo eventi del portale.
+    const ord = await this.ordiniDigest(customerId, days);
+
+    const metriche = {
+      eventi: events.length, ricerche: ricerche.length,
+      viste: [...viste.values()].reduce((s, n) => s + n, 0),
+      articoliDistinti: viste.size, aggiuntiCarrello: carrello.length,
+      ordiniPortale: ordini,
+      ordiniTotali: ord.nOrdini, ordiniRecenti: ord.nRecenti, importoTotale: ord.importo, ultimoOrdine: ord.ultimo,
+    };
     const testo = [
-      `Eventi ultimi ${days} giorni: ${events.length}.`,
+      ord.nOrdini
+        ? `Storico ordini: ${ord.nOrdini} ordini (${ord.nRecenti} negli ultimi ${days} giorni), importo totale ${ord.importo.toFixed(2)} €${ord.ultimo ? `, ultimo il ${ord.ultimo.toLocaleDateString('it-IT')}` : ''}.`
+        : 'Storico ordini: nessun ordine registrato.',
+      ord.topFamiglie.length ? `Famiglie più acquistate: ${ord.topFamiglie.map((f) => `${f.nome} (${f.n})`).join('; ')}.` : '',
+      ord.topProdotti.length ? `Prodotti più acquistati: ${ord.topProdotti.map((f) => `${f.nome} (${f.n})`).join('; ')}.` : '',
+      `Attività portale B2B ultimi ${days} giorni: ${events.length} eventi.`,
       ricerche.length ? `Ricerche: ${[...new Set(ricerche)].slice(0, 12).join('; ')}.` : '',
       topViste.length ? `Articoli più visti: ${topViste.map(([n, c]) => `${n} (${c})`).join('; ')}.` : '',
       carrello.length ? `Aggiunti al carrello: ${[...new Set(carrello)].slice(0, 12).join(', ')}.` : '',
-      `Ordini creati: ${ordini}.`,
     ].filter(Boolean).join('\n');
-    return { testo, metriche };
+    return { testo, metriche, haDati: events.length > 0 || ord.nOrdini > 0 };
+  }
+
+  /** Storico ordini reali da ordini_clienti/righe_ordini (import gestionale + checkout B2B). */
+  private async ordiniDigest(customerId: number, days: number) {
+    const [agg] = await this.prisma.$queryRawUnsafe<{ n: number; recenti: number; importo: string | null; ultimo: Date | null }[]>(
+      `SELECT count(*)::int AS n,
+              count(*) FILTER (WHERE o.data_ordine >= now() - make_interval(days => $2::int))::int AS recenti,
+              coalesce(sum(o.importo_totale), 0)::numeric AS importo,
+              max(o.data_ordine) AS ultimo
+         FROM ordini_clienti o WHERE o.customer_id = $1`,
+      customerId, days,
+    );
+    const famiglie = await this.prisma.$queryRawUnsafe<{ nome: string; n: number }[]>(
+      `SELECT x.nome, sum(x.n)::int AS n FROM (
+         SELECT f.nome AS nome, count(*) AS n
+           FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+           JOIN varianti v ON v.codice = ro.codice_prodotto
+           JOIN articoli a ON a.id = v.articolo_id JOIN famiglie f ON f.codice = a.famiglia_codice
+          WHERE o.customer_id = $1 GROUP BY f.nome
+         UNION ALL
+         SELECT f.nome, count(*) FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+           JOIN articoli a ON a.codice_linea = ro.codice_prodotto JOIN famiglie f ON f.codice = a.famiglia_codice
+          WHERE o.customer_id = $1 GROUP BY f.nome
+       ) x GROUP BY x.nome ORDER BY sum(x.n) DESC LIMIT 8`,
+      customerId,
+    );
+    const prodotti = await this.prisma.$queryRawUnsafe<{ nome: string; n: number }[]>(
+      `SELECT coalesce(nullif(ro.descrizione, ''), ro.codice_prodotto) AS nome, count(*)::int AS n
+         FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+        WHERE o.customer_id = $1 AND coalesce(nullif(ro.descrizione, ''), ro.codice_prodotto) IS NOT NULL
+        GROUP BY 1 ORDER BY 2 DESC LIMIT 10`,
+      customerId,
+    );
+    return {
+      nOrdini: agg?.n ?? 0,
+      nRecenti: agg?.recenti ?? 0,
+      importo: agg?.importo ? Number(agg.importo) : 0,
+      ultimo: agg?.ultimo ?? null,
+      topFamiglie: famiglie,
+      topProdotti: prodotti,
+    };
   }
 
   /** Genera (o rigenera) la sintesi AI del cliente: profilo + prossima azione. */
   async generate(customerId: number) {
-    const { testo: digest, metriche } = await this.digest(customerId);
+    const { testo: digest, metriche, haDati } = await this.digest(customerId);
     const prompt = `Sei un analista commerciale B2B per un'azienda di vasi e complementi.
 Dato il comportamento del cliente qui sotto, scrivi in italiano, max ~120 parole:
 1) un breve PROFILO (interessi, categorie/attributi ricorrenti, stagionalità o segnali di abbandono);
@@ -55,7 +109,7 @@ Sii concreto, niente frasi vuote. Se i dati sono pochi, dillo.
 Comportamento:
 ${digest || '(nessun evento registrato)'}`;
 
-    let sintesi = digest ? await this.integrazione.generaSintesiAI(prompt) : 'Dati insufficienti: il cliente non ha ancora attività registrata.';
+    let sintesi = haDati ? await this.integrazione.generaSintesiAI(prompt) : 'Dati insufficienti: il cliente non ha ordini storici né attività sul portale.';
     sintesi = (sintesi || '').trim();
     const vec = await this.embedding.embedText(sintesi);
 
