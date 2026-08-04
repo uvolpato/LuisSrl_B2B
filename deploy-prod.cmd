@@ -15,6 +15,7 @@ set SVC_CADDY=LuisCaddy
 set PG_USER=postgres
 set PG_DB=LuisSrlDb
 set BACKUP_DIR=C:\backup
+set FE_PORT=3000
 
 cd /d "%~dp0"
 
@@ -45,6 +46,10 @@ echo Backup in %BACKUP_DIR%\%PG_DB%_!STAMP!.dump (chiede la password postgres)..
 REM --- [2/6] Stop servizi ---
 echo.
 echo === [2/6] Fermo i servizi ===
+REM Attivo la pagina di cortesia: Caddy la serve finche' esiste il flag (Caddy NON va fermato).
+if not exist "%~dp0maintenance" mkdir "%~dp0maintenance"
+echo maintenance>"%~dp0maintenance\maintenance.flag"
+echo Pagina di cortesia ATTIVA.
 if "!USE_SVC!"=="1" goto svc_stop
 echo Nessun servizio rilevato. Se il backend gira in una finestra, CHIUDILA ora.
 pause
@@ -102,6 +107,27 @@ goto done
 "!NSSM!" start %SVC_FE% || goto :err
 if defined NSSM "!NSSM!" status %SVC_CADDY% >nul 2>nul && "!NSSM!" restart %SVC_CADDY% >nul 2>nul
 
+REM --- Attendo che il sito risponda davvero, poi tolgo la pagina di cortesia ---
+echo.
+echo === Attendo che il sito sia online... ===
+set /a TRIES=0
+:healthwait
+set /a TRIES+=1
+powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing 'http://localhost:%FE_PORT%/api/health' -TimeoutSec 5; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
+if not errorlevel 1 goto healthok
+if !TRIES! geq 30 goto healthtimeout
+timeout /t 2 /nobreak >nul
+goto healthwait
+
+:healthtimeout
+echo [avviso] il sito non ha risposto entro il timeout: lascio ATTIVA la pagina di cortesia.
+echo          Verifica i servizi, poi togli il flag:  del "%~dp0maintenance\maintenance.flag"
+goto done
+
+:healthok
+del "%~dp0maintenance\maintenance.flag" >nul 2>nul
+echo Sito online: pagina di cortesia disattivata.
+
 :done
 echo.
 echo === AGGIORNAMENTO COMPLETATO ===
@@ -115,6 +141,7 @@ echo.
 echo *** Il branch locale diverge da origin/master (commit locali non pushati). ***
 echo *** Risolvi a mano: git log --oneline origin/master..HEAD   poi decidi merge/reset. ***
 echo *** I servizi sono FERMI: riavviali con  nssm start %SVC_BE% ^&^& nssm start %SVC_FE% ***
+echo *** Pagina di cortesia ancora ATTIVA: dopo aver riavviato togli  del "%~dp0maintenance\maintenance.flag" ***
 pause
 exit /b 1
 
@@ -122,5 +149,7 @@ exit /b 1
 echo.
 echo *** ERRORE durante l'aggiornamento (codice %errorlevel%). Interrotto. ***
 if "!USE_SVC!"=="1" echo *** Servizi fermi: riavviali con  nssm start %SVC_BE% ^&^& nssm start %SVC_FE% ***
+echo *** La pagina di cortesia resta ATTIVA (sito non pronto). Quando tutto e' ok togli il flag: ***
+echo ***   del "%~dp0maintenance\maintenance.flag" ***
 pause
 exit /b %errorlevel%

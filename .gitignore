@@ -75,3 +75,6 @@ email-presentazione.md
 .DS_Store
 Thumbs.db
 *.suo
+
+# Flag transitorio pagina di manutenzione (creato/rimosso dal deploy)
+maintenance/maintenance.flag
