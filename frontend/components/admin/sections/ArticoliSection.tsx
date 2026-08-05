@@ -16,6 +16,8 @@ type SyncProgress = { running: boolean; pct: number; phase: string; errorText?: 
 
 export default function ArticoliSection() {
   const [view, setView] = useState<"list" | "grid">("list");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Su mobile la tabella scorre orizzontalmente e le colonne restano tagliate:
   // sotto i 640px si passa automaticamente a griglia (card), sopra a tabella.
@@ -60,6 +62,20 @@ export default function ArticoliSection() {
   const artRows = filteredArticles.slice((artPage - 1) * PAGE_SIZE, artPage * PAGE_SIZE);
   const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.variantiCount ?? 0), 0)} varianti`;
 
+  // Infinite scroll per vista griglia
+  useEffect(() => {
+    if (view !== "grid" || visibleCount >= filteredArticles.length) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount((c) => Math.min(c + PAGE_SIZE, filteredArticles.length));
+      }
+    }, { rootMargin: "200px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [view, visibleCount, filteredArticles.length]);
+
   useEffect(() => {
     api.get<Article[]>("/api/integrazione/articoli")
       .then(setArticles)
@@ -67,7 +83,10 @@ export default function ArticoliSection() {
       .finally(() => setArtLoading(false));
   }, [importModalOpen]);
 
-  useEffect(() => setArtPage(1), [articleFilter]);
+  useEffect(() => {
+    setArtPage(1);
+    setVisibleCount(PAGE_SIZE);
+  }, [articleFilter, articleSearch]);
 
   useEffect(() => {
     return () => {
@@ -266,67 +285,57 @@ export default function ArticoliSection() {
             onPageChange={setArtPage}
             loading={artLoading}
           />
-        ) : (
-          <div className="data-cards-scroll">
-            <div className="article-grid">
-              {artRows.map((a) => (
-                <div key={a.id} className="article-card">
-                  <div style={{ position: "relative" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="article-card-img" src={thumbUrl(a.img, 400) || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
-                    {a.imgTipo === "AI" && (
-                      <span className="ai-badge" title="Immagine generata con AI">AI</span>
-                    )}
-                  </div>
-                  <div className="article-card-body">
-                    <div className="article-card-top">
-                      <span className="article-card-id">{a.id}</span>
-                      <h3>{a.name}</h3>
-                      <span className="article-card-color">
-                        <span className="color-swatch" style={{ background: a.coloreRgb || a.colore || "#888" }} />
-                        {a.colore}
-                      </span>
+) : (
+              <div className="data-cards-scroll">
+                <div className="article-grid">
+                  {filteredArticles.slice(0, visibleCount).map((a) => (
+                    <div key={a.id} className="article-card">
+                      <div style={{ position: "relative" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img className="article-card-img" src={thumbUrl(a.img, 400) || PLACEHOLDER} alt={a.name} onError={(e) => { (e.target as HTMLImageElement).style.background = "var(--fg-soft)"; }} />
+                        {a.imgTipo === "AI" && (
+                          <span className="ai-badge" title="Immagine generata con AI">AI</span>
+                        )}
+                      </div>
+                      <div className="article-card-body">
+                        <div className="article-card-top">
+                          <span className="article-card-id">{a.id}</span>
+                          <h3>{a.name}</h3>
+                          <span className="article-card-color">
+                            <span className="color-swatch" style={{ background: a.coloreRgb || a.colore || "#888" }} />
+                            {a.colore}
+                          </span>
+                        </div>
+                        <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
+                          {a.stato}
+                        </span>
+                        <div className="article-card-counts">
+                          {a.variantiVisibiliCount !== undefined && a.variantiVisibiliCount !== (a.variantiCount ?? 0)
+                            ? `${a.variantiVisibiliCount ?? 0}/${a.variantiCount ?? 0}`
+                            : `${a.variantiCount ?? 0}`}{" "}
+                          varianti
+                        </div>
+                        <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
+                        <div className="article-card-actions">
+                          <button className="btn btn-secondary btn-sm" onClick={() => setEditCodiceLinea(a.id)}>Modifica</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => toggleArticleStatus(a)}>
+                            {a.stato === "attivo" ? "Disattiva" : "Attiva"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <span className={`status ${a.stato === "attivo" ? "status-active" : "status-hidden"}`}>
-                      {a.stato}
-                    </span>
-                    <div className="article-card-counts">
-                      {a.variantiVisibiliCount !== undefined && a.variantiVisibiliCount !== (a.variantiCount ?? 0)
-                        ? `${a.variantiVisibiliCount ?? 0}/${a.variantiCount ?? 0}`
-                        : `${a.variantiCount ?? 0}`}{" "}
-                      varianti
+                  ))}
+                  {filteredArticles.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 14, gridColumn: "1 / -1" }}>
+                      Nessun articolo trovato
                     </div>
-                    <div className="article-card-counts">{a.raccolte?.length ?? 0} raccolte</div>
-                    <div className="article-card-actions">
-                      <button className="btn btn-secondary btn-sm" onClick={() => setEditCodiceLinea(a.id)}>Modifica</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => toggleArticleStatus(a)}>
-                        {a.stato === "attivo" ? "Disattiva" : "Attiva"}
-                      </button>
-                    </div>
-                  </div>
+                  )}
+                  {visibleCount < filteredArticles.length && (
+                    <div ref={sentinelRef} style={{ height: 20 }} />
+                  )}
                 </div>
-              ))}
-              {artRows.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 14, gridColumn: "1 / -1" }}>
-                  Nessun articolo trovato
-                </div>
-              )}
-            </div>
-            {filteredArticles.length > PAGE_SIZE && (
-              <div className="data-footer" style={{ marginTop: 14 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setArtPage(p => Math.max(1, p - 1))} disabled={artPage === 1}>
-                  Precedente
-                </button>
-                <span style={{ margin: "0 16px", fontSize: 13.5, color: "var(--muted)" }}>
-                  Pagina {artPage} di {Math.ceil(filteredArticles.length / PAGE_SIZE)}
-                </span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setArtPage(p => Math.min(Math.ceil(filteredArticles.length / PAGE_SIZE), p + 1))} disabled={artPage === Math.ceil(filteredArticles.length / PAGE_SIZE)}>
-                  Successiva
-                </button>
               </div>
             )}
-          </div>
-        )}
         <ImportaArticoliModal
           open={importModalOpen}
           onClose={() => setImportModalOpen(false)}
