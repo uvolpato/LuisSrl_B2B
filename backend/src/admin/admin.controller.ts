@@ -312,6 +312,14 @@ export class AdminController {
     return this.intelligence.dossier(id);
   }
 
+  @Get('customers/:id/offerte')
+  @RequirePermission('admin.customers.view')
+  async getCustomerOfferte(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.intelligence.raccomandazioni(id);
+  }
+
   @Post('customers/:id/regenerate-profile')
   @RequirePermission('admin.customers.view')
   async regenerateCustomerProfile(
