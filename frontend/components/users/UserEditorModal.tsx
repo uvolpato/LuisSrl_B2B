@@ -23,12 +23,13 @@ import ProvisionalPasswordModal from "./ProvisionalPasswordModal";
 import OrdineDetailModal from "./OrdineDetailModal";
 import CustomerTimeline from "../admin/CustomerTimeline";
 import CustomerDossierPanel from "../admin/CustomerDossier";
+import CustomerOfferte from "../admin/CustomerOfferte";
 
 export type UserEditorTarget =
   | { mode: "create" }
   | { mode: "edit"; user: CustomerProfile };
 
-type Tab = "panoramica" | "anagrafica" | "ordini" | "attivita" | "profilo";
+type Tab = "panoramica" | "offerte" | "anagrafica" | "ordini" | "attivita" | "profilo";
 
 const SALUTE: Record<CustomerDossier["salute"], { txt: string; col: string }> = {
   buona: { txt: "buona", col: "var(--ok)" },
@@ -453,6 +454,7 @@ export default function UserEditorModal({
 
           <nav className="dossier-tabs" role="tablist" aria-label="Sezioni della scheda cliente">
             <button className={`tab-btn ${tab === "panoramica" ? "active" : ""}`} onClick={() => setTab("panoramica")} role="tab">Panoramica</button>
+            <button className={`tab-btn ${tab === "offerte" ? "active" : ""}`} onClick={() => setTab("offerte")} role="tab">Offerte</button>
             <button className={`tab-btn ${tab === "anagrafica" ? "active" : ""}`} onClick={() => setTab("anagrafica")} role="tab">Anagrafica e contatti</button>
             <button className={`tab-btn ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")} role="tab">
               Ordini {dossier && <span className="cnt">{dossier.kpi.ordiniTotali}</span>}
@@ -473,6 +475,7 @@ export default function UserEditorModal({
 
           <div className="dossier-body">
             {tab === "panoramica" && <CustomerDossierPanel dossier={dossier} insight={insight} />}
+            {tab === "offerte" && editing && <CustomerOfferte customerId={editing.id} />}
 
             {tab === "anagrafica" && (
               <div>

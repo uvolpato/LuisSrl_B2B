@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 
@@ -158,6 +159,21 @@ export class CustomerIntelligenceService {
     }
     void cardById;
     return out.slice(0, 12);
+  }
+
+  /** Crea un Progetto (offerta) per il cliente con le varianti scelte. */
+  async creaOfferta(customerId: number, varianti: { codice: string; quantita?: number }[], nome?: string) {
+    const items = varianti.filter((v) => v.codice);
+    if (!items.length) throw new Error('Nessuna variante selezionata');
+    return this.prisma.progetto.create({
+      data: {
+        clienteId: customerId,
+        nome: nome?.trim() || `Offerta ${new Date().toLocaleDateString('it-IT')}`,
+        shareToken: randomBytes(12).toString('hex'),
+        items: { create: items.map((v) => ({ varianteCodice: v.codice, quantita: v.quantita ?? 1 })) },
+      },
+      select: { id: true, nome: true, shareToken: true },
+    });
   }
 
   async dossier(customerId: number): Promise<Dossier> {
