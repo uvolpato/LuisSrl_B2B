@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { api, ApiError } from "../../lib/api";
 import type {
   CustomerProfile,
   CustomerIntelligenceProfile,
+  CustomerDossier,
+  CustomerInsight,
   IndirizzoCliente,
   ContattoCliente,
   OrdineCliente,
@@ -14,21 +16,34 @@ import type {
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import SyncButton from "../common/SyncButton";
+import Hint from "../common/Hint";
+import Tooltip from "../common/Tooltip";
 import { useConfirm } from "../common/ConfirmProvider";
 import ProvisionalPasswordModal from "./ProvisionalPasswordModal";
 import OrdineDetailModal from "./OrdineDetailModal";
 import CustomerTimeline from "../admin/CustomerTimeline";
-import CustomerDossier from "../admin/CustomerDossier";
+import CustomerDossierPanel from "../admin/CustomerDossier";
 
 export type UserEditorTarget =
   | { mode: "create" }
   | { mode: "edit"; user: CustomerProfile };
 
-type Tab = "dossier" | "anagrafica" | "indirizzi" | "contatti" | "ordini" | "attivita" | "profilo";
+type Tab = "panoramica" | "anagrafica" | "ordini" | "attivita" | "profilo";
+
+const SALUTE: Record<CustomerDossier["salute"], { txt: string; col: string }> = {
+  buona: { txt: "buona", col: "var(--ok)" },
+  media: { txt: "media", col: "var(--amber)" },
+  a_rischio: { txt: "a rischio", col: "var(--danger)" },
+};
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
   return iso.slice(0, 10);
+}
+
+function fmtDataIt(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("it-IT");
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -49,11 +64,77 @@ function Field({ label, full, children }: { label: string; full?: boolean; child
   );
 }
 
-function ReadOnlyField({ label, value, full }: { label: string; value?: string | null; full?: boolean }) {
+
+
+
+
+
+
+
+
+function RoField({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
   return (
-    <Field label={label} full={full}>
-      <input className="input" value={value ?? ""} readOnly disabled />
-    </Field>
+    <div className={`field${full ? " full" : ""}`}>
+      <label>{label}</label>
+      <div className={`ro locked${mono ? " mono" : ""}`}>{value ?? "—"}</div>
+    </div>
+  );
+}
+
+function Fsec({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="fsec">
+      <div className="fsec-h">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+const STATO_CLS: Record<string, string> = {
+  fatturato: "st-ok",
+  fatturata: "st-ok",
+  confermato: "st-blue",
+  spedito: "st-amber",
+  cancellato: "st-danger",
+};
+
+function StatoPill({ stato }: { stato: string | null }) {
+  const s = stato?.toLowerCase() ?? "";
+  const cls = Object.entries(STATO_CLS).find(([k]) => s.includes(k))?.[1] ?? "st-muted";
+  return (
+    <span className={`status ${cls}`}>
+      <span className="sd">●</span>
+      {stato || "—"}
+    </span>
+  );
+}
+
+function descrizioneOrdine(o: OrdineCliente): string {
+  const n = o.righe.length;
+  const prima = o.righe[0]?.descrizione?.trim() || o.righe[0]?.codiceProdotto;
+  if (!prima) return n > 0 ? `${n} articoli` : "—";
+  return `${prima} · ${n} articoli`;
+}
+
+function tipoIndirizzo(a: IndirizzoCliente): { label: string; cls: string } {
+  const t = (a.tipoDestinazione ?? "").toLowerCase();
+  if (a.flagSpedizione || t === "spedizione") return { label: "Spedizione", cls: "st-amber" };
+  if (t === "fatturazione" || t === "legale") return { label: "Sede legale", cls: "st-blue" };
+  if (t === "magazzino") return { label: "Magazzino", cls: "st-amber" };
+  return { label: "Filiale", cls: "st-muted" };
+}
+
+function AddrCard({ tipo, cls, a }: { tipo: string; cls: string; a: { indirizzo: string | null | undefined; cap: string | null | undefined; citta: string | null | undefined; provincia: string | null | undefined } }) {
+  return (
+    <div className="addr-card">
+      <div className="addr-card-h">
+        <span className={`status ${cls}`}><span className="sd">●</span>{tipo}</span>
+      </div>
+      <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
+      <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
+      <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
+      <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
+    </div>
   );
 }
 
@@ -80,7 +161,9 @@ export default function UserEditorModal({
     telefono: editing?.telefono ?? "",
     preferredLanguage: editing?.preferredLanguage ?? "it",
   });
-  const [tab, setTab] = useState<Tab>(editing ? "dossier" : "anagrafica");
+  const [tab, setTab] = useState<Tab>(editing ? "panoramica" : "anagrafica");
+  const [dossier, setDossier] = useState<CustomerDossier | null>(null);
+  const [insight, setInsight] = useState<CustomerInsight | null>(null);
   const [profilo, setProfilo] = useState<CustomerIntelligenceProfile | null>(null);
   const [profiloLoading, setProfiloLoading] = useState(false);
   const [indirizzi, setIndirizzi] = useState<IndirizzoCliente[]>([]);
@@ -95,15 +178,15 @@ export default function UserEditorModal({
   const [ordiniSortDir, setOrdiniSortDir] = useState<"asc" | "desc">("desc");
   const [ordiniLoading, setOrdiniLoading] = useState(false);
   const [detailOrdine, setDetailOrdine] = useState<OrdineCliente | null>(null);
-  const [loadingLinked, setLoadingLinked] = useState(false);
   const [linkedError, setLinkedError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [resetting, setResetting] = useState(false);
+  const [busyAi, setBusyAi] = useState(false);
+  const [busyBox, setBusyBox] = useState(false);
   const [provisional, setProvisional] = useState<{ email: string; password: string } | null>(null);
-  const initialFormRef = useRef(form);
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
+  const [initialForm] = useState(() => form);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
   const canSave =
     tab === "anagrafica" &&
     !busy &&
@@ -128,51 +211,22 @@ export default function UserEditorModal({
     }
   }
 
-  async function onResetPassword() {
-    if (!editing) return;
-    if (!(await confirm({ message: t("confirmReset"), tone: "danger" }))) return;
-    setResetting(true);
-    setError(null);
-    try {
-      const res = await api.post<{ provisionalPassword: string }>(`/api/customers/${editing.id}/reset-password`);
-      setProvisional({ email: editing.email, password: res.provisionalPassword });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.code : "errors.generic");
-    } finally {
-      setResetting(false);
-    }
-  }
-
   async function handleCancel() {
-    if (isDirty && !(await confirm({ message: t("confirmDiscard"), tone: "danger" }))) return;
+    if (target.mode === "create" && isDirty && !(await confirm({ message: t("confirmDiscard"), tone: "danger" }))) return;
     onClose();
   }
 
-  async function loadIndirizzi() {
+  async function loadDossier() {
     if (!editing) return;
-    setLoadingLinked(true);
-    setLinkedError(null);
     try {
-      const r = await api.get<IndirizzoCliente[]>(`/api/customers/${editing.id}/indirizzi`);
-      setIndirizzi(r);
-    } catch (err) {
-      setLinkedError(err instanceof ApiError ? err.code : "errors.generic");
-    } finally {
-      setLoadingLinked(false);
-    }
-  }
-
-  async function loadContatti() {
-    if (!editing) return;
-    setLoadingLinked(true);
-    setLinkedError(null);
-    try {
-      const r = await api.get<ContattoCliente[]>(`/api/customers/${editing.id}/contatti`);
-      setContatti(r);
-    } catch (err) {
-      setLinkedError(err instanceof ApiError ? err.code : "errors.generic");
-    } finally {
-      setLoadingLinked(false);
+      const [d, i] = await Promise.all([
+        api.get<CustomerDossier>(`/api/admin/customers/${editing.id}/dossier`),
+        api.get<CustomerInsight | null>(`/api/customers/${editing.id}/insight`),
+      ]);
+      setDossier(d);
+      setInsight(i);
+    } catch {
+      setDossier(null);
     }
   }
 
@@ -212,22 +266,22 @@ export default function UserEditorModal({
     } finally {
       setOrdiniLoading(false);
     }
-   }
+  }
 
-   async function loadProfilo() {
-     if (!editing) return;
-     setProfiloLoading(true);
-     try {
-       const res = await api.get<CustomerIntelligenceProfile>(`/api/admin/customers/${editing.id}/profilo`);
-       setProfilo(res);
-     } catch {
-       setProfilo(null);
-     } finally {
-       setProfiloLoading(false);
-     }
-   }
+  async function loadProfilo() {
+    if (!editing) return;
+    setProfiloLoading(true);
+    try {
+      const res = await api.get<CustomerIntelligenceProfile>(`/api/admin/customers/${editing.id}/profilo`);
+      setProfilo(res);
+    } catch {
+      setProfilo(null);
+    } finally {
+      setProfiloLoading(false);
+    }
+  }
 
-   function handleSort(field: string) {
+  function handleSort(field: string) {
     const same = ordiniSortBy === field;
     const newDir = same && ordiniSortDir === "asc" ? "desc" : "asc";
     setOrdiniSortBy(field);
@@ -237,11 +291,96 @@ export default function UserEditorModal({
   }
 
   useEffect(() => {
-    if (tab === "indirizzi" && indirizzi.length === 0) void loadIndirizzi();
-    if (tab === "contatti" && contatti.length === 0) void loadContatti();
-    if (tab === "ordini") void loadOrdini("", 1);
-    if (tab === "profilo" && editing && !profilo && !profiloLoading) void loadProfilo();
-  }, [tab, editing]);
+    if (!editing) return;
+    const id = editing.id;
+    void Promise.all([
+      api.get<CustomerDossier>(`/api/admin/customers/${id}/dossier`),
+      api.get<CustomerInsight | null>(`/api/customers/${id}/insight`),
+    ])
+      .then(([d, i]) => { setDossier(d); setInsight(i); })
+      .catch(() => setDossier(null));
+    void api
+      .get<CustomerIntelligenceProfile>(`/api/admin/customers/${id}/profilo`)
+      .then(setProfilo)
+      .catch(() => setProfilo(null));
+    if (tab === "anagrafica") {
+      if (indirizzi.length === 0) {
+        void api
+          .get<IndirizzoCliente[]>(`/api/customers/${id}/indirizzi`)
+          .then(setIndirizzi)
+          .catch((err) => setLinkedError(err instanceof ApiError ? err.code : "errors.generic"));
+      }
+      if (contatti.length === 0) {
+        void api
+          .get<ContattoCliente[]>(`/api/customers/${id}/contatti`)
+          .then(setContatti)
+          .catch((err) => setLinkedError(err instanceof ApiError ? err.code : "errors.generic"));
+      }
+    }
+    if (tab === "ordini") {
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "20",
+        sortBy: "dataOrdine",
+        sortDir: "desc",
+        year: String(new Date().getFullYear()),
+      });
+      void api
+        .get<OrdiniResponse>(`/api/customers/${id}/ordini?${params}`)
+        .then((r) => {
+          setOrdini(r.items);
+          setTotalOrdini(r.total);
+          setOrdiniAnni(r.years);
+          if (r.years.length > 0 && !r.years.includes(Number(params.get("year")))) {
+            setOrdiniYear(String(r.years[0]));
+          }
+        })
+        .catch((err) => setLinkedError(err instanceof ApiError ? err.code : "errors.generic"));
+    }
+  }, [tab, editing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!editing) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [editing, onClose]);
+
+  async function elaboraAI() {
+    if (!editing) return;
+    setBusyAi(true);
+    setError(null);
+    try {
+      await Promise.all([
+        api.post<CustomerIntelligenceProfile>(`/api/admin/customers/${editing.id}/regenerate-profile`),
+        api.post<CustomerInsight>(`/api/customers/${editing.id}/insight/genera`),
+      ]);
+      await Promise.all([loadDossier(), loadProfilo()]);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : "errors.generic");
+    } finally {
+      setBusyAi(false);
+    }
+  }
+
+  async function rigeneraBox() {
+    if (!editing) return;
+    if (!(await confirm({
+      title: "Rigenera box",
+      message: "Rigenerare i box dashboard di questo cliente?",
+      confirmLabel: "Rigenera",
+    }))) return;
+    setBusyBox(true);
+    try {
+      await api.post(`/api/dashboard/suggerimenti/rigenera?clienteId=${editing.id}`);
+    } catch {
+      setError("errors.generic");
+    } finally {
+      setBusyBox(false);
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -255,465 +394,415 @@ export default function UserEditorModal({
       preferredLanguage: form.preferredLanguage,
     };
     try {
-      if (editing) {
-        await api.patch(`/api/customers/${editing.id}`, payload);
-        onSaved(null);
-      } else {
-        const res = await api.post<{ customer: CustomerProfile; provisionalPassword: string }>("/api/customers", {
-          email: form.email,
-          ...payload,
-        });
-        onSaved({ email: res.customer.email, password: res.provisionalPassword });
-      }
+      const res = await api.post<{ customer: CustomerProfile; provisionalPassword: string }>("/api/customers", {
+        email: form.email,
+        ...payload,
+      });
+      onSaved({ email: res.customer.email, password: res.provisionalPassword });
     } catch (err) {
       setError(err instanceof ApiError ? err.code : "errors.generic");
       setBusy(false);
     }
   }
 
-  return (<>
-    <Modal
-      open
-      onClose={onClose}
-      noHeader
-      footer={
-        <>
-          {editing && (
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              onClick={onDelete}
-              disabled={deleting}
-            >
-              {deleting ? "Eliminazione..." : t("delete")}
-            </button>
-          )}
-          <div style={{ flex: 1 }} />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={handleCancel}>
-            {tc("cancel")}
-          </button>
-          <button
-            type="submit"
-            form="user-editor-form"
-            className="btn btn-primary btn-sm"
-            disabled={!canSave}
-          >
-            {tc("save")}
-          </button>
-        </>
-      }
-    >
-      <div className="modal-root-header">
-        <h2>{editing ? (editing.ragioneSociale || editing.nome || t("editTitle")) : t("createTitle")}</h2>
-        <button className="modal-root-close" onClick={onClose} aria-label="Chiudi">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+  const s = dossier ? SALUTE[dossier.salute] : null;
 
-      {editing && (
-        <div className="modal-tabs-bar">
-          {editing && <button className={`modal-tab-btn ${tab === "dossier" ? "active" : ""}`} onClick={() => setTab("dossier")}>Dossier</button>}
-          <button className={`modal-tab-btn ${tab === "anagrafica" ? "active" : ""}`} onClick={() => setTab("anagrafica")}>Anagrafica</button>
-          <button className={`modal-tab-btn ${tab === "indirizzi" ? "active" : ""}`} onClick={() => setTab("indirizzi")}>Indirizzi</button>
-          <button className={`modal-tab-btn ${tab === "contatti" ? "active" : ""}`} onClick={() => setTab("contatti")}>Contatti</button>
-          <button className={`modal-tab-btn ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")}>Ordini</button>
-          {editing && <button className={`modal-tab-btn ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")}>Attività</button>}
-          {editing && <button className={`modal-tab-btn ${tab === "profilo" ? "active" : ""}`} onClick={() => setTab("profilo")}>Profilo</button>}
-        </div>
-      )}
-
-      <div className="modal-body" style={{ flex: 1, overflowY: tab === "ordini" ? "hidden" : "auto", display: tab === "ordini" ? "flex" : undefined, flexDirection: tab === "ordini" ? "column" : undefined }}>
-        {tab === "anagrafica" && (
-          <form id="user-editor-form" onSubmit={onSubmit}>
-            {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
-
-            {editing ? (
-              <>
-                <Section title="Anagrafica">
-                  <ReadOnlyField label="Codice cliente" value={editing.codiceCliente} />
-                  <ReadOnlyField label="Listino" value={editing.codiceListino} />
-                  <Field label={t("fieldCompany")} full>
-                    <input
-                      className="input"
-                      value={form.ragioneSociale}
-                      onChange={(e) => set("ragioneSociale", e.target.value)}
-                    />
-                  </Field>
-                  <Field label={t("fieldPiva")}>
-                    <input
-                      className="input"
-                      value={form.partitaIva}
-                      onChange={(e) => set("partitaIva", e.target.value)}
-                    />
-                  </Field>
-                </Section>
-
-                <Section title="Contatti">
-                  <Field label={t("fieldEmail")} full>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input
-                        className="input"
-                        type="email"
-                        required
-                        disabled
-                        value={form.email}
-                        onChange={(e) => set("email", e.target.value)}
-                        style={{ flex: 1 }}
-                      />
-                      {editing && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-secondary"
-                          disabled={resetting}
-                          onClick={onResetPassword}
-                          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
-                        >
-                          {resetting ? "..." : "Reset password"}
-                        </button>
-                      )}
-                    </div>
-                  </Field>
-                  <Field label={t("fieldName")}>
-                    <input
-                      className="input"
-                      required
-                      value={form.nome}
-                      onChange={(e) => set("nome", e.target.value)}
-                    />
-                  </Field>
-                  <Field label={t("fieldPhone")}>
-                    <input
-                      className="input"
-                      value={form.telefono}
-                      onChange={(e) => set("telefono", e.target.value)}
-                    />
-                  </Field>
-                  <Field label={t("fieldLanguage")}>
-                    <select
-                      className="input"
-                      value={form.preferredLanguage}
-                      onChange={(e) => set("preferredLanguage", e.target.value)}
-                    >
-                      <option value="it">Italiano</option>
-                      <option value="en">English</option>
-                    </select>
-                  </Field>
-                </Section>
-
-                <Section title="Sede">
-                  <ReadOnlyField label="Indirizzo" value={editing.indirizzo} full />
-                  <ReadOnlyField label="CAP" value={editing.cap} />
-                  <ReadOnlyField label="Città" value={editing.citta} />
-                  <ReadOnlyField label="Provincia" value={editing.provincia} />
-                </Section>
-
-                <Section title="Condizioni commerciali">
-                  <ReadOnlyField label="Pagamento" value={editing.codicePagamentoDescrizione || editing.codicePagamento} />
-                  <ReadOnlyField label="Fido" value={editing.fido != null ? String(editing.fido) : null} />
-                </Section>
-              </>
-            ) : (
-              <Section title={t("createTitle")}>
-                <Field label={t("fieldEmail")} full>
-                  <input
-                    className="input"
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => set("email", e.target.value)}
-                  />
-                </Field>
-                <Field label={t("fieldName")}>
-                  <input
-                    className="input"
-                    required
-                    value={form.nome}
-                    onChange={(e) => set("nome", e.target.value)}
-                  />
-                </Field>
-                <Field label={t("fieldCompany")}>
-                  <input
-                    className="input"
-                    value={form.ragioneSociale}
-                    onChange={(e) => set("ragioneSociale", e.target.value)}
-                  />
-                </Field>
-                <Field label={t("fieldPiva")}>
-                  <input
-                    className="input"
-                    value={form.partitaIva}
-                    onChange={(e) => set("partitaIva", e.target.value)}
-                  />
-                </Field>
-                <Field label={t("fieldPhone")}>
-                  <input
-                    className="input"
-                    value={form.telefono}
-                    onChange={(e) => set("telefono", e.target.value)}
-                  />
-                </Field>
-                <Field label={t("fieldLanguage")}>
-                  <select
-                    className="input"
-                    value={form.preferredLanguage}
-                    onChange={(e) => set("preferredLanguage", e.target.value)}
-                  >
-                    <option value="it">Italiano</option>
-                    <option value="en">English</option>
-                  </select>
-                </Field>
-              </Section>
-            )}
-          </form>
-        )}
-
-        {tab === "indirizzi" && (
-          <div>
-            {linkedError && <Notice variant="error" onClose={() => setLinkedError(null)}>{tServer(linkedError)}</Notice>}
-            {loadingLinked ? (
-              <p className="meta">Caricamento…</p>
-            ) : indirizzi.length === 0 ? (
-              <p className="meta">Nessun indirizzo di spedizione.</p>
-            ) : (
-              <div className="data-table">
-                <div className="data-table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Ragione sociale</th>
-                        <th>Indirizzo</th>
-                        <th>CAP</th>
-                        <th>Città</th>
-                        <th>Prov.</th>
-                        <th style={{ textAlign: "center" }}>Sped.</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {indirizzi.map((a) => (
-                        <tr key={a.id}>
-                          <td>{a.ragioneSociale || "—"}</td>
-                          <td>{a.indirizzo || "—"}</td>
-                          <td>{a.cap || "—"}</td>
-                          <td>{a.citta || "—"}</td>
-                          <td>{a.provincia || "—"}</td>
-                          <td style={{ textAlign: "center" }}>{a.flagSpedizione ? "✓" : ""}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+  return (
+    <>
+      {editing ? (
+        <div
+          className="dossier-backdrop"
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget && e.button === 0) onClose();
+          }}
+        >
+        <div className="dossier">
+          <header className="dossier-header">
+            <div className="dossier-title">
+              <h1>{editing.ragioneSociale || editing.nome || t("editTitle")}</h1>
+              <div className="dossier-kv">
+                <span>Codice <span className="mono">{editing.codiceCliente || "—"}</span></span>
+                <span>Listino <span className="mono">{editing.codiceListino || "—"}</span></span>
+                <span>{[editing.indirizzo, editing.cap, editing.citta, editing.provincia ? `(${editing.provincia})` : null].filter(Boolean).join(" · ") || "—"}</span>
+                <span>P.IVA <span className="mono">{editing.partitaIva || "—"}</span></span>
               </div>
-            )}
-          </div>
-        )}
-
-        {tab === "contatti" && (
-          <div>
-            {linkedError && <Notice variant="error" onClose={() => setLinkedError(null)}>{tServer(linkedError)}</Notice>}
-            {loadingLinked ? (
-              <p className="meta">Caricamento…</p>
-            ) : contatti.length === 0 ? (
-              <p className="meta">Nessun contatto.</p>
-            ) : (
-              <div className="data-table">
-                <div className="data-table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Tipo</th>
-                        <th>Data</th>
-                        <th>Contenuto</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contatti.map((c) => (
-                        <tr key={c.id}>
-                          <td>{c.tipo}</td>
-                          <td className="mono">{fmtDate(c.data)}</td>
-                          <td>{c.contenuto}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === "dossier" && editing && <CustomerDossier customerId={editing.id} />}
-        {tab === "attivita" && editing && <CustomerTimeline customerId={editing.id} />}
-
-        {tab === "profilo" && editing && (
-          <ProfiloTab
-            customerId={editing.id}
-            profilo={profilo}
-            loading={profiloLoading}
-            onGenerate={async () => {
-              setProfiloLoading(true);
-              try {
-                const res = await api.post<CustomerIntelligenceProfile>(
-                  `/api/admin/customers/${editing.id}/regenerate-profile`,
-                );
-                setProfilo(res);
-              } catch (e) {
-                setProfilo(null);
-              } finally {
-                setProfiloLoading(false);
-              }
-            }}
-          />
-        )}
-
-        {tab === "ordini" && editing && (
-          <div className="ordini-tab">
-            {linkedError && <div style={{ flexShrink: 0 }}><Notice variant="error" onClose={() => setLinkedError(null)}>{tServer(linkedError)}</Notice></div>}
-
-            <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-              <div className="admin-search" style={{ flex: 1 }}>
-                <span className="search-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Cerca per numero ordine, codice articolo, descrizione…"
-                  value={ordiniSearch}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setOrdiniSearch(v);
-                    setOrdiniPage(1);
-                    void loadOrdini(v, 1);
-                  }}
-                />
-              </div>
-              <select
-                className="input"
-                style={{ width: 80, flexShrink: 0 }}
-                value={ordiniYear}
-                onChange={(e) => {
-                  const y = e.target.value;
-                  setOrdiniYear(y);
-                  setOrdiniPage(1);
-                  void loadOrdini(undefined, 1, undefined, undefined, y);
-                }}
-              >
-                {ordiniAnni.length === 0 ? (
-                  <option value={String(new Date().getFullYear())}>{new Date().getFullYear()}</option>
+              <div className="badges">
+                {dossier ? (
+                  <>
+                    <span className="pill solid" style={{ background: "var(--accent)" }}>{dossier.segmento}</span>
+                    <Tooltip text="Indicatore stimato dallo storico ordini (cadenza d'acquisto, trend del fatturato e ultimo ordine). Buona = cliente regolare e attivo. Media = andamento altalenante o segnali misti. A rischio = cadenza o fatturato in calo.">
+                      <span className="pill" style={{ cursor: "help" }}>
+                        Salute <span className="sd" style={{ color: s!.col }}>●</span> {s!.txt}
+                      </span>
+                    </Tooltip>
+                    {dossier.kpi.ultimoOrdine && (
+                      <span className="pill muted">Ultimo ordine {dossier.kpi.giorniDaUltimoOrdine ?? "—"} gg fa</span>
+                    )}
+                  </>
                 ) : (
-                  ordiniAnni.map((y) => (
-                    <option key={y} value={String(y)}>{y}</option>
-                  ))
+                  <span className="pill muted">Caricamento…</span>
                 )}
-              </select>
-              {editing.codiceCliente && (
-                <SyncButton
-                  label="Sincronizza"
-                  onClick={async () => {
-                    setLinkedError(null);
-                    try {
-                      await api.post(`/api/integrazione/clienti/${editing.codiceCliente}/sync-ordini`);
-                      await loadOrdini("", 1);
-                    } catch (err) {
-                      setLinkedError(err instanceof ApiError ? err.code : "errors.generic");
-                      throw err;
-                    }
-                  }}
-                />
-              )}
+              </div>
             </div>
+            <button className="modal-root-close" onClick={onClose} aria-label="Chiudi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </header>
 
-            {ordiniLoading && ordini.length === 0 ? (
-              <p className="meta">Caricamento…</p>
-            ) : ordini.length === 0 ? (
-              <p className="meta">Nessun ordine.</p>
-            ) : (
-              <div className="data-table">
-                <div className="data-table-scroll">
-                  <table>
-                    <colgroup>
-                      <col />
-                      <col style={{ width: 140 }} />
-                      <col style={{ width: 110 }} />
-                      <col style={{ width: 130 }} />
-                      <col style={{ width: 50 }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th className="sortable" onClick={() => handleSort("numeroOrdine")}>Ordine{ordiniSortBy === "numeroOrdine" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
-                        <th className="sortable" onClick={() => handleSort("dataOrdine")}>Data{ordiniSortBy === "dataOrdine" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
-                        <th className="sortable" onClick={() => handleSort("stato")}>Stato{ordiniSortBy === "stato" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
-                        <th className="sortable" style={{ textAlign: "right" }} onClick={() => handleSort("importoTotale")}>Totale{ordiniSortBy === "importoTotale" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ordini.map((o) => {
-                        const hasImporto = o.righe.some((r) => r.prezzo != null && r.quantita != null);
-                        const calcTotale = o.righe.reduce((s, r) => s + (Number(r.quantita) || 0) * (Number(r.prezzo) || 0), 0);
-                        return (
-                        <tr key={o.id}>
-                          <td className="mono" style={{ fontWeight: 600 }}>#{o.numeroOrdine}</td>
-                          <td className="mono" style={{ fontSize: 13 }}>{fmtDate(o.dataOrdine)}</td>
-                          <td>{o.stato || "—"}</td>
-                          <td className="mono" style={{ textAlign: "right", fontSize: 13 }}>
-                            {hasImporto ? `€ ${calcTotale.toFixed(2)}` : "—"}
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="row-action"
-                              onClick={() => setDetailOrdine(o)}
-                              aria-label="Dettaglio ordine"
-                              title="Dettaglio"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="3" /><path d="M21 12a9 9 0 1 0-9 9" />
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ); })}
-                    </tbody>
-                  </table>
+          <nav className="dossier-tabs" role="tablist" aria-label="Sezioni della scheda cliente">
+            <button className={`tab-btn ${tab === "panoramica" ? "active" : ""}`} onClick={() => setTab("panoramica")} role="tab">Panoramica</button>
+            <button className={`tab-btn ${tab === "anagrafica" ? "active" : ""}`} onClick={() => setTab("anagrafica")} role="tab">Anagrafica e contatti</button>
+            <button className={`tab-btn ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")} role="tab">
+              Ordini {dossier && <span className="cnt">{dossier.kpi.ordiniTotali}</span>}
+            </button>
+            <button className={`tab-btn ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")} role="tab">Attività</button>
+            <button className={`tab-btn ${tab === "profilo" ? "active" : ""}`} onClick={() => setTab("profilo")} role="tab">Profilo</button>
+            <span style={{ marginLeft: "auto", display: "flex", gap: 8, paddingLeft: 16, flexShrink: 0 }}>
+              <button type="button" className="btn" onClick={rigeneraBox} disabled={busyBox}>
+                {busyBox ? "Rigenero…" : "Rigenera box"}
+              </button>
+              <button type="button" className="btn" onClick={elaboraAI} disabled={busyAi}>
+                {busyAi ? "Elaboro…" : "Elabora con AI"}
+              </button>
+            </span>
+          </nav>
+
+          {error && <div style={{ padding: "8px 24px 0" }}><Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice></div>}
+
+          <div className="dossier-body">
+            {tab === "panoramica" && <CustomerDossierPanel dossier={dossier} insight={insight} />}
+
+            {tab === "anagrafica" && (
+              <div>
+                <div className="panel-intro">
+                  <strong>Anagrafica e contatti</strong>
+                  <Hint text="Dati anagrafici e contatti del cliente. Tutti i campi provengono dal gestionale e sono in sola lettura: le modifiche si fanno sul gestionale e arrivano con la prossima sincronizzazione." />
                 </div>
 
-                <div className="data-table-footer">
-                  <span className="data-table-range">
-                    {(totalOrdini === 0 ? 0 : (ordiniPage - 1) * 20 + 1)}–{Math.min(ordiniPage * 20, totalOrdini)} di {totalOrdini}
-                  </span>
-                  {totalOrdini > 20 && (
-                    <div className="pager">
-                      <button
-                        type="button"
-                        disabled={ordiniPage <= 1}
-                        onClick={() => loadOrdini(undefined, ordiniPage - 1)}
-                        aria-label="Pagina precedente"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
-                      </button>
-                      <span className="pager-current">{ordiniPage} / {Math.ceil(totalOrdini / 20)}</span>
-                      <button
-                        type="button"
-                        disabled={ordiniPage >= Math.ceil(totalOrdini / 20)}
-                        onClick={() => loadOrdini(undefined, ordiniPage + 1)}
-                        aria-label="Pagina successiva"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
-                      </button>
+                <div className="fsec">
+                  <div className="fsec-h">Anagrafica</div>
+                  <RoField label="Codice cliente" value={editing.codiceCliente} mono />
+                  <RoField label="Listino" value={editing.codiceListino} mono />
+                  <RoField label="Ragione sociale" value={editing.ragioneSociale} />
+                  <RoField label="P.IVA" value={editing.partitaIva} mono />
+                  <RoField label="Email" value={editing.email} />
+                  <RoField label="Telefono" value={editing.telefono} mono />
+                  <RoField label="Lingua preferita" value={editing.preferredLanguage === "it" ? "Italiano" : "English"} />
+                  <div className="fsec-h">Condizioni commerciali</div>
+                  <RoField label="Pagamento" value={editing.codicePagamentoDescrizione || editing.codicePagamento} />
+                  <RoField label="Fido" value={editing.fido != null ? `€ ${Number(editing.fido).toLocaleString("it-IT")}` : null} mono />
+                </div>
+
+                <div style={{ marginTop: 22 }}>
+                  <div className="block-h" style={{ marginBottom: 0 }}>
+                    <span className="block-t">Indirizzi e sedi</span>
+                    <span className="mono">{indirizzi.length + 1}</span>
+                    <span style={{ flex: 1 }} />
+                    <Hint text="Sedi e recapiti del cliente registrati sul gestionale: sede legale, filiali, punto di spedizione e magazzino. In sola lettura, aggiornati a ogni sincronizzazione." />
+                  </div>
+                  <div className="addr-grid">
+                    <AddrCard
+                      tipo="Sede legale"
+                      cls="st-blue"
+                      a={{ indirizzo: editing.indirizzo, cap: editing.cap, citta: editing.citta, provincia: editing.provincia }}
+                    />
+                    {indirizzi.map((a) => {
+                      const tp = tipoIndirizzo(a);
+                      return <AddrCard key={a.id} tipo={tp.label} cls={tp.cls} a={a} />;
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 22 }}>
+                  <div className="block-h" style={{ marginBottom: 8 }}>
+                    <span className="block-t">Contatti registrati</span>
+                    <span className="mono">{contatti.length}</span>
+                    <span style={{ flex: 1 }} />
+                    <Hint text="Elenco dei contatti e riferimenti registrati sul gestionale: canale, data e contenuto. Solo dati di riferimento, non modificabili da qui." />
+                  </div>
+                  {contatti.length === 0 ? (
+                    <p className="meta">Nessun contatto.</p>
+                  ) : (
+                    <div className="data-table">
+                      <div className="data-table-scroll">
+                        <table>
+                          <thead>
+                            <tr><th>Tipo</th><th>Data</th><th>Contenuto</th></tr>
+                          </thead>
+                          <tbody>
+                            {contatti.map((c) => (
+                              <tr key={c.id}>
+                                <td>{c.tipo}</td>
+                                <td className="mono">{fmtDataIt(c.data)}</td>
+                                <td>{c.contenuto}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             )}
+
+            {tab === "ordini" && (
+              <div className="ordini-tab">
+                {linkedError && <div style={{ flexShrink: 0 }}><Notice variant="error" onClose={() => setLinkedError(null)}>{tServer(linkedError)}</Notice></div>}
+
+                <div className="panel-intro">
+                  <strong>Ordini e storico acquisti</strong>
+                  <Hint text="Storico ordini sincronizzato dal gestionale. Cerca per numero o articolo, filtra per anno e apri un ordine per vedere i dettagli delle righe. «Sincronizza» aggiorna i dati dal gestionale." />
+                </div>
+
+                <div className="ord-tools">
+                  <div className="search">
+                    <span className="ic">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Cerca per numero ordine, codice articolo, descrizione…"
+                      value={ordiniSearch}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setOrdiniSearch(v);
+                        setOrdiniPage(1);
+                        void loadOrdini(v, 1);
+                      }}
+                    />
+                  </div>
+                  <select
+                    className="select"
+                    aria-label="Filtra per anno"
+                    value={ordiniYear}
+                    onChange={(e) => {
+                      const y = e.target.value;
+                      setOrdiniYear(y);
+                      setOrdiniPage(1);
+                      void loadOrdini(undefined, 1, undefined, undefined, y);
+                    }}
+                  >
+                    {ordiniAnni.length === 0 ? (
+                      <option value={String(new Date().getFullYear())}>{new Date().getFullYear()}</option>
+                    ) : (
+                      ordiniAnni.map((y) => (
+                        <option key={y} value={String(y)}>{y}</option>
+                      ))
+                    )}
+                  </select>
+                  {editing.codiceCliente && (
+                    <SyncButton
+                      label="Sincronizza"
+                      onClick={async () => {
+                        setLinkedError(null);
+                        try {
+                          await api.post(`/api/integrazione/clienti/${editing.codiceCliente}/sync-ordini`);
+                          await loadOrdini("", 1);
+                        } catch (err) {
+                          setLinkedError(err instanceof ApiError ? err.code : "errors.generic");
+                          throw err;
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+
+                {ordiniLoading && ordini.length === 0 ? (
+                  <p className="meta">Caricamento…</p>
+                ) : ordini.length === 0 ? (
+                  <p className="meta">Nessun ordine.</p>
+                ) : (
+                  <div className="data-table">
+                    <div className="data-table-scroll">
+                      <table>
+                        <colgroup>
+                          <col style={{ width: 130 }} />
+                          <col style={{ width: 120 }} />
+                          <col style={{ width: 140 }} />
+                          <col />
+                          <col style={{ width: 120 }} />
+                          <col style={{ width: 52 }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th className="sortable" onClick={() => handleSort("numeroOrdine")}>Ordine{ordiniSortBy === "numeroOrdine" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
+                            <th className="sortable" onClick={() => handleSort("dataOrdine")}>Data{ordiniSortBy === "dataOrdine" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
+                            <th className="sortable" onClick={() => handleSort("stato")}>Stato{ordiniSortBy === "stato" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
+                            <th>Descrizione</th>
+                            <th className="sortable num" onClick={() => handleSort("importoTotale")}>Totale{ordiniSortBy === "importoTotale" && (ordiniSortDir === "asc" ? " ▲" : " ▼")}</th>
+                            <th />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ordini.map((o) => {
+                            const hasImporto = o.righe.some((r) => r.prezzo != null && r.quantita != null);
+                            const calcTotale = o.righe.reduce((s, r) => s + (Number(r.quantita) || 0) * (Number(r.prezzo) || 0), 0);
+                            return (
+                            <tr key={o.id}>
+                              <td className="mono" style={{ fontWeight: 600 }}>#{o.numeroOrdine}</td>
+                              <td className="mono" style={{ fontSize: 13 }}>{fmtDate(o.dataOrdine)}</td>
+                              <td><StatoPill stato={o.stato} /></td>
+                              <td style={{ fontSize: 12.5, color: "var(--muted)" }}>{descrizioneOrdine(o)}</td>
+                              <td className="num mono">
+                                {hasImporto ? `€ ${calcTotale.toFixed(2)}` : "—"}
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="row-action"
+                                  onClick={() => setDetailOrdine(o)}
+                                  aria-label="Dettaglio ordine"
+                                  title="Dettaglio"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="3" /><path d="M21 12a9 9 0 1 0-9 9" />
+                                  </svg>
+                                </button>
+                              </td>
+                            </tr>
+                          ); })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="data-footer">
+                      <span>
+                        {(totalOrdini === 0 ? 0 : (ordiniPage - 1) * 20 + 1)}–{Math.min(ordiniPage * 20, totalOrdini)} di {totalOrdini}
+                      </span>
+                      {totalOrdini > 20 && (
+                        <div className="pager">
+                          <button
+                            type="button"
+                            disabled={ordiniPage <= 1}
+                            onClick={() => loadOrdini(undefined, ordiniPage - 1)}
+                            aria-label="Pagina precedente"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+                          </button>
+                          <span className="pager-current">{ordiniPage} / {Math.ceil(totalOrdini / 20)}</span>
+                          <button
+                            type="button"
+                            disabled={ordiniPage >= Math.ceil(totalOrdini / 20)}
+                            onClick={() => loadOrdini(undefined, ordiniPage + 1)}
+                            aria-label="Pagina successiva"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "attivita" && (
+              <div>
+                <div className="panel-intro">
+                  <strong>Attività e comportamento</strong>
+                  <Hint text="Cronologia dei comportamenti del cliente sul portale (accessi, ricerche, carrello, ordini). Ogni colore indica un tipo di evento." />
+                </div>
+                <CustomerTimeline customerId={editing.id} showAi={false} />
+              </div>
+            )}
+
+            {tab === "profilo" && (
+              <ProfiloTab
+                profilo={profilo}
+                loading={profiloLoading}
+                onGenerate={async () => {
+                  setProfiloLoading(true);
+                  try {
+                    const res = await api.post<CustomerIntelligenceProfile>(
+                      `/api/admin/customers/${editing.id}/regenerate-profile`,
+                    );
+                    setProfilo(res);
+                    await loadDossier();
+                  } catch {
+                    setProfilo(null);
+                  } finally {
+                    setProfiloLoading(false);
+                  }
+                }}
+              />
+            )}
           </div>
-        )}
-      </div>
-    </Modal>
+          <footer className="dossier-footer">
+            <div className="footer-actions">
+              <button type="button" className="btn btn-danger btn-sm" onClick={onDelete} disabled={deleting}>
+                {deleting ? "Eliminazione..." : t("delete")}
+              </button>
+            </div>
+            <div className="footer-actions">
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleCancel}>
+                Chiudi
+              </button>
+            </div>
+          </footer>
+        </div>
+        </div>
+      ) : (
+        <Modal
+          open
+          size="md"
+          onClose={onClose}
+          noHeader
+          footer={
+            <>
+              <div style={{ flex: 1 }} />
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleCancel}>
+                {tc("cancel")}
+              </button>
+              <button
+                type="submit"
+                form="user-editor-form"
+                className="btn btn-primary btn-sm"
+                disabled={!canSave}
+              >
+                {tc("save")}
+              </button>
+            </>
+          }
+        >
+          <div className="modal-root-header">
+            <h2>{t("createTitle")}</h2>
+            <button className="modal-root-close" onClick={onClose} aria-label="Chiudi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <form id="user-editor-form" onSubmit={onSubmit}>
+            {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
+            <Section title={t("createTitle")}>
+              <Field label={t("fieldEmail")} full>
+                <input className="input" type="email" required value={form.email} onChange={(e) => set("email", e.target.value)} />
+              </Field>
+              <Field label={t("fieldName")}>
+                <input className="input" required value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+              </Field>
+              <Field label={t("fieldCompany")}>
+                <input className="input" value={form.ragioneSociale} onChange={(e) => set("ragioneSociale", e.target.value)} />
+              </Field>
+              <Field label={t("fieldPiva")}>
+                <input className="input" value={form.partitaIva} onChange={(e) => set("partitaIva", e.target.value)} />
+              </Field>
+              <Field label={t("fieldPhone")}>
+                <input className="input" value={form.telefono} onChange={(e) => set("telefono", e.target.value)} />
+              </Field>
+              <Field label={t("fieldLanguage")}>
+                <select className="input" value={form.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)}>
+                  <option value="it">Italiano</option>
+                  <option value="en">English</option>
+                </select>
+              </Field>
+            </Section>
+          </form>
+        </Modal>
+      )}
       {detailOrdine && (
         <OrdineDetailModal
           ordine={detailOrdine}
@@ -727,135 +816,144 @@ export default function UserEditorModal({
           onClose={() => setProvisional(null)}
         />
       )}
-   </>);
+    </>
+  );
 }
 
 function ProfiloTab({
-  customerId,
   profilo,
   loading,
   onGenerate,
 }: {
-  customerId: number;
   profilo: CustomerIntelligenceProfile | null;
   loading: boolean;
   onGenerate: () => void;
 }) {
-  const t = useTranslations("admin");
-  const confirm = useConfirm();
-  async function handleRigenera() {
-    if (!(await confirm({
-      title: "Rigenera profilo",
-      message: "Rigenerare il profilo AI di questo cliente? Quello attuale verrà sostituito.",
-      confirmLabel: "Rigenera",
-    }))) return;
-    onGenerate();
-  }
-  if (loading) return <div className="catalog-empty">Generazione profilo in corso…</div>;
+  if (loading) return <p className="meta">Generazione profilo in corso…</p>;
   if (!profilo) {
     return (
       <div className="catalog-empty">
-        Nessun profilo generato yet.
+        Nessun profilo generato.
         <button className="btn btn-primary btn-sm" onClick={onGenerate} style={{ marginLeft: 12 }}>
           Genera ora
         </button>
       </div>
     );
   }
+  const fmt = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button className="btn btn-secondary btn-sm" onClick={handleRigenera}>Rigenera profilo</button>
+    <div>
+      <div className="panel-intro">
+        <strong>Profilo del cliente</strong>
+        <Hint text="Analisi del profilo generata dall'AI combinando dati ufficiali (registro imprese), storico ordini e comportamento sul portale: chi è il cliente, cosa gli interessa e cosa proporgli. Rigenerabile quando servono dati aggiornati." />
       </div>
-      <div>
-        <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Sintesi</h3>
-        <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>
-          {profilo.sintesi ?? "—"}
-        </p>
+
+      <div className="ai-box">
+        <div className="ai-body">{profilo.sintesi ?? profilo.sintesiBreve ?? "—"}</div>
+        <div className="ai-meta">Generato il {fmt(profilo.generatoIl)} · aggiornato il {fmt(profilo.aggiornatoIl)}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <Section title="Settore">
-          <span style={{ fontSize: 14 }}>{profilo.settore ?? "—"}</span>
-        </Section>
-        <Section title="Dimensione">
-          <span style={{ fontSize: 14 }}>{profilo.dimensione ?? "—"}</span>
-        </Section>
-        <Section title="Fatturato stimato">
-          <span style={{ fontSize: 14 }}>{profilo.fatturatoStimato ?? "—"}</span>
-        </Section>
-        <Section title="Stagionalità">
-          <span style={{ fontSize: 14 }}>{profilo.stagionalita ?? "—"}</span>
-        </Section>
+
+      <div className="grid-2-charts" style={{ marginTop: 14 }}>
+        <div className="block">
+          <div className="block-h"><span className="block-t">Settore</span></div>
+          <span style={{ fontSize: 13.5 }}>{profilo.settore ?? "—"}</span>
+        </div>
+        <div className="block">
+          <div className="block-h"><span className="block-t">Dimensione</span></div>
+          <span style={{ fontSize: 13.5 }}>{profilo.dimensione ?? "—"}</span>
+        </div>
+        <div className="block">
+          <div className="block-h"><span className="block-t">Fatturato stimato</span></div>
+          <span style={{ fontSize: 13.5 }}>{profilo.fatturatoStimato ?? "—"}</span>
+        </div>
+        <div className="block">
+          <div className="block-h"><span className="block-t">Stagionalità</span></div>
+          <span style={{ fontSize: 13.5 }}>{profilo.stagionalita ?? "—"}</span>
+        </div>
       </div>
+
       {profilo.composizioneBusiness && (
-        <Section title="Composizione business">
-          <p style={{ margin: 0, fontSize: 14 }}>{profilo.composizioneBusiness}</p>
-        </Section>
-      )}
-      {profilo.sedi && profilo.sedi.length > 0 && (
-        <Section title="Sedi">
-          <p style={{ margin: 0, fontSize: 14 }}>{profilo.sedi.join(', ')}</p>
-        </Section>
-      )}
-      {profilo.contattiChiave && profilo.contattiChiave.length > 0 && (
-        <Section title="Contatti chiave">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Ruolo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {profilo.contattiChiave.map((c, i) => (
-                <tr key={i}>
-                  <td>{c.nome}</td>
-                  <td>{c.ruolo}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Section>
-      )}
-      {profilo.interessiPrincipali && profilo.interessiPrincipali.length > 0 && (
-        <Section title="Interessi principali">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {profilo.interessiPrincipali.map((i, idx) => (
-              <span key={idx} className="product-tag">{i}</span>
-            ))}
+        <div className="block" style={{ marginTop: 14 }}>
+          <div className="block-h">
+            <span className="block-t">Composizione business</span>
+            <span style={{ flex: 1 }} />
+            <Hint text="Come si colloca il cliente nella filiera: cosa produce o rivende e in quale fase." />
           </div>
-        </Section>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>{profilo.composizioneBusiness}</p>
+        </div>
+      )}
+
+      {profilo.sedi && profilo.sedi.length > 0 && (
+        <div className="block" style={{ marginTop: 14 }}>
+          <div className="block-h">
+            <span className="block-t">Sedi</span>
+            <span style={{ flex: 1 }} />
+            <Hint text="Sedi rilevate tra dati ufficiali e indirizzi presenti sul gestionale." />
+          </div>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>{profilo.sedi.join(" · ")}</p>
+        </div>
+      )}
+
+      {profilo.contattiChiave && profilo.contattiChiave.length > 0 && (
+        <div className="block" style={{ marginTop: 14 }}>
+          <div className="block-h">
+            <span className="block-t">Contatti chiave</span>
+            <span style={{ flex: 1 }} />
+            <Hint text="Figure di riferimento del cliente con cui parlano i commerciali." />
+          </div>
+          <div className="data-table">
+            <div className="data-table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Nome</th><th>Ruolo</th></tr>
+                </thead>
+                <tbody>
+                  {profilo.contattiChiave.map((c, i) => (
+                    <tr key={i}>
+                      <td>{c.nome}</td>
+                      <td>{c.ruolo}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {profilo.interessiPrincipali && profilo.interessiPrincipali.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div className="block-h" style={{ marginBottom: 8 }}><span className="block-t">Interessi principali</span></div>
+          <div className="tag-row">
+            {profilo.interessiPrincipali.map((i, idx) => <span key={idx} className="tag">{i}</span>)}
+          </div>
+        </div>
       )}
       {profilo.interessiSecondari && profilo.interessiSecondari.length > 0 && (
-        <Section title="Interessi secondari">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {profilo.interessiSecondari.map((i, idx) => (
-              <span key={idx} className="product-tag">{i}</span>
-            ))}
+        <div style={{ marginTop: 14 }}>
+          <div className="block-h" style={{ marginBottom: 8 }}><span className="block-t">Interessi secondari</span></div>
+          <div className="tag-row">
+            {profilo.interessiSecondari.map((i, idx) => <span key={idx} className="tag">{i}</span>)}
           </div>
-        </Section>
+        </div>
       )}
       {profilo.nonCompreraMai && profilo.nonCompreraMai.length > 0 && (
-        <Section title="Non comprerà mai">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {profilo.nonCompreraMai.map((i, idx) => (
-              <span key={idx} className="product-tag" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{i}</span>
-            ))}
+        <div style={{ marginTop: 14 }}>
+          <div className="block-h" style={{ marginBottom: 8 }}><span className="block-t">Non comprerà mai</span></div>
+          <div className="tag-row">
+            {profilo.nonCompreraMai.map((i, idx) => <span key={idx} className="tag danger">{i}</span>)}
           </div>
-        </Section>
+        </div>
       )}
       {profilo.opportunitaCrossSell && profilo.opportunitaCrossSell.length > 0 && (
-        <Section title="Opportunità cross-sell">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {profilo.opportunitaCrossSell.map((i, idx) => (
-              <span key={idx} className="product-tag">{i}</span>
-            ))}
+        <div style={{ marginTop: 14 }}>
+          <div className="block-h" style={{ marginBottom: 8 }}><span className="block-t">Opportunità cross-sell</span></div>
+          <div className="tag-row">
+            {profilo.opportunitaCrossSell.map((i, idx) => <span key={idx} className="tag">{i}</span>)}
           </div>
-        </Section>
+        </div>
       )}
-      <div style={{ fontSize: 12, color: "var(--muted)" }}>
-        Aggiornato: {new Date(profilo.aggiornatoIl).toLocaleString("it-IT")}
-      </div>
     </div>
-   );
+  );
 }

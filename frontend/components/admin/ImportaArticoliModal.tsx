@@ -5,7 +5,7 @@ import { api, ApiError } from "../../lib/api";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import type { ProdottoView, SearchResult } from "./types";
-import { IconSearch, IconInfo } from "./icons";
+import { IconSearch, IconInfo, IconRefresh } from "./icons";
 import DataTable, { type Column } from "./DataTable";
 
 export default function ImportaArticoliModal({
@@ -150,7 +150,14 @@ export default function ImportaArticoliModal({
           <div style={{ flex: 1 }} />
           <button className="btn btn-secondary btn-sm" onClick={onClose}>Annulla</button>
           <button className="btn btn-primary btn-sm" disabled={selected.size === 0 || importing} onClick={doImport}>
-            {importing ? "Importazione..." : "Importa selezionati"}
+            {importing ? (
+              <>
+                <span className="sync-icon spin">{IconRefresh}</span>
+                <span>Importazione...</span>
+              </>
+            ) : (
+              "Importa selezionati"
+            )}
           </button>
         </>
       }

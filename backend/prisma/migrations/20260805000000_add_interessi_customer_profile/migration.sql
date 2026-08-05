@@ -1,0 +1,1 @@
+ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS interessi_principali jsonb, ADD COLUMN IF NOT EXISTS interessi_secondari jsonb, ADD COLUMN IF NOT EXISTS non_comprera_mai jsonb, ADD COLUMN IF NOT EXISTS opportunita_cross_sell jsonb, ADD COLUMN IF NOT EXISTS stagionalita text;

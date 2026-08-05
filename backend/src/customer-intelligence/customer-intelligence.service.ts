@@ -21,6 +21,7 @@ export interface DossierFamiglia { codice: string; nome: string; valore: number;
 export interface Dossier {
   kpi: DossierKpi;
   stagionalita: number[]; // 12 valori (gen..dic), fatturato per mese calendario
+  fatturatoMensile: { mese: string; valore: number }[]; // ultimi 12 mesi rolling (mese = YYYY-MM)
   basket: {
     famiglie: DossierFamiglia[];
     topProdotti: { nome: string; pezzi: number }[];
@@ -71,6 +72,26 @@ export class CustomerIntelligenceService {
     const stagionalita = Array(12).fill(0) as number[];
     for (const r of stagRows) if (r.mese >= 1 && r.mese <= 12) stagionalita[r.mese - 1] = Number(r.f);
 
+    // Fatturato mensile — ultimi 12 mesi rolling (per bar chart "€k").
+    const mesiRolling = await this.prisma.$queryRawUnsafe<{ mese: string; valore: string }[]>(
+      `SELECT to_char(date_trunc('month', o.data_ordine), 'YYYY-MM') AS mese,
+              coalesce(sum(coalesce(nullif(o.importo_totale, 0),
+                (SELECT sum(ro.prezzo * ro.quantita) FROM righe_ordini ro WHERE ro.ordine_id = o.id))), 0)::numeric AS valore
+         FROM ordini_clienti o
+        WHERE o.customer_id = $1 AND o.data_ordine >= date_trunc('month', now()) - interval '11 months'
+        GROUP BY 1`,
+      customerId,
+    );
+    const meseValore = new Map(mesiRolling.map((r) => [r.mese, Number(r.valore)]));
+    const fatturatoMensile: { mese: string; valore: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      fatturatoMensile.push({ mese: key, valore: meseValore.get(key) ?? 0 });
+    }
+
     const famRows = await this.prisma.$queryRawUnsafe<{ codice: string; nome: string; valore: string; pezzi: string }[]>(
       `SELECT x.codice, x.nome, sum(x.valore)::numeric AS valore, sum(x.pezzi)::numeric AS pezzi FROM (
          SELECT f.codice, f.nome, sum(ro.prezzo * ro.quantita) AS valore, sum(ro.quantita) AS pezzi
@@ -95,7 +116,7 @@ export class CustomerIntelligenceService {
       `SELECT coalesce(nullif(ro.descrizione, ''), ro.codice_prodotto) AS nome, sum(ro.quantita)::numeric AS pezzi
          FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
         WHERE o.customer_id = $1 AND coalesce(nullif(ro.descrizione, ''), ro.codice_prodotto) IS NOT NULL
-        GROUP BY 1 ORDER BY 2 DESC LIMIT 8`,
+        GROUP BY 1 ORDER BY 2 DESC LIMIT 10`,
       customerId,
     );
 
@@ -133,7 +154,7 @@ export class CustomerIntelligenceService {
     const { segmento, salute } = this.classifica(kpi);
 
     return {
-      kpi, stagionalita,
+      kpi, stagionalita, fatturatoMensile,
       basket: {
         famiglie: famiglie.slice(0, 8),
         topProdotti: topProd.map((p) => ({ nome: p.nome, pezzi: Number(p.pezzi) })),
