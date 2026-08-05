@@ -50,7 +50,7 @@ interface Comportamento {
   vistiMaiInCarrello: { entitaId: string; nome: string; viste: number }[];
 }
 
-export default function CustomerTimeline({ customerId }: { customerId: number }) {
+export default function CustomerTimeline({ customerId, showAi = true }: { customerId: number; showAi?: boolean }) {
   const [eventi, setEventi] = useState<Evento[] | null>(null);
   const [insight, setInsight] = useState<Insight | null>(null);
   const [comp, setComp] = useState<Comportamento | null>(null);
@@ -147,7 +147,7 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
       )}
     </div>
   );
-  const header = <>{aiPanel}{compPanel}</>;
+  const header = <>{showAi && aiPanel}{compPanel}</>;
 
   if (!eventi) return <>{header}<p style={{ color: "var(--muted)" }}>Caricamento…</p></>;
   if (eventi.length === 0) return <>{header}<p style={{ color: "var(--muted)" }}>Nessuna attività registrata.</p></>;
@@ -155,6 +155,14 @@ export default function CustomerTimeline({ customerId }: { customerId: number })
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {header}
+      <div className="legend">
+        <span><span className="tl-dot" style={{ background: "var(--accent)" }}></span>Accesso</span>
+        <span><span className="tl-dot" style={{ background: "#8b5cf6" }}></span>Ricerca</span>
+        <span><span className="tl-dot" style={{ background: "#3b82f6" }}></span>Articolo</span>
+        <span><span className="tl-dot" style={{ background: "#16a34a" }}></span>Carrello</span>
+        <span><span className="tl-dot" style={{ background: "#dc2626" }}></span>Rimozione</span>
+        <span><span className="tl-dot" style={{ background: "#d97706" }}></span>Ordine</span>
+      </div>
       {eventi.map((e) => (
         <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--border)" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: DOT[e.tipo] ?? "var(--muted)", flexShrink: 0 }} />

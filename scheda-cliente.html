@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scheda cliente — VIVAI ROSSI S.r.l.</title>
+<style>
+/* ─────────────────────────────────────────────
+   Token — fedeli all'admin esistente (admin.css)
+   ───────────────────────────────────────────── */
+:root {
+  --bg:      oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg:      oklch(22% 0.02 60);
+  --muted:   oklch(52% 0.015 60);
+  --border:  oklch(88% 0.01 70);
+  --accent:  oklch(55% 0.14 45);
+  --accent-soft: oklch(95% 0.03 45);
+  --danger:  oklch(55% 0.18 25);
+  --danger-soft: color-mix(in oklch, var(--danger) 14%, transparent);
+  --ok:      oklch(55% 0.12 150);
+  --ok-soft: color-mix(in oklch, var(--ok) 14%, transparent);
+  --amber:   oklch(60% 0.13 65);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --blue:    oklch(55% 0.15 250);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scaffold admin ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 16px 12px; gap: 4px;
+  color: var(--muted);
+}
+.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 6px 10px 18px; }
+.sidebar-brand .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.sidebar-brand b { color: var(--fg); font-size: 15px; font-weight: 600; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.side-nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--muted);
+}
+.side-nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.side-nav .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.side-nav a.active .dot { background: var(--accent); }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  height: 48px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.crumb { font-size: 13px; color: var(--muted); }
+.crumb b { color: var(--fg); font-weight: 600; }
+.topbar-meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* ── Backdrop + modal dossier ── */
+.backdrop {
+  flex: 1; min-height: 0;
+  background: var(--bg);
+  display: grid; place-items: center; padding: 28px 40px;
+  position: relative;
+}
+.dossier {
+  width: 100%; max-width: 1180px; height: 86vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 64px color-mix(in oklch, var(--fg) 14%, transparent);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header cliente */
+.dossier-header {
+  padding: 16px 24px 12px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  flex-shrink: 0;
+}
+.dossier-title { display: flex; flex-direction: column; gap: 8px; }
+.dossier-title h1 {
+  margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.01em;
+}
+.dossier-kv { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.dossier-kv .mono { font-family: var(--font-mono); color: var(--fg); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border);
+}
+.pill.solid { border: none; color: #fff; }
+.pill .sd { font-size: 9px; }
+.pill.muted { color: var(--muted); }
+.dossier-close {
+  border: none; background: none; color: var(--muted); cursor: pointer;
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0;
+}
+.dossier-close:hover { background: var(--fg-soft, var(--accent-soft)); color: var(--fg); }
+
+/* Barra tab (fedele a .modal-tabs-bar/.modal-tab-btn) */
+.dossier-tabs {
+  display: flex; align-items: center; gap: 0;
+  padding: 0 24px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; min-height: 44px;
+  overflow-x: auto;
+}
+.dossier-tabs::-webkit-scrollbar { display: none; }
+.tab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 14px; border: none; background: none;
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  cursor: pointer; position: relative; white-space: nowrap; flex-shrink: 0;
+  font-family: var(--font-body);
+}
+.tab-btn:hover { color: var(--fg); }
+.tab-btn.active { color: var(--accent); }
+.tab-btn.active::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+}
+.tab-btn .cnt {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+  background: var(--fg-soft, var(--accent-soft)); padding: 1px 7px; border-radius: 999px;
+}
+.tab-btn.active .cnt { color: var(--accent); }
+
+/* Corpo */
+.dossier-body { flex: 1; overflow-y: auto; padding: 20px 24px 28px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fade .18s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+/* Helper "?" con tooltip */
+.hint {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); color: var(--fg);
+  font-size: 11px; font-weight: 700; cursor: help; flex-shrink: 0;
+  user-select: none;
+  border: 1px solid var(--fg);
+}
+.hint-tip { display: none; }
+.hint-tip-global {
+  position: fixed; z-index: 1000; display: none;
+  max-width: 320px;
+  background: var(--fg); color: var(--surface);
+  font-size: 12px; line-height: 1.55; font-weight: 400; font-family: var(--font-body);
+  padding: 9px 11px; border-radius: 8px;
+  box-shadow: 0 10px 28px color-mix(in oklch, var(--fg) 22%, transparent);
+  text-align: left; white-space: normal;
+  pointer-events: none;
+}
+
+/* Intro di tab con helper */
+.panel-intro {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 16px; font-size: 12.5px; color: var(--muted); line-height: 1.5;
+}
+.panel-intro strong { color: var(--fg); font-weight: 600; }
+
+/* Blocchi */
+.block { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; background: var(--surface); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-2-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-2-charts .span2 { grid-column: 1 / -1; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.block-h { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+.block-t { font-weight: 600; font-size: 13px; }
+.block-h .mono { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); font-weight: 400; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; }
+.tile { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: var(--surface); }
+.tile .k { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+.tile .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 11px; margin-top: 3px; }
+.trend-up { color: var(--ok); }
+.trend-down { color: var(--danger); }
+.kpi-caption { margin: 10px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+/* Grafici a barre */
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 92px; }
+.bars .bar {
+  flex: 1; border-radius: 3px 3px 0 0; background: color-mix(in oklch, var(--accent) 42%, transparent);
+  min-height: 3px; position: relative;
+}
+.bars .bar.hi { background: var(--accent); }
+.bars .bar:hover { filter: brightness(0.96); }
+.bars .bar .bv {
+  position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+  opacity: 0; transition: opacity .12s ease; white-space: nowrap;
+}
+.bars .bar:hover .bv { opacity: 1; }
+.bars-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; margin-top: 5px; }
+
+/* Barre proporzionali (composizione) */
+.share-row { display: flex; flex-direction: column; gap: 8px; }
+.share-line .share-top { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px; }
+.share-top .mono { font-family: var(--font-mono); color: var(--muted); font-size: 11px; }
+.share-track { background: var(--bg); border-radius: 4px; height: 7px; }
+.share-fill { background: var(--accent); height: 7px; border-radius: 4px; }
+
+/* Top articoli più acquistati */
+.top-list { display: flex; flex-direction: column; gap: 2px; }
+.top-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.top-rank {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklch, var(--accent) 15%, transparent); color: var(--accent);
+  font-size: 11px; font-weight: 700;
+}
+.top-name { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-num { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* Form / campi anagrafica */
+.fsec { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.fsec-h { grid-column: 1 / -1; display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13px; margin: 8px 0 0; }
+.fsec-h .hint { margin-left: auto; }
+
+/* Indirizzi e sedi */
+.addr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 14px; }
+.addr-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; background: var(--surface); }
+.addr-card-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.addr-l { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; }
+.addr-l b { font-weight: 500; color: var(--muted); }
+.addr-l > span { text-align: right; }
+
+/* Tag profilo */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px;
+  background: color-mix(in oklch, var(--accent) 13%, transparent); color: var(--accent);
+  font-size: 12px; line-height: 1.3;
+}
+.tag.danger { background: color-mix(in oklch, var(--danger) 12%, transparent); color: var(--danger); }
+.field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.field .ro {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font-size: 13px;
+}
+.field .ro.mono { font-family: var(--font-mono); font-size: 12.5px; }
+.field .ro.locked { background: color-mix(in oklch, var(--bg) 70%, var(--surface)); color: var(--muted); }
+.field.full { grid-column: 1 / -1; }
+
+/* Tabelle */
+.data-table { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.data-table-scroll { overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  text-align: left; padding: 9px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); background: var(--table-head-bg); white-space: nowrap;
+  border-bottom: 1px solid var(--border); font-weight: 600;
+}
+.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--accent-soft); }
+.mono { font-family: var(--font-mono); font-size: 12.5px; }
+.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; padding: 2px 9px; border-radius: 999px; font-weight: 500;
+}
+.status .sd { font-size: 8px; }
+.st-ok { background: var(--ok-soft); color: var(--ok); }
+.st-amber { background: var(--amber-soft); color: var(--amber); }
+.st-danger { background: var(--danger-soft); color: var(--danger); }
+.st-blue { background: var(--blue-soft); color: var(--blue); }
+.st-muted { background: var(--fg-soft, var(--table-head-bg)); color: var(--muted); }
+.row-action {
+  border: none; background: none; color: var(--muted); cursor: pointer;
+  width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+}
+.row-action:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* Filtri ordini */
+.ord-tools { display: flex; gap: 8px; align-items: center; margin: 0 0 12px; flex-wrap: wrap; }
+.search { flex: 1; min-width: 240px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; background: var(--surface); }
+.search input { border: none; outline: none; flex: 1; padding: 8px 0; font-size: 13px; background: none; color: var(--fg); }
+.search .ic { color: var(--muted); display: flex; }
+.select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 13px; color: var(--fg); font-family: var(--font-body); }
+.btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--font-body);
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.data-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+.pager { display: flex; align-items: center; gap: 6px; }
+.pager button {
+  border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+  width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: grid; place-items: center;
+}
+.pager button:disabled { opacity: .4; cursor: default; }
+.pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pager-current { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* Sintesi AI */
+.ai-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; background: var(--surface); }
+.ai-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ai-title { display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13px; }
+.ai-ic { width: 16px; height: 16px; color: var(--accent); }
+.ai-body { font-size: 13.5px; line-height: 1.6; }
+.ai-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 8px; }
+.funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.funnel .tile .k { font-size: 11px; }
+.funnel .tile .v { font-size: 17px; }
+.visti { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+
+/* Timeline */
+.tl { display: flex; flex-direction: column; }
+.tl-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.tl-row:last-child { border-bottom: none; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tl-time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); min-width: 96px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend .tl-dot { width: 7px; height: 7px; }
+
+/* Note commerciali */
+.note { border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 14px; }
+.note-h { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.note-h .mono { font-size: 11px; }
+.note-p { margin: 0; font-size: 13px; line-height: 1.55; }
+
+@media (max-width: 720px) {
+  .grid-2-charts { grid-template-columns: 1fr; }
+}
+@media (max-width: 1080px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+  .funnel { grid-template-columns: repeat(2, 1fr); }
+  .fsec { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar admin (contesto) -->
+  <aside class="sidebar" data-od-id="admin-sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">L</span><b>Luis B2B</b>
+    </div>
+    <nav class="side-nav" aria-label="Navigazione admin">
+      <a href="#"><span class="dot"></span>Dashboard</a>
+      <a href="#"><span class="dot"></span>Utenti e accessi</a>
+      <a class="active" href="#"><span class="dot"></span>Clienti</a>
+      <a href="#"><span class="dot"></span>Articoli</a>
+      <a href="#"><span class="dot"></span>Famiglie</a>
+      <a href="#"><span class="dot"></span>Sincronizzazioni</a>
+      <a href="#"><span class="dot"></span>AI</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar" data-od-id="topbar">
+      <div class="crumb">Clienti <span style="color:var(--border)">›</span> <b>VIVAI ROSSI S.r.l.</b></div>
+      <div class="topbar-meta">admin · terracotta</div>
+    </header>
+
+    <div class="backdrop">
+      <section class="dossier" data-od-id="dossier-card">
+
+        <!-- Header cliente -->
+        <header class="dossier-header">
+          <div class="dossier-title">
+            <h1>VIVAI ROSSI S.r.l.</h1>
+            <div class="dossier-kv">
+              <span>Codice <span class="mono">V00124</span></span>
+              <span>Listino <span class="mono">L2 · Rivenditore</span></span>
+              <span>Via dei Vivai 12 · 20138 Milano (MI)</span>
+              <span>P.IVA <span class="mono">03678210145</span></span>
+            </div>
+            <div class="badges">
+              <span class="pill solid" style="background:var(--accent)">Vivaisti &amp; garden center</span>
+              <span class="pill tip" tabindex="0" style="cursor:help">Salute <span class="sd" style="color:var(--ok)">●</span> buona
+                <span class="hint-tip">
+                  Indicatore stimato dallo storico ordini (cadenza d'acquisto, trend del fatturato e ultimo ordine).
+                  <b>Buona</b> = cliente regolare e attivo, ordina con frequenza costante e il fatturato è in crescita.
+                  <b>Media</b> = andamento altalenante o segnali misti. <b>A rischio</b> = cadenza o fatturato in calo.
+                </span>
+              </span>
+              <span class="pill muted">Ultimo ordine 12 gg fa</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <button class="dossier-close" aria-label="Chiudi">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Barra tab -->
+        <nav class="dossier-tabs" role="tablist" aria-label="Sezioni della scheda cliente">
+          <button class="tab-btn active" data-tab="panoramica" role="tab">Panoramica</button>
+          <button class="tab-btn" data-tab="anagrafica" role="tab">Anagrafica e contatti</button>
+          <button class="tab-btn" data-tab="ordini" role="tab">Ordini <span class="cnt">34</span></button>
+          <button class="tab-btn" data-tab="attivita" role="tab">Attività</button>
+          <button class="tab-btn" data-tab="profilo" role="tab">Profilo</button>
+          <span style="margin-left:auto; display:flex; gap:8px; padding-left:16px; flex-shrink:0">
+            <button class="btn" type="button">Rigenera box</button>
+            <button class="btn" type="button">Elabora con AI</button>
+          </span>
+        </nav>
+
+        <div class="dossier-body">
+
+          <!-- ═══════ TAB 1 · PANORAMICA ═══════ -->
+          <section class="tab-panel active" id="tab-panoramica" data-od-id="tab-panoramica">
+            <div class="panel-intro">
+              <strong>Riepilogo e performance</strong>
+              <span class="hint" tabindex="0">?
+                <span class="hint-tip">Sintesi commerciale del cliente: indicatori di fatturato, salute, stagionalità e composizione acquisti, calcolati dallo storico ordini. Ogni blocco spiega cosa leggere.</span>
+              </span>
+            </div>
+
+            <div class="ai-box" data-od-id="ai-sintesi">
+              <div class="ai-body">
+                Cliente attivo e ricorrente: ordina in media ogni 23 giorni con picco tra aprile e luglio.
+                Nel 2026 ha ampliato il carrello agli accessori d'annaffiatura (+38% vs 2025). Consulta spesso
+                il catalogo vasi in ceramica ma il tasso di conversione sul carrello è in calo (14%).
+                Opportunità: riproporre la linea Fioriere nel mese di settembre.
+              </div>
+              <div class="ai-meta">Generata il 18/06/2026 10:32</div>
+            </div>
+
+            <!-- KPI -->
+            <div class="kpis" data-od-id="kpi-tiles">
+              <div class="tile">
+                <div class="k">Fatturato 12m</div>
+                <div class="v">€ 284.520</div>
+                <div class="s trend-up">▲ +12% YoY</div>
+              </div>
+              <div class="tile">
+                <div class="k">Fatturato totale</div>
+                <div class="v">€ 1,24 M</div>
+                <div class="s" style="color:var(--muted)">387 ordini</div>
+              </div>
+              <div class="tile">
+                <div class="k">Ticket medio</div>
+                <div class="v">€ 735</div>
+              </div>
+              <div class="tile">
+                <div class="k">Cadenza</div>
+                <div class="v">~23 gg</div>
+                <div class="s" style="color:var(--muted)">16 ordini/anno</div>
+              </div>
+              <div class="tile">
+                <div class="k">Assortimento</div>
+                <div class="v">14 fam.</div>
+                <div class="s" style="color:var(--muted)">386 articoli</div>
+              </div>
+            </div>
+            <p class="kpi-caption">
+              Valori calcolati sullo storico ordini: trend rispetto all'anno precedente, frequenza media d'acquisto e ampiezza del catalogo acquistato.
+            </p>
+
+            <div class="grid-2-charts" style="margin-top:14px">
+              <!-- Fatturato mensile -->
+              <div class="block" data-od-id="block-fatturato">
+                <div class="block-h">
+                  <span class="block-t">Fatturato mensile</span>
+                  <span class="mono">ultimi 12 mesi</span>
+                  <span style="flex:1"></span>
+                  <span class="hint" tabindex="0">?
+                    <span class="hint-tip">Fatturato ordinato per ogni mese (in migliaia di euro). I mesi più alti sono evidenziati per leggere subito il picco di stagione.</span>
+                  </span>
+                </div>
+                <div class="bars">
+                  <div class="bar" style="height:58%"><span class="bv">€18k</span></div>
+                  <div class="bar" style="height:68%"><span class="bv">€21k</span></div>
+                  <div class="bar" style="height:77%"><span class="bv">€24k</span></div>
+                  <div class="bar" style="height:61%"><span class="bv">€19k</span></div>
+                  <div class="bar" style="height:87%"><span class="bv">€27k</span></div>
+                  <div class="bar hi" style="height:100%"><span class="bv">€31k</span></div>
+                  <div class="bar" style="height:71%"><span class="bv">€22k</span></div>
+                  <div class="bar" style="height:52%"><span class="bv">€16k</span></div>
+                  <div class="bar" style="height:84%"><span class="bv">€26k</span></div>
+                  <div class="bar" style="height:94%"><span class="bv">€29k</span></div>
+                  <div class="bar hi" style="height:97%"><span class="bv">€30k</span></div>
+                  <div class="bar" style="height:71%"><span class="bv">€22k</span></div>
+                </div>
+                <div class="bars-axis"><span>G</span><span>F</span><span>M</span><span>A</span><span>M</span><span>G</span><span>L</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+              </div>
+
+              <!-- Stagionalità -->
+              <div class="block" data-od-id="block-stagionalita">
+                <div class="block-h">
+                  <span class="block-t">Stagionalità</span>
+                  <span style="flex:1"></span>
+                  <span class="hint" tabindex="0">?
+                    <span class="hint-tip">Quota di fatturato per ciascun mese: evidenzia i picchi stagionali del cliente e i mesi di calo. Utile per pianificare proposte e promozioni.</span>
+                  </span>
+                </div>
+                <div class="bars">
+                  <div class="bar" style="height:42%"></div>
+                  <div class="bar" style="height:58%"></div>
+                  <div class="bar" style="height:75%"></div>
+                  <div class="bar" style="height:58%"></div>
+                  <div class="bar hi" style="height:83%"></div>
+                  <div class="bar hi" style="height:100%"></div>
+                  <div class="bar" style="height:67%"></div>
+                  <div class="bar" style="height:42%"></div>
+                  <div class="bar" style="height:75%"></div>
+                  <div class="bar" style="height:83%"></div>
+                  <div class="bar hi" style="height:92%"></div>
+                  <div class="bar" style="height:58%"></div>
+                </div>
+                <div class="bars-axis"><span>G</span><span>F</span><span>M</span><span>A</span><span>M</span><span>G</span><span>L</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+              </div>
+
+              <!-- Composizione acquisti -->
+              <div class="block" data-od-id="block-composizione">
+                <div class="block-h">
+                  <span class="block-t">Composizione acquisti</span>
+                  <span style="flex:1"></span>
+                  <span class="hint" tabindex="0">?
+                    <span class="hint-tip">Ripartizione degli acquisti per famiglia merceologica del catalogo: mostra dove si concentra il valore del cliente e le aree da far crescere.</span>
+                  </span>
+                </div>
+                <div class="share-row">
+                  <div class="share-line">
+                    <div class="share-top"><span>Vasi in ceramica</span><span class="mono">34%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:34%"></div></div>
+                  </div>
+                  <div class="share-line">
+                    <div class="share-top"><span>Fioriere e cassette</span><span class="mono">22%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:22%"></div></div>
+                  </div>
+                  <div class="share-line">
+                    <div class="share-top"><span>Vasi in terracotta</span><span class="mono">18%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:18%"></div></div>
+                  </div>
+                  <div class="share-line">
+                    <div class="share-top"><span>Cestini e composizioni</span><span class="mono">11%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:11%"></div></div>
+                  </div>
+                  <div class="share-line">
+                    <div class="share-top"><span>Accessori annaffiatura</span><span class="mono">9%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:9%"></div></div>
+                  </div>
+                  <div class="share-line">
+                    <div class="share-top"><span>Articoli da giardinaggio</span><span class="mono">6%</span></div>
+                    <div class="share-track"><div class="share-fill" style="width:6%"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Articoli più acquistati -->
+              <div class="block" data-od-id="block-top-articoli">
+                <div class="block-h">
+                  <span class="block-t">Articoli più acquistati</span>
+                  <span class="mono">top 10 · ultimi 12 mesi</span>
+                  <span style="flex:1"></span>
+                  <span class="hint" tabindex="0">?
+                    <span class="hint-tip">Gli articoli che il cliente acquista più spesso negli ultimi 12 mesi, con quantità totali ordinate.</span>
+                  </span>
+                </div>
+                <div class="top-list">
+                  <div class="top-item"><span class="top-rank">1</span><span class="top-name">Vaso Kiva Ø 45 cm</span><span class="top-num">132 pz</span></div>
+                  <div class="top-item"><span class="top-rank">2</span><span class="top-name">Fioriera Rustica 80 cm</span><span class="top-num">98 pz</span></div>
+                  <div class="top-item"><span class="top-rank">3</span><span class="top-name">Vaso tondo terracotta Ø 35 cm</span><span class="top-num">87 pz</span></div>
+                  <div class="top-item"><span class="top-rank">4</span><span class="top-name">Cestino intrecciato S</span><span class="top-num">64 pz</span></div>
+                  <div class="top-item"><span class="top-rank">5</span><span class="top-name">Annaffiatoio in metallo 5 L</span><span class="top-num">51 pz</span></div>
+                  <div class="top-item"><span class="top-rank">6</span><span class="top-name">Fioriera Urbana 60 cm</span><span class="top-num">47 pz</span></div>
+                  <div class="top-item"><span class="top-rank">7</span><span class="top-name">Vaso Bianco Liscio Ø 30 cm</span><span class="top-num">39 pz</span></div>
+                  <div class="top-item"><span class="top-rank">8</span><span class="top-name">Composizione "Primavera"</span><span class="top-num">33 pz</span></div>
+                  <div class="top-item"><span class="top-rank">9</span><span class="top-name">Guanti da giardinaggio</span><span class="top-num">28 pz</span></div>
+                  <div class="top-item"><span class="top-rank">10</span><span class="top-name">Terriccio universale 20 L</span><span class="top-num">25 pz</span></div>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ═══════ TAB 2 · ANAGRAFICA E CONTATTI ═══════ -->
+          <section class="tab-panel" id="tab-anagrafica" data-od-id="tab-anagrafica">
+            <div class="panel-intro">
+              <strong>Anagrafica e contatti</strong>
+              <span class="hint" tabindex="0">?
+                <span class="hint-tip">Dati anagrafici e contatti del cliente. Tutti i campi provengono dal gestionale e sono in sola lettura: le modifiche si fanno sul gestionale e arrivano con la prossima sincronizzazione.</span>
+              </span>
+            </div>
+
+            <div class="fsec">
+              <div class="fsec-h">Anagrafica</div>
+              <div class="field"><label>Codice cliente</label><div class="ro mono locked">V00124</div></div>
+              <div class="field"><label>Listino</label><div class="ro mono locked">L2 · Rivenditore</div></div>
+              <div class="field"><label>Ragione sociale</label><div class="ro locked">VIVAI ROSSI S.r.l.</div></div>
+              <div class="field"><label>P.IVA</label><div class="ro mono locked">03678210145</div></div>
+              <div class="field"><label>Email</label><div class="ro locked">ordini@vivairossi.it</div></div>
+              <div class="field"><label>Telefono</label><div class="ro mono locked">02 4123 5678</div></div>
+              <div class="field"><label>Lingua preferita</label><div class="ro locked">Italiano</div></div>
+
+              <div class="fsec-h">Condizioni commerciali</div>
+              <div class="field"><label>Pagamento</label><div class="ro locked">Bonifico 30 gg d.f.m.</div></div>
+              <div class="field"><label>Fido</label><div class="ro mono locked">€ 25.000</div></div>
+            </div>
+
+            <div style="margin-top:22px">
+              <div class="block-h" style="margin-bottom:0">
+                <span class="block-t">Indirizzi e sedi</span>
+                <span class="mono">7</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Sedi e recapiti del cliente registrati sul gestionale: sede legale, filiali, punto di spedizione e magazzino. In sola lettura, aggiornati a ogni sincronizzazione.</span>
+                </span>
+              </div>
+              <div class="addr-grid">
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-blue"><span class="sd">●</span>Sede legale</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Via dei Vivai 12</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">20138</span></div>
+                  <div class="addr-l"><b>Città</b><span>Milano</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">MI</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-muted"><span class="sd">●</span>Filiale 1</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Via dell'Orto Botanico 3</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">10123</span></div>
+                  <div class="addr-l"><b>Città</b><span>Torino</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">TO</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-muted"><span class="sd">●</span>Filiale 2</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Via dei Giardini 45</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">35131</span></div>
+                  <div class="addr-l"><b>Città</b><span>Padova</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">PD</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-muted"><span class="sd">●</span>Filiale 3</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Corso dei Fiori 8</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">42121</span></div>
+                  <div class="addr-l"><b>Città</b><span>Reggio Emilia</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">RE</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-muted"><span class="sd">●</span>Filiale 4</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Viale delle Palme 21</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">80055</span></div>
+                  <div class="addr-l"><b>Città</b><span>Portici</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">NA</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-amber"><span class="sd">●</span>Spedizione</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Via della Logistica 2</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">20090</span></div>
+                  <div class="addr-l"><b>Città</b><span>Settala</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">MI</span></div>
+                </div>
+                <div class="addr-card">
+                  <div class="addr-card-h"><span class="status st-amber"><span class="sd">●</span>Magazzino</span></div>
+                  <div class="addr-l"><b>Indirizzo</b><span>Zona Industriale Nord 7</span></div>
+                  <div class="addr-l"><b>CAP</b><span class="mono">20064</span></div>
+                  <div class="addr-l"><b>Città</b><span>Gorgonzola</span></div>
+                  <div class="addr-l"><b>Provincia</b><span class="mono">MI</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:22px">
+              <div class="block-h" style="margin-bottom:8px">
+                <span class="block-t">Contatti registrati</span>
+                <span class="mono">5</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Elenco dei contatti e riferimenti registrati sul gestionale: canale, data e contenuto. Solo dati di riferimento, non modificabili da qui.</span>
+                </span>
+              </div>
+              <div class="data-table">
+                <div class="data-table-scroll">
+                  <table>
+                    <thead><tr><th>Tipo</th><th>Data</th><th>Contenuto</th></tr></thead>
+                    <tbody>
+                      <tr><td>Telefono</td><td class="mono">12/03/2026</td><td>02 4123 5678</td></tr>
+                      <tr><td>Email</td><td class="mono">08/05/2026</td><td>ordini@vivairossi.it</td></tr>
+                      <tr><td>Referente</td><td class="mono">08/05/2026</td><td>Maria Rossi — ufficio acquisti</td></tr>
+                      <tr><td>Visita</td><td class="mono">02/06/2026</td><td>Visita agente A. Colombo</td></tr>
+                      <tr><td>Email</td><td class="mono">18/06/2026</td><td>Preventivo primavera 2026</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═══════ TAB 3 · ORDINI ═══════ -->
+          <section class="tab-panel" id="tab-ordini" data-od-id="tab-ordini">
+            <div class="panel-intro">
+              <strong>Ordini e storico acquisti</strong>
+              <span class="hint" tabindex="0">?
+                <span class="hint-tip">Storico ordini sincronizzato dal gestionale. Cerca per numero o articolo, filtra per anno e apri un ordine per vedere i dettagli delle righe. "Sincronizza" aggiorna i dati dal gestionale.</span>
+              </span>
+            </div>
+
+            <div class="ord-tools">
+              <div class="search">
+                <span class="ic"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
+                <input id="ord-search" type="text" placeholder="Cerca per numero ordine, codice articolo, descrizione…">
+              </div>
+              <select id="ord-year" class="select" aria-label="Filtra per anno">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+              <button class="btn" type="button">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+                Sincronizza
+              </button>
+            </div>
+
+            <div class="data-table">
+              <div class="data-table-scroll">
+                <table>
+                  <colgroup>
+                    <col style="width:120px"><col style="width:120px"><col style="width:150px"><col><col style="width:110px"><col style="width:52px">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>Ordine</th><th>Data</th><th>Stato</th><th>Descrizione</th><th class="num">Totale</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="ord-tbody">
+                    <tr data-year="2026" data-q="V00214 vasi ceramica">
+                      <td class="mono" style="font-weight:600">#V00214</td>
+                      <td class="mono">13/07/2026</td>
+                      <td><span class="status st-blue"><span class="sd">●</span>Confermato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Vasi in ceramica · 4 articoli</td>
+                      <td class="num mono">€ 4.850,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00209 fioriere resina">
+                      <td class="mono" style="font-weight:600">#V00209</td>
+                      <td class="mono">20/06/2026</td>
+                      <td><span class="status st-amber"><span class="sd">●</span>Spedito</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Fioriere in resina · 3 articoli</td>
+                      <td class="num mono">€ 3.120,50</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00201 terracotta cestini">
+                      <td class="mono" style="font-weight:600">#V00201</td>
+                      <td class="mono">28/05/2026</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Vasi in terracotta · 8 articoli</td>
+                      <td class="num mono">€ 6.780,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00194 annaffiatura">
+                      <td class="mono" style="font-weight:600">#V00194</td>
+                      <td class="mono">09/05/2026</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Accessori annaffiatura · 5 articoli</td>
+                      <td class="num mono">€ 2.450,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00186 ceramica">
+                      <td class="mono" style="font-weight:600">#V00186</td>
+                      <td class="mono">16/04/2026</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Vasi in ceramica · 6 articoli</td>
+                      <td class="num mono">€ 5.110,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00175 fioriere">
+                      <td class="mono" style="font-weight:600">#V00175</td>
+                      <td class="mono">27/03/2026</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Fioriere e cassette · 4 articoli</td>
+                      <td class="num mono">€ 3.890,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00163 cestini">
+                      <td class="mono" style="font-weight:600">#V00163</td>
+                      <td class="mono">05/03/2026</td>
+                      <td><span class="status st-danger"><span class="sd">●</span>Cancellato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Cestini e composizioni · 2 articoli</td>
+                      <td class="num mono">€ 1.120,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2026" data-q="V00158 ceramica">
+                      <td class="mono" style="font-weight:600">#V00158</td>
+                      <td class="mono">11/02/2026</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Vasi in ceramica · 5 articoli</td>
+                      <td class="num mono">€ 4.230,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2025" data-q="V00131 terracotta">
+                      <td class="mono" style="font-weight:600">#V00131</td>
+                      <td class="mono">12/11/2025</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Vasi in terracotta · 7 articoli</td>
+                      <td class="num mono">€ 5.620,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                    <tr data-year="2025" data-q="V00120 annaffiatura">
+                      <td class="mono" style="font-weight:600">#V00120</td>
+                      <td class="mono">10/09/2025</td>
+                      <td><span class="status st-ok"><span class="sd">●</span>Fatturato</span></td>
+                      <td style="font-size:12.5px;color:var(--muted)">Accessori annaffiatura · 4 articoli</td>
+                      <td class="num mono">€ 2.180,00</td>
+                      <td><button class="row-action" aria-label="Dettaglio ordine"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 0-9 9"/></svg></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="data-footer">
+                <span id="ord-range">1–8 di 34</span>
+                <div class="pager">
+                  <button disabled aria-label="Pagina precedente"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <span class="pager-current">1 / 5</span>
+                  <button aria-label="Pagina successiva"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═══════ TAB 4 · ATTIVITÀ ═══════ -->
+          <section class="tab-panel" id="tab-attivita" data-od-id="tab-attivita">
+            <div class="panel-intro">
+              <strong>Attività e comportamento</strong>
+              <span class="hint" tabindex="0">?
+                <span class="hint-tip">Cronologia dei comportamenti del cliente sul portale (accessi, ricerche, carrello, ordini). Ogni colore indica un tipo di evento.</span>
+              </span>
+            </div>
+
+            <div class="funnel" style="margin-top:14px" data-od-id="funnel">
+              <div class="tile"><div class="k">Articoli visti</div><div class="v">1.240</div></div>
+              <div class="tile"><div class="k">→ Carrello</div><div class="v">184 <span class="s" style="color:var(--muted)">(14,8%)</span></div></div>
+              <div class="tile"><div class="k">→ Ordini</div><div class="v">26 <span class="s" style="color:var(--muted)">(14,1%)</span></div></div>
+              <div class="tile"><div class="k">Tempo / pagina</div><div class="v">42s</div></div>
+            </div>
+            <p class="visti">Visti ma mai nel carrello: Vaso tondo cm 40 (12) · Fioriera rettangolare (9) · Cestino in vimini (7)</p>
+
+            <div class="block" style="margin-top:14px" data-od-id="timeline">
+              <div class="block-h">
+                <span class="block-t">Timeline eventi</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Ultimi eventi registrati sul portale. Colori: arancio accesso, viola ricerca, blu apertura articolo, verde carrello, rosso rimozione, ambra ordine creato.</span>
+                </span>
+              </div>
+              <div class="legend">
+                <span><span class="tl-dot" style="background:var(--accent)"></span>Accesso</span>
+                <span><span class="tl-dot" style="background:#8b5cf6"></span>Ricerca</span>
+                <span><span class="tl-dot" style="background:var(--blue)"></span>Articolo</span>
+                <span><span class="tl-dot" style="background:var(--ok)"></span>Carrello</span>
+                <span><span class="tl-dot" style="background:var(--danger)"></span>Rimozione</span>
+                <span><span class="tl-dot" style="background:var(--amber)"></span>Ordine</span>
+              </div>
+              <div class="tl">
+                <div class="tl-row"><span class="tl-dot" style="background:var(--accent)"></span><span class="tl-time">12/07 09:41</span><span>Accesso</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:#8b5cf6"></span><span class="tl-time">12/07 09:52</span><span>Ricerca «vaso ceramica 50» · 18 risultati</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--blue)"></span><span class="tl-time">12/07 09:58</span><span>Ha aperto Vaso in ceramica Viva 50</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--ok)"></span><span class="tl-time">12/07 10:05</span><span>Aggiunto al carrello A10045 ×4</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--ok)"></span><span class="tl-time">12/07 10:12</span><span>Quantità aggiornata A10045 → 6</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--amber)"></span><span class="tl-time">11/07 16:20</span><span>Ordine creato V00214 · € 4.850</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--accent)"></span><span class="tl-time">10/07 08:15</span><span>Accesso</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:#8b5cf6"></span><span class="tl-time">09/07 14:02</span><span>Ricerca per immagine · 24 risultati</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--blue)"></span><span class="tl-time">09/07 14:08</span><span>Ha aperto Fioriera in resina 60</span></div>
+                <div class="tl-row"><span class="tl-dot" style="background:var(--danger)"></span><span class="tl-time">09/07 14:30</span><span>Rimosso dal carrello A10012</span></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═══════ TAB 5 · PROFILO ═══════ -->
+          <section class="tab-panel" id="tab-profilo" data-od-id="tab-profilo">
+            <div class="panel-intro">
+              <strong>Profilo del cliente</strong>
+              <span class="hint" tabindex="0">?
+                <span class="hint-tip">Analisi del profilo generata dall'AI combinando dati ufficiali (registro imprese), storico ordini e comportamento sul portale: chi è il cliente, cosa gli interessa e cosa proporgli. Rigenerabile quando servono dati aggiornati.</span>
+              </span>
+            </div>
+
+            <div class="ai-box" data-od-id="profilo-sintesi">
+              <div class="ai-body">
+                Rivenditore B2B di vasi e complementi d'arredo per giardino con 4 punti vendita al dettaglio.
+                Business familiare, ordina regolarmente tutto l'anno con picco stagionale tra aprile e luglio;
+                in crescita sugli accessori d'annaffiatura e sulle fioriere. Clientela finale: privati e piccoli garden center.
+              </div>
+              <div class="ai-meta">Generato il 18/06/2026 · aggiornato il 22/07/2026</div>
+            </div>
+
+            <div class="grid-2-charts" style="margin-top:14px">
+              <div class="block">
+                <div class="block-h"><span class="block-t">Settore</span></div>
+                <span style="font-size:13.5px">Vivaistica e garden center</span>
+              </div>
+              <div class="block">
+                <div class="block-h"><span class="block-t">Dimensione</span></div>
+                <span style="font-size:13.5px">Medio</span>
+              </div>
+              <div class="block">
+                <div class="block-h"><span class="block-t">Fatturato stimato</span></div>
+                <span style="font-size:13.5px">€1,5M–3M (registro imprese)</span>
+              </div>
+              <div class="block">
+                <div class="block-h"><span class="block-t">Stagionalità</span></div>
+                <span style="font-size:13.5px">Picco aprile–luglio, calo ad agosto</span>
+              </div>
+            </div>
+
+            <div class="block" style="margin-top:14px">
+              <div class="block-h">
+                <span class="block-t">Composizione business</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Come si colloca il cliente nella filiera: cosa produce o rivende e in quale fase.</span>
+                </span>
+              </div>
+              <p style="margin:0; font-size:13.5px; line-height:1.6">Rivenditore al dettaglio specializzato in vasi, fioriere e complementi per il giardino, con 4 punti vendita tra nord e centro Italia e canale B2B verso piccoli garden center.</p>
+            </div>
+
+            <div class="block" style="margin-top:14px">
+              <div class="block-h">
+                <span class="block-t">Sedi</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Sedi rilevate tra dati ufficiali e indirizzi presenti sul gestionale.</span>
+                </span>
+              </div>
+              <p style="margin:0; font-size:13.5px; line-height:1.6">Via dei Vivai 12, 20138 Milano (MI) · filiali a Torino, Padova, Reggio Emilia, Portici · spedizione a Settala (MI)</p>
+            </div>
+
+            <div class="block" style="margin-top:14px">
+              <div class="block-h">
+                <span class="block-t">Contatti chiave</span>
+                <span style="flex:1"></span>
+                <span class="hint" tabindex="0">?
+                  <span class="hint-tip">Figure di riferimento del cliente con cui parlano i commerciali.</span>
+                </span>
+              </div>
+              <div class="data-table">
+                <div class="data-table-scroll">
+                  <table>
+                    <thead><tr><th>Nome</th><th>Ruolo</th></tr></thead>
+                    <tbody>
+                      <tr><td>Maria Rossi</td><td>Ufficio acquisti</td></tr>
+                      <tr><td>Paolo Rossi</td><td>Titolare</td></tr>
+                      <tr><td>A. Colombo</td><td>Agente di riferimento</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px">
+              <div class="block-h" style="margin-bottom:8px"><span class="block-t">Interessi principali</span></div>
+              <div class="tag-row">
+                <span class="tag">Vasi in ceramica</span>
+                <span class="tag">Fioriere e cassette</span>
+                <span class="tag">Articoli da esterno</span>
+              </div>
+            </div>
+
+            <div style="margin-top:14px">
+              <div class="block-h" style="margin-bottom:8px"><span class="block-t">Interessi secondari</span></div>
+              <div class="tag-row">
+                <span class="tag">Accessori annaffiatura</span>
+                <span class="tag">Terricci e substrati</span>
+              </div>
+            </div>
+
+            <div style="margin-top:14px">
+              <div class="block-h" style="margin-bottom:8px"><span class="block-t">Non comprerà mai</span></div>
+              <div class="tag-row">
+                <span class="tag danger">Attrezzatura da giardinaggio professionale</span>
+                <span class="tag danger">Semi e piante da orto</span>
+              </div>
+            </div>
+
+            <div style="margin-top:14px">
+              <div class="block-h" style="margin-bottom:8px"><span class="block-t">Opportunità cross-sell</span></div>
+              <div class="tag-row">
+                <span class="tag">Illuminazione da giardino</span>
+                <span class="tag">Sistemi d'annaffiatura automatici</span>
+                <span class="tag">Composizioni primaverili</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Tooltip "?" — posizionamento fisso ancorato all'icona, clampato nel viewport */
+(function () {
+  var tip = document.createElement('div');
+  tip.className = 'hint-tip-global';
+  document.body.appendChild(tip);
+
+  function show(hint) {
+    var src = hint.querySelector('.hint-tip');
+    if (!src) return;
+    tip.innerHTML = src.innerHTML;
+    tip.style.display = 'block';
+    var r = hint.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    var top = r.bottom + 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hide() { tip.style.display = 'none'; }
+
+  document.querySelectorAll('.hint, .tip').forEach(function (hint) {
+    hint.addEventListener('mouseenter', function () { show(hint); });
+    hint.addEventListener('mouseleave', hide);
+    hint.addEventListener('focusin', function () { show(hint); });
+    hint.addEventListener('focusout', hide);
+  });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+})();
+
+/* Tab: commutazione con persistenza */
+(function () {
+  var btns = document.querySelectorAll('.tab-btn');
+  var panels = document.querySelectorAll('.tab-panel');
+  var saved = localStorage.getItem('scheda-cliente-tab');
+
+  function activate(name) {
+    btns.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+    panels.forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + name); });
+    localStorage.setItem('scheda-cliente-tab', name);
+  }
+  var initial = saved && document.getElementById('tab-' + saved) ? saved : 'panoramica';
+  activate(initial);
+  btns.forEach(function (b) { b.addEventListener('click', function () { activate(b.dataset.tab); }); });
+})();
+
+/* Ordini: ricerca e filtro anno */
+(function () {
+  var tbody = document.getElementById('ord-tbody');
+  var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+  var search = document.getElementById('ord-search');
+  var year = document.getElementById('ord-year');
+  var range = document.getElementById('ord-range');
+
+  function apply() {
+    var q = (search.value || '').toLowerCase();
+    var y = year.value;
+    var visible = rows.filter(function (r) {
+      var okYear = y === 'tutti' || r.dataset.year === y;
+      var okQ = !q || r.dataset.q.toLowerCase().indexOf(q) !== -1;
+      return okYear && okQ;
+    });
+    rows.forEach(function (r) { r.style.display = 'none'; });
+    visible.forEach(function (r) { r.style.display = ''; });
+    range.textContent = visible.length === 0
+      ? '0 risultati'
+      : '1\u2013' + visible.length + ' di ' + visible.length;
+  }
+  search.addEventListener('input', apply);
+  year.addEventListener('change', apply);
+})();
+</script>
+</body>
+</html>

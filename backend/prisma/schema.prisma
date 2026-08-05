@@ -557,18 +557,23 @@ model DashboardBox {
 /// Generato periodicamente da un LLM che arricchisce i dati esistenti
 /// (ordini, tracking, progetti, indirizzi) con informazioni pubbliche.
 model CustomerProfile {
-  id               Int      @id @default(autoincrement())
-  customerId       Int      @unique @map("customer_id")
-  settore          String?
-  fatturatoStimato String?  @map("fatturato_stimato")
-  composizione     String?
-  sedi             String?
-  contatti         Json?
-  segmento         String?  // piccolo | medio | grande
-  sintesi          String?
-  fonti            Json?
-  generatoIl       DateTime @default(now()) @map("generato_il")
-  aggiornatoIl     DateTime @updatedAt @map("aggiornato_il")
+  id                    Int      @id @default(autoincrement())
+  customerId            Int      @unique @map("customer_id")
+  settore               String?
+  fatturatoStimato      String?  @map("fatturato_stimato")
+  composizione          String?
+  sedi                  String?
+  contatti              Json?
+  segmento              String?  // piccolo | medio | grande
+  sintesi               String?
+  fonti                 Json?
+  interessiPrincipali   Json?    @map("interessi_principali")
+  interessiSecondari    Json?    @map("interessi_secondari")
+  nonCompreraMai        Json?    @map("non_comprera_mai")
+  opportunitaCrossSell  Json?    @map("opportunita_cross_sell")
+  stagionalita          String?
+  generatoIl            DateTime @default(now()) @map("generato_il")
+  aggiornatoIl          DateTime @updatedAt @map("aggiornato_il")
 
   customer Customer @relation(fields: [customerId], references: [id])
 

@@ -69,12 +69,15 @@ export interface CustomerIntelligenceProfile {
 export interface IndirizzoCliente {
   id: number;
   customerId: number;
+  codiceDestinazione?: string | null;
   ragioneSociale: string | null;
   indirizzo: string | null;
   cap: string | null;
   citta: string | null;
   provincia: string | null;
   flagSpedizione: boolean;
+  flagAbituale?: boolean;
+  tipoDestinazione?: string | null;
 }
 
 export interface ContattoCliente {
@@ -116,6 +119,50 @@ export interface OrdiniResponse {
   items: OrdineCliente[];
   total: number;
   years: number[];
+}
+
+export interface DossierKpi {
+  fatturato12m: number;
+  fatturatoPrec12m: number;
+  trendYoY: number | null;
+  fatturatoTotale: number;
+  ticketMedio: number | null;
+  ordiniTotali: number;
+  ordini12m: number;
+  ordiniPerAnno: number | null;
+  giorniDaUltimoOrdine: number | null;
+  cadenzaMediaGiorni: number | null;
+  primoOrdine: string | null;
+  ultimoOrdine: string | null;
+}
+
+export interface DossierFamiglia {
+  codice: string;
+  nome: string;
+  valore: number;
+  pezzi: number;
+  quota: number;
+}
+
+export interface CustomerDossier {
+  kpi: DossierKpi;
+  stagionalita: number[];
+  fatturatoMensile: { mese: string; valore: number }[];
+  basket: {
+    famiglie: DossierFamiglia[];
+    topProdotti: { nome: string; pezzi: number }[];
+    nFamiglie: number;
+    nArticoli: number;
+    concentrazioneHHI: number;
+  };
+  segmento: string;
+  salute: "buona" | "media" | "a_rischio";
+}
+
+export interface CustomerInsight {
+  testo: string;
+  metriche: Record<string, unknown> | null;
+  generatoIl: string;
 }
 
 export interface MeResponse {

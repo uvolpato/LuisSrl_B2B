@@ -14,6 +14,17 @@ export default function Tooltip({ text, children }: TooltipProps) {
   const [style, setStyle] = useState<React.CSSProperties>({ display: "none" });
 
   useEffect(() => {
+    if (!visible) return;
+    const hide = () => setVisible(false);
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+    };
+  }, [visible]);
+
+  useEffect(() => {
     if (visible && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setStyle({
