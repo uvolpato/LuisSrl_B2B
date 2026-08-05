@@ -312,6 +312,19 @@ export default function ArticoliSection() {
                 </div>
               )}
             </div>
+            {filteredArticles.length > PAGE_SIZE && (
+              <div className="data-footer" style={{ marginTop: 14 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setArtPage(p => Math.max(1, p - 1))} disabled={artPage === 1}>
+                  Precedente
+                </button>
+                <span style={{ margin: "0 16px", fontSize: 13.5, color: "var(--muted)" }}>
+                  Pagina {artPage} di {Math.ceil(filteredArticles.length / PAGE_SIZE)}
+                </span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setArtPage(p => Math.min(Math.ceil(filteredArticles.length / PAGE_SIZE), p + 1))} disabled={artPage === Math.ceil(filteredArticles.length / PAGE_SIZE)}>
+                  Successiva
+                </button>
+              </div>
+            )}
           </div>
         )}
         <ImportaArticoliModal
