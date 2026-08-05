@@ -1,5 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { IntegrazioneService } from '../integrazione/integrazione.service';
+
+export type MotivoOfferta = 'riordino' | 'cross-sell' | 'up-sell';
+
+export interface Offerta {
+  id: string;            // codice linea
+  nome: string;
+  img: string | null;
+  prezzo: number | null;
+  varianteCodice: string | null; // per "Crea offerta"
+  motivo: MotivoOfferta;
+  dettaglio: string;     // spiegazione breve
+  score: number;
+}
 
 export interface DossierKpi {
   fatturato12m: number;
@@ -35,7 +49,116 @@ export interface Dossier {
 
 @Injectable()
 export class CustomerIntelligenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly integrazione: IntegrazioneService,
+  ) {}
+
+  /**
+   * Offerte consigliate per il cliente (deterministico). Ogni candidato ha motivo + score.
+   *  - riordino: articoli comprati >=3 volte con cadenza regolare e ormai "in scadenza".
+   *  - cross-sell: best-seller nelle famiglie che il cliente compra ma su articoli mai presi.
+   * Filtri: esclude nonCompreraMai (dal profilo), solo configurati/attivi con giacenza.
+   */
+  async raccomandazioni(customerId: number, codiceListino?: string | null): Promise<Offerta[]> {
+    const RIORDINO_MIN = 3;        // ponytail: n. minimo di ordini per considerarlo ricorrente
+    const RIORDINO_SOGLIA = 0.8;   //           quota di cadenza oltre cui è "da riordinare"
+    if (!codiceListino) {
+      const cust = await this.prisma.customer.findUnique({ where: { id: customerId }, select: { codiceListino: true } });
+      codiceListino = cust?.codiceListino ?? null;
+    }
+
+    // 1) Riordino ciclico — articoli ricorrenti mappati al catalogo.
+    const riordinoRows = await this.prisma.$queryRawUnsafe<{ id: number; codice_linea: string; n: number; ultimo: Date; primo: Date }[]>(
+      `SELECT a.id, a.codice_linea, count(DISTINCT o.id)::int AS n, max(o.data_ordine) AS ultimo, min(o.data_ordine) AS primo
+         FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+         JOIN articoli a ON (a.codice_linea = ro.codice_prodotto
+                             OR EXISTS (SELECT 1 FROM varianti v WHERE v.codice = ro.codice_prodotto AND v.articolo_id = a.id))
+        WHERE o.customer_id = $1 AND a.configurato = true AND a.stato = 'ATTIVO'
+        GROUP BY a.id, a.codice_linea
+       HAVING count(DISTINCT o.id) >= ${RIORDINO_MIN}`,
+      customerId,
+    );
+    const giorno = 86_400_000;
+    const riordino = riordinoRows
+      .map((r) => {
+        const cadenza = Math.max(1, (r.ultimo.getTime() - r.primo.getTime()) / giorno / Math.max(1, r.n - 1));
+        const daUltimo = (Date.now() - r.ultimo.getTime()) / giorno;
+        const overdue = daUltimo / cadenza;
+        return { id: r.id, overdue, n: r.n, giorni: Math.round(daUltimo), cadenza: Math.round(cadenza) };
+      })
+      .filter((r) => r.overdue >= RIORDINO_SOGLIA)
+      .sort((a, b) => b.overdue * Math.log(1 + b.n) - a.overdue * Math.log(1 + a.n))
+      .slice(0, 8);
+
+    // 2) Cross-sell — best-seller nelle sue famiglie, su articoli mai acquistati.
+    const crossRows = await this.prisma.$queryRawUnsafe<{ id: number; venduto: number }[]>(
+      `WITH sue_fam AS (
+         SELECT DISTINCT a.famiglia_codice FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+           JOIN articoli a ON (a.codice_linea = ro.codice_prodotto
+                               OR EXISTS (SELECT 1 FROM varianti v WHERE v.codice = ro.codice_prodotto AND v.articolo_id = a.id))
+          WHERE o.customer_id = $1),
+       suoi AS (
+         SELECT DISTINCT a.id FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+           JOIN articoli a ON (a.codice_linea = ro.codice_prodotto
+                               OR EXISTS (SELECT 1 FROM varianti v WHERE v.codice = ro.codice_prodotto AND v.articolo_id = a.id))
+          WHERE o.customer_id = $1)
+       SELECT a.id, count(*)::int AS venduto
+         FROM righe_ordini ro JOIN varianti v ON v.codice = ro.codice_prodotto JOIN articoli a ON a.id = v.articolo_id
+         JOIN famiglie f ON f.codice = a.famiglia_codice
+        WHERE a.famiglia_codice IN (SELECT famiglia_codice FROM sue_fam)
+          AND a.id NOT IN (SELECT id FROM suoi)
+          AND a.configurato = true AND a.stato = 'ATTIVO' AND f.stato = 'ATTIVO'
+          AND EXISTS (SELECT 1 FROM varianti vv WHERE vv.articolo_id = a.id AND vv.stato <> 'NASCOSTO' AND vv.giacenza > 0)
+        GROUP BY a.id ORDER BY venduto DESC LIMIT 8`,
+      customerId,
+    );
+
+    const ids = [...new Set([...riordino.map((r) => r.id), ...crossRows.map((c) => c.id)])];
+    if (!ids.length) return [];
+
+    // Arricchimento (prezzo/immagine) + variante rappresentativa (per "Crea offerta").
+    const [cards, varRows, profilo] = await Promise.all([
+      this.integrazione.arricchisciBoxArticoli(ids, codiceListino ?? null) as Promise<{ id: string; nome: string; img: string | null; prezzo: number | null; famiglia?: { nome?: string } }[]>,
+      this.prisma.$queryRawUnsafe<{ articolo_id: number; codice: string }[]>(
+        `SELECT DISTINCT ON (v.articolo_id) v.articolo_id, v.codice
+           FROM varianti v WHERE v.articolo_id = ANY($1::int[]) AND v.stato <> 'NASCOSTO' AND v.giacenza > 0
+          ORDER BY v.articolo_id, v.giacenza DESC`,
+        ids,
+      ),
+      this.prisma.customerProfile.findUnique({ where: { customerId }, select: { nonCompreraMai: true } }),
+    ]);
+    const varByArt = new Map(varRows.map((v) => [v.articolo_id, v.codice]));
+    const cardById = new Map(cards.map((c) => [c.id, c]));
+    // Map codiceLinea → articoloId per collegare i risultati.
+    const artIdByLinea = new Map<string, number>();
+    const lineaRows = await this.prisma.$queryRawUnsafe<{ id: number; codice_linea: string }[]>(
+      `SELECT id, codice_linea FROM articoli WHERE id = ANY($1::int[])`, ids,
+    );
+    for (const r of lineaRows) artIdByLinea.set(r.codice_linea, r.id);
+
+    const escludi = (Array.isArray(profilo?.nonCompreraMai) ? (profilo!.nonCompreraMai as string[]) : []).map((s) => s.toLowerCase());
+    const vietato = (nome: string, fam?: string) => {
+      const hay = `${nome} ${fam ?? ''}`.toLowerCase();
+      return escludi.some((t) => t && hay.includes(t));
+    };
+
+    const out: Offerta[] = [];
+    for (const r of riordino) {
+      const c = cards.find((x) => artIdByLinea.get(x.id) === r.id);
+      if (!c || vietato(c.nome, c.famiglia?.nome)) continue;
+      out.push({ id: c.id, nome: c.nome, img: c.img, prezzo: c.prezzo, varianteCodice: varByArt.get(r.id) ?? null,
+        motivo: 'riordino', dettaglio: `${r.n} riacquisti · ultimo ${r.giorni}gg fa (cadenza ~${r.cadenza}gg)`, score: Number((r.overdue * Math.log(1 + r.n)).toFixed(2)) });
+    }
+    for (const cr of crossRows) {
+      const c = cards.find((x) => artIdByLinea.get(x.id) === cr.id);
+      if (!c || vietato(c.nome, c.famiglia?.nome) || out.some((o) => o.id === c.id)) continue;
+      out.push({ id: c.id, nome: c.nome, img: c.img, prezzo: c.prezzo, varianteCodice: varByArt.get(cr.id) ?? null,
+        motivo: 'cross-sell', dettaglio: `Popolare nella sua categoria, mai acquistato`, score: Number((cr.venduto / 100).toFixed(2)) });
+    }
+    void cardById;
+    return out.slice(0, 12);
+  }
 
   async dossier(customerId: number): Promise<Dossier> {
     const [kpiRow] = await this.prisma.$queryRawUnsafe<{
