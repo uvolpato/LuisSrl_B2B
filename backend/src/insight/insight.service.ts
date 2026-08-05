@@ -35,6 +35,25 @@ export class InsightService {
     // Storico ordini reale (gestionale + B2B), non solo eventi del portale.
     const ord = await this.ordiniDigest(customerId, days);
 
+    // Andamento valore (trend YoY) + profilo (settore/interessi) → narrazione dossier-aware.
+    const [trendRow] = await this.prisma.$queryRawUnsafe<{ f12: string; fprec: string }[]>(
+      `WITH ord AS (
+         SELECT o.data_ordine, coalesce(nullif(o.importo_totale, 0),
+                (SELECT sum(ro.prezzo * ro.quantita) FROM righe_ordini ro WHERE ro.ordine_id = o.id)) AS imp
+           FROM ordini_clienti o WHERE o.customer_id = $1)
+       SELECT coalesce(sum(imp) FILTER (WHERE data_ordine >= now() - interval '12 months'), 0)::numeric AS f12,
+              coalesce(sum(imp) FILTER (WHERE data_ordine >= now() - interval '24 months' AND data_ordine < now() - interval '12 months'), 0)::numeric AS fprec
+         FROM ord`,
+      customerId,
+    );
+    const f12 = Number(trendRow?.f12 ?? 0), fprec = Number(trendRow?.fprec ?? 0);
+    const trend = fprec > 0 ? Math.round(((f12 - fprec) / fprec) * 100) : null;
+    const prof = await this.prisma.customerProfile.findUnique({
+      where: { customerId }, select: { settore: true, interessiPrincipali: true, nonCompreraMai: true },
+    });
+    const interessi = Array.isArray(prof?.interessiPrincipali) ? (prof!.interessiPrincipali as string[]) : [];
+    const nonVuole = Array.isArray(prof?.nonCompreraMai) ? (prof!.nonCompreraMai as string[]) : [];
+
     const metriche = {
       eventi: events.length, ricerche: ricerche.length,
       viste: [...viste.values()].reduce((s, n) => s + n, 0),
@@ -46,8 +65,12 @@ export class InsightService {
       ord.nOrdini
         ? `Storico ordini: ${ord.nOrdini} ordini (${ord.nRecenti} negli ultimi ${days} giorni), importo totale ${ord.importo.toFixed(2)} €${ord.ultimo ? `, ultimo il ${ord.ultimo.toLocaleDateString('it-IT')}` : ''}.`
         : 'Storico ordini: nessun ordine registrato.',
+      trend != null ? `Andamento valore ultimi 12 mesi vs 12 precedenti: ${trend >= 0 ? '+' : ''}${trend}%.` : '',
+      prof?.settore ? `Settore: ${prof.settore}.` : '',
       ord.topFamiglie.length ? `Famiglie più acquistate: ${ord.topFamiglie.map((f) => `${f.nome} (${f.n})`).join('; ')}.` : '',
       ord.topProdotti.length ? `Prodotti più acquistati: ${ord.topProdotti.map((f) => `${f.nome} (${f.n})`).join('; ')}.` : '',
+      interessi.length ? `Interessi noti (dal profilo): ${interessi.join('; ')}.` : '',
+      nonVuole.length ? `Da NON proporre: ${nonVuole.join('; ')}.` : '',
       `Attività portale B2B ultimi ${days} giorni: ${events.length} eventi.`,
       ricerche.length ? `Ricerche: ${[...new Set(ricerche)].slice(0, 12).join('; ')}.` : '',
       topViste.length ? `Articoli più visti: ${topViste.map(([n, c]) => `${n} (${c})`).join('; ')}.` : '',
@@ -103,13 +126,13 @@ export class InsightService {
   async generate(customerId: number) {
     const { testo: digest, metriche, haDati } = await this.digest(customerId);
     const prompt = `Sei un analista commerciale B2B per un'azienda di vasi e complementi.
-Dato il comportamento del cliente qui sotto, scrivi in italiano, max ~120 parole:
-1) un breve PROFILO (interessi, categorie/attributi ricorrenti, stagionalità o segnali di abbandono);
-2) una riga "Prossima azione consigliata:" per l'agente (up-sell, riattivazione, ecc.).
+Dai dati del cliente qui sotto (storico ordini, andamento, comportamento, profilo), scrivi in italiano, max ~130 parole:
+1) un breve PROFILO commerciale: chi è, cosa compra, salute/andamento (crescita, stabilità o abbandono), stagionalità;
+2) "Prossima azione consigliata:" per l'agente, CONCRETA: quali prodotti/categorie proporre (riordino, cross-sell, up-sell) rispettando ciò che il cliente NON vuole.
 Sii concreto, niente frasi vuote. Se i dati sono pochi, dillo.
 
-Comportamento:
-${digest || '(nessun evento registrato)'}`;
+Dati cliente:
+${digest || '(nessun dato registrato)'}`;
 
     let sintesi = haDati ? await this.integrazione.generaSintesiAI(prompt) : 'Dati insufficienti: il cliente non ha ordini storici né attività sul portale.';
     sintesi = (sintesi || '').trim();
