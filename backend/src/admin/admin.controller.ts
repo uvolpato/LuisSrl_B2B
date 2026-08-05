@@ -320,6 +320,15 @@ export class AdminController {
     return this.intelligence.raccomandazioni(id);
   }
 
+  @Post('customers/:id/offerta')
+  @RequirePermission('admin.customers.view')
+  async creaOfferta(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { varianti: { codice: string; quantita?: number }[]; nome?: string },
+  ) {
+    return this.intelligence.creaOfferta(id, body.varianti ?? [], body.nome);
+  }
+
   @Post('customers/:id/regenerate-profile')
   @RequirePermission('admin.customers.view')
   async regenerateCustomerProfile(
