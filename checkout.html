@@ -99,6 +99,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
   padding: 10px 14px; border: 1px dashed var(--border); border-radius: var(--radius);
   background: var(--fg-soft); font-size: 14px; color: var(--fg); font-family: var(--font-mono);
 }
+.iban-row { display: flex; gap: 8px; align-items: center; }
+.iban-field { flex: 1; }
 
 /* ══ Modalità consegna — opt cards ══ */
 .catalogo-page.cart-page.checkout-page .opt-list { display: flex; flex-direction: column; gap: 12px; }
@@ -270,14 +272,18 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
           <section class="checkout-section">
             <h2 class="checkout-section-title">Condizioni di pagamento</h2>
             <p class="checkout-note" style="margin-bottom:12px">Condizioni predefinite dall'anagrafica cliente.</p>
-            <div class="checkout-grid">
-              <div class="form-field">
-                <label>Pagamento</label>
-                <div class="read-only-field" id="cod-pagamento">BB30 — Bonifico 30 gg d.f.</div>
-              </div>
-              <div class="form-field">
-                <label>Banca d'appoggio</label>
-                <div class="read-only-field">Banca Intesa Sanpaolo — IT 12345</div>
+            <div class="form-field" style="margin-bottom:14px">
+              <label>Pagamento</label>
+              <div class="read-only-field">BB30 — Bonifico 30 gg d.f.</div>
+            </div>
+            <div class="form-field">
+              <label>Coordinate bancarie</label>
+              <div class="iban-row">
+                <div class="read-only-field iban-field">IT 60 X 05428 11101 000000123456 — Banca Intesa Sanpaolo</div>
+                <button type="button" class="btn btn-sm btn-secondary" id="btn-copy-iban" title="Copia IBAN">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copia
+                </button>
               </div>
             </div>
           </section>
@@ -959,6 +965,26 @@ var provinciaCombobox = null;
     if (e.key === 'Enter') applyCoupon(this.value.trim().toUpperCase());
   });
   document.getElementById('btn-coupon-remove').addEventListener('click', removeCoupon);
+
+  // Copy IBAN
+  document.getElementById('btn-copy-iban').addEventListener('click', function() {
+    var iban = 'IT60X0542811101000000123456';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(iban).then(function() {
+        var btn = document.getElementById('btn-copy-iban');
+        btn.textContent = 'Copiato!';
+        setTimeout(function() { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia'; }, 2000);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = iban; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      var btn = document.getElementById('btn-copy-iban');
+      btn.textContent = 'Copiato!';
+      setTimeout(function() { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia'; }, 2000);
+    }
+  });
 
   // Confirm
   document.getElementById('btn-conferma').addEventListener('click', confermaOrdine);
