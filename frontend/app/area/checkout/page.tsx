@@ -152,7 +152,7 @@ export default function CheckoutPage() {
       setItems(active);
 
       const def = d.indirizzi.find(i => i.abituale) ?? d.indirizzi[0] ?? null;
-      setIndirizzoId(def ? def.id : null);
+      setIndirizzoId(def ? def.id : (d.cliente.indirizzo ? -1 : null));
 
       // Payment: use cliente's default or first
       setPaymentMethod(d.cliente.codicePagamento ?? d.pagamenti[0]?.codice ?? "");
@@ -172,10 +172,34 @@ export default function CheckoutPage() {
     if (!authLoading && user) fetchAll();
   }, [authLoading, user, fetchAll]);
 
-  const indirizzoSelezionato = useMemo(
-    () => dati?.indirizzi.find(i => i.id === indirizzoId) ?? null,
-    [dati, indirizzoId],
-  );
+  const indirizzoSelezionato = useMemo(() => {
+    if (indirizzoId === -1) return sedeLegale;
+    return dati?.indirizzi.find(i => i.id === indirizzoId) ?? null;
+  }, [dati, indirizzoId]);
+
+  // Sede legale virtuale dall'anagrafica cliente
+  const sedeLegale: Indirizzo | null = useMemo(() => {
+    if (!dati?.cliente.indirizzo) return null;
+    return {
+      id: -1,
+      ragioneSociale: null,
+      indirizzo: dati.cliente.indirizzo,
+      cap: dati.cliente.cap,
+      citta: dati.cliente.citta,
+      provincia: dati.cliente.provincia,
+      tipoDestinazione: "SEDE_LEGALE",
+      flagSpedizione: false,
+      flagAbituale: false,
+      tipo: "SEDE_LEGALE",
+      abituale: false,
+      daIntegra: true,
+    };
+  }, [dati]);
+
+  const tuttiIndirizzi = useMemo(() => {
+    const list = sedeLegale ? [sedeLegale, ...dati!.indirizzi] : dati!.indirizzi;
+    return list;
+  }, [dati, sedeLegale]);
 
   function selezionaIndirizzo(id: number) {
     setIndirizzoId(id);
@@ -373,27 +397,16 @@ export default function CheckoutPage() {
                 <section className="checkout-section">
                   <h2 className="checkout-section-title">Indirizzo di spedizione</h2>
 
-                  {dati.indirizzi.length > 0 && (
+                  {tuttiIndirizzi.length > 0 && (
                     <div className="addr-grid">
-                      {dati.cliente.indirizzo && (
-                        <label className={"addr-card" + (indirizzoId === 0 ? " selected" : "")} style={{ cursor: "pointer" }} onClick={() => selezionaIndirizzo(0)}>
-                          <input type="radio" name="indirizzo" checked={indirizzoId === 0} onChange={() => selezionaIndirizzo(0)} style={{ position: "absolute", opacity: 0 }} />
-                          <div className="addr-card-h">
-                            <span className="status st-blue"><span className="sd">●</span>Sede legale</span>
-                          </div>
-                          <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
-                          <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
-                          <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
-                          <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
-                        </label>
-                      )}
-                      {dati.indirizzi.map(a => (
+                      {tuttiIndirizzi.map(a => (
                         <label key={a.id} className={"addr-card" + (a.id === indirizzoId ? " selected" : "")} style={{ cursor: "pointer" }}>
                           <input type="radio" name="indirizzo" checked={a.id === indirizzoId} onChange={() => selezionaIndirizzo(a.id)} style={{ position: "absolute", opacity: 0 }} />
                           <div className="addr-card-h">
                             <span className={`status ${a.tipoDestinazione === "SPEDIZIONE" ? "st-amber" : "st-blue"}`}>
                               <span className="sd">●</span>
-                              {a.tipoDestinazione === "SEDE_LEGALE" || a.tipoDestinazione === "SEDE" ? "Sede legale"
+                              {a.id === -1 ? "Sede legale"
+                               : a.tipoDestinazione === "SEDE_LEGALE" || a.tipoDestinazione === "SEDE" ? "Sede legale"
                                : a.tipoDestinazione === "SPEDIZIONE" ? "Spedizione"
                                : a.tipoDestinazione === "FILIALE" ? "Filiale"
                                : a.ragioneSociale ?? a.tipoDestinazione ?? "Sede"}
@@ -404,12 +417,12 @@ export default function CheckoutPage() {
                           <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
                           <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
                           {a.abituale && <span className="addr-badge">Abituale</span>}
-                          {!a.daIntegra && (
-                            <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); /* TODO: edit inline */ }}>
+                          {a.id !== -1 && !a.daIntegra && (
+                            <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); }}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
                           )}
-                          {!a.abituale && (
+                          {a.id !== -1 && !a.abituale && (
                             <button type="button" className="btn-set-default" onClick={e => { e.stopPropagation(); /* TODO: set default */ }}>
                               Imposta come predefinito
                             </button>
@@ -419,18 +432,9 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {dati.indirizzi.length === 0 && !showNuovo && (
+                  {tuttiIndirizzi.length === 0 && !showNuovo && (
                     <div>
-                      <p className="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell&apos;anagrafica:</p>
-                      <div className="addr-grid">
-                        <div className="addr-card selected" style={{ cursor: "default", opacity: 0.8 }}>
-                          <div className="addr-card-h"><span className="status st-blue"><span className="sd">●</span>Sede legale</span></div>
-                          <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
-                          <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
-                          <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
-                          <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
-                        </div>
-                      </div>
+                      <p className="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell&apos;anagrafica.</p>
                     </div>
                   )}
 
