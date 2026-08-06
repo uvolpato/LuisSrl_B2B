@@ -1566,6 +1566,12 @@
   display: flex; align-items: center; gap: 6px;
   font-weight: 600; font-size: 13.5px; margin-bottom: 2px;
 }
+.catalogo-page.cart-page.checkout-page .addr-card-h .sd { font-size: 9px; }
+
+.catalogo-page.cart-page.checkout-page .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.catalogo-page.cart-page.checkout-page .st-amber { color: var(--amber); }
+.catalogo-page.cart-page.checkout-page .st-blue { color: var(--blue); }
+.catalogo-page.cart-page.checkout-page .st-muted { color: var(--muted); }
 
 .catalogo-page.cart-page.checkout-page .addr-l {
   display: flex; gap: 6px; font-size: 13px;
