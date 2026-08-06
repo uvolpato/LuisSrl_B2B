@@ -118,6 +118,7 @@ export default function CheckoutPage() {
   const [nCap, setNCap] = useState("");
   const [nCitta, setNCitta] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{ indirizzo: string; cap: string; citta: string; provincia: string } | null>(null);
   const [nProvincia, setNProvincia] = useState("");
   const [nDefault, setNDefault] = useState(false);
 
@@ -417,30 +418,36 @@ export default function CheckoutPage() {
                               <div className="addr-card-title">{a.ragioneSociale}</div>
                             )}
                           </div>
-                          <div className="addr-l"><b>Indirizzo</b><span contentEditable={editingId === a.id} suppressContentEditableWarning>{a.indirizzo || "—"}</span></div>
-                          <div className="addr-l"><b>CAP</b><span className="mono" contentEditable={editingId === a.id} suppressContentEditableWarning>{a.cap || "—"}</span></div>
-                          <div className="addr-l"><b>Città</b><span contentEditable={editingId === a.id} suppressContentEditableWarning>{a.citta || "—"}</span></div>
-                          <div className="addr-l"><b>Provincia</b><span className="mono" contentEditable={editingId === a.id} suppressContentEditableWarning>{a.provincia || "—"}</span></div>
+                          {editingId === a.id ? (
+                            <>
+                              <div className="addr-l"><b>Indirizzo</b><input className="edit-input" value={editValues?.indirizzo ?? ""} onChange={e => setEditValues(v => v ? { ...v, indirizzo: e.target.value } : null)} /></div>
+                              <div className="addr-l"><b>CAP</b><input className="edit-input mono" value={editValues?.cap ?? ""} onChange={e => setEditValues(v => v ? { ...v, cap: e.target.value } : null)} /></div>
+                              <div className="addr-l"><b>Città</b><input className="edit-input" value={editValues?.citta ?? ""} onChange={e => setEditValues(v => v ? { ...v, citta: e.target.value } : null)} /></div>
+                              <div className="addr-l"><b>Provincia</b><input className="edit-input mono" value={editValues?.provincia ?? ""} onChange={e => setEditValues(v => v ? { ...v, provincia: e.target.value } : null)} /></div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
+                              <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
+                              <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
+                              <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
+                            </>
+                          )}
                           {a.abituale && <span className="addr-badge">Abituale</span>}
                           {a.id !== -1 && !a.daIntegra && (
                             <button type="button" className={`addr-edit-btn${editingId === a.id ? " editing" : ""}`}
                               onClick={e => {
                                 e.stopPropagation();
-                                if (editingId === a.id) {
-                                  const spans = e.currentTarget.parentElement!.querySelectorAll<HTMLSpanElement>('.addr-l span');
+                                if (editingId === a.id && editValues) {
                                   const updated = tuttiIndirizzi.map(addr =>
-                                    addr.id === a.id ? {
-                                      ...addr,
-                                      indirizzo: spans[0]?.textContent ?? addr.indirizzo,
-                                      cap: spans[1]?.textContent ?? addr.cap,
-                                      citta: spans[2]?.textContent ?? addr.citta,
-                                      provincia: spans[3]?.textContent ?? addr.provincia,
-                                    } : addr
+                                    addr.id === a.id ? { ...addr, ...editValues } : addr
                                   );
                                   setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
                                   setEditingId(null);
+                                  setEditValues(null);
                                 } else {
                                   setEditingId(a.id);
+                                  setEditValues({ indirizzo: a.indirizzo ?? "", cap: a.cap ?? "", citta: a.citta ?? "", provincia: a.provincia ?? "" });
                                 }
                               }}
                             >
@@ -448,7 +455,15 @@ export default function CheckoutPage() {
                             </button>
                           )}
                           {a.id !== -1 && !a.abituale && (
-                            <button type="button" className="btn-set-default" onClick={e => { e.stopPropagation(); }}>
+                            <button type="button" className="btn-set-default" onClick={e => {
+                              e.stopPropagation();
+                              const updated = tuttiIndirizzi.map(addr => ({
+                                ...addr,
+                                abituale: addr.id === a.id,
+                              }));
+                              setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
+                              setIndirizzoId(a.id);
+                            }}>
                               Imposta come predefinito
                             </button>
                           )}
