@@ -65,11 +65,6 @@ export class CheckoutController {
     return this.checkout.eliminaIndirizzo(req.user.id, id);
   }
 
-  @Patch('indirizzo/0/predefinito')
-  resetPredefinito(@Req() req: AuthenticatedRequest) {
-    return this.checkout.impostaPredefinito(req.user.id, 0);
-  }
-
   @Patch('indirizzo/:id/predefinito')
   impostaPredefinito(
     @Req() req: AuthenticatedRequest,
