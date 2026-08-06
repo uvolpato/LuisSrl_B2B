@@ -111,6 +111,31 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
   letter-spacing: 0.04em; text-transform: uppercase; text-align: left;
   padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--border);
 }
+.data-table thead th.col-resizable { position: relative; }
+.data-table thead th.col-resizable .th-resize {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 12px; cursor: col-resize; z-index: 6;
+}
+.data-table thead th.col-resizable .th-resize::before {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 3px; height: 18px; border-radius: 2px;
+  background: transparent; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  transition: background 0.12s ease;
+}
+.data-table thead th.col-resizable .th-resize:hover::before,
+.data-table thead th.col-resizable .th-resize.dragging::before {
+  background: var(--accent);
+}
+.data-table thead th.col-resizable .th-resize::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 4px 8px; background: var(--fg); color: var(--surface);
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  border-radius: 6px; opacity: 0; pointer-events: none;
+  transition: opacity 0.12s ease; z-index: 7;
+}
+.data-table thead th.col-resizable .th-resize:hover::after { opacity: 1; }
 .data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--fg); }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background: var(--fg-soft); }
@@ -263,11 +288,7 @@ select.input:not(:disabled) { cursor: pointer; }
 .range-del svg { display: block; }
 .range-empty { padding: 12px; color: var(--muted); text-align: center; }
 
-/* ── Anteprima / Simulatore ── */
-.prev-result { font-family: var(--font-display); font-size: 24px; margin: 6px 0; }
-.prev-result.free { color: var(--ok); }
-.prev-note { color: var(--muted); font-size: 12.5px; margin: 0; }
-.prev-note b { color: var(--fg); }
+/* ── Calcolatore ── */
 .sim-source { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
 .sim-source b { color: var(--fg); }
 .sim-result { font-family: var(--font-display); font-size: 30px; margin: 6px 0; }
@@ -339,17 +360,16 @@ select.input:not(:disabled) { cursor: pointer; }
         <colgroup>
           <col style="width:300px">
           <col style="width:90px">
-          <col>
+          <col id="col-scaglioni" style="width:220px; min-width:140px">
           <col style="width:130px">
           <col style="width:140px">
-          <col style="width:120px">
           <col style="width:96px">
         </colgroup>
         <thead>
           <tr>
             <th>Destinazione</th>
             <th class="num">% base</th>
-            <th>Scaglioni sconto medio</th>
+            <th class="col-resizable">Scaglioni sconto medio<span class="th-resize" id="th-resize" data-tip="Trascina per ridimensionare" aria-hidden="true"></span></th>
             <th class="num">Impatto medio</th>
             <th class="num">Soglia gratuita</th>
             <th style="text-align:right">Azioni</th>
@@ -453,19 +473,7 @@ select.input:not(:disabled) { cursor: pointer; }
             <input class="input" id="edit-soglia" type="number" step="50" min="0">
           </div>
           <div class="field">
-            <label>Anteprima calcolo</label>
-            <div class="field-row">
-              <div class="field">
-                <label>Importo (€)</label>
-                <input class="input" id="prev-amount" type="number" step="50" min="0" value="10000">
-              </div>
-              <div class="field">
-                <label>Sconto medio (%)</label>
-                <input class="input" id="prev-discount" type="number" step="0.5" min="0" max="30" value="8">
-              </div>
-            </div>
-            <div class="prev-result" id="prev-result">€ 0,00</div>
-            <p class="prev-note" id="prev-note"></p>
+            <button class="btn btn-secondary" id="open-prev" type="button">Anteprima calcolo</button>
           </div>
         </div>
         <div class="col">
@@ -486,65 +494,68 @@ select.input:not(:disabled) { cursor: pointer; }
   </div>
 </div>
 
-<!-- Simulatore -->
-<div class="modal-back" id="sim-modal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sim-title">
+<!-- Calcolatore (simulatore + anteprima) -->
+<div class="modal-back" id="calc-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calc-title">
     <div class="modal-h">
-      <h2 id="sim-title">Simulatore di costo</h2>
-      <button class="modal-close" id="sim-close" type="button" title="Chiudi" aria-label="Chiudi">
+      <h2 id="calc-title">Simulatore di costo</h2>
+      <button class="modal-close" id="calc-close" type="button" title="Chiudi" aria-label="Chiudi">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
       </button>
     </div>
     <div class="modal-b">
-      <div class="field">
-        <label>Nazione di consegna</label>
-        <div class="combobox">
-          <input class="combobox-input" id="sim-nazione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Nazione di consegna">
-          <div class="combobox-dropdown" id="sim-nazione-dropdown"></div>
-          <input type="hidden" id="sim-nazione">
+      <div id="calc-picker">
+        <div class="field">
+          <label>Nazione di consegna</label>
+          <div class="combobox">
+            <input class="combobox-input" id="calc-nazione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Nazione di consegna">
+            <div class="combobox-dropdown" id="calc-nazione-dropdown"></div>
+            <input type="hidden" id="calc-nazione">
+          </div>
+        </div>
+        <div class="field" id="calc-regione-field" style="display:none">
+          <label>Regione</label>
+          <div class="combobox">
+            <input class="combobox-input" id="calc-regione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Regione">
+            <div class="combobox-dropdown" id="calc-regione-dropdown"></div>
+            <input type="hidden" id="calc-regione">
+          </div>
         </div>
       </div>
-      <div class="field" id="sim-regione-field" style="display:none">
-        <label>Regione</label>
-        <div class="combobox">
-          <input class="combobox-input" id="sim-regione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Regione">
-          <div class="combobox-dropdown" id="sim-regione-dropdown"></div>
-          <input type="hidden" id="sim-regione">
-        </div>
-      </div>
+      <p class="sim-source" id="calc-locked" style="display:none"></p>
       <div class="field-row">
         <div class="field">
           <label>Importo fattura senza IVA (€)</label>
-          <input class="input" id="sim-amount" type="number" step="50" min="0" value="10000">
+          <input class="input" id="calc-amount" type="number" step="50" min="0" value="10000">
         </div>
         <div class="field">
           <label>Sconto medio su listino (%)</label>
-          <input class="input" id="sim-discount" type="number" step="0.5" min="0" max="30" value="8">
+          <input class="input" id="calc-discount" type="number" step="0.5" min="0" max="30" value="8">
         </div>
       </div>
       <div class="field">
-        <p class="sim-source" id="sim-source"></p>
-        <div class="sim-result" id="sim-result">—</div>
-        <p class="sim-note" id="sim-note"></p>
+        <p class="sim-source" id="calc-source"></p>
+        <div class="sim-result" id="calc-result">—</div>
+        <p class="sim-note" id="calc-note"></p>
       </div>
       <div class="field">
         <label>Riepilogo</label>
         <div class="sim-steps">
-          <div class="sim-step"><div class="k">Importo netto</div><div class="v" id="sim-step-amount">—</div></div>
-          <div class="sim-step"><div class="k">Sconto medio</div><div class="v" id="sim-step-discount">—</div></div>
-          <div class="sim-step"><div class="k">Tariffa applicata</div><div class="v" id="sim-step-tariffa">—</div></div>
-          <div class="sim-step"><div class="k">Soglia gratuita</div><div class="v" id="sim-step-soglia">—</div></div>
-          <div class="sim-step"><div class="k">Percentuale</div><div class="v" id="sim-step-pct">—</div></div>
-          <div class="sim-step"><div class="k">Spese di spedizione</div><div class="v" id="sim-step-fee">—</div></div>
+          <div class="sim-step"><div class="k">Importo netto</div><div class="v" id="calc-step-amount">—</div></div>
+          <div class="sim-step"><div class="k">Sconto medio</div><div class="v" id="calc-step-discount">—</div></div>
+          <div class="sim-step"><div class="k">Tariffa applicata</div><div class="v" id="calc-step-tariffa">—</div></div>
+          <div class="sim-step"><div class="k">Soglia gratuita</div><div class="v" id="calc-step-soglia">—</div></div>
+          <div class="sim-step"><div class="k">Percentuale</div><div class="v" id="calc-step-pct">—</div></div>
+          <div class="sim-step"><div class="k">Spese di spedizione</div><div class="v" id="calc-step-fee">—</div></div>
         </div>
       </div>
       <div class="field">
         <label>Percentuale per sconto medio</label>
-        <div class="bars" id="sim-bars"></div>
+        <div class="bars" id="calc-bars"></div>
       </div>
     </div>
     <div class="modal-f">
-      <button class="btn btn-primary" id="sim-ok" type="button">Chiudi</button>
+      <button class="btn btn-primary" id="calc-ok" type="button">Chiudi</button>
     </div>
   </div>
 </div>
@@ -923,7 +934,7 @@ function resolveTariffa(nazione, regione) {
 }
 
 /* ── Elenco ── */
-var PAGE_SIZE = 10;
+var PAGE_SIZE = 15;
 var page = 1;
 
 var fmtEur = function (n) {
@@ -1046,7 +1057,6 @@ document.getElementById('reg-filter').addEventListener('change', function () { p
 document.getElementById('pg-prev').addEventListener('click', function () { if (page > 1) { page--; renderRows(); } });
 document.getElementById('pg-next').addEventListener('click', function () { page++; renderRows(); });
 
-document.getElementById('btn-sim').addEventListener('click', openSim);
 function creaNuovo() {
   var n = { id: nextId(), nazione: 'IT', regione: null, base: 3.0, stato: 'configura', soglia: null, ranges: [], updated: '—', isNew: true };
   DESTINAZIONI.push(n);
@@ -1074,8 +1084,8 @@ var editNazione = document.getElementById('edit-nazione');
 var editRegione = document.getElementById('edit-regione');
 var currentComboboxNazione = null;
 var currentComboboxRegione = null;
-var simComboboxNazione = null;
-var simComboboxRegione = null;
+var calcComboboxNazione = null;
+var calcComboboxRegione = null;
 
 function buildComboboxOptions() {
   var nazioniOpts = [{ value: '', label: 'Usa tariffa automatica', meta: '' }].concat(NAZIONI_ORDER.map(function (n) {
@@ -1249,15 +1259,15 @@ function initComboboxes() {
     opts.regioni, null,
     function (val) { destPreview(); }
   );
-  simComboboxNazione = createCombobox(
-    'sim-nazione-search', 'sim-nazione-dropdown', 'sim-nazione',
+  calcComboboxNazione = createCombobox(
+    'calc-nazione-search', 'calc-nazione-dropdown', 'calc-nazione',
     opts.nazioni.slice(1), null,
-    function (val) { simNazioneChange(); }
+    function (val) { calcNazioneChange(); }
   );
-  simComboboxRegione = createCombobox(
-    'sim-regione-search', 'sim-regione-dropdown', 'sim-regione',
+  calcComboboxRegione = createCombobox(
+    'calc-regione-search', 'calc-regione-dropdown', 'calc-regione',
     opts.regioni, null,
-    function (val) { simCalc(); }
+    function (val) { calcCompute(); }
   );
 }
 
@@ -1340,7 +1350,6 @@ function openEditor(d) {
   document.getElementById('edit-stato').value = d.stato;
   document.getElementById('edit-soglia').value = d.soglia == null ? '' : d.soglia;
   renderRanges(d.ranges.slice());
-  recompute();
   editModal.hidden = false;
   document.getElementById('edit-base').focus();
 }
@@ -1383,11 +1392,7 @@ function renderRanges(ranges) {
       var idx = Number(b.dataset.del);
       current.ranges.splice(idx, 1);
       renderRanges(current.ranges.slice());
-      recompute();
     });
-  });
-  box.querySelectorAll('.range-input').forEach(function (inp) {
-    inp.addEventListener('input', recompute);
   });
   box.querySelectorAll('.range-input[data-k="max"]').forEach(function (inp) {
     inp.addEventListener('input', function () {
@@ -1412,7 +1417,6 @@ document.getElementById('add-range').addEventListener('click', function () {
     current.ranges.push([last[1], null, current.base]);
   }
   renderRanges(current.ranges.slice());
-  recompute();
 });
 
 function currentRanges() {
@@ -1429,51 +1433,172 @@ function currentRanges() {
   });
 }
 
-function recompute() {
-  var base = parseFloat(document.getElementById('edit-base').value);
-  var ranges = currentRanges();
-  var amount = parseFloat(document.getElementById('prev-amount').value);
-  var discount = parseFloat(document.getElementById('prev-discount').value);
-  var sogliaVal = document.getElementById('edit-soglia').value;
-  if (isNaN(base)) base = 0;
-  if (isNaN(amount) || amount < 0) amount = 0;
-  if (isNaN(discount) || discount < 0) discount = 0;
-  var soglia = sogliaVal === '' ? null : parseFloat(sogliaVal);
-  if (soglia !== null && isNaN(soglia)) soglia = null;
+/* ── Calcolatore (simulatore + anteprima) ── */
+var calcModal = document.getElementById('calc-modal');
+var calcNazione = document.getElementById('calc-nazione');
+var calcRegione = document.getElementById('calc-regione');
+var calcRegioneField = document.getElementById('calc-regione-field');
+var calcMode = 'sim';
 
-  var res = { pct: base, rng: null };
-  for (var i = 0; i < ranges.length; i++) {
-    var rg = ranges[i];
-    if (discount >= rg[0] && (rg[1] === null || discount < rg[1])) { res = { pct: rg[2], rng: rg }; break; }
-  }
-  var free = soglia !== null && amount >= soglia;
-  var fee = free ? 0 : amount * res.pct / 100;
-  var prevResult = document.getElementById('prev-result');
-  prevResult.textContent = fmtEur(fee);
-  prevResult.classList.toggle('free', free);
-  var note;
-  if (free) {
-    note = 'Spedizione <b>gratuita</b>: importo ≥ soglia <b>' + fmtEur(soglia) + '</b> della destinazione.';
-  } else if (res.rng) {
-    var maxL = res.rng[1] === null ? 'oltre' : res.rng[1];
-    note = 'Scaglione ' + res.rng[0] + '\u2013' + maxL + '% · <b>' + fmtPct(res.pct) + '</b> su ' +
-      fmtEur(amount) + ' (sconto medio ' + fmtPct(discount) + ')' +
-      (soglia !== null ? ' · sotto soglia gratuita di ' + fmtEur(soglia) : '');
+function openCalc(mode) {
+  calcMode = mode === 'prev' ? 'prev' : 'sim';
+  document.getElementById('calc-title').textContent = calcMode === 'prev' ? 'Anteprima calcolo' : 'Simulatore di costo';
+  var picker = document.getElementById('calc-picker');
+  var locked = document.getElementById('calc-locked');
+  if (calcMode === 'prev' && current) {
+    picker.style.display = 'none';
+    var name = destName(current);
+    var src = destTitle(current);
+    locked.innerHTML = '<b>' + name + '</b>' + (src ? ' · ' + src : '') +
+      (current.stato === 'pausa' ? ' · <span style="color:var(--amber)">In pausa</span>' : '');
+    locked.style.display = '';
   } else {
-    note = 'Percentuale di base <b>' + fmtPct(base) + '</b> su ' + fmtEur(amount) + ' · nessuno scaglione per sconto ' + fmtPct(discount) +
-      (soglia !== null ? ' · sotto soglia gratuita di ' + fmtEur(soglia) : '');
+    picker.style.display = '';
+    locked.style.display = 'none';
+    if (calcComboboxNazione) {
+      if (calcComboboxNazione.getValue() !== 'IT') calcComboboxNazione.setValue('IT', NAZIONI.IT.n);
+    } else {
+      calcNazione.value = 'IT';
+    }
+    if (calcComboboxRegione) calcComboboxRegione.setValue('', '');
+    else calcRegione.value = '';
+    calcRegioneField.style.display = calcNazione.value === 'IT' ? '' : 'none';
   }
-  document.getElementById('prev-note').innerHTML = note;
+  calcModal.hidden = false;
+  calcCompute();
+  document.getElementById('calc-amount').focus();
 }
 
-['edit-base', 'edit-soglia', 'prev-amount', 'prev-discount'].forEach(function (id) {
-  document.getElementById(id).addEventListener('input', recompute);
+function closeCalc() { calcModal.hidden = true; }
+
+document.getElementById('open-prev').addEventListener('click', function () { openCalc('prev'); });
+document.getElementById('btn-sim').addEventListener('click', function () { openCalc('sim'); });
+document.getElementById('calc-close').addEventListener('click', closeCalc);
+document.getElementById('calc-ok').addEventListener('click', closeCalc);
+calcModal.addEventListener('click', function (e) { if (e.target === calcModal) closeCalc(); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (!editModal.hidden) closeEditor();
+  else if (!calcModal.hidden) closeCalc();
 });
 
-function backToList() { closeEditor(); renderRows(); }
+function calcNazioneChange() {
+  calcRegioneField.style.display = calcNazione.value === 'IT' ? '' : 'none';
+  if (calcNazione.value !== 'IT') {
+    calcRegione.value = '';
+    if (calcComboboxRegione) calcComboboxRegione.setValue('', '');
+  }
+  calcCompute();
+}
+
+function calcCompute() {
+  var amount = parseFloat(document.getElementById('calc-amount').value);
+  var discount = parseFloat(document.getElementById('calc-discount').value);
+  if (isNaN(amount) || amount < 0) amount = 0;
+  if (isNaN(discount) || discount < 0) discount = 0;
+
+  var resultEl = document.getElementById('calc-result');
+  var sourceEl = document.getElementById('calc-source');
+  var noteEl = document.getElementById('calc-note');
+  var feeEl = document.getElementById('calc-step-fee');
+  var pctEl = document.getElementById('calc-step-pct');
+
+  function emptySteps() {
+    ['amount', 'discount', 'tariffa', 'soglia', 'pct', 'fee'].forEach(function (k) {
+      document.getElementById('calc-step-' + k).textContent = '\u2014';
+    });
+    feeEl.classList.remove('free');
+    document.getElementById('calc-bars').innerHTML = '';
+  }
+
+  var t, label, suffix;
+  if (calcMode === 'prev' && current) {
+    var base = parseFloat(document.getElementById('edit-base').value);
+    var sogliaVal = document.getElementById('edit-soglia').value;
+    if (isNaN(base)) base = 0;
+    var soglia = sogliaVal === '' ? null : parseFloat(sogliaVal);
+    if (soglia !== null && isNaN(soglia)) soglia = null;
+    t = {
+      nazione: current.nazione,
+      regione: current.regione,
+      base: base,
+      soglia: soglia,
+      ranges: currentRanges()
+    };
+    label = destName(t);
+    suffix = ' (in modifica)';
+  } else {
+    var nazione = calcNazione.value;
+    var regioneVal = calcRegione.value;
+    var resolved = resolveTariffa(nazione, regioneVal === '' ? null : regioneVal);
+    if (!resolved) {
+      resultEl.textContent = '\u2014';
+      resultEl.classList.remove('free');
+      sourceEl.innerHTML = '<b>Tariffa da confermare</b>';
+      noteEl.innerHTML = 'Nessuna tariffa attiva per ' + (NAZIONI[nazione] ? NAZIONI[nazione].n : nazione) +
+        (regioneVal !== '' ? ' \u2013 ' + regioneVal : '') + ': da configurare una tariffa di nazione, regione o area.';
+      emptySteps();
+      return;
+    }
+    t = resolved.t;
+    if (resolved.source === 'regione') {
+      label = 'Regione ' + destName(t);
+      suffix = ' (eccezione sopra la tariffa nazione)';
+    } else if (resolved.source === 'nazione') {
+      label = 'Nazione ' + (NAZIONI[t.nazione] ? NAZIONI[t.nazione].n : t.nazione);
+      suffix = ' (fallback)';
+    } else if (resolved.source === 'europa') {
+      label = 'Europa';
+      suffix = ' (tariffa d\u2019area)';
+    } else {
+      label = 'Resto del mondo';
+      suffix = ' (default globale)';
+    }
+  }
+
+  sourceEl.innerHTML = 'Tariffa applicata: <b>' + label + '</b>' + suffix;
+
+  var res = pctOf(t, discount);
+  var free = t.soglia != null && amount >= t.soglia;
+  var fee = free ? 0 : amount * res.pct / 100;
+
+  resultEl.textContent = fmtEur(fee);
+  resultEl.classList.toggle('free', free);
+  var note;
+  if (free) {
+    note = 'Spedizione <b>gratuita</b>: importo ≥ soglia <b>' + fmtEur(t.soglia) + '</b> della tariffa ' + label + '.';
+  } else if (res.rng) {
+    var maxL = res.rng[1] === null ? 'oltre' : res.rng[1];
+    note = 'Percentuale <b>' + fmtPct(res.pct) + '</b> · scaglione ' + res.rng[0] + '\u2013' + maxL + '% (sconto medio ' + fmtPct(discount) + ')' +
+      (t.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(t.soglia) : '');
+  } else {
+    note = 'Percentuale di base <b>' + fmtPct(t.base) + '</b> · nessuno scaglione per sconto ' + fmtPct(discount) +
+      (t.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(t.soglia) : '');
+  }
+  noteEl.innerHTML = note;
+  document.getElementById('calc-step-amount').textContent = fmtEur(amount);
+  document.getElementById('calc-step-discount').textContent = fmtPct(discount);
+  document.getElementById('calc-step-tariffa').textContent = label;
+  document.getElementById('calc-step-soglia').textContent = t.soglia == null ? 'Nessuna' : fmtEur(t.soglia);
+  pctEl.textContent = free ? '0,0%' : fmtPct(res.pct);
+  feeEl.textContent = fmtEur(fee);
+  feeEl.classList.toggle('free', free);
+
+  var steps = [0, 5, 10, 15, 20];
+  var bars = steps.map(function (s) {
+    var p = pctOf(t, s).pct;
+    return '<div class="bar' + (s === Math.round(discount) ? ' hi' : '') + '" style="height:' + Math.max(3, p / 8 * 84) + 'px"><span class="bv">' + fmtPct(p) + '</span></div>';
+  }).join('');
+  document.getElementById('calc-bars').innerHTML = bars;
+}
+
+['calc-amount', 'calc-discount'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', calcCompute);
+});
 
 document.getElementById('edit-close').addEventListener('click', backToList);
 editModal.addEventListener('click', function (e) { if (e.target === editModal) backToList(); });
+function backToList() { closeEditor(); renderRows(); }
 document.getElementById('edit-save').addEventListener('click', function () {
   if (!current) return;
   var nazione = isZona(currentLevel) ? currentLevel : editNazione.value;
@@ -1503,129 +1628,6 @@ document.getElementById('edit-delete').addEventListener('click', function () {
   backToList();
 });
 
-/* ── Simulatore ── */
-var simModal = document.getElementById('sim-modal');
-var simNazione = document.getElementById('sim-nazione');
-var simRegione = document.getElementById('sim-regione');
-var simRegioneField = document.getElementById('sim-regione-field');
-
-function openSim() {
-  simModal.hidden = false;
-  if (simComboboxNazione) {
-    if (simComboboxNazione.getValue() !== 'IT') simComboboxNazione.setValue('IT', NAZIONI.IT.n);
-  } else {
-    simNazione.value = 'IT';
-  }
-  if (simComboboxRegione) simComboboxRegione.setValue('', '');
-  else simRegione.value = '';
-  simRegioneField.style.display = simNazione.value === 'IT' ? '' : 'none';
-  simCalc();
-  document.getElementById('sim-amount').focus();
-}
-function closeSim() { simModal.hidden = true; }
-document.getElementById('sim-close').addEventListener('click', closeSim);
-document.getElementById('sim-ok').addEventListener('click', closeSim);
-simModal.addEventListener('click', function (e) { if (e.target === simModal) closeSim(); });
-document.addEventListener('keydown', function (e) {
-  if (e.key !== 'Escape') return;
-  if (!editModal.hidden) closeEditor();
-  else if (!simModal.hidden) closeSim();
-});
-
-function simNazioneChange() {
-  simRegioneField.style.display = simNazione.value === 'IT' ? '' : 'none';
-  if (simNazione.value !== 'IT') {
-    simRegione.value = '';
-    if (simComboboxRegione) simComboboxRegione.setValue('', '');
-  }
-  simCalc();
-}
-
-function simCalc() {
-  var nazione = simNazione.value;
-  var regioneVal = simRegione.value;
-  var amount = parseFloat(document.getElementById('sim-amount').value);
-  var discount = parseFloat(document.getElementById('sim-discount').value);
-  if (isNaN(amount) || amount < 0) amount = 0;
-  if (isNaN(discount) || discount < 0) discount = 0;
-
-  var resolved = resolveTariffa(nazione, regioneVal === '' ? null : regioneVal);
-  var simResult = document.getElementById('sim-result');
-  var simSource = document.getElementById('sim-source');
-  var simNote = document.getElementById('sim-note');
-  var feeEl = document.getElementById('sim-step-fee');
-  var pctEl = document.getElementById('sim-step-pct');
-
-  if (!resolved) {
-    simResult.textContent = '\u2014';
-    simResult.classList.remove('free');
-    simSource.innerHTML = '<b>Tariffa da confermare</b>';
-    simNote.innerHTML = 'Nessuna tariffa attiva per ' + (NAZIONI[nazione] ? NAZIONI[nazione].n : nazione) +
-      (regioneVal !== '' ? ' \u2013 ' + regioneVal : '') + ': da configurare una tariffa di nazione, regione o area.';
-    document.getElementById('sim-step-tariffa').textContent = '—';
-    document.getElementById('sim-step-soglia').textContent = '—';
-    pctEl.textContent = '—';
-    feeEl.textContent = '—';
-    feeEl.classList.remove('free');
-    document.getElementById('sim-bars').innerHTML = '';
-    return;
-  }
-
-  var r = resolved.t;
-  var tariffaLabel, sourceSuffix;
-  if (resolved.source === 'regione') {
-    tariffaLabel = 'Regione ' + destName(r);
-    sourceSuffix = ' (eccezione sopra la tariffa nazione)';
-  } else if (resolved.source === 'nazione') {
-    tariffaLabel = 'Nazione ' + (NAZIONI[r.nazione] ? NAZIONI[r.nazione].n : r.nazione);
-    sourceSuffix = ' (fallback)';
-  } else if (resolved.source === 'europa') {
-    tariffaLabel = 'Europa';
-    sourceSuffix = ' (tariffa d\u2019area)';
-  } else {
-    tariffaLabel = 'Resto del mondo';
-    sourceSuffix = ' (default globale)';
-  }
-  simSource.innerHTML = 'Tariffa applicata: <b>' + tariffaLabel + '</b>' + sourceSuffix;
-
-  var res = pctOf(r, discount);
-  var free = r.soglia != null && amount >= r.soglia;
-  var fee = free ? 0 : amount * res.pct / 100;
-
-  simResult.textContent = fmtEur(fee);
-  simResult.classList.toggle('free', free);
-  var note;
-  if (free) {
-    note = 'Spedizione <b>gratuita</b>: importo ≥ soglia <b>' + fmtEur(r.soglia) + '</b> della tariffa ' + tariffaLabel + '.';
-  } else if (res.rng) {
-    var maxL = res.rng[1] === null ? 'oltre' : res.rng[1];
-    note = 'Percentuale <b>' + fmtPct(res.pct) + '</b> · scaglione ' + res.rng[0] + '\u2013' + maxL + '% (sconto medio ' + fmtPct(discount) + ')' +
-      (r.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(r.soglia) : '');
-  } else {
-    note = 'Percentuale di base <b>' + fmtPct(r.base) + '</b> · nessuno scaglione per sconto ' + fmtPct(discount) +
-      (r.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(r.soglia) : '');
-  }
-  simNote.innerHTML = note;
-  document.getElementById('sim-step-amount').textContent = fmtEur(amount);
-  document.getElementById('sim-step-discount').textContent = fmtPct(discount);
-  document.getElementById('sim-step-tariffa').textContent = tariffaLabel;
-  document.getElementById('sim-step-soglia').textContent = r.soglia == null ? 'Nessuna' : fmtEur(r.soglia);
-  pctEl.textContent = free ? '0,0%' : fmtPct(res.pct);
-  feeEl.textContent = fmtEur(fee);
-  feeEl.classList.toggle('free', free);
-
-  var steps = [0, 5, 10, 15, 20];
-  var bars = steps.map(function (s) {
-    var p = pctOf(r, s).pct;
-    return '<div class="bar' + (s === Math.round(discount) ? ' hi' : '') + '" style="height:' + Math.max(3, p / 8 * 84) + 'px"><span class="bv">' + fmtPct(p) + '</span></div>';
-  }).join('');
-  document.getElementById('sim-bars').innerHTML = bars;
-}
-
-['sim-amount', 'sim-discount'].forEach(function (id) {
-  document.getElementById(id).addEventListener('input', simCalc);
-});
-
 /* ── Tooltip "?" ── */
 (function () {
   var tip = document.createElement('div');
@@ -1653,6 +1655,44 @@ function simCalc() {
   });
   window.addEventListener('scroll', hide, true);
   window.addEventListener('resize', hide);
+})();
+
+/* ── Colonna ridimensionabile (Scaglioni sconto medio) ── */
+(function () {
+  var col = document.getElementById('col-scaglioni');
+  var handle = document.getElementById('th-resize');
+  var MIN_W = 140;
+  if (!col || !handle) return;
+  function apply(w) {
+    if (w < MIN_W) w = MIN_W;
+    col.style.width = w + 'px';
+  }
+  try {
+    var saved = localStorage.getItem('spese-scaglioni-w');
+    if (saved) apply(parseFloat(saved));
+  } catch (e) {}
+  handle.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    var startX = e.clientX;
+    var startW = col.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    function move(ev) {
+      apply(startW + (ev.clientX - startX));
+    }
+    function up(ev) {
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      try { localStorage.setItem('spese-scaglioni-w', col.style.width); } catch (e2) {}
+    }
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+  });
 })();
 
 /* ── Init ── */
