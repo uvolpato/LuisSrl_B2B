@@ -405,6 +405,7 @@ export default function CheckoutPage() {
                             <button type="button" className="addr-edit-btn" style={{ right: 40, color: "var(--red)" }}
                               onClick={async e => {
                                 e.stopPropagation();
+                                if (!(await confirm({ message: "Eliminare questo indirizzo?", tone: "danger", confirmLabel: "Elimina" }))) return;
                                 try { await api.del(`/api/checkout/indirizzo/${a.id}`); } catch {}
                                 const updated = dati!.indirizzi.filter(x => x.id !== a.id);
                                 setDati({ ...dati!, indirizzi: updated });
