@@ -279,10 +279,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
             <div class="form-field">
               <label>Coordinate bancarie</label>
               <div class="iban-row">
-                <div class="read-only-field iban-field">IT 60 X 05428 11101 000000123456 — Banca Intesa Sanpaolo</div>
-                <button type="button" class="btn btn-sm btn-secondary" id="btn-copy-iban" title="Copia IBAN">
+                <div class="read-only-field iban-field">
+                  <div style="font-size:14px;margin-bottom:2px">IT 60 X 05428 11101 000000123456</div>
+                  <div style="font-size:12px;color:var(--muted)">Intesa Sanpaolo — SWIFT BCITITMM</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" id="btn-copy-iban" title="Copia IBAN (senza spazi)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  Copia
+                  Copia IBAN
                 </button>
               </div>
             </div>
@@ -563,6 +566,14 @@ function renderSummary() {
  * l'imponibile supera la soglia di spedizione gratuita.
  * Lo sconto medio dell'ordine determina lo scaglione da applicare.
  * Il frontend NON calcola — passa solo provincia e chiave ordine.
+ *
+ * SPECIFICA IBAN / COPIA:
+ *   Le coordinate bancarie (IBAN + SWIFT) sono esposte in sola lettura
+ *   dall'anagrafica cliente. Il pulsante "Copia IBAN" copia negli appunti
+ *   l'IBAN SENZA SPAZI (es. IT60X0542811101000000123456) pronto per essere
+ *   incollato nell'home banking del cliente.
+ *   In produzione usare navigator.clipboard.writeText() con fallback
+ *   document.execCommand('copy') per browser meno recenti.
  */
 var SCONTO_MEDIO = 0.20; // 20% sconto medio ordine (demo)
 
@@ -968,21 +979,21 @@ var provinciaCombobox = null;
 
   // Copy IBAN
   document.getElementById('btn-copy-iban').addEventListener('click', function() {
-    var iban = 'IT60X0542811101000000123456';
+    var iban = 'IT60X0542811101000000123456'; // senza spazi — pronto per home banking
+    var btn = this;
+    var svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia IBAN';
     if (navigator.clipboard) {
       navigator.clipboard.writeText(iban).then(function() {
-        var btn = document.getElementById('btn-copy-iban');
         btn.textContent = 'Copiato!';
-        setTimeout(function() { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia'; }, 2000);
+        setTimeout(function() { btn.innerHTML = svg; }, 2000);
       });
     } else {
       var ta = document.createElement('textarea');
       ta.value = iban; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
-      var btn = document.getElementById('btn-copy-iban');
       btn.textContent = 'Copiato!';
-      setTimeout(function() { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia'; }, 2000);
+      setTimeout(function() { btn.innerHTML = svg; }, 2000);
     }
   });
 
