@@ -118,6 +118,7 @@ export default function CheckoutPage() {
   const [nCap, setNCap] = useState("");
   const [nCitta, setNCitta] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [nProvincia, setNProvincia] = useState("");
   const [nDefault, setNDefault] = useState(false);
 
   // Pagamento
