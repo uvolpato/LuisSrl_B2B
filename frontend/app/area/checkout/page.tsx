@@ -288,6 +288,47 @@ export default function CheckoutPage() {
                 </div>
               </section>
 
+              {/* Sede di spedizione */}
+              {modalita !== "RITIRO" && (
+                <section className="checkout-section">
+                  <h2 className="checkout-section-title">Sede di spedizione</h2>
+                  {dati.indirizzi.length === 0 && !showNuovo ? (
+                    <p className="checkout-note">La merce verrà inviata alla sede dell&apos;anagrafica.</p>
+                  ) : (
+                    <div className="addr-list">
+                      {dati.indirizzi.map((a) => (
+                        <label
+                          key={a.id}
+                          className={"addr-card" + (a.id === indirizzoId ? " selected" : "")}
+                        >
+                          <input
+                            type="radio"
+                            name="indirizzo"
+                            checked={a.id === indirizzoId}
+                            onChange={() => selezionaIndirizzo(a.id)}
+                          />
+                          <span className="addr-main">
+                            <span className="addr-name">{a.ragioneSociale ?? dati.cliente.ragioneSociale ?? "Sede"}</span>
+                            {(a.indirizzo || a.citta) && (
+                              <span className="addr-line">
+                                {[a.indirizzo, a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}
+                              </span>
+                            )}
+                            {(a.codicePorto || a.codiceVettore) && (
+                              <span className="addr-meta">
+                                {a.codicePorto && <span className="badge">Porto {a.codicePorto}</span>}
+                                {a.codiceVettore && <span className="badge">Vett {a.codiceVettore}</span>}
+                              </span>
+                            )}
+                          </span>
+                          {a.flagAbituale && <span className="addr-default">Abituale</span>}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
               {/* Note */}
               <section className="checkout-section">
                 <h2 className="checkout-section-title">Note</h2>
