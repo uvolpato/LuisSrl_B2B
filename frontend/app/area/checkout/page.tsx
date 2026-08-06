@@ -146,8 +146,8 @@ export default function CheckoutPage() {
       setDati(d);
       const active = (c.items ?? []).filter(i => !i.salvato);
       setItems(active);
-      const def = d.indirizzi.find(i => i.abituale) ?? d.indirizzi[0] ?? null;
-      setIndirizzoId(def ? def.id : (d.cliente.indirizzo ? -1 : null));
+      const def = d.indirizzi.find(i => i.abituale) ?? null;
+      setIndirizzoId(def ? def.id : -1);
       setPaymentMethod(d.cliente.codicePagamento ?? d.pagamenti[0]?.codice ?? "");
       setModalita("SPEDIZIONE");
       try { setBankData(await api.get<any>("/api/config/banca-luis")); } catch {}
