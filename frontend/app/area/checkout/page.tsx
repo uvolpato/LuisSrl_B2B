@@ -542,6 +542,7 @@ export default function CheckoutPage() {
                   </div>
                 </td></tr>
                 {couponActive && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
                 <tr className="bold"><td>Spedizione</td>
                   <td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>
