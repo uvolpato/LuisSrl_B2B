@@ -379,8 +379,12 @@ export default function CheckoutPage() {
                         <label key={a.id} className={"addr-card" + (a.id === indirizzoId ? " selected" : "")} style={{ cursor: "pointer" }}>
                           <input type="radio" name="indirizzo" checked={a.id === indirizzoId} onChange={() => selezionaIndirizzo(a.id)} style={{ position: "absolute", opacity: 0 }} />
                           <div className="addr-card-h">
-                            <span className={`status ${a.tipo === "SPEDIZIONE" ? "st-amber" : "st-blue"}`}>
-                              <span className="sd">●</span>{a.ragioneSociale ?? "Sede"}
+                            <span className={`status ${a.tipoDestinazione === "SPEDIZIONE" ? "st-amber" : "st-blue"}`}>
+                              <span className="sd">●</span>
+                              {a.tipoDestinazione === "SEDE_LEGALE" || a.tipoDestinazione === "SEDE" ? "Sede legale"
+                               : a.tipoDestinazione === "SPEDIZIONE" ? "Spedizione"
+                               : a.tipoDestinazione === "FILIALE" ? "Filiale"
+                               : a.ragioneSociale ?? a.tipoDestinazione ?? "Sede"}
                             </span>
                           </div>
                           <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
