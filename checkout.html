@@ -351,10 +351,12 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
           <hr class="summary-divider">
 
           <table class="total-table" id="total-table">
-            <tr><td>Subtotale (<span id="summary-qty">0</span> pz)</td><td id="summary-sub">€ 0,00</td></tr>
+            <tr id="row-sub-listino"><td>Totale articoli a listino</td><td id="val-sub-listino">—</td></tr>
             <tr class="discount" id="row-sconto-cliente"><td>Sconto cliente</td><td id="val-sconto-cliente">—</td></tr>
             <tr class="discount" id="row-sconto-famiglia"><td>Sconto famiglia</td><td id="val-sconto-famiglia">—</td></tr>
             <tr class="discount" id="row-sconto-articolo"><td>Sconto articolo</td><td id="val-sconto-articolo">—</td></tr>
+            <tr><td colspan="2"><hr class="total-divider"></td></tr>
+            <tr id="row-sub-scontato"><td>Subtotale scontato</td><td id="val-sub-scontato">—</td></tr>
             <tr id="row-spedizione"><td>Spedizione</td><td id="val-spedizione">—</td></tr>
             <tr id="row-imponibile"><td>Imponibile IVA</td><td id="val-imponibile">—</td></tr>
             <tr id="row-iva"><td>IVA 22%</td><td id="val-iva">—</td></tr>
@@ -419,11 +421,6 @@ var selectedAddrId = 1;
 /* ── FORMATTER ── */
 function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
 
-/* ── COMPUTE ── */
-function computeSubtotal() {
-  return ITEMS.reduce(function(s, i) { return s + i.qty * i.prezzo; }, 0);
-}
-
 /* ── RENDER SIDEBAR ── */
 function renderSummary() {
   var container = document.getElementById('summary-items');
@@ -452,21 +449,32 @@ function renderSummary() {
   }
   container.innerHTML = html;
 
-  document.getElementById('summary-qty').textContent = qty;
-  document.getElementById('summary-sub').textContent = fmtEur(subtotal);
+  var subtotal = 0;
+  var subtotalListino = 0;
+  var qty = 0;
+  for (var ii = 0; ii < ITEMS.length; ii++) {
+    var it2 = ITEMS[ii];
+    subtotal += it2.qty * it2.prezzo;
+    subtotalListino += it2.qty * it2.listino;
+    qty += it2.qty;
+  }
 
   // Economic summary (dati demo)
   var scontoCliente = Math.round(subtotal * 0.11 * 100) / 100;
   var scontoFamiglia = Math.round(subtotal * 0.06 * 100) / 100;
   var scontoArticolo = Math.round(subtotal * 0.03 * 100) / 100;
+  var totaleSconti = scontoCliente + scontoFamiglia + scontoArticolo;
   var spedizione = 12.50;
-  var imponibile = subtotal - scontoCliente - scontoFamiglia - scontoArticolo;
+  var subScontato = subtotal - totaleSconti;
+  var imponibile = subScontato;
   var iva = Math.round(imponibile * 0.22 * 100) / 100;
   var totale = imponibile + spedizione + iva;
 
+  document.getElementById('val-sub-listino').textContent = fmtEur(subtotalListino);
   document.getElementById('val-sconto-cliente').textContent = '\u2212' + fmtEur(scontoCliente);
   document.getElementById('val-sconto-famiglia').textContent = '\u2212' + fmtEur(scontoFamiglia);
   document.getElementById('val-sconto-articolo').textContent = '\u2212' + fmtEur(scontoArticolo);
+  document.getElementById('val-sub-scontato').textContent = fmtEur(subScontato);
   document.getElementById('val-spedizione').textContent = fmtEur(spedizione);
   document.getElementById('val-imponibile').textContent = fmtEur(imponibile);
   document.getElementById('val-iva').textContent = fmtEur(iva);
@@ -543,7 +551,13 @@ function confermaOrdine() {
   }
   document.getElementById('submit-error').hidden = true;
 
-  var subtotal = computeSubtotal();
+  var subtotal = 0;
+  var subtotalListino = 0;
+  for (var ii = 0; ii < ITEMS.length; ii++) {
+    var it2 = ITEMS[ii];
+    subtotal += it2.qty * it2.prezzo;
+    subtotalListino += it2.qty * it2.listino;
+  }
   var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
   var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
   var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
