@@ -388,6 +388,11 @@ export default function CheckoutPage() {
                           </span>
                           {a.ragioneSociale && a.id !== -1 && <div className="addr-card-title">{a.ragioneSociale}</div>}
                           {a.id === -1 && dati.cliente.ragioneSociale && <div className="addr-card-title">{dati.cliente.ragioneSociale}</div>}
+                        {a.id === -1 && (
+                          <button type="button" className="btn-set-default" style={{ opacity: 0.6 }} disabled>
+                            Indirizzo principale
+                          </button>
+                        )}
                         </div>
                         <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
                         <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
