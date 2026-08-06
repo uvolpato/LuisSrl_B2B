@@ -331,7 +331,7 @@ export default function CheckoutPage() {
                       ))}
                     </div>
                   ) : null}
-                  {dati.allowNewAddress && !showNuovo && (
+                  {dati.allowNewAddress && !showNuovo && dati.indirizzi.length > 0 && (
                     <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
                       + Indica un nuovo indirizzo
                     </button>
