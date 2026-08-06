@@ -11,6 +11,9 @@ export interface Column<T> {
   align?: "left" | "center" | "right";
   /** Larghezza fissa (es. "120px"). Se assente la colonna si adatta. */
   width?: string;
+  /** Larghezza minima (es. "140px"): difende una colonna a larghezza
+   *  variabile (es. la colonna ridimensionabile "Scaglioni") dal collassare. */
+  minWidth?: string;
   /** La colonna prende lo spazio rimanente (tipicamente la principale). */
   grow?: boolean;
   /** Numeri tabellari (monospace, tabular-nums). */
@@ -159,7 +162,14 @@ export default function DataTable<T>({
             {columns.map((c) => (
               <col
                 key={c.key}
-                style={c.grow ? undefined : c.width ? { width: c.width } : undefined}
+                style={
+                  c.grow
+                    ? undefined
+                    : {
+                        ...(c.width ? { width: c.width } : {}),
+                        ...(c.minWidth ? { minWidth: c.minWidth } : {}),
+                      }
+                }
               />
             ))}
             {actions.length > 0 && <col style={{ width: `${actions.length * 40 + 16}px` }} />}
