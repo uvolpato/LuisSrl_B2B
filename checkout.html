@@ -33,15 +33,9 @@ body { margin: 0; font-family: var(--font-body); font-size: 14px; color: var(--f
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 
 /* ══ Page wrapper (catalogo-page pattern) ══ */
-.catalogo-page { min-height: 100vh; display: flex; flex-direction: column; }
+.catalogo-page { display: flex; flex-direction: column; }
 .catalogo-page .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 @media (max-width: 640px) { .catalogo-page .container { padding: 0 16px; } }
-
-/* ══ Area header (seme di what the app nav looks like) ══ */
-.area-header { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.area-header nav { display: flex; gap: 24px; }
-.area-header nav a { font-size: 14px; color: var(--muted); text-decoration: none; }
-.area-header nav a:hover, .area-header nav a.active { color: var(--fg); }
 
 /* ══ Buttons (da globals.css) ══ */
 .btn {
@@ -215,21 +209,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 </style>
 </head>
 <body>
+
 <div class="catalogo-page cart-page checkout-page">
 
-  <!-- Area header (simula il nav dell'app) -->
-  <header class="area-header">
+  <main id="content">
     <div class="container">
-      <nav>
-        <a href="#">Catalogo</a>
-        <a href="#">Carrello</a>
-        <a href="#" class="active">Checkout</a>
-        <a href="#">I miei ordini</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="content" class="container">
 
     <!-- ===== STATO: CHECKOUT ===== -->
     <div id="view-checkout">
@@ -321,32 +305,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
             </div>
           </section>
 
-          <!-- Porto e vettore -->
-          <section class="checkout-section">
-            <h2 class="checkout-section-title">Trasporto</h2>
-            <div class="checkout-grid">
-              <div class="form-field">
-                <label for="porto">Porto</label>
-                <select id="porto" class="form-select">
-                  <option value="" selected>—</option>
-                  <option value="FCO">Franco Consegna (FCO)</option>
-                  <option value="FOB">Franco a Bordo (FOB)</option>
-                  <option value="ASSEGNO">Assegno</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="vettore">Vettore</label>
-                <select id="vettore" class="form-select">
-                  <option value="--" selected>—</option>
-                  <option value="BRT">BRT</option>
-                  <option value="SDA">SDA</option>
-                  <option value="GLS">GLS</option>
-                  <option value="TNT">TNT</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
           <!-- Note -->
           <section class="checkout-section">
             <h2 class="checkout-section-title">Note</h2>
@@ -421,8 +379,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       </div>
     </div>
 
+    </div><!-- /container -->
   </main>
-</div>
+</div><!-- /catalogo-page -->
 
 <script>
 /* ── DATA ── */
