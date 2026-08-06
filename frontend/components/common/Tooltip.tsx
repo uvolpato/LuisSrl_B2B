@@ -40,7 +40,7 @@ export default function Tooltip({ text, children }: TooltipProps) {
         padding: "8px 12px",
         borderRadius: 8,
         maxWidth: 280,
-        whiteSpace: "normal" as const,
+        whiteSpace: "nowrap" as const,
         wordWrap: "break-word" as const,
         zIndex: 9999,
         pointerEvents: "none" as const,
