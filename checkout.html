@@ -189,7 +189,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .total-table tr.discount td { color: var(--accent); }
 .total-divider { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
 .total-table tr.final td { font-weight: 700; font-size: 18px; padding-top: 8px; }
-.total-table tr.bold td { font-weight: 700; }
+
+.coupon-row { display: flex; gap: 6px; align-items: center; }
+.coupon-input { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font: inherit; font-size: 12px; color: var(--fg); outline: none; }
+.coupon-input:focus { border-color: var(--accent); }
+.coupon-msg { font-size: 11px; }
+.coupon-msg.ok { color: var(--green); }
+.coupon-msg.err { color: var(--red); }
 
 .checkout-error {
   margin-top: 12px; font-size: 13px; color: oklch(55% 0.18 30);
@@ -375,9 +381,14 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 
           <table class="total-table" id="total-table">
             <tr id="row-sub-listino"><td>Totale articoli a listino</td><td id="val-sub-listino">—</td></tr>
-            <tr class="discount" id="row-sconto-cliente"><td>Sconto cliente</td><td id="val-sconto-cliente">—</td></tr>
-            <tr class="discount" id="row-sconto-famiglia"><td>Sconto famiglia</td><td id="val-sconto-famiglia">—</td></tr>
-            <tr class="discount" id="row-sconto-articolo"><td>Sconto articolo</td><td id="val-sconto-articolo">—</td></tr>
+            <tr><td colspan="2" style="padding:4px 0 0">
+              <div class="coupon-row" id="coupon-row">
+                <input type="text" id="coupon-code" class="coupon-input" placeholder="Codice sconto" autocomplete="off">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-coupon" style="font-size:12px;padding:5px 10px">Applica</button>
+                <span class="coupon-msg" id="coupon-msg" hidden></span>
+              </div>
+            </td></tr>
+            <tr class="discount" id="row-coupon" hidden><td>Sconto codice</td><td id="val-coupon">—</td></tr>
             <tr><td colspan="2"><hr class="total-divider"></td></tr>
             <tr class="bold" id="row-sub-scontato"><td>Subtotale scontato</td><td id="val-sub-scontato">—</td></tr>
             <tr class="bold" id="row-spedizione"><td>Spedizione</td><td id="val-spedizione">—</td></tr>
@@ -439,6 +450,11 @@ var ADDRESSES = [
 
 var selectedAddrId = 1;
 
+/* ── COUPON ── */
+var _couponActive = false;
+var _couponValue = 0;
+var _couponIsPct = false; // true = percentuale, false = importo fisso
+
 /* ── FORMATTER ── */
 function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
 
@@ -480,20 +496,20 @@ function renderSummary() {
     qty += it2.qty;
   }
 
-  // Economic summary (dati demo)
-  var scontoCliente = Math.round(subtotal * 0.11 * 100) / 100;
-  var scontoFamiglia = Math.round(subtotal * 0.06 * 100) / 100;
-  var scontoArticolo = Math.round(subtotal * 0.03 * 100) / 100;
-  var totaleSconti = scontoCliente + scontoFamiglia + scontoArticolo;
+  // Economic summary
+  var couponVal = _couponActive ? (_couponIsPct ? Math.round(subtotal * _couponValue * 100) / 100 : _couponValue) : 0;
   var isRitiro = document.querySelector('input[name="modalita"]:checked').value === 'RITIRO';
   var spedizione = isRitiro ? 0 : (_currentSpedizione || 0);
-  var subScontato = subtotal - totaleSconti;
+  var subScontato = subtotal - couponVal;
   var totale = subScontato + spedizione;
 
   document.getElementById('val-sub-listino').textContent = fmtEur(subtotalListino);
-  document.getElementById('val-sconto-cliente').textContent = '\u2212' + fmtEur(scontoCliente);
-  document.getElementById('val-sconto-famiglia').textContent = '\u2212' + fmtEur(scontoFamiglia);
-  document.getElementById('val-sconto-articolo').textContent = '\u2212' + fmtEur(scontoArticolo);
+  if (_couponActive) {
+    document.getElementById('row-coupon').hidden = false;
+    document.getElementById('val-coupon').textContent = '\u2212' + fmtEur(couponVal);
+  } else {
+    document.getElementById('row-coupon').hidden = true;
+  }
   document.getElementById('val-sub-scontato').textContent = fmtEur(subScontato);
   document.getElementById('val-spedizione').textContent = isRitiro ? '0,00 \u20AC' : (spedizione === 0 ? 'Gratuita' : fmtEur(spedizione));
   if (spedizione === 0 && !isRitiro) document.getElementById('val-spedizione').style.color = 'var(--green)';
@@ -583,10 +599,8 @@ var _currentSpedizioneDesc = '';
 function subtotalScontato() {
   var subtotal = 0;
   for (var i = 0; i < ITEMS.length; i++) subtotal += ITEMS[i].qty * ITEMS[i].prezzo;
-  var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
-  var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
-  var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
-  return subtotal - scontoCl - scontoFa - scontoAr;
+  var couponVal = _couponActive ? (_couponIsPct ? Math.round(subtotal * _couponValue * 100) / 100 : _couponValue) : 0;
+  return subtotal - couponVal;
 }
 
 /* ── ADDRESS ── */
@@ -671,11 +685,9 @@ function confermaOrdine() {
     subtotal += it2.qty * it2.prezzo;
     subtotalListino += it2.qty * it2.listino;
   }
-  var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
-  var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
-  var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
+  var couponVal = _couponActive ? (_couponIsPct ? Math.round(subtotal * _couponValue * 100) / 100 : _couponValue) : 0;
   var sped = (document.querySelector('input[name="modalita"]:checked').value === 'RITIRO') ? 0 : (_currentSpedizione || 0);
-  var impon = subtotal - scontoCl - scontoFa - scontoAr;
+  var impon = subtotal - couponVal;
   var totale = impon + sped;
   var num = 'ORD-' + new Date().getFullYear() + '-' + String(Math.floor(10000 + Math.random() * 90000));
   document.getElementById('confirm-num').textContent = num;
@@ -871,6 +883,37 @@ var provinciaCombobox = null;
       }
     });
   }
+
+  // Coupon handler
+  document.getElementById('btn-coupon').addEventListener('click', function() {
+    var code = document.getElementById('coupon-code').value.trim().toUpperCase();
+    var msg = document.getElementById('coupon-msg');
+    msg.hidden = false;
+    msg.className = 'coupon-msg';
+    // Demo: codici sconto funzionanti
+    if (code === 'B2B10') {
+      _couponActive = true; _couponValue = 0.10; _couponIsPct = true;
+      msg.textContent = 'Codice B2B10: −10% applicato';
+      msg.classList.add('ok');
+    } else if (code === 'B2B20') {
+      _couponActive = true; _couponValue = 0.20; _couponIsPct = true;
+      msg.textContent = 'Codice B2B20: −20% applicato';
+      msg.classList.add('ok');
+    } else if (code === 'SPRING50') {
+      _couponActive = true; _couponValue = 50; _couponIsPct = false;
+      msg.textContent = 'Codice SPRING50: −50,00 \u20AC applicato';
+      msg.classList.add('ok');
+    } else {
+      _couponActive = false;
+      msg.textContent = 'Codice non valido';
+      msg.classList.add('err');
+    }
+    renderSummary();
+    if (_currentSpedizione > 0) updateSpedizione();
+  });
+  document.getElementById('coupon-code').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('btn-coupon').click();
+  });
 
   // Confirm
   document.getElementById('btn-conferma').addEventListener('click', confermaOrdine);
