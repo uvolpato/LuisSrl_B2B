@@ -3357,21 +3357,14 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .sim-step .k { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .sim-step .v { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-top: 2px; }
 .filter-select { width: auto; min-width: 170px; }
-.row-action { position: relative; width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; margin-left: 2px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; transition: background .12s ease, color .12s ease; }
-.row-action:hover { background: var(--fg-soft); color: var(--fg); }
-.row-action svg { width: 16px; height: 16px; }
-.row-action::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 4px 8px; background: var(--fg); color: var(--surface); font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .12s ease; z-index: 100; }
-.row-action:hover::after { opacity: 1; }
 .chip-set { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .chip { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--fg-soft); white-space: nowrap; }
 .chip.more { background: var(--accent-soft); color: var(--accent); }
 .cell-empty { color: var(--muted); }
-.cell-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; position: relative; }
+.cell-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .cell-dot.ok { background: var(--ok); }
 .cell-dot.pausa { background: var(--amber); }
 .cell-dot.configura { background: var(--blue); }
-.cell-dot::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 4px 8px; background: var(--fg); color: var(--surface); font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .12s ease; z-index: 100; }
-.cell-dot:hover::after { opacity: 1; }
 .cell-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .cell-entity-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .cell-entity-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

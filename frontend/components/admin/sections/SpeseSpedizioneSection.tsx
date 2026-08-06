@@ -173,7 +173,7 @@ export default function SpeseSpedizioneSection() {
                     <tr key={d.id}>
                       <td>
                         <div className="cell-entity">
-                          <span className={`cell-dot ${d.stato}`} data-tip={statoLabel[d.stato] ?? d.stato} />
+                          <span className={`cell-dot ${d.stato}`} title={statoLabel[d.stato] ?? d.stato} />
                           <div className="cell-entity-text">
                             <span className="cell-entity-title">{destName(d)}</span>
                             <span className="cell-entity-sub mono">{destTitle(d)}</span>
@@ -206,11 +206,11 @@ export default function SpeseSpedizioneSection() {
                       </td>
                       <td className="num">{d.sogliaImporto != null ? fmtEur(d.sogliaImporto) : <span className="cell-empty">—</span>}</td>
                       <td className="data-table-actions">
-                        <button className="row-action" data-tip="Modifica" onClick={() => openEdit(d)}>
+                        <button className="row-action" title="Modifica" onClick={() => openEdit(d)}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                         </button>
                         {d.stato !== "configura" && (
-                          <button className="row-action" data-tip={d.stato === "ok" ? "Metti in pausa" : "Riprendi"} onClick={() => toggleStato(d)}>
+                          <button className="row-action" title={d.stato === "ok" ? "Metti in pausa" : "Riprendi"} onClick={() => toggleStato(d)}>
                             {d.stato === "ok" ? (
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
                             ) : (
