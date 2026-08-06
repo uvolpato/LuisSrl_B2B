@@ -183,6 +183,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .total-table tr.discount td { color: var(--accent); }
 .total-divider { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
 .total-table tr.final td { font-weight: 700; font-size: 18px; padding-top: 8px; }
+.total-table tr.bold td { font-weight: 700; }
 
 .checkout-error {
   margin-top: 12px; font-size: 13px; color: oklch(55% 0.18 30);
@@ -356,8 +357,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
             <tr class="discount" id="row-sconto-famiglia"><td>Sconto famiglia</td><td id="val-sconto-famiglia">—</td></tr>
             <tr class="discount" id="row-sconto-articolo"><td>Sconto articolo</td><td id="val-sconto-articolo">—</td></tr>
             <tr><td colspan="2"><hr class="total-divider"></td></tr>
-            <tr id="row-sub-scontato"><td>Subtotale scontato</td><td id="val-sub-scontato">—</td></tr>
-            <tr id="row-spedizione"><td>Spedizione</td><td id="val-spedizione">—</td></tr>
+            <tr class="bold" id="row-sub-scontato"><td>Subtotale scontato</td><td id="val-sub-scontato">—</td></tr>
+            <tr class="bold" id="row-spedizione"><td>Spedizione</td><td id="val-spedizione">—</td></tr>
             <tr><td colspan="2"><hr class="total-divider"></td></tr>
             <tr class="final"><td>Totale (IVA esclusa)</td><td id="summary-total">€ 0,00</td></tr>
           </table>
