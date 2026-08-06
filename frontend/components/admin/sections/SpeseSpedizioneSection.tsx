@@ -341,13 +341,16 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
             <label>La tariffa vale per</label>
             <div className="seg">
               {(["regione","nazione","EUROPA","ROW"] as const).map(lv => (
-                <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => { setLivello(lv); setRegione(""); }} type="button">
+                <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => {
+                  if (lv === "regione") { setNazione("IT"); setRegione(""); }
+                  setLivello(lv);
+                }} type="button">
                   {lv === "regione" ? "Regione" : lv === "nazione" ? "Nazione" : lv === "EUROPA" ? "Europa" : "Resto del mondo"}
                 </button>
               ))}
             </div>
           </div>
-          {(livello === "regione" || livello === "nazione") && (
+          {livello === "nazione" && (
             <div className="field">
               <label>Nazione</label>
               <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
