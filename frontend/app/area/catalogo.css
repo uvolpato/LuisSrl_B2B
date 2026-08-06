@@ -2,6 +2,8 @@
 .catalogo-page {
   --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
   --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
   --table-head-bg: oklch(92.5% 0.006 79);
   --fs-h2: clamp(28px, 3.5vw, 40px);
   --fs-body: 15px;
