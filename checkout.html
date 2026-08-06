@@ -494,29 +494,31 @@ function updateShipTo() {
     if (ADDRESSES[i].id === selectedAddrId) { addr = ADDRESSES[i]; break; }
   }
   var el = document.getElementById('summary-ship-to');
-  var parent = el.parentNode;
-  if (addr) {
+  var mode = document.querySelector('input[name="modalita"]:checked').value;
+  if (addr && mode !== 'RITIRO') {
     document.getElementById('ship-name').textContent = addr.nome;
     document.getElementById('ship-addr').textContent = addr.indirizzo + ' ' + addr.cap + ' ' + addr.citta + ' ' + addr.prov;
-    if (el.parentNode !== parent) parent.insertBefore(el, document.getElementById('summary-items'));
-  } else {
-    if (el.parentNode === parent) parent.removeChild(el);
+    if (!el.parentNode && _shipParent) _shipParent.insertBefore(el, document.getElementById('summary-items'));
+  } else if (el.parentNode) {
+    el.parentNode.removeChild(el);
   }
 }
 
 /* ── DELIVERY MODE ── */
+var _shipParent = null;
+
 function updateModalita(mode) {
   document.getElementById('opt-ritiro').classList.toggle('selected', mode === 'RITIRO');
   document.getElementById('opt-spedizione').classList.toggle('selected', mode === 'SPEDIZIONE');
   var sede = document.getElementById('sede-section');
   var shipEl = document.getElementById('summary-ship-to');
-  var parent = shipEl.parentNode;
+  if (!_shipParent) _shipParent = shipEl.parentNode;
   if (mode === 'RITIRO') {
     sede.hidden = true;
-    if (shipEl.parentNode === parent && parent) parent.removeChild(shipEl);
+    if (shipEl.parentNode) shipEl.parentNode.removeChild(shipEl);
   } else {
     sede.hidden = false;
-    if (shipEl.parentNode !== parent && parent) parent.insertBefore(shipEl, document.getElementById('summary-items'));
+    if (!shipEl.parentNode) _shipParent.insertBefore(shipEl, document.getElementById('summary-items'));
     updateShipTo();
   }
   renderSummary();
