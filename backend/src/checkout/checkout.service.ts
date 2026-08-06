@@ -173,6 +173,21 @@ export class CheckoutService {
     };
   }
 
+  async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string }) {
+    const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
+    if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    const updated = await this.prisma.indirizzoCliente.update({
+      where: { id },
+      data: {
+        ...(dto.indirizzo !== undefined ? { indirizzo: dto.indirizzo } : {}),
+        ...(dto.cap !== undefined ? { cap: dto.cap } : {}),
+        ...(dto.citta !== undefined ? { citta: dto.citta } : {}),
+        ...(dto.provincia !== undefined ? { provincia: dto.provincia } : {}),
+      },
+    });
+    return { id: updated.id };
+  }
+
   async confermaOrdine(
     clienteId: number,
     dto: {
