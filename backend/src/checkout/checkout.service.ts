@@ -188,6 +188,12 @@ export class CheckoutService {
     return { id: updated.id };
   }
 
+  async eliminaIndirizzo(clienteId: number, id: number) {
+    const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
+    if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    await this.prisma.indirizzoCliente.delete({ where: { id } });
+  }
+
   async confermaOrdine(
     clienteId: number,
     dto: {
