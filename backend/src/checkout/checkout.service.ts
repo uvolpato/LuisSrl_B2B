@@ -106,6 +106,16 @@ export class CheckoutService {
   }
 
   async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number, sconto: number = 0) {
+    if (!provincia) {
+      const resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+      if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false };
+      const calc = Calcola(resolved.t, imponibile, sconto);
+      return {
+        importo: Math.round(calc.fee * 100) / 100,
+        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+        gratuita: calc.superaSoglia,
+      };
+    }
     const regione = this.provinciaToRegione(provincia?.toUpperCase());
     if (!regione) return { importo: 0, descrizione: 'Provincia non trovata', gratuita: false };
 
