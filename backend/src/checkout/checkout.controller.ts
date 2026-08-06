@@ -20,11 +20,13 @@ export class CheckoutController {
     @Req() req: AuthenticatedRequest,
     @Query('provincia') provincia: string,
     @Query('imponibile') imponibile: string,
+    @Query('sconto') sconto?: string,
   ) {
     return this.checkout.calcolaSpedizione(
       req.user.id,
       provincia,
       imponibile != null ? Number(imponibile) : 0,
+      sconto != null ? Number(sconto) : 0,
     );
   }
 

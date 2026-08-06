@@ -190,9 +190,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!indirizzoSelezionato?.provincia) return;
-    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${indirizzoSelezionato.provincia}&imponibile=${subtotalAmount}`)
+    const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
+    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${indirizzoSelezionato.provincia}&imponibile=${subScontato}&sconto=${avgDiscount}`)
       .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
-  }, [indirizzoSelezionato?.provincia, subtotalAmount]);
+  }, [indirizzoSelezionato?.provincia, subScontato, subtotalListino, subtotalAmount]);
 
   const couponDiscount = couponActive ? (couponIsPct ? subtotalAmount * couponValue : couponValue) : 0;
   const subScontato = subtotalAmount - couponDiscount;
