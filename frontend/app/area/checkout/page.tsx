@@ -295,35 +295,67 @@ export default function CheckoutPage() {
                   {dati.indirizzi.length === 0 && !showNuovo ? (
                     <p className="checkout-note">La merce verrà inviata alla sede dell&apos;anagrafica.</p>
                   ) : (
-                    <div className="addr-list">
+                    <div className="addr-grid">
                       {dati.indirizzi.map((a) => (
                         <label
                           key={a.id}
                           className={"addr-card" + (a.id === indirizzoId ? " selected" : "")}
+                          style={{ cursor: "pointer" }}
                         >
                           <input
                             type="radio"
                             name="indirizzo"
                             checked={a.id === indirizzoId}
                             onChange={() => selezionaIndirizzo(a.id)}
+                            style={{ position: "absolute", opacity: 0 }}
                           />
-                          <span className="addr-main">
-                            <span className="addr-name">{a.ragioneSociale ?? dati.cliente.ragioneSociale ?? "Sede"}</span>
-                            {(a.indirizzo || a.citta) && (
-                              <span className="addr-line">
-                                {[a.indirizzo, a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}
-                              </span>
-                            )}
-                            {(a.codicePorto || a.codiceVettore) && (
-                              <span className="addr-meta">
-                                {a.codicePorto && <span className="badge">Porto {a.codicePorto}</span>}
-                                {a.codiceVettore && <span className="badge">Vett {a.codiceVettore}</span>}
-                              </span>
-                            )}
-                          </span>
-                          {a.flagAbituale && <span className="addr-default">Abituale</span>}
+                          <div className="addr-card-h">
+                            <span className={`status ${a.tipoDestinazione === "SPEDIZIONE" ? "st-amber" : a.flagSpedizione ? "st-blue" : "st-muted"}`}>
+                              <span className="sd">●</span>
+                              {a.ragioneSociale ?? a.tipoDestinazione ?? "Sede"}
+                            </span>
+                          </div>
+                          <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
+                          <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
+                          <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
+                          <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
+                          {a.flagAbituale && <span className="addr-badge">Abituale</span>}
                         </label>
                       ))}
+                    </div>
+                  )}
+                  {dati.allowNewAddress && !showNuovo && (
+                    <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
+                      + Indica un nuovo indirizzo
+                    </button>
+                  )}
+                  {showNuovo && (
+                    <div className="addr-new">
+                      <div className="checkout-grid">
+                        <div className="form-field">
+                          <label htmlFor="nRagione">Intestazione</label>
+                          <input id="nRagione" className="form-input" value={nRagione} onChange={(e) => setNRagione(e.target.value)} placeholder="Es. Nome destinatario" />
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="nIndirizzo">Indirizzo *</label>
+                          <input id="nIndirizzo" className="form-input" value={nIndirizzo} onChange={(e) => setNIndirizzo(e.target.value)} />
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="nCap">CAP *</label>
+                          <input id="nCap" className="form-input" value={nCap} onChange={(e) => setNCap(e.target.value)} />
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="nCitta">Città *</label>
+                          <input id="nCitta" className="form-input" value={nCitta} onChange={(e) => setNCitta(e.target.value)} />
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="nProvincia">Provincia</label>
+                          <input id="nProvincia" className="form-input" value={nProvincia} onChange={(e) => setNProvincia(e.target.value)} maxLength={2} />
+                        </div>
+                      </div>
+                      <button type="button" className="btn btn-ghost addr-cancel" onClick={() => setShowNuovo(false)}>
+                        Annulla
+                      </button>
                     </div>
                   )}
                 </section>
