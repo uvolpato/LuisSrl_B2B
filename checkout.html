@@ -271,16 +271,25 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
           <!-- Condizioni di pagamento -->
           <section class="checkout-section">
             <h2 class="checkout-section-title">Condizioni di pagamento</h2>
-            <p class="checkout-note" style="margin-bottom:12px">Condizioni predefinite dall'anagrafica cliente.</p>
+            <p class="checkout-note" style="margin-bottom:12px">Modalità di pagamento ricevuta da Integra.</p>
             <div class="form-field" style="margin-bottom:14px">
               <label>Pagamento</label>
-              <div class="read-only-field">BB30 — Bonifico 30 gg d.f.</div>
+              <select id="payment-method" class="form-select" style="width:100%">
+                <option value="BB30">BB30 — Bonifico 30 gg d.f.</option>
+                <option value="BB60">BB60 — Bonifico 60 gg d.f.</option>
+                <option value="ANT">Bonifico anticipato</option>
+                <option value="RB30">RB30 — Ri.Ba. 30 gg</option>
+                <option value="RB60">RB60 — Ri.Ba. 60 gg</option>
+              </select>
             </div>
-            <div class="form-field">
-              <label>Coordinate bancarie</label>
+            <!-- Coordinate bancarie LUIS — visibili solo per bonifico anticipato -->
+            <div class="form-field" id="luis-bank" hidden>
+              <label>Coordinate bancarie LUIS S.r.l.</label>
+              <p class="checkout-note" style="margin-bottom:8px">Effettuare il bonifico alle seguenti coordinate. L'ordine sarà evaso a pagamento ricevuto.</p>
               <div class="iban-row">
                 <div class="read-only-field iban-field">
-                  <div style="font-size:14px;margin-bottom:2px">IT 60 X 05428 11101 000000123456</div>
+                  <div style="font-size:13px;color:var(--muted);margin-bottom:2px">Intestatario: LUIS S.r.l.</div>
+                  <div style="font-size:14px;margin-bottom:1px">IT 60 X 05428 11101 000000123456</div>
                   <div style="font-size:12px;color:var(--muted)">Intesa Sanpaolo — SWIFT BCITITMM</div>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" id="btn-copy-iban" title="Copia IBAN (senza spazi)">
@@ -574,6 +583,27 @@ function renderSummary() {
  *   incollato nell'home banking del cliente.
  *   In produzione usare navigator.clipboard.writeText() con fallback
  *   document.execCommand('copy') per browser meno recenti.
+ *
+ * SPECIFICA PAGAMENTO / COORDINATE LUIS:
+ *   La modalità di pagamento arriva da Integra (codicePagamento dall'anagrafica).
+ *   Le coordinate bancarie del CLIENTE NON vengono mai mostrate.
+ *   Solo per pagamenti anticipati (es. bonifico anticipato) si mostrano le
+ *   coordinate bancarie della LUIS S.r.l., lette da un parametro di configurazione:
+ *
+ *   CONFIG (backend — file .env o tabella Impostazioni):
+ *     LUIS_BANK_INTESTATARIO="LUIS S.r.l."
+ *     LUIS_BANK_NOME="Intesa Sanpaolo"
+ *     LUIS_BANK_IBAN="IT60X0542811101000000123456"
+ *     LUIS_BANK_SWIFT="BCITITMM"
+ *
+ *   Il frontend recupera questi valori via API (GET /api/config/banca-luis)
+ *   e li mostra solo se il metodo di pagamento è anticipato.
+ *   Per tutte le altre modalità (BB30, BB60, RB30, RB60...) nessuna coordinata
+ *   bancaria viene esposta al cliente.
+ *
+ *   In futuro, altri metodi di pagamento potrebbero avere logiche diverse
+ *   (es. link a gateway, QR code, ecc.) — il parametro paymentMethod guida
+ *   quale UI mostrare.
  */
 var SCONTO_MEDIO = 0.20; // 20% sconto medio ordine (demo)
 
@@ -995,6 +1025,13 @@ var provinciaCombobox = null;
       btn.textContent = 'Copiato!';
       setTimeout(function() { btn.innerHTML = svg; }, 2000);
     }
+  });
+
+  // Payment method toggle — mostra coordinate LUIS solo per bonifico anticipato
+  var pmSel = document.getElementById('payment-method');
+  var luisBank = document.getElementById('luis-bank');
+  pmSel.addEventListener('change', function() {
+    luisBank.hidden = this.value !== 'ANT';
   });
 
   // Confirm
