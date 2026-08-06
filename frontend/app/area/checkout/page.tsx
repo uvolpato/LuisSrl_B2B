@@ -394,6 +394,7 @@ export default function CheckoutPage() {
                         <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
                         <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
                         {a.abituale && <span className="addr-badge">Predefinito</span>}
+                        {a.id === -1 && !tuttiIndirizzi.some(x => x.id !== -1 && x.abituale) && <span className="addr-badge">Predefinito</span>}
                         {a.id !== -1 && !a.daIntegra && (
                           <>
                             <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); openEditForm(a); }}>
@@ -412,7 +413,7 @@ export default function CheckoutPage() {
                             </button>
                           </>
                         )}
-                        {!a.abituale && (
+                        {!a.abituale && !(a.id === -1 && !tuttiIndirizzi.some(x => x.id !== -1 && x.abituale)) && (
                           <button type="button" className="btn-set-default" onClick={async e => {
                             e.stopPropagation();
                             if (a.id === -1) {
