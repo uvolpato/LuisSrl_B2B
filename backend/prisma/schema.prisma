@@ -579,3 +579,18 @@ model CustomerProfile {
 
   @@map("customer_profiles")
 }
+
+model TariffaSpedizione {
+  id             Int      @id @default(autoincrement())
+  nazione        String   @map("nazione")
+  regione        String?  @map("regione")
+  basePercent    Decimal  @map("base_percent") @db.Decimal(5, 2)
+  stato          String   @default("configura") @map("stato") // ok | pausa | configura
+  sogliaImporto  Decimal? @map("soglia_importo") @db.Decimal(12, 2)
+  ranges         Json?    @map("ranges") // [[min, max, pct], ...]
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([nazione, regione])
+  @@map("tariffe_spedizione")
+}
