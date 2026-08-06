@@ -6,13 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
-import { formatPrice } from "../../../lib/helpers";
-
-interface PrezzoInfo {
-  prezzoNetto: number;
-  prezzoListino: number;
-  sconto: number;
-}
+import ComboboxField from "../../../components/admin/ComboboxField";
+import type { ComboboxOption } from "../../../components/admin/ComboboxField";
 
 interface CartItem {
   id: number;
@@ -20,15 +15,26 @@ interface CartItem {
   quantita: number;
   salvato: boolean;
   articoloNome: string | null;
-  articoloCodiceLinea: string | null;
   varianteDescrizione: string | null;
   dimensioni: string;
   immagineUrl: string | null;
   multiplo: number;
-  prezzo: PrezzoInfo | null;
+  prezzo: { prezzoNetto: number; prezzoListino: number; sconto: number } | null;
 }
 
 type ModalitaConsegna = "RITIRO" | "SPEDIZIONE";
+
+interface Indirizzo {
+  id: number;
+  nome: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  tipo: string | null;
+  abituale: boolean;
+  daIntegra: boolean;
+}
 
 interface DatiCheckout {
   cliente: {
@@ -39,41 +45,56 @@ interface DatiCheckout {
     citta: string | null;
     provincia: string | null;
     codicePagamento: string | null;
-    codicePorto: string | null;
-    codiceSpedizione: string | null;
-    codiceVettore: string | null;
   };
-  indirizzi: Array<{
-    id: number;
-    codiceDestinazione: string | null;
-    ragioneSociale: string | null;
-    indirizzo: string | null;
-    cap: string | null;
-    citta: string | null;
-    provincia: string | null;
-    flagSpedizione: boolean;
-    flagAbituale: boolean;
-    tipoDestinazione: string | null;
-    codicePorto: string | null;
-    codiceVettore: string | null;
-  }>;
-  allowNewAddress: boolean;
+  indirizzi: Indirizzo[];
   pagamenti: Array<{ codice: string; descrizione: string }>;
-  porti: Array<{ codice: string; descrizione: string }>;
-  spedizioni: Array<{ codice: string; descrizione: string }>;
-  vettori: Array<{ codice: string; descrizione: string }>;
-  descrizioni: {
-    pagamento: string | null;
-    porto: string | null;
-    spedizione: string | null;
-    vettore: string | null;
-  };
+  allowNewAddress: boolean;
+}
+
+interface ShippingResult {
+  importo: number;
+  descrizione: string;
+  gratuita: boolean;
 }
 
 interface OrdineConfermato {
   id: number;
   numeroOrdine: string;
   importoTotale: number;
+}
+
+const PROVINCE_OPTS: ComboboxOption[] = [
+  { value:"AG",label:"Agrigento"},{ value:"AL",label:"Alessandria"},{ value:"AN",label:"Ancona"},{ value:"AO",label:"Aosta"},
+  { value:"AR",label:"Arezzo"},{ value:"AP",label:"Ascoli Piceno"},{ value:"AT",label:"Asti"},{ value:"AV",label:"Avellino"},
+  { value:"BA",label:"Bari"},{ value:"BT",label:"Barletta-Andria-Trani"},{ value:"BL",label:"Belluno"},{ value:"BN",label:"Benevento"},
+  { value:"BG",label:"Bergamo"},{ value:"BI",label:"Biella"},{ value:"BO",label:"Bologna"},{ value:"BZ",label:"Bolzano"},
+  { value:"BS",label:"Brescia"},{ value:"BR",label:"Brindisi"},{ value:"CA",label:"Cagliari"},{ value:"CL",label:"Caltanissetta"},
+  { value:"CB",label:"Campobasso"},{ value:"CE",label:"Caserta"},{ value:"CT",label:"Catania"},{ value:"CZ",label:"Catanzaro"},
+  { value:"CH",label:"Chieti"},{ value:"CO",label:"Como"},{ value:"CS",label:"Cosenza"},{ value:"CR",label:"Cremona"},
+  { value:"KR",label:"Crotone"},{ value:"CN",label:"Cuneo"},{ value:"EN",label:"Enna"},{ value:"FM",label:"Fermo"},
+  { value:"FE",label:"Ferrara"},{ value:"FI",label:"Firenze"},{ value:"FG",label:"Foggia"},{ value:"FC",label:"Forlì-Cesena"},
+  { value:"FR",label:"Frosinone"},{ value:"GE",label:"Genova"},{ value:"GO",label:"Gorizia"},{ value:"GR",label:"Grosseto"},
+  { value:"IM",label:"Imperia"},{ value:"IS",label:"Isernia"},{ value:"SP",label:"La Spezia"},{ value:"AQ",label:"L'Aquila"},
+  { value:"LT",label:"Latina"},{ value:"LE",label:"Lecce"},{ value:"LC",label:"Lecco"},{ value:"LI",label:"Livorno"},
+  { value:"LO",label:"Lodi"},{ value:"LU",label:"Lucca"},{ value:"MC",label:"Macerata"},{ value:"MN",label:"Mantova"},
+  { value:"MS",label:"Massa-Carrara"},{ value:"MT",label:"Matera"},{ value:"ME",label:"Messina"},{ value:"MI",label:"Milano"},
+  { value:"MO",label:"Modena"},{ value:"MB",label:"Monza e Brianza"},{ value:"NA",label:"Napoli"},{ value:"NO",label:"Novara"},
+  { value:"NU",label:"Nuoro"},{ value:"OR",label:"Oristano"},{ value:"PD",label:"Padova"},{ value:"PA",label:"Palermo"},
+  { value:"PR",label:"Parma"},{ value:"PV",label:"Pavia"},{ value:"PG",label:"Perugia"},{ value:"PU",label:"Pesaro e Urbino"},
+  { value:"PE",label:"Pescara"},{ value:"PC",label:"Piacenza"},{ value:"PI",label:"Pisa"},{ value:"PT",label:"Pistoia"},
+  { value:"PN",label:"Pordenone"},{ value:"PZ",label:"Potenza"},{ value:"PO",label:"Prato"},{ value:"RG",label:"Ragusa"},
+  { value:"RA",label:"Ravenna"},{ value:"RC",label:"Reggio Calabria"},{ value:"RE",label:"Reggio Emilia"},{ value:"RI",label:"Rieti"},
+  { value:"RN",label:"Rimini"},{ value:"RM",label:"Roma"},{ value:"RO",label:"Rovigo"},{ value:"SA",label:"Salerno"},
+  { value:"SS",label:"Sassari"},{ value:"SV",label:"Savona"},{ value:"SI",label:"Siena"},{ value:"SR",label:"Siracusa"},
+  { value:"SO",label:"Sondrio"},{ value:"SU",label:"Sud Sardegna"},{ value:"TA",label:"Taranto"},{ value:"TE",label:"Teramo"},
+  { value:"TR",label:"Terni"},{ value:"TO",label:"Torino"},{ value:"TP",label:"Trapani"},{ value:"TN",label:"Trento"},
+  { value:"TV",label:"Treviso"},{ value:"TS",label:"Trieste"},{ value:"UD",label:"Udine"},{ value:"VA",label:"Varese"},
+  { value:"VE",label:"Venezia"},{ value:"VB",label:"Verbano-Cusio-Ossola"},{ value:"VC",label:"Vercelli"},{ value:"VR",label:"Verona"},
+  { value:"VV",label:"Vibo Valentia"},{ value:"VI",label:"Vicenza"},{ value:"VT",label:"Viterbo"},
+];
+
+function fmtEur(n: number): string {
+  return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
 
 export default function CheckoutPage() {
@@ -86,17 +107,32 @@ export default function CheckoutPage() {
 
   const [indirizzoId, setIndirizzoId] = useState<number | null>(null);
   const [modalita, setModalita] = useState<ModalitaConsegna>("SPEDIZIONE");
-  const [porto, setPorto] = useState<string>("");
-  const [vettore, setVettore] = useState<string>("--");
-  const [notaSpedizione, setNotaSpedizione] = useState("");
-  const [notaOrdine, setNotaOrdine] = useState("");
 
+  // Nuovo indirizzo
   const [showNuovo, setShowNuovo] = useState(false);
   const [nRagione, setNRagione] = useState("");
   const [nIndirizzo, setNIndirizzo] = useState("");
   const [nCap, setNCap] = useState("");
   const [nCitta, setNCitta] = useState("");
   const [nProvincia, setNProvincia] = useState("");
+  const [nDefault, setNDefault] = useState(false);
+
+  // Pagamento
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [bankData, setBankData] = useState<{ intestatario: string; nome: string; iban: string; swift: string } | null>(null);
+
+  // Spedizione
+  const [spedizione, setSpedizione] = useState<ShippingResult>({ importo: 0, descrizione: "", gratuita: false });
+
+  // Coupon
+  const [couponCode, setCouponCode] = useState("");
+  const [couponActive, setCouponActive] = useState(false);
+  const [couponValue, setCouponValue] = useState(0);
+  const [couponIsPct, setCouponIsPct] = useState(false);
+  const [couponMsg, setCouponMsg] = useState("");
+
+  const [notaSpedizione, setNotaSpedizione] = useState("");
+  const [notaOrdine, setNotaOrdine] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -109,18 +145,20 @@ export default function CheckoutPage() {
         api.get<{ id: number; items: CartItem[] }>("/api/carrello"),
       ]);
       setDati(d);
-      const active = (c.items ?? []).filter((i) => !i.salvato);
+      const active = (c.items ?? []).filter(i => !i.salvato);
       setItems(active);
-      // Default sede spedizione: primo indirizzo con flagSpedizione, altrimenti il primo
-      const def = d.indirizzi.find((i) => i.flagSpedizione) ?? d.indirizzi[0] ?? null;
+
+      const def = d.indirizzi.find(i => i.abituale) ?? d.indirizzi[0] ?? null;
       setIndirizzoId(def ? def.id : null);
-      // Porto / vettore: dall'indirizzo se presenti, altrimenti dal cliente
-      const portoDef = (def?.codicePorto) || d.cliente.codicePorto || "";
-      const vettDef = (def?.codiceVettore) || d.cliente.codiceVettore || "--";
-      setPorto(portoDef);
-      setVettore(vettDef);
-      // Modalità di consegna di default: spedizione se esiste un vettore o un indirizzo, altrimenti ritiro in sede
-      setModalita(d.cliente.codiceVettore || d.indirizzi.length > 0 ? "SPEDIZIONE" : "RITIRO");
+
+      // Payment: use cliente's default or first
+      setPaymentMethod(d.cliente.codicePagamento ?? d.pagamenti[0]?.codice ?? "");
+
+      // Set default modalità
+      setModalita(d.indirizzi.length > 0 ? "SPEDIZIONE" : "RITIRO");
+
+      // Fetch bank data
+      try { setBankData(await api.get<any>("/api/config/banca-luis")); } catch {}
     } catch (e) {
       setError(e instanceof ApiError ? e.code : "errors.generic");
     }
@@ -132,43 +170,60 @@ export default function CheckoutPage() {
   }, [authLoading, user, fetchAll]);
 
   const indirizzoSelezionato = useMemo(
-    () => dati?.indirizzi.find((i) => i.id === indirizzoId) ?? null,
+    () => dati?.indirizzi.find(i => i.id === indirizzoId) ?? null,
     [dati, indirizzoId],
   );
 
   function selezionaIndirizzo(id: number) {
-    const addr = dati?.indirizzi.find((i) => i.id === id) ?? null;
     setIndirizzoId(id);
-    // Porto/vettore ereditati dall'indirizzo se valorizzati, altrimenti dal cliente
-    setPorto((addr?.codicePorto) || (dati?.cliente.codicePorto) || "");
-    setVettore((addr?.codiceVettore) || (dati?.cliente.codiceVettore) || "--");
   }
 
+  // Economic calculations
   const subtotalQty = items.reduce((s, i) => s + i.quantita, 0);
   const subtotalAmount = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+  const subtotalListino = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoListino ?? 0), 0);
+
+  // Shipping calculation
+  useEffect(() => {
+    if (!indirizzoSelezionato?.provincia) return;
+    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${indirizzoSelezionato.provincia}&imponibile=${subtotalAmount}`)
+      .then(setSpedizione)
+      .catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
+  }, [indirizzoSelezionato?.provincia, subtotalAmount]);
+
+  const couponDiscount = couponActive ? (couponIsPct ? subtotalAmount * couponValue : couponValue) : 0;
+  const subScontato = subtotalAmount - couponDiscount;
+  const isRitiro = modalita === "RITIRO";
+  const spedizioneFee = isRitiro ? 0 : (spedizione?.importo ?? 0);
+  const totale = subScontato + spedizioneFee;
+
+  async function applyCoupon() {
+    setCouponMsg("");
+    if (!couponCode.trim()) return;
+    // Demo coupons (prototype behavior)
+    if (couponCode === "B2B10") { setCouponActive(true); setCouponValue(0.10); setCouponIsPct(true); setCouponMsg("Codice applicato: −10%"); }
+    else if (couponCode === "B2B20") { setCouponActive(true); setCouponValue(0.20); setCouponIsPct(true); setCouponMsg("Codice applicato: −20%"); }
+    else if (couponCode === "SPRING50") { setCouponActive(true); setCouponValue(50); setCouponIsPct(false); setCouponMsg("Codice applicato: −50 €"); }
+    else { setCouponMsg("Codice non valido"); setCouponActive(false); }
+  }
+
+  function removeCoupon() {
+    setCouponActive(false); setCouponValue(0); setCouponMsg(""); setCouponCode("");
+  }
 
   async function conferma() {
     if (!dati) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const nuovoIndirizzo =
-        showNuovo && nIndirizzo.trim() && nCap.trim() && nCitta.trim()
-          ? {
-              ragioneSociale: nRagione || undefined,
-              indirizzo: nIndirizzo.trim(),
-              cap: nCap.trim(),
-              citta: nCitta.trim(),
-              provincia: nProvincia || undefined,
-            }
-          : undefined;
+      const nuovoIndirizzo = showNuovo && nIndirizzo.trim() && nCap.trim() && nCitta.trim()
+        ? { ragioneSociale: nRagione || undefined, indirizzo: nIndirizzo.trim(), cap: nCap.trim(), citta: nCitta.trim(), provincia: nProvincia || undefined, abituale: nDefault }
+        : undefined;
       const res = await api.post<OrdineConfermato>("/api/checkout/conferma", {
         modalitaConsegna: modalita,
-        indirizzoSpedizioneId: modalita === "RITIRO" ? undefined : indirizzoId ?? undefined,
+        indirizzoSpedizioneId: isRitiro ? undefined : indirizzoId ?? undefined,
         nuovoIndirizzo,
-        codicePorto: porto || undefined,
-        codiceVettore: vettore && vettore !== "--" ? vettore : undefined,
-        codicePagamento: dati.cliente.codicePagamento ?? undefined,
+        codicePagamento: paymentMethod || undefined,
         notaSpedizione: notaSpedizione || undefined,
         notaOrdine: notaOrdine || undefined,
       });
@@ -180,12 +235,16 @@ export default function CheckoutPage() {
     setSubmitting(false);
   }
 
+  async function copyIban() {
+    const iban = bankData?.iban?.replace(/\s/g, "") ?? "";
+    try { await navigator.clipboard.writeText(iban); } catch {}
+  }
+
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
   if (confermato) {
     return (
       <div className="catalogo-page cart-page checkout-page">
-        
         <main id="content">
           <div className="container">
             <div className="checkout-confirm">
@@ -200,7 +259,7 @@ export default function CheckoutPage() {
               </p>
               <div className="checkout-confirm-total">
                 <span>Totale (IVA esclusa)</span>
-                <strong>{formatPrice(confermato.importoTotale)}</strong>
+                <strong>{fmtEur(confermato.importoTotale)}</strong>
               </div>
               <div className="checkout-confirm-actions">
                 <Link href="/area/catalogo" className="btn btn-primary">Continua lo shopping</Link>
@@ -209,7 +268,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         </main>
-        
       </div>
     );
   }
@@ -217,9 +275,7 @@ export default function CheckoutPage() {
   if (loading) {
     return (
       <div className="catalogo-page cart-page">
-        
         <main id="content"><div className="container" style={{ paddingBlock: 48, color: "var(--muted)" }}>Caricamento…</div></main>
-        
       </div>
     );
   }
@@ -227,12 +283,10 @@ export default function CheckoutPage() {
   if (error || !dati) {
     return (
       <div className="catalogo-page cart-page">
-        
         <main id="content"><div className="container" style={{ paddingBlock: 48, textAlign: "center" }}>
           <p style={{ color: "var(--muted)", marginBottom: 20 }}>Impossibile caricare i dati di checkout.</p>
           <Link href="/area/carrello" className="btn btn-primary">Torna al carrello</Link>
         </div></main>
-        
       </div>
     );
   }
@@ -240,19 +294,16 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="catalogo-page cart-page">
-        
         <main id="content"><div className="container" style={{ paddingBlock: 48, textAlign: "center" }}>
           <p style={{ color: "var(--muted)", marginBottom: 20 }}>Il carrello è vuoto.</p>
           <Link href="/area/catalogo" className="btn btn-primary">Continua lo shopping</Link>
         </div></main>
-        
       </div>
     );
   }
 
   return (
     <div className="catalogo-page cart-page checkout-page">
-      
       <main id="content">
         <div className="container">
           <div className="page-title">
@@ -261,125 +312,153 @@ export default function CheckoutPage() {
 
           <div className="checkout-layout">
             <div className="checkout-form">
+
+              {/* Condizioni di pagamento */}
+              <section className="checkout-section">
+                <h2 className="checkout-section-title">Condizioni di pagamento</h2>
+                <p className="checkout-note" style={{ marginBottom: 12 }}>Modalità di pagamento ricevuta da Integra.</p>
+                <div className="form-field" style={{ marginBottom: 14 }}>
+                  <label>Pagamento</label>
+                  <select className="form-select" style={{ width: "100%" }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                    {dati.pagamenti.map(p => (
+                      <option key={p.codice} value={p.codice}>{p.codice} — {p.descrizione}</option>
+                    ))}
+                  </select>
+                </div>
+                {bankData && paymentMethod === "ANT" && (
+                  <div className="form-field">
+                    <label>Coordinate bancarie LUIS S.r.l.</label>
+                    <p className="checkout-note" style={{ marginBottom: 8 }}>Effettuare il bonifico alle seguenti coordinate. L&apos;ordine sarà evaso a pagamento ricevuto.</p>
+                    <div className="iban-row">
+                      <div className="read-only-field iban-field">
+                        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 2 }}>Intestatario: {bankData.intestatario}</div>
+                        <div style={{ fontSize: 14, marginBottom: 1 }}>{bankData.iban}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)" }}>{bankData.nome} — SWIFT {bankData.swift}</div>
+                      </div>
+                      <button type="button" className="btn btn-sm btn-secondary" onClick={copyIban} title="Copia IBAN (senza spazi)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copia IBAN
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+
               {/* Modalità di consegna */}
               <section className="checkout-section">
                 <h2 className="checkout-section-title">Modalità di consegna</h2>
                 <div className="opt-list">
                   <label className={"opt-card" + (modalita === "RITIRO" ? " selected" : "")}>
-                    <input
-                      type="radio"
-                      name="modalita"
-                      checked={modalita === "RITIRO"}
-                      onChange={() => setModalita("RITIRO")}
-                    />
+                    <input type="radio" name="modalita" checked={modalita === "RITIRO"} onChange={() => setModalita("RITIRO")} />
                     <span className="opt-main">
                       <span className="opt-name">Ritiro in sede</span>
                       <span className="opt-desc">Ritiri tu stesso la merce presso la nostra sede.</span>
                     </span>
                   </label>
                   <label className={"opt-card" + (modalita === "SPEDIZIONE" ? " selected" : "")}>
-                    <input
-                      type="radio"
-                      name="modalita"
-                      checked={modalita === "SPEDIZIONE"}
-                      onChange={() => setModalita("SPEDIZIONE")}
-                    />
+                    <input type="radio" name="modalita" checked={modalita === "SPEDIZIONE"} onChange={() => setModalita("SPEDIZIONE")} />
                     <span className="opt-main">
                       <span className="opt-name">Spedizione corriere</span>
-                      <span className="opt-desc">Consegnamo tramite vettore all'indirizzo indicato.</span>
+                      <span className="opt-desc">Consegnamo tramite vettore all&apos;indirizzo indicato.</span>
                     </span>
                   </label>
                 </div>
               </section>
 
-              {/* Sede di spedizione */}
-              {modalita !== "RITIRO" && (
+              {/* Indirizzo di spedizione */}
+              {!isRitiro && (
                 <section className="checkout-section">
-                  <h2 className="checkout-section-title">Sede di spedizione</h2>
-                  {dati.indirizzi.length === 0 && !showNuovo ? (
-                    <div>
-                      <p className="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell&apos;anagrafica:</p>
-                      {(dati.cliente.ragioneSociale || dati.indirizzi.length === 0) && (
-                        <div className="addr-grid">
-                          <div className="addr-card selected" style={{ cursor: "default", opacity: 0.8 }}>
-                            <div className="addr-card-h">
-                              <span className="status st-blue"><span className="sd">●</span>Sede legale</span>
-                            </div>
-                            <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
-                            <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
-                            <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
-                            <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
-                          </div>
-                        </div>
-                      )}
-                      {dati.allowNewAddress && (
-                        <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
-                          + Indica un nuovo indirizzo
-                        </button>
-                      )}
-                    </div>
-                  ) : dati.indirizzi.length > 0 ? (
+                  <h2 className="checkout-section-title">Indirizzo di spedizione</h2>
+
+                  {dati.indirizzi.length > 0 && (
                     <div className="addr-grid">
-                      {dati.indirizzi.map((a) => (
-                        <label
-                          key={a.id}
-                          className={"addr-card" + (a.id === indirizzoId ? " selected" : "")}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <input
-                            type="radio"
-                            name="indirizzo"
-                            checked={a.id === indirizzoId}
-                            onChange={() => selezionaIndirizzo(a.id)}
-                            style={{ position: "absolute", opacity: 0 }}
-                          />
+                      {dati.indirizzi.map(a => (
+                        <label key={a.id} className={"addr-card" + (a.id === indirizzoId ? " selected" : "")} style={{ cursor: "pointer" }}>
+                          <input type="radio" name="indirizzo" checked={a.id === indirizzoId} onChange={() => selezionaIndirizzo(a.id)} style={{ position: "absolute", opacity: 0 }} />
                           <div className="addr-card-h">
-                            <span className={`status ${a.tipoDestinazione === "SPEDIZIONE" ? "st-amber" : a.flagSpedizione ? "st-blue" : "st-muted"}`}>
-                              <span className="sd">●</span>
-                              {a.ragioneSociale ?? a.tipoDestinazione ?? "Sede"}
+                            <span className={`status ${a.tipo === "SPEDIZIONE" ? "st-amber" : "st-blue"}`}>
+                              <span className="sd">●</span>{a.nome ?? "Sede"}
                             </span>
                           </div>
                           <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
                           <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
                           <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
                           <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
-                          {a.flagAbituale && <span className="addr-badge">Abituale</span>}
+                          {a.abituale && <span className="addr-badge">Abituale</span>}
+                          {!a.daIntegra && (
+                            <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); /* TODO: edit inline */ }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                          )}
+                          {!a.abituale && (
+                            <button type="button" className="btn-set-default" onClick={e => { e.stopPropagation(); /* TODO: set default */ }}>
+                              Imposta come predefinito
+                            </button>
+                          )}
                         </label>
                       ))}
                     </div>
-                  ) : null}
-                  {dati.allowNewAddress && !showNuovo && dati.indirizzi.length > 0 && (
+                  )}
+
+                  {dati.indirizzi.length === 0 && !showNuovo && (
+                    <div>
+                      <p className="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell&apos;anagrafica:</p>
+                      <div className="addr-grid">
+                        <div className="addr-card selected" style={{ cursor: "default", opacity: 0.8 }}>
+                          <div className="addr-card-h"><span className="status st-blue"><span className="sd">●</span>Sede legale</span></div>
+                          <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
+                          <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
+                          <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
+                          <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {dati.allowNewAddress && !showNuovo && (
                     <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
                       + Indica un nuovo indirizzo
                     </button>
                   )}
+
                   {showNuovo && (
                     <div className="addr-new">
                       <div className="checkout-grid">
                         <div className="form-field">
                           <label htmlFor="nRagione">Intestazione</label>
-                          <input id="nRagione" className="form-input" value={nRagione} onChange={(e) => setNRagione(e.target.value)} placeholder="Es. Nome destinatario" />
+                          <input id="nRagione" className="form-input" value={nRagione} onChange={e => setNRagione(e.target.value)} placeholder="Es. Nome destinatario" />
                         </div>
                         <div className="form-field">
                           <label htmlFor="nIndirizzo">Indirizzo *</label>
-                          <input id="nIndirizzo" className="form-input" value={nIndirizzo} onChange={(e) => setNIndirizzo(e.target.value)} />
+                          <input id="nIndirizzo" className="form-input" value={nIndirizzo} onChange={e => setNIndirizzo(e.target.value)} />
                         </div>
                         <div className="form-field">
                           <label htmlFor="nCap">CAP *</label>
-                          <input id="nCap" className="form-input" value={nCap} onChange={(e) => setNCap(e.target.value)} />
+                          <input id="nCap" className="form-input" value={nCap} onChange={e => setNCap(e.target.value)} />
                         </div>
                         <div className="form-field">
                           <label htmlFor="nCitta">Città *</label>
-                          <input id="nCitta" className="form-input" value={nCitta} onChange={(e) => setNCitta(e.target.value)} />
+                          <input id="nCitta" className="form-input" value={nCitta} onChange={e => setNCitta(e.target.value)} />
                         </div>
                         <div className="form-field">
                           <label htmlFor="nProvincia">Provincia</label>
-                          <input id="nProvincia" className="form-input" value={nProvincia} onChange={(e) => setNProvincia(e.target.value)} maxLength={2} />
+                          <ComboboxField value={nProvincia} onChange={v => setNProvincia(v)} options={PROVINCE_OPTS} allowAuto={false} placeholder="Cerca provincia..." />
                         </div>
                       </div>
-                      <button type="button" className="btn btn-ghost addr-cancel" onClick={() => setShowNuovo(false)}>
-                        Annulla
-                      </button>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--fg)", cursor: "pointer" }}>
+                          <input type="checkbox" checked={nDefault} onChange={e => setNDefault(e.target.checked)} style={{ accentColor: "var(--accent)", width: 15, height: 15 }} />
+                          Imposta come predefinito
+                        </label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setShowNuovo(false); setNRagione(""); setNIndirizzo(""); setNCap(""); setNCitta(""); setNProvincia(""); setNDefault(false); }}>Annulla</button>
+                          <button type="button" className="btn btn-primary btn-sm" onClick={async () => {
+                            if (!nIndirizzo.trim() || !nCap.trim() || !nCitta.trim()) return;
+                            // Save new address via API (simplified for now)
+                            setShowNuovo(false);
+                          }}>Salva indirizzo</button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </section>
@@ -391,73 +470,77 @@ export default function CheckoutPage() {
                 <div className="checkout-grid">
                   <div className="form-field">
                     <label htmlFor="notaSpedizione">Nota di spedizione</label>
-                    <textarea
-                      id="notaSpedizione"
-                      className="form-textarea"
-                      rows={3}
-                      value={notaSpedizione}
-                      onChange={(e) => setNotaSpedizione(e.target.value)}
-                      placeholder="Es. consegna al piano, orari preferiti…"
-                    />
+                    <textarea id="notaSpedizione" className="form-textarea" rows={3} value={notaSpedizione} onChange={e => setNotaSpedizione(e.target.value)} placeholder="Es. consegna al piano, orari preferiti…" />
                   </div>
                   <div className="form-field">
-                    <label htmlFor="notaOrdine">Nota d'ordine</label>
-                    <textarea
-                      id="notaOrdine"
-                      className="form-textarea"
-                      rows={3}
-                      value={notaOrdine}
-                      onChange={(e) => setNotaOrdine(e.target.value)}
-                      placeholder="Es. riferimento commessa interna…"
-                    />
+                    <label htmlFor="notaOrdine">Nota d&apos;ordine</label>
+                    <textarea id="notaOrdine" className="form-textarea" rows={3} value={notaOrdine} onChange={e => setNotaOrdine(e.target.value)} placeholder="Es. riferimento commessa interna…" />
                   </div>
                 </div>
               </section>
             </div>
 
+            {/* Sidebar: riepilogo ordine */}
             <aside className="order-summary checkout-summary">
               <h2>Riepilogo ordine</h2>
-              {indirizzoSelezionato && (
+
+              {!isRitiro && indirizzoSelezionato && (
                 <div className="summary-ship">
                   <span className="label">Spedizione a</span>
-                  <span className="value">{indirizzoSelezionato.ragioneSociale ?? dati.cliente.ragioneSociale}</span>
-                  <span className="summary-ship-line">
-                    {[indirizzoSelezionato.indirizzo, indirizzoSelezionato.cap, indirizzoSelezionato.citta, indirizzoSelezionato.provincia].filter(Boolean).join(" ")}
-                  </span>
+                  <span className="value">{indirizzoSelezionato.nome ?? "Sede"}</span>
+                  <span className="summary-ship-line">{[indirizzoSelezionato.indirizzo, indirizzoSelezionato.cap, indirizzoSelezionato.citta, indirizzoSelezionato.provincia].filter(Boolean).join(" ")}</span>
                 </div>
               )}
+
               <div className="summary-rows">
-                {items.map((i) => (
-                  <div key={i.varianteCodice} className="summary-item">
-                    <span className="summary-item-name">
-                      <span className="badge code">{i.varianteCodice}</span>
-                      {i.articoloNome && <span>{i.articoloNome}</span>}
-                    </span>
-                    <span className="summary-item-meta">
-                      {i.quantita} pz × {formatPrice(i.prezzo?.prezzoNetto ?? 0)}
-                    </span>
-                    <span className="summary-item-price">{formatPrice(i.quantita * (i.prezzo?.prezzoNetto ?? 0))}</span>
-                  </div>
-                ))}
+                {items.map(item => {
+                  const tot = item.quantita * (item.prezzo?.prezzoNetto ?? 0);
+                  const scontoPct = item.prezzo?.sconto ?? 0;
+                  return (
+                    <div key={item.varianteCodice} className="summary-item">
+                      <div className="summary-item-row1">
+                        <span className="badge code">{item.varianteCodice}</span>
+                        <span className="desc">{item.articoloNome ?? item.varianteCodice}</span>
+                      </div>
+                      <div className="summary-item-row2">
+                        <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>
+                        {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
+                        <span className="riga">{item.quantita} × {fmtEur(item.prezzo?.prezzoNetto ?? 0)}</span>
+                        <span className="netto">{fmtEur(tot)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
               <hr className="summary-divider" />
-              <div className="summary-row">
-                <span className="label">Subtotale ({subtotalQty} pz)</span>
-                <span className="value">{formatPrice(subtotalAmount)}</span>
-              </div>
-              <div className="summary-total">
-                <span className="label">Totale IVA esclusa</span>
-                <span className="value">{formatPrice(subtotalAmount)}</span>
-              </div>
-              <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>
-                IVA non inclusa · Spese di trasporto da confermare
-              </p>
-              {submitError && <p className="checkout-error">{submitError}</p>}
-              <button
-                className="btn btn-primary checkout-btn"
-                disabled={submitting}
-                onClick={conferma}
-              >
+
+              <table className="total-table">
+                <tbody>
+                  <tr id="row-sub-listino"><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
+                  <tr><td colSpan={2} style={{ padding: "4px 0 0" }}>
+                    <div className="coupon-row">
+                      <input type="text" className="coupon-input" placeholder="Codice sconto" value={couponCode} onChange={e => setCouponCode(e.target.value)} autoComplete="off" />
+                      <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: 12, padding: "5px 10px" }} onClick={applyCoupon}>Applica</button>
+                      {couponActive && <button type="button" className="coupon-remove" onClick={removeCoupon}>×</button>}
+                      {couponMsg && <span className={`coupon-msg ${couponActive ? "ok" : "err"}`} style={{ fontSize: 11 }}>{couponMsg}</span>}
+                    </div>
+                  </td></tr>
+                  {couponActive && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                  <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                  <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
+                  <tr className="bold"><td>Spedizione</td>
+                    <td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>
+                      {isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizione?.importo ?? 0)}
+                    </td>
+                  </tr>
+                  <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                  <tr className="final"><td>Totale (IVA esclusa)</td><td>{fmtEur(totale)}</td></tr>
+                </tbody>
+              </table>
+
+              {submitError && <div className="checkout-error">{submitError}</div>}
+              <button className="btn btn-primary checkout-btn" disabled={submitting} onClick={conferma}>
                 {submitting ? "Invio in corso…" : "Conferma ordine"}
               </button>
               <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>
@@ -467,7 +550,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </main>
-      
     </div>
   );
 }

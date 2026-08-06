@@ -1629,15 +1629,66 @@
 .catalogo-page.cart-page.checkout-page .summary-ship .value { font-weight: 500; font-size: 14px; color: var(--fg); }
 .catalogo-page.cart-page.checkout-page .summary-ship-line { font-size: 13px; color: var(--muted); }
 .catalogo-page.cart-page.checkout-page .summary-rows {
-  display: flex; flex-direction: column; gap: 12px;
-  max-height: 320px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 280px; overflow-y: auto;
   margin-bottom: 8px;
 }
-.catalogo-page.cart-page.checkout-page .summary-item { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; }
-.catalogo-page.cart-page.checkout-page .summary-item-name { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); flex-wrap: wrap; }
-.catalogo-page.cart-page.checkout-page .summary-item-name .badge.code { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; }
-.catalogo-page.cart-page.checkout-page .summary-item-meta { font-size: 12px; color: var(--muted); grid-column: 1; }
-.catalogo-page.cart-page.checkout-page .summary-item-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--fg); grid-row: 1 / span 2; align-self: center; }
+.catalogo-page.cart-page.checkout-page .summary-item { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.catalogo-page.cart-page.checkout-page .summary-item:last-child { border-bottom: none; padding-bottom: 0; }
+.catalogo-page.cart-page.checkout-page .summary-item-row1 { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg); min-width: 0; }
+.catalogo-page.cart-page.checkout-page .summary-item-row1 .badge.code { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+.catalogo-page.cart-page.checkout-page .summary-item-row1 .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.catalogo-page.cart-page.checkout-page .summary-item-row2 { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; font-size: 12px; padding-top: 2px; }
+.catalogo-page.cart-page.checkout-page .summary-item-row2 .listino { color: var(--muted); text-decoration: line-through; }
+.catalogo-page.cart-page.checkout-page .summary-item-row2 .sconto { color: var(--accent); font-weight: 500; }
+.catalogo-page.cart-page.checkout-page .summary-item-row2 .riga { color: var(--muted); }
+.catalogo-page.cart-page.checkout-page .summary-item-row2 .netto { font-family: var(--font-mono); font-weight: 600; color: var(--fg); font-size: 13px; }
+
+/* Total table */
+.total-table { width: 100%; }
+.total-table td { padding: 5px 0; font-size: 13px; }
+.total-table td:last-child { text-align: right; font-family: var(--font-mono); font-weight: 500; }
+.total-table tr.discount td { color: var(--accent); }
+.total-divider { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
+.total-table tr.final td { font-weight: 700; font-size: 18px; padding-top: 8px; }
+
+/* Coupon */
+.coupon-row { display: flex; gap: 6px; align-items: center; }
+.coupon-input { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font: inherit; font-size: 12px; color: var(--fg); outline: none; }
+.coupon-input:focus { border-color: var(--accent); }
+.coupon-msg.ok { color: var(--green); }
+.coupon-msg.err { color: var(--red); }
+.coupon-remove { width: 26px; height: 26px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; display: grid; place-items: center; }
+.coupon-remove:hover { background: var(--fg-soft); color: var(--fg); }
+
+/* IBAN */
+.iban-row { display: flex; gap: 8px; align-items: flex-start; }
+.iban-field { flex: 1; }
+
+/* Address edit */
+.addr-edit-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--muted); cursor: pointer; display: grid; place-items: center;
+}
+.addr-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.addr-edit-btn svg { width: 13px; height: 13px; }
+.btn-set-default {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 12px; padding: 2px 0; text-align: left; align-self: flex-start;
+}
+.btn-set-default:hover { color: var(--accent); }
+
+/* Combobox nel checkout */
+.catalogo-page.cart-page.checkout-page .combobox { position: relative; }
+.catalogo-page.cart-page.checkout-page .combobox-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: inherit; color: var(--fg); outline: none; width: 100%; }
+.catalogo-page.cart-page.checkout-page .combobox-input:focus { border-color: var(--accent); outline: 2px solid var(--border); }
+.catalogo-page.cart-page.checkout-page .combobox-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 220px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 16%, transparent); display: none; }
+.catalogo-page.cart-page.checkout-page .combobox-dropdown.open { display: block; }
+.catalogo-page.cart-page.checkout-page .combobox-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+.catalogo-page.cart-page.checkout-page .combobox-option:hover { background: var(--fg-soft); }
+.catalogo-page.cart-page.checkout-page .combobox-option.highlighted { background: var(--accent-soft); }
+.catalogo-page.cart-page.checkout-page .combobox-empty { padding: 10px 12px; color: var(--muted); font-size: 13px; }
 .catalogo-page.cart-page.checkout-page .checkout-error {
   margin-top: 12px; font-size: 13px; color: oklch(55% 0.18 30);
   background: oklch(92% 0.04 30); border-radius: var(--radius); padding: 8px 12px;
