@@ -26,6 +26,7 @@ Regione (Italia)  →  Nazione  →  Area (Europa)  →  Default (Resto del mond
 - Esiste **una sola tariffa "Resto del mondo"**: non deve poter essere eliminata (solo modificata o messa in pausa).
 - I paesi sono classificati in due aree: **Europa** (27 paesi) o **resto del mondo**.
 - Solo le tariffe in stato **`ok` (Configurata)** partecipano alla risoluzione: `pausa` e `configura` vengono saltate.
+- **Unicità delle destinazioni attive** (requisito esplicito): non possono esistere **due tariffe attive** per la stessa destinazione `(nazione, regione)`. Il vincolo è garantito a database con un **indice unico su `(nazione, regione)`** (una sola riga per destinazione, in qualunque stato) e a livello applicativo prima di creare/attivare una tariffa (dettagli e implementazione al **§11.7**).
 
 ---
 
@@ -45,7 +46,7 @@ Regione (Italia)  →  Nazione  →  Area (Europa)  →  Default (Resto del mond
 | `updated` | string | data ultimo aggiornamento (demo); nel reale `updatedAt` |
 
 Vincoli:
-- **Unicità**: una sola tariffa per coppia `(nazione, regione)`.
+- **Unicità (destinazioni)**: una sola tariffa per coppia `(nazione, regione)` — la destinazione identifica la tariffa. Indice unico a database su `(nazione, regione)`; **due tariffe attive per la stessa destinazione non possono esistere** (requisito esplicito, vedi §11.7).
 - **Livello regione**: `nazione` deve essere `'IT'`.
 - **Livello area**: `nazione ∈ {'EUROPA','ROW'}`, `regione = null`.
 
@@ -138,20 +139,23 @@ La derivazione dei limiti inferiori avviene in `currentRanges()`: partendo da `f
 ## 5. Struttura della pagina admin
 
 ### 5.1 Header
-- Titolo sezione + meta conteggi: `"27 tariffe · 2 zone · 5 nazioni · 20 eccezioni regionali · 23 configurate · 2 da configurare · 2 in pausa"` (sempre ricalcolati).
+- Titolo sezione + meta conteggi: `"27 tariffe · 2 zone · 5 nazioni · 20 eccezioni regionali · 21 configurate · 4 da configurare · 2 in pausa"` (sempre ricalcolati).
 - Ricerca testuale (`destName` in minuscolo) + filtro per stato (`tutti`/`ok`/`pausa`/`configura`).
 - Bottoni: **Simulatore di costo** (apre modale) e **Crea nuovo** (apre editor in modalità creazione).
 
 ### 5.2 Tabella elenco
-Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impatto medio** · **Soglia gratuita** · **Stato** · **Azioni**.
+Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impatto medio** · **Soglia gratuita** · **Azioni**.
 
-- Ordinamento: zone prima (Europa → Resto del mondo), poi nazioni in ordine alfabetico italiano, poi regioni della stessa nazione (la tariffa nazione precede le sue regioni). Righe zona evidenziate (`row-zona`).
+- **Header fisso (sticky)**: tutte le colonne restano visibili durante lo scroll, compresa "Scaglioni sconto medio" (la cella ridimensionabile **non deve** sovrascrivere `position: sticky` con `position: relative`, altrimenti l'header sale con lo scroll).
+- **Colonna "Scaglioni sconto medio" ridimensionabile**: trascinando il bordo destro dell'header; larghezza **persistita** in `localStorage('spese-scaglioni-w')` (default 220px, min 140px).
+- Lo **stato non è una colonna**: è un **pallino colorato** nella cella Destinazione (`ok` verde, `pausa` ambra, `configura` rosso) con tooltip col nome dello stato; il toggle pausa/riprendi resta tra le azioni di riga.
+
+- Ordinamento: zone prima (Europa → Resto del mondo), poi nazioni in ordine alfabetico italiano, poi regioni della stessa nazione (la tariffa nazione precede le sue regioni).
 - Scaglioni: chip `0–5% → 4,5%` (max primi 3, poi `+N`); senza scaglioni mostra `—`.
 - **Impatto medio**: `pctOf(tariffa, 8%) × 10.000 €`, arrotondato (esempio dimostrativo; il reale può calcolare a sconto 0 o mostrare la pct).
 - Soglia: `€ 2.500,00` o `—` se assente.
-- Stato: etichetta con pallino colorato (`ok` verde, `pausa` ambra, `configura` rosso).
 - Azioni per riga: **Modifica** (apre editor) e **toggle pausa/riprendi** (scambia `ok ↔ pausa`, non tocca `configura`).
-- Paginazione: 10 righe/pagina; testo `"1–10 di 27"` e contatore `"1 / 3"`; ricerca/filtro resettano a pagina 1.
+- Paginazione: **15 righe/pagina**; testo `"1–15 di 27"` e contatore `"1 / 2"`; ricerca/filtro resettano a pagina 1; empty state a tutta larghezza (`colspan="6"`).
 
 ### 5.3 Editor destinazione (modale)
 
@@ -173,7 +177,7 @@ Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impat
 - **Stato**: Configurata / In pausa / Da configurare.
 - **Soglia spedizione gratuita** (€): vuoto = nessuna.
 - **Scaglioni per sconto medio**: righe `Sconto da X% → fino a [input]% → percentuale [input]%`; il limite inferiore è derivato (0 per il primo, il limite superiore del precedente per gli altri) e mostrato come testo non modificabile; l'ultima riga mostra "oltre" al posto del limite superiore. Aggiungi/rimuovi; se non configurati mostra "Nessuno scaglione configurato: vale la percentuale di base."
-- **Anteprima calcolo**: input importo (default 10.000, step 50) e sconto medio (default 8, step 0,5) → mostra risultato e spiegazione testuale del criterio applicato (scaglione/base/soglia).
+- **Anteprima calcolo**: pulsante che apre la **modale di calcolo in modalità "anteprima"** (vedi §5.4): destinazione **bloccata** sulla tariffa in modifica (nome + "In pausa" se in pausa), calcolo sui valori **non ancora salvati** (base, soglia e scaglioni del form), risultato con etichetta "(in modifica)".
 
 **Azioni**: Salva modifiche · Annulla · Elimina. In creazione la tariffa nasce come bozza `{nazione:'IT', stato:'configura', base:3.0, soglia:null, ranges:[], isNew:true}`; al salvataggio `isNew` viene rimosso.
 
@@ -184,12 +188,14 @@ Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impat
 
 **Nota per il reale**: aggiungere **conferma di eliminazione** (nel prototipo elimina senza chiedere) e **bloccare l'eliminazione del default ROW**.
 
-### 5.4 Simulatore di costo (modale)
+### 5.4 Calcolatore (modale unica: simulatore + anteprima)
 
-### 5.4 Simulatore di costo (modale)
+Un'unica modale riutilizzabile con **due modalità**, scelte all'apertura:
 
-Input:
-- **Nazione di consegna** (ricerca inclusa con autocomplete) · **Regione** (ricerca inclusa; visibile solo se la nazione è Italia, con opzione "Usa tariffa automatica" sempre raggiungibile) · **Importo fattura senza IVA** (default 10.000 €) · **Sconto medio su listino** (default 8%, campo 0–30, step 0,5).
+- **Simulatore** (pulsante della toolbar): mostra il selettore **Nazione di consegna** (ricerca inclusa con autocomplete) e **Regione** (ricerca inclusa; visibile solo se la nazione è Italia, con opzione "Usa tariffa automatica" sempre raggiungibile); all'apertura resetta a **Italia / automatica**. Risolve con `resolveTariffa` sulle tariffe **salvate**.
+- **Anteprima** (pulsante dell'editor): nasconde il selettore e mostra una riga bloccata con la destinazione in modifica; calcola sui valori **correnti del form** (non ancora salvati), etichettata "(in modifica)". Il titolo della modale diventa "Anteprima calcolo".
+
+Input comuni: **Importo fattura senza IVA** (default 10.000 €, step 50) · **Sconto medio su listino** (default 8%, campo 0–30, step 0,5).
 
 Output:
 - **Tariffa applicata**: riga con sorgente e qualificatore:
@@ -201,7 +207,7 @@ Output:
 - **Riepilogo a passi**: importo netto · sconto medio · tariffa applicata · soglia gratuita · percentuale applicata · spese di spedizione.
 - **Grafico a barre**: percentuale applicata per sconto 0/5/10/15/20%, barra dello sconto simulato evidenziata.
 
-Il simulatore riusa la **stessa** `resolveTariffa` e `pctOf` dell'elenco (unica fonte di verità).
+Il calcolatore riusa la **stessa** `resolveTariffa` e `pctOf` di elenco/checkout (unica fonte di verità).
 
 ---
 
@@ -249,18 +255,115 @@ Nel flusso d'ordine il costo trasporto va calcolato così:
 5. Scaglione: sconto esattamente su `max` → cade nello scaglione successivo (`min ≤ x < max`).
 6. Catena scaglioni: i limiti inferiori derivati corrispondono (0 per il primo, limite superiore del precedente); modificando un limite superiore la riga successiva si aggiorna; l'ultima riga è "oltre".
 7. Aggiunta scaglione su catena "oltre": il default chiude l'ultimo limite a `min + 5` e resta modificabile senza buchi/sovrapposizioni (es. `[0,null]` → `[0,5] + [5,null]`).
-8. Unicità: salvare una tariffa esistente la sostituisce (con conferma nel reale).
+8. Unicità: salvare una tariffa esistente la sostituisce (con conferma nel reale); **non si possono mai creare due tariffe attive per la stessa destinazione** (indice unico su `(nazione, regione)` + verifica applicativa).
 9. Il default `ROW` non è eliminabile.
-10. Ordinamento elenco: zone → nazioni (alfabetico it) → regioni; paginazione 10 righe.
-11. Simulatore ed elenco producono lo **stesso** risultato a parità di input.
+10. Ordinamento elenco: zone → nazioni (alfabetico it) → regioni; paginazione **15 righe**.
+11. Simulatore ed elenco producono lo **stesso** risultato a parità di input; la modale di **anteprima** con la stessa destinazione e gli stessi valori del simulatore produce lo stesso risultato (parità delle due modalità).
 12. Il conteggio dei paesi dell'area europea è calcolato (27) e mostrato nei testi di Europa.
+13. **Header sticky**: a scorrimento verticale tutte le colonne (inclusa "Scaglioni sconto medio") restano fisse in alto.
+14. **Colonna ridimensionabile**: trascinando l'handle la larghezza cambia e sopravvive al reload (`localStorage('spese-scaglioni-w')`).
+15. **Nessuna colonna "Stato"**: lo stato è visibile solo tramite il pallino con tooltip nella cella Destinazione.
 
 ---
 
 ## 10. Note implementative
 
-- Il prototipo (`spese-spedizione.html`) è il riferimento di comportamento: copie fedeli di `resolveTariffa`, `pctOf`, `destName`, `destTitle`, `describeTariffa`, `bindNationSearch`/`resetNationSearch` (ricerca per **regione** e **nazione**; l'opzione "Usa tariffa automatica" resta sempre visibile e non viene mai auto-selezionata; a query vuota non si seleziona nulla).
+- Il prototipo (`spese-spedizione.html`) è il riferimento di comportamento: copie fedeli di `resolveTariffa`, `pctOf`, `destName`, `destTitle`, `describeTariffa` e del componente combobox (vedi §11.4 punto 7).
 - Nell'editor, il blocco Destinazione: **picker solo in creazione**, **descrizione + striscia di gerarchia in modifica** — requisito esplicito, da rispettare.
 - Tooltip "?": comportamento hover/focus con riposizionamento su scroll/resize.
 - Accessibilità: modali con `role="dialog"` e `aria-modal`, pulsanti icona con `aria-label`/`title`.
-- **Autocomplete/ricerca**: sia la Nazione sia la Regione usano lo stesso pattern `bindNationSearch`/`resetNationSearch` (campo di ricerca sopra la select che filtra le option in tempo reale); l'opzione "Usa tariffa automatica" (valore vuoto) resta **sempre visibile** e **non viene mai auto-selezionata**; a query vuota non avviene alcuna auto-selezione; all'apertura delle modali (`openEditor` / `openSim`) e al cambio nazione (non-IT) le ricerche vengono resettate.
+- **Autocomplete/ricerca (combobox)**: Nazione e Regione usano lo stesso componente (`createCombobox` nel prototipo): campo di ricerca sopra il dropdown che filtra le opzioni in tempo reale; l'opzione "Usa tariffa automatica" (valore vuoto) resta **sempre visibile** e **non viene mai auto-selezionata**; a query vuota non avviene alcuna auto-selezione; all'apertura delle modali e al cambio nazione (non-IT) i campi vengono resettati.
+
+---
+
+## 11. Replica fisica nell'applicazione — guida all'agente implementatore
+
+> **Obiettivo**: la replica deve essere **identica** al prototipo `spese-spedizione.html` nel comportamento e nell'aspetto, integrata nel **routing dell'applicazione** (Next.js + NestJS). Il prototipo resta la fonte di verità comportamentale: in caso di dubbio, aprire il prototipo e riprodurre esattamente ciò che fa.
+
+### 11.1 Posizionamento nel routing (integrazione)
+
+**Frontend (Next.js, `"use client"`):**
+- Nuovo componente sezione: `frontend/components/admin/sections/SpeseSpedizioneSection.tsx` (punto di ingresso di tutta la UI: toolbar, tabella, editor, calcolatore).
+- Registrazione della sezione in `frontend/app/admin/page.tsx`:
+  - `import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";`
+  - `{section === "spese-spedizione" && <SpeseSpedizioneSection />}`
+  - titolo in `SECTION_TITLES` (`spese-spedizione: "Spese di spedizione"`).
+- Voce di menu in `frontend/components/admin/AdminSidebar.tsx` (es. gruppo "Vendite": `{ id: "spese-spedizione", label: "Spese di spedizione", icon: "truck" }` + icona in `ICONS`).
+- Traduzioni: nuove chiavi in `frontend/messages/it.json` ed `en.json` (il prototipo è solo in italiano; le stringhe tecniche dei calcoli restano in italiano).
+- Stili: la sezione importa già `admin.css` (via `page.tsx`). Portare le regole del prototipo in `frontend/app/admin/admin.css` seguendo il mapping del **§11.5** — non introdurre framework CSS esterni per tabella/modali di questa sezione.
+
+**Backend (NestJS):**
+- Nuovo modulo `backend/src/spese-spedizione/` con `spese-spedizione.module.ts`, `spese-spedizione.controller.ts`, `spese-spedizione.service.ts`, `dto/*.ts`; registrato in `app.module.ts`.
+- Modello Prisma `TariffaSpedizione` (mapping del §2.3) + migrazione con **indice unico su `(nazione, regione)`**.
+- Endpoint REST del §7 protetti con `AuthenticatedGuard` + `PermissionsGuard` e permission di tipo `spese-spedizione.view` / `spese-spedizione.edit`.
+
+### 11.2 Inventory componenti (mapping prototipo → React)
+
+| Blocco prototipo | Componente React | Note |
+|---|---|---|
+| header/toolbar (titolo + meta + ricerca + filtro + bottoni "Simulatore di costo" / "Crea nuovo") | `<SpeseSpedizioneToolbar />` | contenuto della sezione, non dell'AdminTopBar globale |
+| tabella `#reg-tbody` + `#reg-meta` + footer pager | `<TariffeTable />` | righe generate dalla funzione `renderRows` del prototipo (vedi §11.4) |
+| editor `#edit-modal` | `<TariffaEditor />` | picker (creazione) **vs** scheda descrittiva + striscia di gerarchia (modifica) |
+| combobox ricerca Nazione/Regione | `<Combobox />` riutilizzabile | comportamento del §11.4 / §10 |
+| calcolatore `#calc-modal` | `<TariffaCalcModal />` | **unica modale**, due modalità: `sim` (picker libero) e `prev` (destinazione bloccata) |
+| handle resize colonna `#th-resize` | hook `useResizableColumn` | persistenza `localStorage('spese-scaglioni-w')` |
+
+### 11.3 Logica condivisa (unica fonte di verità)
+
+Portare in una libreria pura senza dipendenze DOM (`frontend/lib/spese-spedizione.ts`, testabile con vitest/jest) e riutilizzare nel checkout:
+
+- `resolveTariffa(nazione, regione)` — §3 (attenzione: solo `stato === 'ok'` vince).
+- `pctOf(tariffa, discount)` — §4.
+- `destName`, `destTitle`, `describeTariffa`, `destLevel` — etichette.
+- `currentRanges()` — derivazione limiti inferiori dagli scaglioni (§4.1).
+- `sortedDest()` + `filtered()` — ordinamento e filtri elenco.
+- `euCount()` — conteggio paesi EU **calcolato**.
+- `fmtEur` / `fmtPct` — formattazione italiana (§6).
+- Il **calcolatore** (`calcCompute`) accetta il contesto: tariffa risolta dal server (`sim`) **oppure** una tariffa costruita dai valori non salvati del form (`prev`). Stesso rendering per entrambe.
+
+### 11.4 Comportamenti da replicare identici (checklist comportamentale)
+
+1. **Header sticky**: `position: sticky; top: 0` su TUTTE le `th`, inclusa "Scaglioni sconto medio". **Non** applicare `position: relative` alla th ridimensionabile (rompe lo sticky). L'handle di resize resta assoluto dentro la th sticky.
+2. **Colonna ridimensionabile**: pointer events su `#th-resize`, larghezza minima 140px, persistita in `localStorage('spese-scaglioni-w')`.
+3. **Pallino stato, nessuna colonna Stato**: `cell-dot` con classe `ok`/`pausa`/`configura` + tooltip `data-tip` → stato `Configurata`/`In pausa`/`Da configurare`. Toggle pausa/riprendi nelle azioni di riga (scambia `ok ↔ pausa`, ignora `configura`).
+4. **Modale calcolatore unica**: all'apertura `sim` → reset a Italia/automatica; all'apertura `prev` → picker nascosto, riga bloccata con destinazione + stato "In pausa", titolo "Anteprima calcolo", etichetta tariffa "(in modifica)". Entrambe condividono lo stesso output (risultato grande, nota, riepilogo a passi, barre).
+5. **"Tariffa da confermare"** quando `resolveTariffa` non trova alcuna tariffa attiva nella catena (result `—`, nota con destinazione e suggerimento).
+6. **Editor**: picker solo in creazione (`isNew`), scheda + gerarchia in modifica; il cambio di livello aggiorna titolo/descrizione in tempo reale; nazione non-IT nasconde e resetta la regione.
+7. **Combobox**: "Usa tariffa automatica" (`value:''`) sempre visibile (anche a query non vuota) e mai auto-selezionata; a query vuota nessuna auto-selezione; reset delle ricerche all'apertura modali e al cambio nazione (non-IT).
+8. **Chiusura modali**: ×, click su backdrop, `Escape` con catena di priorità (editor → calcolatore). `role="dialog"` + `aria-modal`, `aria-label`/`title` sui pulsanti icona.
+9. **Paginazione 15**, reset a pagina 1 su ricerca/filtro, empty state `colspan="6"`, meta conteggi ricalcolati ad ogni render.
+10. **Chip scaglioni**: `0–5% → 4,5%` con `+N` oltre i primi 3; `—` senza scaglioni.
+
+### 11.5 Mapping CSS (token e classi del prototipo)
+
+- Token del prototipo (`:root`) da allineare a quelli di `admin.css`/`globals.css`: `--bg`, `--surface`, `--fg`, `--muted`, `--border`, `--accent`, `--accent-soft`, `--ok`/`--ok-soft`, `--amber`/`--amber-soft`, `--danger`/`--danger-soft`, `--green`/`--red`/`--blue`, `--table-head-bg`, `--fg-soft`, `--font-display`, `--font-body`, `--font-mono`, raggi. Se il tema dell'app non espone lo stesso token, definirli a livello di sezione senza toccare il resto dell'app.
+- Classi da portare in `admin.css` (con lo stesso nome e le stesse regole): `.data-table*` (thead sticky, `.col-resizable`, `.th-resize`), `.cell-entity`/`.cell-dot`/`.cell-empty`, `.chip-set`/`.chip`, `.btn*`, `.admin-search`, `.filter-select`, `.pager`, `.modal-*`, `.field`/`.field-row`/`.edit-cols`/`.col`, `.seg`/`.seg-btn`, `.combobox*`/`.auto-option`, `.zona-panel`, `.dest-desc`, `.hier`/`.lvl`/`.arrow`, `.range-table`/`.range-row`/`.range-del`, `.sim-*` (source/result/note/steps/bars/bar/bv), `.hint`/`.tip`/`.hint-tip`/`.hint-tip-global`, `.row-action`, `.data-table-empty`.
+- Tooltip: implementare il tooltip globale del prototipo (contenitore unico, `data-tip`/`::after` o riposizionamento su scroll/resize).
+
+### 11.6 Dati di riferimento e seed
+
+- Seed dei **27 record `DESTINAZIONI`** del prototipo (vedi `spese-spedizione.html`, variabile `DESTINAZIONI`) per garantire parità di test e demo (stessi id, percentuali, scaglioni, soglie, stati).
+- Tabelle di riferimento: `NAZIONI` (~210 paesi con area EU/ROW) e `REGIONI_IT` (20). Nel reale una tabella `Paese(iso, nomeIt, area)`; il conteggio "27 paesi" è **calcolato** (§2.2).
+- L'eliminazione della tariffa `ROW` è vietata a database (row-level protection nel service) e a UI (nessuna conferma di eliminazione per ROW).
+
+### 11.7 Regola di business: unicità delle destinazioni attive (requisito esplicito)
+
+**Regola**: per una stessa destinazione `(nazione, regione)` **non può esistere più di una tariffa attiva (`stato === 'ok'`)** contemporaneamente.
+
+Implementazione su tre livelli:
+1. **Dati (vincolo forte)**: indice unico su `(nazione, regione)` nel modello `TariffaSpedizione` → la destinazione identifica la tariffa e una riga può esistere **una sola volta** in qualunque stato (attiva, in pausa o da configurare). Questo rende strutturalmente impossibile la duplicazione.
+2. **Applicativo (servizio)**: in `create`/`update`, prima di salvare, risolvere la destinazione: se esiste già una riga con la stessa `(nazione, regione)` diversa da quella in modifica → **restituire un conflitto** (`409`) oppure, se la logica lo prevede, aggiornare quella riga. Nel reale la UI mostra una **conferma di sovrascrittura** (il prototipo sostituisce direttamente la precedente).
+3. **Regola "attiva"**: una tariffa in `pausa` o `configura` **occupa comunque la destinazione**: per riattivare una destinazione si modifica lo stato della riga esistente (toggle `ok ↔ pausa`), non si crea una seconda riga. In `resolveTariffa` vince solo la riga unica se è `ok`; se non lo è, la risoluzione prosegue ai livelli inferiori (§3).
+
+### 11.8 Checklist di parità pre-consegna
+
+- [ ] I 15 criteri di accettazione del §9 passano sul porting.
+- [ ] A parità di input, elenco, simulatore e anteprima danno lo **stesso** risultato.
+- [ ] Nessuna colonna "Stato": lo stato è solo il pallino con tooltip.
+- [ ] Header sticky per tutte le colonne (anche "Scaglioni") e colonna ridimensionabile che sopravvive al reload.
+- [ ] Modali editor/calcolatore: apertura, chiusura (×, backdrop, Escape) e priorità corrette.
+- [ ] "Tariffa da confermare" mostrata quando manca una tariffa attiva.
+- [ ] Impossibile creare due tariffe attive per la stessa destinazione (indice unico + 409/conferma).
+- [ ] Default `ROW` non eliminabile.
+- [ ] Meta conteggi, formato € e % (virgola) corretti.
+- [ ] I 27 record di seed producono la stessa tabella e gli stessi calcoli del prototipo.
