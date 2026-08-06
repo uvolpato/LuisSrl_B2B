@@ -209,6 +209,7 @@ export default function SpeseSpedizioneSection() {
             </div>
           </div>
       </div>
+      </div>
       {editOpen && <TariffaEditor
         tariffa={editTarget}
         allTariffe={tariffe}
