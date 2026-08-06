@@ -95,6 +95,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
   background: var(--surface); font: inherit; font-size: 14px; color: var(--fg);
 }
 
+.read-only-field {
+  padding: 10px 14px; border: 1px dashed var(--border); border-radius: var(--radius);
+  background: var(--fg-soft); font-size: 14px; color: var(--fg); font-family: var(--font-mono);
+}
+
 /* ══ Modalità consegna — opt cards ══ */
 .catalogo-page.cart-page.checkout-page .opt-list { display: flex; flex-direction: column; gap: 12px; }
 .catalogo-page.cart-page.checkout-page .opt-card {
@@ -360,6 +365,22 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
               <div class="form-field">
                 <label for="notaOrdine">Nota d'ordine</label>
                 <textarea id="notaOrdine" class="form-textarea" rows="3" placeholder="Es. riferimento commessa interna…"></textarea>
+              </div>
+            </div>
+          </section>
+
+          <!-- Condizioni di pagamento -->
+          <section class="checkout-section">
+            <h2 class="checkout-section-title">Condizioni di pagamento</h2>
+            <p class="checkout-note" style="margin-bottom:12px">Condizioni predefinite dall'anagrafica cliente.</p>
+            <div class="checkout-grid">
+              <div class="form-field">
+                <label>Pagamento</label>
+                <div class="read-only-field" id="cod-pagamento">BB30 — Bonifico 30 gg d.f.</div>
+              </div>
+              <div class="form-field">
+                <label>Banca d'appoggio</label>
+                <div class="read-only-field">Banca Intesa Sanpaolo — IT 12345</div>
               </div>
             </div>
           </section>
