@@ -463,9 +463,9 @@ function renderSummary() {
   var scontoFamiglia = Math.round(subtotal * 0.06 * 100) / 100;
   var scontoArticolo = Math.round(subtotal * 0.03 * 100) / 100;
   var totaleSconti = scontoCliente + scontoFamiglia + scontoArticolo;
-  var spedizione = 12.50;
+  var isRitiro = document.querySelector('input[name="modalita"]:checked').value === 'RITIRO';
+  var spedizione = isRitiro ? 0 : 12.50;
   var subScontato = subtotal - totaleSconti;
-  var spedizione = 12.50;
   var totale = subScontato + spedizione;
 
   document.getElementById('val-sub-listino').textContent = fmtEur(subtotalListino);
@@ -519,6 +519,7 @@ function updateModalita(mode) {
     if (shipEl.parentNode !== parent && parent) parent.insertBefore(shipEl, document.getElementById('summary-items'));
     updateShipTo();
   }
+  renderSummary();
 }
 
 /* ── VALIDATE ── */
@@ -557,7 +558,7 @@ function confermaOrdine() {
   var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
   var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
   var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
-  var sped = 12.50;
+  var sped = (document.querySelector('input[name="modalita"]:checked').value === 'RITIRO') ? 0 : 12.50;
   var impon = subtotal - scontoCl - scontoFa - scontoAr;
   var totale = impon + sped;
   var num = 'ORD-' + new Date().getFullYear() + '-' + String(Math.floor(10000 + Math.random() * 90000));
