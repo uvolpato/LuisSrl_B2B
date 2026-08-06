@@ -19,7 +19,7 @@ interface CartItem {
   dimensioni: string;
   immagineUrl: string | null;
   multiplo: number;
-  prezzo: { prezzoNetto: number; prezzoListino: number; sconto: number } | null;
+  prezzo: { prezzoNetto: number; prezzoListino: number; scontoListino?: number; sconto?: number } | null;
 }
 
 type ModalitaConsegna = "RITIRO" | "SPEDIZIONE";
@@ -534,7 +534,7 @@ export default function CheckoutPage() {
               <div className="summary-rows">
                 {items.map(item => {
                   const tot = item.quantita * (item.prezzo?.prezzoNetto ?? 0);
-                  const scontoPct = item.prezzo?.sconto ?? 0;
+                  const scontoPct = item.prezzo?.sconto ?? item.prezzo?.scontoListino ?? 0;
                   return (
                     <div key={item.varianteCodice} className="summary-item">
                       <div className="summary-item-row1">
