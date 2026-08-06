@@ -28,6 +28,21 @@ export class CheckoutController {
     );
   }
 
+  @Post('indirizzo')
+  salvaIndirizzo(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: {
+      ragioneSociale?: string;
+      indirizzo: string;
+      cap: string;
+      citta: string;
+      provincia?: string;
+      abituale?: boolean;
+    },
+  ) {
+    return this.checkout.salvaIndirizzo(req.user.id, dto);
+  }
+
   @Post('conferma')
   conferma(
     @Req() req: AuthenticatedRequest,

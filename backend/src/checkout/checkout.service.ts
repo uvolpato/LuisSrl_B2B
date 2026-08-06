@@ -147,6 +147,36 @@ export class CheckoutService {
     return map[prov] ?? null;
   }
 
+  async salvaIndirizzo(clienteId: number, dto: { ragioneSociale?: string; indirizzo: string; cap: string; citta: string; provincia?: string; abituale?: boolean }) {
+    if (dto.abituale) {
+      await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
+    }
+    const nuovo = await this.prisma.indirizzoCliente.create({
+      data: {
+        customerId: clienteId,
+        ragioneSociale: dto.ragioneSociale ?? null,
+        indirizzo: dto.indirizzo,
+        cap: dto.cap,
+        citta: dto.citta,
+        provincia: dto.provincia ?? null,
+        flagSpedizione: true,
+        flagAbituale: dto.abituale ?? false,
+        tipoDestinazione: 'SPEDIZIONE',
+      },
+    });
+    return {
+      id: nuovo.id,
+      nome: nuovo.ragioneSociale ?? "Nuovo indirizzo",
+      indirizzo: nuovo.indirizzo,
+      cap: nuovo.cap,
+      citta: nuovo.citta,
+      provincia: nuovo.provincia,
+      tipo: nuovo.tipoDestinazione ?? "SPEDIZIONE",
+      abituale: nuovo.flagAbituale,
+      daIntegra: false,
+    };
+  }
+
   async confermaOrdine(
     clienteId: number,
     dto: {
