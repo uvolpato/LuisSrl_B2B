@@ -129,7 +129,8 @@ function AddrCard({ tipo, cls, ragioneSociale, a }: { tipo: string; cls: string;
   return (
     <div className="addr-card">
       <div className="addr-card-h">
-        <span className={`status ${cls}`}><span className="sd">●</span>{tipo}{ragioneSociale ? ` — ${ragioneSociale}` : ""}</span>
+        <span className={`status ${cls}`}><span className="sd">●</span>{tipo}</span>
+        {ragioneSociale && <div className="addr-card-title">{ragioneSociale}</div>}
       </div>
       <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
       <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
