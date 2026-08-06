@@ -11,7 +11,7 @@ import {
   resolveTariffa, pctOf, calcFee, destName, destTitle, describeTariffa,
   sortedDest, fmtEur, fmtPct, currentRanges, statoLabel,
   NAZIONI_ORDER, REGIONI_IT, ZONE_KEYS, euCount,
-  isZona,
+  isZona, NAZIONI,
 } from "../../../lib/spese-spedizione";
 
 const PAGE_SIZE = 15;
@@ -250,7 +250,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   const confirm = useConfirm();
   const [error, setError] = useState("");
 
-  const nazioniOpts: ComboboxOption[] = NAZIONI_ORDER.map(k => ({ value: k, label: k }));
+  const nazioniOpts: ComboboxOption[] = NAZIONI_ORDER.map(k => ({ value: k, label: NAZIONI[k].n, meta: NAZIONI[k].z === 'EU' ? 'EU' : undefined }));
   const regioniOpts: ComboboxOption[] = REGIONI_IT.map(r => ({ value: r, label: r }));
 
   const desc = !isNew ? describeTariffa(tariffa!) : null;
@@ -472,7 +472,7 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
   const [amount, setAmount] = useState(10000);
   const [discount, setDiscount] = useState(8);
 
-  const nazioniOpts: ComboboxOption[] = NAZIONI_ORDER.map(k => ({ value: k, label: k }));
+  const nazioniOpts: ComboboxOption[] = NAZIONI_ORDER.map(k => ({ value: k, label: NAZIONI[k].n, meta: NAZIONI[k].z === 'EU' ? 'EU' : undefined }));
   const regioniOpts: ComboboxOption[] = REGIONI_IT.map(r => ({ value: r, label: r }));
 
   const isPrev = mode === "prev";
