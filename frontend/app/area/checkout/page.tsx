@@ -429,11 +429,6 @@ export default function CheckoutPage() {
                               Imposta come predefinito
                             </button>
                           )}
-                          {a.id !== -1 && !a.abituale && (
-                            <button type="button" className="btn-set-default" onClick={e => { e.stopPropagation(); /* TODO: set default */ }}>
-                              Imposta come predefinito
-                            </button>
-                          )}
                         </label>
                       ))}
                     </div>
