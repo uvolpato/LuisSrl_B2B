@@ -486,7 +486,7 @@ function renderSummary() {
   var scontoArticolo = Math.round(subtotal * 0.03 * 100) / 100;
   var totaleSconti = scontoCliente + scontoFamiglia + scontoArticolo;
   var isRitiro = document.querySelector('input[name="modalita"]:checked').value === 'RITIRO';
-  var spedizione = isRitiro ? 0 : 12.50;
+  var spedizione = isRitiro ? 0 : (_currentSpedizione || 0);
   var subScontato = subtotal - totaleSconti;
   var totale = subScontato + spedizione;
 
@@ -495,8 +495,98 @@ function renderSummary() {
   document.getElementById('val-sconto-famiglia').textContent = '\u2212' + fmtEur(scontoFamiglia);
   document.getElementById('val-sconto-articolo').textContent = '\u2212' + fmtEur(scontoArticolo);
   document.getElementById('val-sub-scontato').textContent = fmtEur(subScontato);
-  document.getElementById('val-spedizione').textContent = fmtEur(spedizione);
+  document.getElementById('val-spedizione').textContent = isRitiro ? '0,00 \u20AC' : (spedizione === 0 ? 'Gratuita' : fmtEur(spedizione));
+  if (spedizione === 0 && !isRitiro) document.getElementById('val-spedizione').style.color = 'var(--green)';
+  else document.getElementById('val-spedizione').style.color = '';
   document.getElementById('summary-total').textContent = fmtEur(totale);
+}
+
+/* ── SPEDIZIONE: calcolo basato su provincia → regione → nazione → area (simula API) ──
+ *
+ * SPECIFICA API:
+ *   POST /api/checkout/spedizione
+ *   Body: { ordineKey: string, provincia: string }
+ *   Response: { importo: number, descrizione: string, gratuita: boolean }
+ *
+ * Il backend risolve la tariffa con la cascata:
+ *   regione (solo IT) → nazione → zona Europa → resto del mondo → "da confermare"
+ * usando le tariffe configurate in amministrazione (spese-spedizione).
+ * L'importo è una % sull'imponibile scontato, eventualmente azzerato se
+ * l'imponibile supera la soglia di spedizione gratuita.
+ * Lo sconto medio dell'ordine determina lo scaglione da applicare.
+ * Il frontend NON calcola — passa solo provincia e chiave ordine.
+ */
+var SCONTO_MEDIO = 0.20; // 20% sconto medio ordine (demo)
+
+var PROV_REGIONE = {
+  'AG':'Sicilia','AL':'Piemonte','AN':'Marche','AO':"Valle d'Aosta",'AR':'Toscana','AP':'Marche','AT':'Piemonte','AV':'Campania',
+  'BA':'Puglia','BT':'Puglia','BL':'Veneto','BN':'Campania','BG':'Lombardia','BI':'Piemonte','BO':'Emilia-Romagna',
+  'BZ':'Trentino-Alto Adige','BS':'Lombardia','BR':'Puglia','CA':'Sardegna','CL':'Sicilia','CB':'Molise','CE':'Campania',
+  'CT':'Sicilia','CZ':'Calabria','CH':'Abruzzo','CO':'Lombardia','CS':'Calabria','CR':'Lombardia','KR':'Calabria',
+  'CN':'Piemonte','EN':'Sicilia','FM':'Marche','FE':'Emilia-Romagna','FI':'Toscana','FG':'Puglia','FC':'Emilia-Romagna',
+  'FR':'Lazio','GE':'Liguria','GO':'Friuli-Venezia Giulia','GR':'Toscana','IM':'Liguria','IS':'Molise','SP':'Liguria',
+  'AQ':'Abruzzo','LT':'Lazio','LE':'Puglia','LC':'Lombardia','LI':'Toscana','LO':'Lombardia','LU':'Toscana',
+  'MC':'Marche','MN':'Lombardia','MS':'Toscana','MT':'Basilicata','ME':'Sicilia','MI':'Lombardia','MO':'Emilia-Romagna',
+  'MB':'Lombardia','NA':'Campania','NO':'Piemonte','NU':'Sardegna','OR':'Sardegna','PD':'Veneto','PA':'Sicilia',
+  'PR':'Emilia-Romagna','PV':'Lombardia','PG':'Umbria','PU':'Marche','PE':'Abruzzo','PC':'Emilia-Romagna',
+  'PI':'Toscana','PT':'Toscana','PN':'Friuli-Venezia Giulia','PZ':'Basilicata','PO':'Toscana','RG':'Sicilia',
+  'RA':'Emilia-Romagna','RC':'Calabria','RE':'Emilia-Romagna','RI':'Lazio','RN':'Emilia-Romagna','RM':'Lazio',
+  'RO':'Veneto','SA':'Campania','SS':'Sardegna','SV':'Liguria','SI':'Toscana','SR':'Sicilia','SO':'Lombardia',
+  'SU':'Sardegna','TA':'Puglia','TE':'Abruzzo','TR':'Umbria','TO':'Piemonte','TP':'Sicilia','TN':'Trentino-Alto Adige',
+  'TV':'Veneto','TS':'Friuli-Venezia Giulia','UD':'Friuli-Venezia Giulia','VA':'Lombardia','VE':'Veneto',
+  'VB':'Piemonte','VC':'Piemonte','VR':'Veneto','VV':'Calabria','VI':'Veneto','VT':'Lazio'
+};
+
+function calcolaSpedizione(provincia, imponibile) {
+  if (!provincia) return { importo: 0, descrizione: 'Seleziona una provincia', gratuita: false };
+  var regione = PROV_REGIONE[provincia] || null;
+  if (!regione) return { importo: 0, descrizione: 'Provincia non trovata', gratuita: false };
+  // Simula l'API: cerca la tariffa per regione (demo con valori fissi)
+  var pct = 0.018; // default 1.8%
+  var desc = 'Tariffa base';
+  // Tariffe demo per regione
+  if (regione === 'Lombardia')       { pct = 0.012; desc = 'Lombardia'; }
+  else if (regione === 'Veneto')     { pct = 0.015; desc = 'Veneto'; }
+  else if (regione === 'Piemonte')   { pct = 0.014; desc = 'Piemonte'; }
+  else if (regione === 'Sicilia')    { pct = 0.022; desc = 'Sicilia'; }
+  else if (regione === 'Sardegna')   { pct = 0.025; desc = 'Sardegna'; }
+  else if (regione === 'Calabria')   { pct = 0.024; desc = 'Calabria'; }
+  else { desc = regione + ' (tariffa base)'; }
+  // Scaglione sconto medio: se > 15% applica tariffa ridotta
+  if (SCONTO_MEDIO > 0.15) pct = Math.max(pct * 0.75, 0.008);
+  var importo = Math.round(imponibile * pct * 100) / 100;
+  // Soglia gratuita: sopra 500 € imponibile → gratis
+  var gratuita = imponibile >= 500;
+  if (gratuita) { importo = 0; desc += ' (gratuita sopra soglia)'; }
+  else { desc += ' (' + (pct * 100).toFixed(1) + '%)'; }
+  return { importo: importo, descrizione: desc, gratuita: gratuita };
+}
+
+function updateSpedizione() {
+  var imponibile = subtotalScontato();
+  var addr = null;
+  for (var i = 0; i < ADDRESSES.length; i++) { if (ADDRESSES[i].id === selectedAddrId) { addr = ADDRESSES[i]; break; } }
+  var prov = addr ? addr.prov : '';
+  var res = calcolaSpedizione(prov, imponibile);
+  _currentSpedizione = res.importo;
+  _currentSpedizioneDesc = res.descrizione;
+  document.getElementById('val-spedizione').textContent = res.gratuita ? 'Gratuita' : fmtEur(res.importo);
+  document.getElementById('val-spedizione').style.color = res.gratuita ? 'var(--green)' : '';
+  // Update totale
+  var totale = imponibile + res.importo;
+  document.getElementById('summary-total').textContent = fmtEur(totale);
+}
+
+var _currentSpedizione = 0;
+var _currentSpedizioneDesc = '';
+
+function subtotalScontato() {
+  var subtotal = 0;
+  for (var i = 0; i < ITEMS.length; i++) subtotal += ITEMS[i].qty * ITEMS[i].prezzo;
+  var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
+  var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
+  var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
+  return subtotal - scontoCl - scontoFa - scontoAr;
 }
 
 /* ── ADDRESS ── */
@@ -508,6 +598,7 @@ function selectAddr(id) {
     cards[i].querySelector('input[type="radio"]').checked = (Number(cards[i].dataset.id) === id);
   }
   updateShipTo();
+  updateSpedizione();
 }
 
 function updateShipTo() {
@@ -544,6 +635,7 @@ function updateModalita(mode) {
     updateShipTo();
   }
   renderSummary();
+  if (mode === 'SPEDIZIONE') updateSpedizione();
 }
 
 /* ── VALIDATE ── */
@@ -582,7 +674,7 @@ function confermaOrdine() {
   var scontoCl = Math.round(subtotal * 0.11 * 100) / 100;
   var scontoFa = Math.round(subtotal * 0.06 * 100) / 100;
   var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
-  var sped = (document.querySelector('input[name="modalita"]:checked').value === 'RITIRO') ? 0 : 12.50;
+  var sped = (document.querySelector('input[name="modalita"]:checked').value === 'RITIRO') ? 0 : (_currentSpedizione || 0);
   var impon = subtotal - scontoCl - scontoFa - scontoAr;
   var totale = impon + sped;
   var num = 'ORD-' + new Date().getFullYear() + '-' + String(Math.floor(10000 + Math.random() * 90000));
@@ -673,6 +765,7 @@ var provinciaCombobox = null;
 (function() {
   renderSummary();
   updateShipTo();
+  updateSpedizione();
 
   // Province combobox
   var PROVINCE = [
