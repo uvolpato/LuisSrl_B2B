@@ -10,6 +10,10 @@ export interface DatiCheckout {
   cliente: {
     id: number;
     ragioneSociale: string | null;
+    indirizzo: string | null;
+    cap: string | null;
+    citta: string | null;
+    provincia: string | null;
     codicePagamento: string | null;
     codicePorto: string | null;
     codiceSpedizione: string | null;
@@ -80,6 +84,10 @@ export class CheckoutService {
       cliente: {
         id: customer.id,
         ragioneSociale: customer.ragioneSociale,
+        indirizzo: customer.indirizzo,
+        cap: customer.cap,
+        citta: customer.citta,
+        provincia: customer.provincia,
         codicePagamento: customer.codicePagamento,
         codicePorto: customer.codicePorto,
         codiceSpedizione: customer.codiceSpedizione,
