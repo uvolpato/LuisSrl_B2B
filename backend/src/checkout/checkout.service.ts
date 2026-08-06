@@ -4,7 +4,7 @@ import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { EventsService } from '../events/events.service';
 import { SpeseSpedizioneService, Calcola } from '../spese-spedizione/spese-spedizione.service';
 
-export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE' | 'MEZZI_PROPRI';
+export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE';
 
 export interface DatiCheckout {
   cliente: {
@@ -152,7 +152,7 @@ export class CheckoutService {
         throw new BadRequestException('Indicare data e ora di ritiro in sede');
       }
     } else {
-      // SPEDIZIONE o MEZZI_PROPRI: serve un indirizzo di consegna
+      // SPEDIZIONE: serve un indirizzo di consegna
       if (dto.nuovoIndirizzo) {
         if (!allowNewAddress) {
           throw new BadRequestException('Inserimento di un nuovo indirizzo non abilitato');
@@ -266,9 +266,8 @@ export class CheckoutService {
     dtoSpedizione: string | undefined,
     defaultSpedizione: string | null | undefined,
   ): string {
-    if (modalita === 'RITIRO') return '001'; // A MEZZO MITTENTE (ritiro in sede)
-    if (modalita === 'MEZZI_PROPRI') return '002'; // A MEZZO DESTINATARIO (mezzi propri)
-    return dtoSpedizione ?? defaultSpedizione ?? '003'; // A MEZZO VETTORE (corriere)
+    if (modalita === 'RITIRO') return '001';
+    return dtoSpedizione ?? defaultSpedizione ?? '003';
   }
 
   private async getConfigFlag(key: string): Promise<boolean> {
