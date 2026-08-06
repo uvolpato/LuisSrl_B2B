@@ -5,6 +5,7 @@ import { api } from "../../../lib/api";
 import ComboboxField from "../ComboboxField";
 import type { ComboboxOption } from "../ComboboxField";
 import Modal from "../../common/Modal";
+import Hint from "../../common/Hint";
 import { useConfirm } from "../../common/ConfirmProvider";
 import type { Tariffa } from "../../../lib/spese-spedizione";
 import {
@@ -413,7 +414,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
         </div>
         <div className="col">
           <div className="field">
-            <label>Scaglioni per sconto medio</label>
+            <label>Scaglioni per sconto medio <Hint>Gli scaglioni cambiano la percentuale in base allo sconto medio praticato al cliente rispetto al listino. Il primo parte da 0% e l&apos;ultimo arriva a "oltre": imposta solo il limite superiore di ciascuno.</Hint></label>
             <div className="range-table">
               {ranges.length === 0 ? (
                 <div className="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div>
