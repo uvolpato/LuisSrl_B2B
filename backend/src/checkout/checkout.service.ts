@@ -94,7 +94,7 @@ export class CheckoutService {
         provincia: i.provincia,
         tipoDestinazione: i.tipoDestinazione,
         flagSpedizione: i.flagSpedizione,
-        flagAbituale: i.flagAbituale,
+        abituale: i.flagAbituale,
         daIntegra: i.codiceDestinazione != null && i.codiceDestinazione !== '',
       })),
       allowNewAddress,
