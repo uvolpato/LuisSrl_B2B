@@ -3152,6 +3152,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   background: var(--surface);
 }
 .addr-card-h { margin-bottom: 8px; }
+.addr-card-title { font-weight: 600; font-size: 14px; margin-top: 4px; }
 .addr-l {
   display: flex;
   justify-content: space-between;
