@@ -91,7 +91,7 @@ export default function SpeseSpedizioneSection() {
   const meta = `${tariffe.length} tariffe · ${tariffe.filter(d => isZona(d.nazione)).length} zone · ${tariffe.filter(d => !isZona(d.nazione) && !d.regione).length} nazioni · ${tariffe.filter(d => d.regione !== null).length} eccezioni regionali · ${tariffe.filter(d => d.stato === "ok").length} configurate · ${tariffe.filter(d => d.stato === "configura").length} da configurare · ${tariffe.filter(d => d.stato === "pausa").length} in pausa`;
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div className="admin-top" style={{ position: "sticky", top: 0, zIndex: 10 }}>
         <h1>Spese di spedizione</h1>
         <div className="top-actions">
