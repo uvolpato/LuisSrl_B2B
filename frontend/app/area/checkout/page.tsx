@@ -26,11 +26,14 @@ type ModalitaConsegna = "RITIRO" | "SPEDIZIONE";
 
 interface Indirizzo {
   id: number;
-  nome: string | null;
+  ragioneSociale: string | null;
   indirizzo: string | null;
   cap: string | null;
   citta: string | null;
   provincia: string | null;
+  tipoDestinazione: string | null;
+  flagSpedizione: boolean;
+  flagAbituale: boolean;
   tipo: string | null;
   abituale: boolean;
   daIntegra: boolean;
@@ -377,7 +380,7 @@ export default function CheckoutPage() {
                           <input type="radio" name="indirizzo" checked={a.id === indirizzoId} onChange={() => selezionaIndirizzo(a.id)} style={{ position: "absolute", opacity: 0 }} />
                           <div className="addr-card-h">
                             <span className={`status ${a.tipo === "SPEDIZIONE" ? "st-amber" : "st-blue"}`}>
-                              <span className="sd">●</span>{a.nome ?? "Sede"}
+                              <span className="sd">●</span>{a.ragioneSociale ?? "Sede"}
                             </span>
                           </div>
                           <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
@@ -502,7 +505,7 @@ export default function CheckoutPage() {
               {!isRitiro && indirizzoSelezionato && (
                 <div className="summary-ship">
                   <span className="label">Spedizione a</span>
-                  <span className="value">{indirizzoSelezionato.nome ?? "Sede"}</span>
+                  <span className="value">{indirizzoSelezionato.ragioneSociale ?? "Sede"}</span>
                   <span className="summary-ship-line">{[indirizzoSelezionato.indirizzo, indirizzoSelezionato.cap, indirizzoSelezionato.citta, indirizzoSelezionato.provincia].filter(Boolean).join(" ")}</span>
                 </div>
               )}

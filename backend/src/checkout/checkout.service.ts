@@ -21,17 +21,15 @@ export interface DatiCheckout {
   };
   indirizzi: Array<{
     id: number;
-    codiceDestinazione: string | null;
     ragioneSociale: string | null;
     indirizzo: string | null;
     cap: string | null;
     citta: string | null;
     provincia: string | null;
+    tipoDestinazione: string | null;
     flagSpedizione: boolean;
     flagAbituale: boolean;
-    tipoDestinazione: string | null;
-    codicePorto: string | null;
-    codiceVettore: string | null;
+    daIntegra: boolean;
   }>;
   allowNewAddress: boolean;
   pagamenti: Array<{ codice: string; descrizione: string }>;
@@ -89,17 +87,15 @@ export class CheckoutService {
       },
       indirizzi: indirizzi.map((i) => ({
         id: i.id,
-        codiceDestinazione: i.codiceDestinazione,
         ragioneSociale: i.ragioneSociale,
         indirizzo: i.indirizzo,
         cap: i.cap,
         citta: i.citta,
         provincia: i.provincia,
+        tipoDestinazione: i.tipoDestinazione,
         flagSpedizione: i.flagSpedizione,
         flagAbituale: i.flagAbituale,
-        tipoDestinazione: i.tipoDestinazione,
-        codicePorto: i.codicePorto,
-        codiceVettore: i.codiceVettore,
+        daIntegra: i.codiceDestinazione != null && i.codiceDestinazione !== '',
       })),
       allowNewAddress,
       pagamenti: pagamenti.map((p) => ({ codice: p.codice, descrizione: p.descrizione })),
