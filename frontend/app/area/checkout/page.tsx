@@ -195,6 +195,17 @@ export default function CheckoutPage() {
       .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
   }, [indirizzoSelezionato?.provincia, subScontato, subtotalListino, subtotalAmount]);
 
+  const subtotalQty = items.reduce((s, i) => s + i.quantita, 0);
+  const subtotalAmount = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+  const subtotalListino = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoListino ?? 0), 0);
+
+  useEffect(() => {
+    if (!indirizzoSelezionato?.provincia) return;
+    const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
+    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${indirizzoSelezionato.provincia}&imponibile=${subScontato}&sconto=${avgDiscount}`)
+      .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
+  }, [indirizzoSelezionato?.provincia, subScontato, subtotalListino, subtotalAmount]);
+
   const couponDiscount = couponActive ? (couponIsPct ? subtotalAmount * couponValue : couponValue) : 0;
   const subScontato = subtotalAmount - couponDiscount;
   const isRitiro = modalita === "RITIRO";
