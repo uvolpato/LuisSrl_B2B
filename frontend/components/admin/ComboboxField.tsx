@@ -48,7 +48,7 @@ export default function ComboboxField({
   // Quando il valore cambia dall'esterno (reset, cambio nazione…), aggiorna il
   // testo dell'input con l'etichetta del valore corrente.
   useEffect(() => {
-    const opt = all.find((o) => o.value === value);
+    const opt = value ? all.find((o) => o.value === value) : null;
     setQuery(opt ? opt.label : "");
   }, [value, all]);
 
