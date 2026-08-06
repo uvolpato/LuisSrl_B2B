@@ -208,10 +208,7 @@ export default function SpeseSpedizioneSection() {
               </button>
             </div>
           </div>
-        </div>
-        <p className="hint">Gli scaglioni cambiano la percentuale in base allo sconto medio praticato al cliente rispetto al listino. Se l&apos;imponibile supera la soglia, la spedizione è gratuita.</p>
       </div>
-
       {editOpen && <TariffaEditor
         tariffa={editTarget}
         allTariffe={tariffe}
