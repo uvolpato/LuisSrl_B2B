@@ -163,12 +163,18 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .catalogo-page.cart-page .checkout-btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 20px; justify-content: center; }
 .catalogo-page.cart-page .checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Elenco articoli (stile agent) ── */
-.order-summary-items { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; margin-bottom: 12px; }
-.order-summary-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-.order-summary-item .qty { font-family: var(--font-mono); color: var(--muted); min-width: 28px; text-align: right; }
-.order-summary-item .name { flex: 1; min-width: 0; }
-.order-summary-item .total { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+/* ── Elenco articoli ── */
+.summary-rows { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; margin-bottom: 8px; }
+.summary-item { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.summary-item:last-child { border-bottom: none; padding-bottom: 0; }
+.summary-item-row1 { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg); min-width: 0; }
+.summary-item-row1 .badge.code { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+.summary-item-row1 .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.summary-item-row2 { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; font-size: 12px; padding-top: 2px; }
+.summary-item-row2 .listino { color: var(--muted); text-decoration: line-through; }
+.summary-item-row2 .sconto { color: var(--accent); font-weight: 500; }
+.summary-item-row2 .riga { color: var(--muted); }
+.summary-item-row2 .netto { font-family: var(--font-mono); font-weight: 600; color: var(--fg); font-size: 13px; }
 
 /* ── Riepilogo economico (stile agent) ── */
 .total-table { width: 100%; }
@@ -340,7 +346,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
           </div>
 
           <!-- Articoli -->
-          <div class="order-summary-items" id="summary-items"></div>
+          <div class="summary-rows" id="summary-items"></div>
 
           <hr class="summary-divider">
 
@@ -395,12 +401,12 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 <script>
 /* ── DATA ── */
 var ITEMS = [
-  { codice: "CAPI0101", nome: "Vaso Torchio Terracotta Ø30 H35", qty: 12, prezzo: 12.40 },
-  { codice: "CAPI0203", nome: "Vaso Amphora Cotto H50", qty: 6, prezzo: 25.74 },
-  { codice: "CAPI0301", nome: "Vaso Oliva Terracotta Ø40 H50", qty: 8, prezzo: 18.90 },
-  { codice: "CAPI1804", nome: "Ciotola Rustica Ø25 H18", qty: 12, prezzo: 9.60 },
-  { codice: "CAPI0710", nome: "Orcio Decorato H65", qty: 4, prezzo: 32.50 },
-  { codice: "CAPI1105", nome: "Piatto Portavaso Ø50", qty: 14, prezzo: 14.16 },
+  { codice: "CAPI0101", nome: "Vaso Torchio Terracotta Ø30 H35", qty: 12, prezzo: 12.40, listino: 16.53 },
+  { codice: "CAPI0203", nome: "Vaso Amphora Cotto H50", qty: 6, prezzo: 25.74, listino: 32.18 },
+  { codice: "CAPI0301", nome: "Vaso Oliva Terracotta Ø40 H50", qty: 8, prezzo: 18.90, listino: 23.63 },
+  { codice: "CAPI1804", nome: "Ciotola Rustica Ø25 H18", qty: 12, prezzo: 9.60, listino: 12.00 },
+  { codice: "CAPI0710", nome: "Orcio Decorato H65", qty: 4, prezzo: 32.50, listino: 40.63 },
+  { codice: "CAPI1105", nome: "Piatto Portavaso Ø50", qty: 14, prezzo: 14.16, listino: 18.88 },
 ];
 
 var ADDRESSES = [
@@ -427,13 +433,21 @@ function renderSummary() {
   for (var i = 0; i < ITEMS.length; i++) {
     var it = ITEMS[i];
     var tot = it.qty * it.prezzo;
+    var scontoPct = Math.round((1 - it.prezzo / it.listino) * 100);
     subtotal += tot;
     qty += it.qty;
     html += ''
-      + '<div class="order-summary-item">'
-      + '<span class="qty">' + it.qty + '\u00D7</span>'
-      + '<span class="name">' + it.nome + '</span>'
-      + '<span class="total">' + fmtEur(tot) + '</span>'
+      + '<div class="summary-item">'
+      + '<div class="summary-item-row1">'
+      + '<span class="badge code">' + it.codice + '</span>'
+      + '<span class="desc">' + it.nome + '</span>'
+      + '</div>'
+      + '<div class="summary-item-row2">'
+      + '<span class="listino">' + fmtEur(it.listino) + '</span>'
+      + '<span class="sconto">' + (scontoPct > 0 ? '\u2212' + scontoPct + '%' : '') + '</span>'
+      + '<span class="riga">' + it.qty + '\u00D7 ' + fmtEur(it.prezzo) + '</span>'
+      + '<span class="netto">' + fmtEur(tot) + '</span>'
+      + '</div>'
       + '</div>';
   }
   container.innerHTML = html;
