@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Req, UseGuards, Query, Param, ParseIntPipe } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
@@ -41,6 +41,20 @@ export class CheckoutController {
     },
   ) {
     return this.checkout.salvaIndirizzo(req.user.id, dto);
+  }
+
+  @Put('indirizzo/:id')
+  aggiornaIndirizzo(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: {
+      indirizzo?: string;
+      cap?: string;
+      citta?: string;
+      provincia?: string;
+    },
+  ) {
+    return this.checkout.aggiornaIndirizzo(req.user.id, id, dto);
   }
 
   @Post('conferma')
