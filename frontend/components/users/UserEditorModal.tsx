@@ -125,11 +125,11 @@ function tipoIndirizzo(a: IndirizzoCliente): { label: string; cls: string } {
   return { label: "Filiale", cls: "st-muted" };
 }
 
-function AddrCard({ tipo, cls, a }: { tipo: string; cls: string; a: { indirizzo: string | null | undefined; cap: string | null | undefined; citta: string | null | undefined; provincia: string | null | undefined } }) {
+function AddrCard({ tipo, cls, ragioneSociale, a }: { tipo: string; cls: string; ragioneSociale?: string | null; a: { indirizzo: string | null | undefined; cap: string | null | undefined; citta: string | null | undefined; provincia: string | null | undefined } }) {
   return (
     <div className="addr-card">
       <div className="addr-card-h">
-        <span className={`status ${cls}`}><span className="sd">●</span>{tipo}</span>
+        <span className={`status ${cls}`}><span className="sd">●</span>{tipo}{ragioneSociale ? ` — ${ragioneSociale}` : ""}</span>
       </div>
       <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
       <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
@@ -509,11 +509,12 @@ export default function UserEditorModal({
                     <AddrCard
                       tipo="Sede legale"
                       cls="st-blue"
+                      ragioneSociale={editing.ragioneSociale}
                       a={{ indirizzo: editing.indirizzo, cap: editing.cap, citta: editing.citta, provincia: editing.provincia }}
                     />
                     {indirizzi.map((a) => {
                       const tp = tipoIndirizzo(a);
-                      return <AddrCard key={a.id} tipo={tp.label} cls={tp.cls} a={a} />;
+                      return <AddrCard key={a.id} tipo={tp.label} cls={tp.cls} ragioneSociale={a.ragioneSociale} a={a} />;
                     })}
                   </div>
                 </div>
