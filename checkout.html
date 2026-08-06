@@ -266,6 +266,22 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
         <!-- Colonna sinistra: form -->
         <div class="checkout-form">
 
+          <!-- Condizioni di pagamento -->
+          <section class="checkout-section">
+            <h2 class="checkout-section-title">Condizioni di pagamento</h2>
+            <p class="checkout-note" style="margin-bottom:12px">Condizioni predefinite dall'anagrafica cliente.</p>
+            <div class="checkout-grid">
+              <div class="form-field">
+                <label>Pagamento</label>
+                <div class="read-only-field" id="cod-pagamento">BB30 — Bonifico 30 gg d.f.</div>
+              </div>
+              <div class="form-field">
+                <label>Banca d'appoggio</label>
+                <div class="read-only-field">Banca Intesa Sanpaolo — IT 12345</div>
+              </div>
+            </div>
+          </section>
+
           <!-- Modalità di consegna -->
           <section class="checkout-section">
             <h2 class="checkout-section-title">Modalità di consegna</h2>
@@ -369,21 +385,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
             </div>
           </section>
 
-          <!-- Condizioni di pagamento -->
-          <section class="checkout-section">
-            <h2 class="checkout-section-title">Condizioni di pagamento</h2>
-            <p class="checkout-note" style="margin-bottom:12px">Condizioni predefinite dall'anagrafica cliente.</p>
-            <div class="checkout-grid">
-              <div class="form-field">
-                <label>Pagamento</label>
-                <div class="read-only-field" id="cod-pagamento">BB30 — Bonifico 30 gg d.f.</div>
-              </div>
-              <div class="form-field">
-                <label>Banca d'appoggio</label>
-                <div class="read-only-field">Banca Intesa Sanpaolo — IT 12345</div>
-              </div>
-            </div>
-          </section>
+
         </div>
 
         <!-- Sidebar: riepilogo ordine -->
