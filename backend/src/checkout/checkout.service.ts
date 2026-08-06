@@ -38,12 +38,6 @@ export interface DatiCheckout {
   porti: Array<{ codice: string; descrizione: string }>;
   spedizioni: Array<{ codice: string; descrizione: string }>;
   vettori: Array<{ codice: string; descrizione: string }>;
-  descrizioni: {
-    pagamento: string | null;
-    porto: string | null;
-    spedizione: string | null;
-    vettore: string | null;
-  };
 }
 
 @Injectable()
@@ -112,8 +106,45 @@ export class CheckoutService {
       porti: porti.map((p) => ({ codice: p.codice, descrizione: p.descrizione })),
       spedizioni: spedizioni.map((s) => ({ codice: s.codice, descrizione: s.descrizione })),
       vettori: vettori.map((v) => ({ codice: v.codice, descrizione: v.descrizione })),
-      descrizioni,
     };
+  }
+
+  async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number) {
+    // Map provincia to regione
+    const regione = this.provinciaToRegione(provincia?.toUpperCase());
+    if (!regione) return { importo: 0, descrizione: 'Provincia non trovata', gratuita: false };
+
+    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
+    if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false };
+
+    const calc = Calcola(resolved.t, imponibile, 0);
+    return {
+      importo: Math.round(calc.fee * 100) / 100,
+      descrizione: regione + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+      gratuita: calc.superaSoglia,
+    };
+  }
+
+  private provinciaToRegione(prov: string): string | null {
+    const map: Record<string, string> = {
+      AG:'Sicilia',AL:'Piemonte',AN:'Marche',AO:"Valle d'Aosta",AR:'Toscana',AP:'Marche',AT:'Piemonte',AV:'Campania',
+      BA:'Puglia',BT:'Puglia',BL:'Veneto',BN:'Campania',BG:'Lombardia',BI:'Piemonte',BO:'Emilia-Romagna',
+      BZ:'Trentino-Alto Adige',BS:'Lombardia',BR:'Puglia',CA:'Sardegna',CL:'Sicilia',CB:'Molise',CE:'Campania',
+      CT:'Sicilia',CZ:'Calabria',CH:'Abruzzo',CO:'Lombardia',CS:'Calabria',CR:'Lombardia',KR:'Calabria',
+      CN:'Piemonte',EN:'Sicilia',FM:'Marche',FE:'Emilia-Romagna',FI:'Toscana',FG:'Puglia',FC:'Emilia-Romagna',
+      FR:'Lazio',GE:'Liguria',GO:'Friuli-Venezia Giulia',GR:'Toscana',IM:'Liguria',IS:'Molise',SP:'Liguria',
+      AQ:'Abruzzo',LT:'Lazio',LE:'Puglia',LC:'Lombardia',LI:'Toscana',LO:'Lombardia',LU:'Toscana',
+      MC:'Marche',MN:'Lombardia',MS:'Toscana',MT:'Basilicata',ME:'Sicilia',MI:'Lombardia',MO:'Emilia-Romagna',
+      MB:'Lombardia',NA:'Campania',NO:'Piemonte',NU:'Sardegna',OR:'Sardegna',PD:'Veneto',PA:'Sicilia',
+      PR:'Emilia-Romagna',PV:'Lombardia',PG:'Umbria',PU:'Marche',PE:'Abruzzo',PC:'Emilia-Romagna',
+      PI:'Toscana',PT:'Toscana',PN:'Friuli-Venezia Giulia',PZ:'Basilicata',PO:'Toscana',RG:'Sicilia',
+      RA:'Emilia-Romagna',RC:'Calabria',RE:'Emilia-Romagna',RI:'Lazio',RN:'Emilia-Romagna',RM:'Lazio',
+      RO:'Veneto',SA:'Campania',SS:'Sardegna',SV:'Liguria',SI:'Toscana',SR:'Sicilia',SO:'Lombardia',
+      SU:'Sardegna',TA:'Puglia',TE:'Abruzzo',TR:'Umbria',TO:'Piemonte',TP:'Sicilia',TN:'Trentino-Alto Adige',
+      TV:'Veneto',TS:'Friuli-Venezia Giulia',UD:'Friuli-Venezia Giulia',VA:'Lombardia',VE:'Veneto',
+      VB:'Piemonte',VC:'Piemonte',VR:'Veneto',VV:'Calabria',VI:'Veneto',VT:'Lazio',
+    };
+    return map[prov] ?? null;
   }
 
   async confermaOrdine(
