@@ -172,12 +172,7 @@ export default function CheckoutPage() {
     if (!authLoading && user) fetchAll();
   }, [authLoading, user, fetchAll]);
 
-  const indirizzoSelezionato = useMemo(() => {
-    if (indirizzoId === -1) return sedeLegale;
-    return dati?.indirizzi.find(i => i.id === indirizzoId) ?? null;
-  }, [dati, indirizzoId]);
-
-  // Sede legale virtuale dall'anagrafica cliente
+  // Sede legale virtuale dall'anagrafica cliente (deve stare prima di indirizzoSelezionato)
   const sedeLegale: Indirizzo | null = useMemo(() => {
     if (!dati?.cliente.citta && !dati?.cliente.indirizzo) return null;
     return {
@@ -195,6 +190,11 @@ export default function CheckoutPage() {
       daIntegra: true,
     };
   }, [dati]);
+
+  const indirizzoSelezionato = useMemo(() => {
+    if (indirizzoId === -1) return sedeLegale;
+    return dati?.indirizzi.find(i => i.id === indirizzoId) ?? null;
+  }, [dati, indirizzoId, sedeLegale]);
 
   const tuttiIndirizzi = useMemo(() => {
     if (!dati) return [];
