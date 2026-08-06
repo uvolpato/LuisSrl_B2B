@@ -369,7 +369,9 @@
 /* Search */
 .admin-search {
   position: relative;
-  width: 320px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 600px;
 }
 .admin-search input {
   width: 100%;
