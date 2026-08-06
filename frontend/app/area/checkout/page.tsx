@@ -179,7 +179,7 @@ export default function CheckoutPage() {
 
   // Sede legale virtuale dall'anagrafica cliente
   const sedeLegale: Indirizzo | null = useMemo(() => {
-    if (!dati?.cliente.indirizzo) return null;
+    if (!dati?.cliente.citta && !dati?.cliente.indirizzo) return null;
     return {
       id: -1,
       ragioneSociale: null,
