@@ -358,10 +358,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
             <tr><td colspan="2"><hr class="total-divider"></td></tr>
             <tr id="row-sub-scontato"><td>Subtotale scontato</td><td id="val-sub-scontato">—</td></tr>
             <tr id="row-spedizione"><td>Spedizione</td><td id="val-spedizione">—</td></tr>
-            <tr id="row-imponibile"><td>Imponibile IVA</td><td id="val-imponibile">—</td></tr>
-            <tr id="row-iva"><td>IVA 22%</td><td id="val-iva">—</td></tr>
             <tr><td colspan="2"><hr class="total-divider"></td></tr>
-            <tr class="final"><td>Totale fattura</td><td id="summary-total">€ 0,00</td></tr>
+            <tr class="final"><td>Totale (IVA esclusa)</td><td id="summary-total">€ 0,00</td></tr>
           </table>
 
           <div class="checkout-error" hidden id="submit-error"></div>
@@ -466,9 +464,8 @@ function renderSummary() {
   var totaleSconti = scontoCliente + scontoFamiglia + scontoArticolo;
   var spedizione = 12.50;
   var subScontato = subtotal - totaleSconti;
-  var imponibile = subScontato;
-  var iva = Math.round(imponibile * 0.22 * 100) / 100;
-  var totale = imponibile + spedizione + iva;
+  var spedizione = 12.50;
+  var totale = subScontato + spedizione;
 
   document.getElementById('val-sub-listino').textContent = fmtEur(subtotalListino);
   document.getElementById('val-sconto-cliente').textContent = '\u2212' + fmtEur(scontoCliente);
@@ -476,8 +473,6 @@ function renderSummary() {
   document.getElementById('val-sconto-articolo').textContent = '\u2212' + fmtEur(scontoArticolo);
   document.getElementById('val-sub-scontato').textContent = fmtEur(subScontato);
   document.getElementById('val-spedizione').textContent = fmtEur(spedizione);
-  document.getElementById('val-imponibile').textContent = fmtEur(imponibile);
-  document.getElementById('val-iva').textContent = fmtEur(iva);
   document.getElementById('summary-total').textContent = fmtEur(totale);
 }
 
@@ -563,8 +558,7 @@ function confermaOrdine() {
   var scontoAr = Math.round(subtotal * 0.03 * 100) / 100;
   var sped = 12.50;
   var impon = subtotal - scontoCl - scontoFa - scontoAr;
-  var iva = Math.round(impon * 0.22 * 100) / 100;
-  var totale = impon + sped + iva;
+  var totale = impon + sped;
   var num = 'ORD-' + new Date().getFullYear() + '-' + String(Math.floor(10000 + Math.random() * 90000));
   document.getElementById('confirm-num').textContent = num;
   document.getElementById('confirm-total').textContent = fmtEur(totale);
