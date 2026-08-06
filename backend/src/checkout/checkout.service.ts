@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { EventsService } from '../events/events.service';
+import { SpeseSpedizioneService, Calcola } from '../spese-spedizione/spese-spedizione.service';
 
 export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE' | 'MEZZI_PROPRI';
 
@@ -47,6 +48,7 @@ export class CheckoutService {
     private prisma: PrismaService,
     private integrazione: IntegrazioneService,
     private events: EventsService,
+    private speseSpedizione: SpeseSpedizioneService,
   ) {}
 
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
@@ -216,6 +218,20 @@ export class CheckoutService {
       });
     }
 
+    let costoTrasporto = 0;
+
+    // Calcola spese di spedizione se l'indirizzo ha provincia (Italia)
+    if (indirizzoSpedizioneId) {
+      const addr = await this.prisma.indirizzoCliente.findUnique({ where: { id: indirizzoSpedizioneId } });
+      if (addr?.provincia) {
+        const regione = provinciaToRegione(addr.provincia.toUpperCase());
+        const resolved = this.speseSpedizione.resolveTariffa('IT', regione ?? null);
+        if (resolved) {
+          costoTrasporto = Calcola(resolved.t, importoTotale, 0).fee;
+        }
+      }
+    }
+
     const numeroOrdine = `B2B-${Date.now()}`;
     const ordine = await this.prisma.ordineCliente.create({
       data: {
@@ -275,4 +291,33 @@ export class CheckoutService {
     const max = Math.max(0, ...articolo.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
     return max > 0 ? max : undefined;
   }
+}
+
+// Mapping provincia italiana → regione (per resolveTariffa)
+function provinciaToRegione(prov: string): string | null {
+  const map: Record<string, string> = {
+    AG: 'Sicilia', AL: 'Piemonte', AN: 'Marche', AO: "Valle d'Aosta", AP: 'Marche',
+    AQ: 'Abruzzo', AR: 'Toscana', AT: 'Piemonte', AV: 'Campania', BA: 'Puglia',
+    BG: 'Lombardia', BI: 'Piemonte', BL: 'Veneto', BN: 'Campania', BO: 'Emilia-Romagna',
+    BR: 'Puglia', BS: 'Lombardia', BT: 'Puglia', BZ: 'Trentino-Alto Adige', CA: 'Sardegna',
+    CB: 'Molise', CE: 'Campania', CH: 'Abruzzo', CL: 'Sicilia', CN: 'Piemonte',
+    CO: 'Lombardia', CR: 'Lombardia', CS: 'Calabria', CT: 'Sicilia', CZ: 'Calabria',
+    EN: 'Sicilia', FC: 'Emilia-Romagna', FE: 'Emilia-Romagna', FG: 'Puglia', FI: 'Toscana',
+    FM: 'Marche', FR: 'Lazio', GE: 'Liguria', GO: 'Friuli-Venezia Giulia', GR: 'Toscana',
+    IM: 'Liguria', IS: 'Molise', KR: 'Calabria', LC: 'Lombardia', LE: 'Puglia',
+    LI: 'Toscana', LO: 'Lombardia', LT: 'Lazio', LU: 'Toscana', MB: 'Lombardia',
+    MC: 'Marche', ME: 'Sicilia', MI: 'Lombardia', MN: 'Lombardia', MO: 'Emilia-Romagna',
+    MS: 'Toscana', MT: 'Basilicata', NA: 'Campania', NO: 'Piemonte', NU: 'Sardegna',
+    OR: 'Sardegna', PA: 'Sicilia', PC: 'Emilia-Romagna', PD: 'Veneto', PE: 'Abruzzo',
+    PG: 'Umbria', PI: 'Toscana', PN: 'Friuli-Venezia Giulia', PO: 'Toscana', PR: 'Emilia-Romagna',
+    PT: 'Toscana', PU: 'Marche', PV: 'Lombardia', PZ: 'Basilicata', RA: 'Emilia-Romagna',
+    RC: 'Calabria', RE: 'Emilia-Romagna', RG: 'Sicilia', RI: 'Lazio', RM: 'Lazio',
+    RN: 'Emilia-Romagna', RO: 'Veneto', SA: 'Campania', SI: 'Toscana', SO: 'Lombardia',
+    SP: 'Liguria', SR: 'Sicilia', SS: 'Sardegna', SU: 'Sardegna', SV: 'Liguria',
+    TA: 'Puglia', TE: 'Abruzzo', TN: 'Trentino-Alto Adige', TO: 'Piemonte', TP: 'Sicilia',
+    TR: 'Umbria', TS: 'Friuli-Venezia Giulia', TV: 'Veneto', UD: 'Friuli-Venezia Giulia',
+    VA: 'Lombardia', VB: 'Piemonte', VC: 'Piemonte', VE: 'Veneto', VI: 'Veneto',
+    VR: 'Veneto', VT: 'Lazio', VV: 'Calabria',
+  };
+  return map[prov] ?? null;
 }
