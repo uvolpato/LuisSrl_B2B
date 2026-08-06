@@ -194,6 +194,11 @@ export class CheckoutService {
     await this.prisma.indirizzoCliente.delete({ where: { id } });
   }
 
+  async impostaPredefinito(clienteId: number, id: number) {
+    await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
+    await this.prisma.indirizzoCliente.update({ where: { id }, data: { flagAbituale: true } });
+  }
+
   async confermaOrdine(
     clienteId: number,
     dto: {
