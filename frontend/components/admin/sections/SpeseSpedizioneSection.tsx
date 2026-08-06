@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "../../../lib/api";
+import { ApiError } from "../../../lib/api";
 import ComboboxField from "../ComboboxField";
 import type { ComboboxOption } from "../ComboboxField";
 import Modal from "../../common/Modal";
@@ -345,7 +346,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
         });
       }
       onSaved();
-    } catch { setError("Errore salvataggio"); }
+    } catch (e) { setError(e instanceof ApiError ? e.message : "Errore salvataggio"); }
   }
 
   // Versione temporanea per l'anteprima
