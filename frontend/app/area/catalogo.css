@@ -1540,30 +1540,44 @@
 }
 
 /* Sede spedizione — radio cards */
-.catalogo-page.cart-page.checkout-page .addr-list { display: flex; flex-direction: column; gap: 12px; }
+.catalogo-page.cart-page.checkout-page .addr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
 .catalogo-page.cart-page.checkout-page .addr-card {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 16px 18px;
+  position: relative;
+  padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
   transition: border-color 0.12s ease, background 0.12s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .catalogo-page.cart-page.checkout-page .addr-card:hover { border-color: var(--accent); }
 .catalogo-page.cart-page.checkout-page .addr-card.selected { border-color: var(--accent); background: var(--accent-soft); }
-.catalogo-page.cart-page.checkout-page .addr-card input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
-.catalogo-page.cart-page.checkout-page .addr-main { display: flex; flex-direction: column; gap: 3px; flex: 1; }
-.catalogo-page.cart-page.checkout-page .addr-name { font-weight: 500; font-size: 15px; color: var(--fg); }
-.catalogo-page.cart-page.checkout-page .addr-line { font-size: 13px; color: var(--muted); }
-.catalogo-page.cart-page.checkout-page .addr-meta { display: flex; gap: 6px; margin-top: 4px; }
-.catalogo-page.cart-page.checkout-page .addr-meta .badge {
-  font-family: var(--font-mono); font-size: 11px; padding: 2px 8px;
-  border-radius: 999px; background: var(--fg-soft); color: var(--muted);
+.catalogo-page.cart-page.checkout-page .addr-card input[type="radio"] { position: absolute; opacity: 0; }
+
+.catalogo-page.cart-page.checkout-page .addr-card-h {
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 600; font-size: 13.5px; margin-bottom: 2px;
 }
-.catalogo-page.cart-page.checkout-page .addr-default {
+
+.catalogo-page.cart-page.checkout-page .addr-l {
+  display: flex; gap: 6px; font-size: 13px;
+}
+.catalogo-page.cart-page.checkout-page .addr-l b {
+  font-weight: 500; color: var(--muted); min-width: 90px; flex-shrink: 0;
+}
+
+.catalogo-page.cart-page.checkout-page .addr-badge {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 999px; flex-shrink: 0;
+  color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 999px;
+  align-self: flex-start; margin-top: 4px;
 }
 
 /* Modalità di consegna — radio cards */
