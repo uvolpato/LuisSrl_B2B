@@ -510,6 +510,7 @@ export default function UserEditorModal({
                     <AddrCard
                       tipo="Sede legale"
                       cls="st-blue"
+                      ragioneSociale={editing.ragioneSociale}
                       a={{ indirizzo: editing.indirizzo, cap: editing.cap, citta: editing.citta, provincia: editing.provincia }}
                     />
                     {indirizzi.map((a) => {
