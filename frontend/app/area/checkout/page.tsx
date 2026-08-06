@@ -117,7 +117,7 @@ export default function CheckoutPage() {
   const [nIndirizzo, setNIndirizzo] = useState("");
   const [nCap, setNCap] = useState("");
   const [nCitta, setNCitta] = useState("");
-  const [nProvincia, setNProvincia] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [nDefault, setNDefault] = useState(false);
 
   // Pagamento
@@ -416,13 +416,33 @@ export default function CheckoutPage() {
                               <div className="addr-card-title">{a.ragioneSociale}</div>
                             )}
                           </div>
-                          <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
-                          <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
-                          <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
-                          <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
+                          <div className="addr-l"><b>Indirizzo</b><span contentEditable={editingId === a.id} suppressContentEditableWarning>{a.indirizzo || "—"}</span></div>
+                          <div className="addr-l"><b>CAP</b><span className="mono" contentEditable={editingId === a.id} suppressContentEditableWarning>{a.cap || "—"}</span></div>
+                          <div className="addr-l"><b>Città</b><span contentEditable={editingId === a.id} suppressContentEditableWarning>{a.citta || "—"}</span></div>
+                          <div className="addr-l"><b>Provincia</b><span className="mono" contentEditable={editingId === a.id} suppressContentEditableWarning>{a.provincia || "—"}</span></div>
                           {a.abituale && <span className="addr-badge">Abituale</span>}
                           {a.id !== -1 && !a.daIntegra && (
-                            <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); }}>
+                            <button type="button" className={`addr-edit-btn${editingId === a.id ? " editing" : ""}`}
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (editingId === a.id) {
+                                  const spans = e.currentTarget.parentElement!.querySelectorAll<HTMLSpanElement>('.addr-l span');
+                                  const updated = tuttiIndirizzi.map(addr =>
+                                    addr.id === a.id ? {
+                                      ...addr,
+                                      indirizzo: spans[0]?.textContent ?? addr.indirizzo,
+                                      cap: spans[1]?.textContent ?? addr.cap,
+                                      citta: spans[2]?.textContent ?? addr.citta,
+                                      provincia: spans[3]?.textContent ?? addr.provincia,
+                                    } : addr
+                                  );
+                                  setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
+                                  setEditingId(null);
+                                } else {
+                                  setEditingId(a.id);
+                                }
+                              }}
+                            >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
                           )}
