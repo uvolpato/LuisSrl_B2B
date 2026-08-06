@@ -28,7 +28,7 @@ export interface DatiCheckout {
     provincia: string | null;
     tipoDestinazione: string | null;
     flagSpedizione: boolean;
-    flagAbituale: boolean;
+    abituale: boolean;
     daIntegra: boolean;
   }>;
   allowNewAddress: boolean;
