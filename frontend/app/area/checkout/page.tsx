@@ -378,50 +378,6 @@ export default function CheckoutPage() {
                 </section>
               )}
 
-              {/* Porto / Vettore */}
-              <section className="checkout-section">
-                <h2 className="checkout-section-title">Modalità di trasporto</h2>
-                <div className="checkout-grid">
-                  <div className="form-field">
-                    <label htmlFor="porto">Porto</label>
-                    <select
-                      id="porto"
-                      className="form-select"
-                      value={porto}
-                      onChange={(e) => setPorto(e.target.value)}
-                    >
-                      {dati.porti.map((p) => (
-                        <option key={p.codice} value={p.codice}>{p.codice} — {p.descrizione}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {modalita === "SPEDIZIONE" && (
-                    <div className="form-field">
-                      <label htmlFor="vettore">Vettore</label>
-                      <select
-                        id="vettore"
-                        className="form-select"
-                        value={vettore}
-                        onChange={(e) => setVettore(e.target.value)}
-                      >
-                        {dati.vettori.map((v) => (
-                          <option key={v.codice} value={v.codice}>
-                            {v.descrizione && v.descrizione !== v.codice ? `${v.codice} — ${v.descrizione}` : v.codice}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div className="form-field">
-                    <label>Pagamento</label>
-                    <div className="read-only-field">
-                      {dati.cliente.codicePagamento ?? "--"} — {dati.descrizioni.pagamento ?? "—"}
-                    </div>
-                    <span className="form-hint">Condizioni di pagamento dall'anagrafica (non modificabili).</span>
-                  </div>
-                </div>
-              </section>
-
               {/* Note */}
               <section className="checkout-section">
                 <h2 className="checkout-section-title">Note</h2>
