@@ -196,6 +196,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .coupon-msg { font-size: 11px; }
 .coupon-msg.ok { color: var(--green); }
 .coupon-msg.err { color: var(--red); }
+.coupon-remove { width: 26px; height: 26px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; display: grid; place-items: center; }
+.coupon-remove:hover { background: var(--fg-soft); color: var(--fg); }
 
 .checkout-error {
   margin-top: 12px; font-size: 13px; color: oklch(55% 0.18 30);
@@ -385,6 +387,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
               <div class="coupon-row" id="coupon-row">
                 <input type="text" id="coupon-code" class="coupon-input" placeholder="Codice sconto" autocomplete="off">
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-coupon" style="font-size:12px;padding:5px 10px">Applica</button>
+                <button type="button" class="coupon-remove" id="btn-coupon-remove" hidden title="Rimuovi codice">&times;</button>
                 <span class="coupon-msg" id="coupon-msg" hidden></span>
               </div>
             </td></tr>
@@ -885,35 +888,48 @@ var provinciaCombobox = null;
   }
 
   // Coupon handler
-  document.getElementById('btn-coupon').addEventListener('click', function() {
-    var code = document.getElementById('coupon-code').value.trim().toUpperCase();
+  function applyCoupon(code) {
     var msg = document.getElementById('coupon-msg');
     msg.hidden = false;
     msg.className = 'coupon-msg';
-    // Demo: codici sconto funzionanti
     if (code === 'B2B10') {
       _couponActive = true; _couponValue = 0.10; _couponIsPct = true;
-      msg.textContent = 'Codice B2B10: −10% applicato';
+      msg.textContent = 'Codice B2B10: \u221210% applicato';
       msg.classList.add('ok');
     } else if (code === 'B2B20') {
       _couponActive = true; _couponValue = 0.20; _couponIsPct = true;
-      msg.textContent = 'Codice B2B20: −20% applicato';
+      msg.textContent = 'Codice B2B20: \u221220% applicato';
       msg.classList.add('ok');
     } else if (code === 'SPRING50') {
       _couponActive = true; _couponValue = 50; _couponIsPct = false;
-      msg.textContent = 'Codice SPRING50: −50,00 \u20AC applicato';
+      msg.textContent = 'Codice SPRING50: \u221250,00 \u20AC applicato';
       msg.classList.add('ok');
     } else {
       _couponActive = false;
       msg.textContent = 'Codice non valido';
       msg.classList.add('err');
     }
+    document.getElementById('btn-coupon-remove').hidden = !_couponActive;
     renderSummary();
     if (_currentSpedizione > 0) updateSpedizione();
+  }
+
+  function removeCoupon() {
+    _couponActive = false;
+    document.getElementById('coupon-code').value = '';
+    document.getElementById('coupon-msg').hidden = true;
+    document.getElementById('btn-coupon-remove').hidden = true;
+    renderSummary();
+    if (_currentSpedizione > 0) updateSpedizione();
+  }
+
+  document.getElementById('btn-coupon').addEventListener('click', function() {
+    applyCoupon(document.getElementById('coupon-code').value.trim().toUpperCase());
   });
   document.getElementById('coupon-code').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') document.getElementById('btn-coupon').click();
+    if (e.key === 'Enter') applyCoupon(this.value.trim().toUpperCase());
   });
+  document.getElementById('btn-coupon-remove').addEventListener('click', removeCoupon);
 
   // Confirm
   document.getElementById('btn-conferma').addEventListener('click', confermaOrdine);
