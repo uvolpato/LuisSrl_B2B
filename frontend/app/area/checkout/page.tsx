@@ -288,96 +288,6 @@ export default function CheckoutPage() {
                 </div>
               </section>
 
-              {/* Sede di spedizione (solo per spedizione) */}
-              {modalita !== "RITIRO" && (
-                <section className="checkout-section">
-                  <h2 className="checkout-section-title">Sede di spedizione</h2>
-                  {dati.indirizzi.length === 0 && !showNuovo ? (
-                    <p className="checkout-note">
-                      Nessun indirizzo di spedizione salvato.
-                      {dati.allowNewAddress
-                        ? " Puoi indicarne uno nuovo qui sotto."
-                        : " La merce verrà inviata alla sede dell'anagrafica."}
-                    </p>
-                  ) : (
-                    <div className="addr-list">
-                      {dati.indirizzi.map((a) => (
-                        <label
-                          key={a.id}
-                          className={"addr-card" + (a.id === indirizzoId ? " selected" : "")}
-                        >
-                          <input
-                            type="radio"
-                            name="indirizzo"
-                            checked={a.id === indirizzoId}
-                            onChange={() => selezionaIndirizzo(a.id)}
-                          />
-                          <span className="addr-main">
-                            <span className="addr-name">{a.ragioneSociale ?? dati.cliente.ragioneSociale ?? "Sede"}</span>
-                            {(a.indirizzo || a.citta) && (
-                              <span className="addr-line">
-                                {[a.indirizzo, a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}
-                              </span>
-                            )}
-                            {(a.codicePorto || a.codiceVettore) && (
-                              <span className="addr-meta">
-                                {a.codicePorto && <span className="badge">Porto {a.codicePorto}</span>}
-                                {a.codiceVettore && <span className="badge">Vett {a.codiceVettore}</span>}
-                              </span>
-                            )}
-                          </span>
-                          {a.flagAbituale && <span className="addr-default">Abituale</span>}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  {dati.allowNewAddress && !showNuovo && (
-                    <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
-                      + Indica un nuovo indirizzo
-                    </button>
-                  )}
-
-                  {showNuovo && (
-                    <div className="addr-new">
-                      <div className="checkout-grid">
-                        <div className="form-field">
-                          <label htmlFor="nRagione">Intestazione</label>
-                          <input id="nRagione" className="form-input" value={nRagione} onChange={(e) => setNRagione(e.target.value)} placeholder="Es. Nome destinatario" />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="nIndirizzo">Indirizzo *</label>
-                          <input id="nIndirizzo" className="form-input" value={nIndirizzo} onChange={(e) => setNIndirizzo(e.target.value)} />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="nCap">CAP *</label>
-                          <input id="nCap" className="form-input" value={nCap} onChange={(e) => setNCap(e.target.value)} />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="nCitta">Città *</label>
-                          <input id="nCitta" className="form-input" value={nCitta} onChange={(e) => setNCitta(e.target.value)} />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="nProvincia">Provincia</label>
-                          <input id="nProvincia" className="form-input" value={nProvincia} onChange={(e) => setNProvincia(e.target.value)} maxLength={2} />
-                        </div>
-                      </div>
-                      <button type="button" className="btn btn-ghost addr-cancel" onClick={() => setShowNuovo(false)}>
-                        Annulla
-                      </button>
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* Ritiro in sede */}
-              {modalita === "RITIRO" && (
-                <section className="checkout-section">
-                  <h2 className="checkout-section-title">Ritiro in sede</h2>
-                  <p className="checkout-note">Indica data e orario in cui verrai a ritirare la merce presso la nostra sede.</p>
-                </section>
-              )}
-
               {/* Note */}
               <section className="checkout-section">
                 <h2 className="checkout-section-title">Note</h2>
@@ -445,19 +355,10 @@ export default function CheckoutPage() {
               <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>
                 IVA non inclusa · Spese di trasporto da confermare
               </p>
-              {modalita === "RITIRO" && !notaSpedizione.trim() && (
-                <p className="checkout-error">Indica data e ora di ritiro in sede.</p>
-              )}
-              {modalita !== "RITIRO" && !indirizzoId && !(showNuovo && nIndirizzo.trim() && nCap.trim() && nCitta.trim()) && (
-                <p className="checkout-error">Seleziona o indica un indirizzo di spedizione.</p>
-              )}
               {submitError && <p className="checkout-error">{submitError}</p>}
               <button
                 className="btn btn-primary checkout-btn"
-                disabled={
-                  submitting ||
-                  (modalita === "RITIRO" ? !notaSpedizione.trim() : !indirizzoId && !(showNuovo && nIndirizzo.trim() && nCap.trim() && nCitta.trim()))
-                }
+                disabled={submitting}
                 onClick={conferma}
               >
                 {submitting ? "Invio in corso…" : "Conferma ordine"}
