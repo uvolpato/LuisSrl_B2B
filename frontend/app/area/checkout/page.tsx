@@ -411,8 +411,10 @@ export default function CheckoutPage() {
                                : a.tipoDestinazione === "SPEDIZIONE" ? "Spedizione"
                                : a.tipoDestinazione === "FILIALE" ? "Filiale"
                                : a.ragioneSociale ?? a.tipoDestinazione ?? "Filiale"}
-                              {a.ragioneSociale && a.id !== -1 ? ` — ${a.ragioneSociale}` : ""}
                             </span>
+                            {a.ragioneSociale && a.id !== -1 && (
+                              <div className="addr-card-title">{a.ragioneSociale}</div>
+                            )}
                           </div>
                           <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
                           <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
