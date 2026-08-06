@@ -12,12 +12,14 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SpeseSpedizioneService } from './spese-spedizione.service';
 import { CreateTariffaDto } from './dto/create-tariffa.dto';
 import { UpdateTariffaDto } from './dto/update-tariffa.dto';
 
 @Controller('admin/tariffe-spedizione')
 export class SpeseSpedizioneController {
+  private readonly logger = new Logger(SpeseSpedizioneController.name);
   constructor(private readonly service: SpeseSpedizioneService) {}
 
   @Get()
@@ -74,8 +76,14 @@ export class SpeseSpedizioneController {
   @Post()
   @HttpCode(201)
   async create(@Body() dto: CreateTariffaDto) {
-    const t = await this.service.create(dto);
-    return this.service.serialize(t);
+    try {
+      const t = await this.service.create(dto);
+      this.logger.log('create OK, returning');
+      return this.service.serialize(t);
+    } catch (e) {
+      this.logger.error('create FAIL', e instanceof Error ? e.message : e);
+      throw e;
+    }
   }
 
   @Put(':id')
@@ -96,3 +104,4 @@ export class SpeseSpedizioneController {
     await this.service.delete(id);
   }
 }
+
