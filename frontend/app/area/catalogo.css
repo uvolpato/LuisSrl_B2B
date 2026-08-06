@@ -1563,11 +1563,10 @@
 .catalogo-page.cart-page.checkout-page .addr-card-h { margin-bottom: 8px; }
 .catalogo-page.cart-page.checkout-page .addr-card-h .sd { font-size: 9px; display: inline-block; line-height: 1; }
 
-.catalogo-page.cart-page.checkout-page .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px; border-radius: 999px; }
-.catalogo-page.cart-page.checkout-page .status .sd { display: inline-block; font-size: 9px; line-height: 1; }
-.catalogo-page.cart-page.checkout-page .st-amber { background: var(--amber-soft); color: var(--amber); }
-.catalogo-page.cart-page.checkout-page .st-blue { background: var(--blue-soft); color: var(--blue); }
-.catalogo-page.cart-page.checkout-page .st-muted { background: var(--fg-soft); color: var(--muted); }
+.catalogo-page.cart-page.checkout-page .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.catalogo-page.cart-page.checkout-page .st-amber { color: var(--amber); }
+.catalogo-page.cart-page.checkout-page .st-blue { color: var(--blue); }
+.catalogo-page.cart-page.checkout-page .st-muted { color: var(--muted); }
 
 .catalogo-page.cart-page.checkout-page .addr-l {
   display: flex;
