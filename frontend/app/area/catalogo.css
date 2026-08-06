@@ -1572,11 +1572,13 @@
   display: flex; align-items: flex-start; gap: 12px;
   padding: 16px 18px;
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
-.catalogo-page.cart-page.checkout-page .opt-card.selected { background: var(--accent-soft); }
+.catalogo-page.cart-page.checkout-page .opt-card:hover { border-color: var(--accent); }
+.catalogo-page.cart-page.checkout-page .opt-card.selected { border-color: var(--accent); background: var(--accent-soft); }
 .catalogo-page.cart-page.checkout-page .opt-card input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
 .catalogo-page.cart-page.checkout-page .opt-main { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .catalogo-page.cart-page.checkout-page .opt-name { font-weight: 500; font-size: 15px; color: var(--fg); }
