@@ -180,7 +180,7 @@ export default function SpeseSpedizioneSection() {
                     <tr key={d.id}>
                       <td>
                         <div className="cell-entity">
-                          <span className={`cell-dot ${d.stato}`} title={statoLabel[d.stato] ?? d.stato} />
+                          <span className={`cell-dot ${d.stato}`} title={statoLabel[d.stato] ?? d.stato} data-tip={statoLabel[d.stato] ?? d.stato} />
                           <div className="cell-entity-text">
                             <span className="cell-entity-title">{destName(d)}</span>
                             <span className="cell-entity-sub mono">{destTitle(d)}</span>
