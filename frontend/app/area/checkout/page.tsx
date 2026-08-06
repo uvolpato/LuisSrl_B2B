@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
+import { useConfirm } from "../../../components/common/ConfirmProvider";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import ComboboxField from "../../../components/admin/ComboboxField";
 import type { ComboboxOption } from "../../../components/admin/ComboboxField";
@@ -103,6 +104,7 @@ function fmtEur(n: number): string {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth("customer");
+  const confirm = useConfirm();
   const [dati, setDati] = useState<DatiCheckout | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -416,17 +418,14 @@ export default function CheckoutPage() {
                         {!a.abituale && !(a.id === -1 && !tuttiIndirizzi.some(x => x.id !== -1 && x.abituale)) && (
                           <button type="button" className="btn-set-default" onClick={async e => {
                             e.stopPropagation();
+                            if (!(await confirm({ message: "Impostare questo indirizzo come predefinito?", confirmLabel: "Conferma" }))) return;
                             if (a.id === -1) {
                               try { await api.patch('/api/checkout/indirizzo/0/predefinito'); } catch {}
-                              const updated = tuttiIndirizzi.map(addr => ({ ...addr, abituale: false }));
-                              setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
-                              setIndirizzoId(-1);
                             } else {
                               try { await api.patch(`/api/checkout/indirizzo/${a.id}/predefinito`); } catch {}
-                              const updated = tuttiIndirizzi.map(addr => ({ ...addr, abituale: addr.id === a.id }));
-                              setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
-                              setIndirizzoId(a.id);
                             }
+                            try { const d = await api.get<DatiCheckout>("/api/checkout/dati"); setDati(d); } catch {}
+                            setIndirizzoId(a.id);
                           }}>Imposta come predefinito</button>
                         )}
                       </label>
