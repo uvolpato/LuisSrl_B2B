@@ -323,7 +323,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   }
 
   return (
-    <Modal title={isNew ? "Nuova tariffa" : destTitle(tariffa!)} size="lg" onClose={onClose}
+    <Modal title={isNew ? "Nuova tariffa" : destTitle(tariffa!)} size="sm" onClose={onClose}
       footer={
         <>
           {!isNew && tariffa!.nazione !== "ROW" && <button className="btn btn-danger" onClick={() => onDelete(tariffa!.id)}>Elimina</button>}
@@ -473,7 +473,7 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
   };
 
   return (
-    <Modal title={title} size="md" onClose={onClose}
+    <Modal title={title} size="sm" onClose={onClose}
       footer={<button className="btn btn-primary" onClick={onClose}>Chiudi</button>}
     >
       {!isPrev && (
