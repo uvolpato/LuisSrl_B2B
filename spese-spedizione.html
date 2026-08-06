@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spese di spedizione — Gestione</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(95% 0.03 45);
+  --danger: oklch(55% 0.18 25);
+  --danger-soft: color-mix(in oklch, var(--danger) 14%, transparent);
+  --green: oklch(55% 0.15 145);
+  --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
+  --red: oklch(55% 0.18 25);
+  --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+  --blue: oklch(55% 0.15 250);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --ok: oklch(55% 0.12 150);
+  --ok-soft: color-mix(in oklch, var(--ok) 14%, transparent);
+  --amber: oklch(60% 0.13 65);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; font-family: var(--font-body); font-size: 14px; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* ── Barra superiore (AdminTopBar) ── */
+.admin-top {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.admin-top h1 { font-size: 20px; letter-spacing: -0.01em; margin: 0; }
+.sub { color: var(--muted); margin: 0 0 14px; }
+.top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.action-buttons { display: flex; gap: 8px; }
+.admin-search { position: relative; width: 320px; max-width: 100%; }
+.admin-search input {
+  width: 100%; padding: 9px 14px 9px 36px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font: inherit; font-size: 14px; color: var(--fg);
+  outline: none; transition: border-color 0.15s ease;
+}
+.admin-search input:focus { border-color: var(--accent); }
+.admin-search input::placeholder { color: var(--muted); }
+.admin-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex; }
+.admin-search .search-icon svg { width: 16px; height: 16px; }
+
+/* ── Contenuto ── */
+.admin-content { flex: 1; min-height: 0; padding: 16px 32px 24px; display: flex; flex-direction: column; }
+.content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-shrink: 0; }
+.content-header .meta { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.hint { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+
+/* ── Buttons (globals.css) ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+  font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  text-decoration: none; font-family: var(--font-body);
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover { background: color-mix(in oklch, var(--red) 88%, black); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+
+/* ── DataTable (standard admin) ── */
+.data-table {
+  position: relative; flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 1px solid var(--table-head-bg);
+  border-right: 1px solid var(--table-head-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.data-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead th {
+  position: sticky; top: 0; z-index: 4;
+  background: var(--table-head-bg); color: var(--muted);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; text-transform: uppercase; text-align: left;
+  padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--fg); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.data-table .num { text-align: right; }
+.data-table-empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+.data-table-actions { text-align: right; white-space: nowrap; }
+.data-table .row-action {
+  position: relative; width: 32px; height: 32px; padding: 0;
+  display: inline-grid; place-items: center; margin-left: 2px;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.data-table .row-action:hover { background: var(--fg-soft); color: var(--fg); }
+.data-table .row-action svg { width: 16px; height: 16px; }
+.data-table .row-action::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 4px 8px; background: var(--fg); color: var(--surface);
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  border-radius: 6px; opacity: 0; pointer-events: none;
+  transition: opacity 0.12s ease; z-index: 5;
+}
+.data-table .row-action:hover::after { opacity: 1; }
+.data-table-footer {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface);
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted); position: relative; z-index: 11;
+}
+.data-table-footer .pager { display: flex; align-items: center; gap: 8px; }
+.data-table-footer .pager-current { min-width: 56px; text-align: center; }
+.data-table-footer .pager button {
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--fg); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.data-table-footer .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.data-table-footer .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.data-table-footer .pager button svg { width: 16px; height: 16px; display: block; }
+
+/* Cella entità: thumbnail iniziali + titolo + sottotitolo */
+.cell-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cell-entity-thumb {
+  width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px;
+}
+.cell-entity-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.cell-entity-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-entity-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-entity-sub.mono { font-family: var(--font-mono); }
+
+/* Status */
+.status {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 4px 14px; border-radius: 999px;
+  white-space: nowrap; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 90px; text-align: center;
+}
+.status-active { background: var(--green-soft); color: var(--green); }
+.status-warn { background: var(--amber-soft); color: var(--amber); }
+.status-config { background: var(--blue-soft); color: var(--blue); }
+
+.chip-set { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.chip { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--fg-soft); white-space: nowrap; }
+.chip.more { background: var(--accent-soft); color: var(--accent); }
+.cell-empty { color: var(--muted); }
+
+/* ── Modali ── */
+.modal-back { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 40%, transparent); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 580px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 64px color-mix(in oklch, var(--fg) 20%, transparent); }
+.modal-wide { max-width: 800px; }
+.modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 28px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modal-h h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 8px; border: none;
+  background: transparent; color: var(--muted);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background 0.12s ease; padding: 0; line-height: 0;
+}
+.modal-close:hover { background: var(--fg-soft); color: var(--fg); }
+.modal-close svg { display: block; width: 18px; height: 18px; }
+.modal-b { flex: 1; min-height: 0; overflow-y: auto; padding: 28px; }
+.modal-f { flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 16px 28px; border-top: 1px solid var(--border); }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.field .input, .field select { width: 100%; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-row .field { margin-bottom: 0; }
+.edit-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 22px; align-items: start; }
+.input, .textarea {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--fg); font: inherit; font-size: 14px;
+}
+.input:focus, .textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+select.input:not(:disabled) { cursor: pointer; }
+.filter-select { width: auto; min-width: 170px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.seg-btn {
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent;
+  font-size: 13px; color: var(--muted); cursor: pointer; transition: all 0.12s ease;
+}
+.seg-btn:hover { border-color: var(--fg); color: var(--fg); }
+.seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.zona-panel { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
+.zona-panel h3 { font-family: var(--font-display); font-size: 16px; margin: 0 0 4px; }
+.zona-panel p { margin: 0; color: var(--muted); }
+
+.dest-desc { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.dest-desc h3 { font-family: var(--font-display); font-size: 16px; margin: 0 0 4px; }
+.dest-desc p { margin: 0; color: var(--muted); }
+.hier { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 12px; margin: 14px 0; }
+.hier .lvl { color: var(--muted); padding: 3px 10px; border-radius: 999px; }
+.hier .lvl.on { background: var(--accent); color: #fff; font-weight: 600; }
+.hier .arrow { color: var(--muted); }
+
+/* ── Combobox ── */
+.combobox { position: relative; }
+.combobox-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: inherit; color: var(--fg); outline: none; width: 100%; }
+.combobox-input:focus { border-color: var(--accent); outline: 2px solid var(--accent-soft); }
+.combobox-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 240px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 16%, transparent); display: none; }
+.combobox-dropdown.open { display: block; }
+.combobox-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; cursor: pointer; }
+.combobox-option:hover { background: var(--fg-soft); }
+.combobox-option.highlighted { background: var(--accent-soft); }
+.combobox-option.auto-option { color: var(--muted); font-style: italic; border-bottom: 1px solid var(--border); }
+.option-label { font-weight: 500; }
+.option-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
+.combobox-empty { padding: 10px 12px; color: var(--muted); }
+
+/* ── Scaglioni ── */
+.range-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.range-head, .range-row { display: flex; gap: 8px; align-items: center; padding: 8px 10px; }
+.range-head { background: var(--table-head-bg); font-size: 11px; letter-spacing: .03em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+.range-row { border-top: 1px solid var(--border); }
+.range-from { width: 72px; font-family: var(--font-mono); flex-shrink: 0; }
+.range-arrow { color: var(--muted); }
+.range-max, .range-pct { position: relative; }
+.range-max .range-input, .range-pct .range-input { width: 100%; padding-right: 22px; }
+.range-input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font: inherit; outline: none; }
+.range-input:focus { border-color: var(--accent); }
+.range-oltre { font-family: var(--font-mono); color: var(--muted); }
+.unit { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 11px; pointer-events: none; }
+.range-del { border: none; background: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 6px; }
+.range-del:hover { color: var(--danger); background: var(--danger-soft); }
+.range-del svg { display: block; }
+.range-empty { padding: 12px; color: var(--muted); text-align: center; }
+
+/* ── Anteprima / Simulatore ── */
+.prev-result { font-family: var(--font-display); font-size: 24px; margin: 6px 0; }
+.prev-result.free { color: var(--ok); }
+.prev-note { color: var(--muted); font-size: 12.5px; margin: 0; }
+.prev-note b { color: var(--fg); }
+.sim-source { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.sim-source b { color: var(--fg); }
+.sim-result { font-family: var(--font-display); font-size: 30px; margin: 6px 0; }
+.sim-result.free { color: var(--ok); }
+.sim-note { color: var(--muted); font-size: 12.5px; margin: 0 0 4px; }
+.sim-note b { color: var(--fg); }
+.sim-steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-step { flex: 1; min-width: 130px; background: var(--fg-soft); border-radius: 10px; padding: 10px 12px; }
+.sim-step .k { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.sim-step .v { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-top: 2px; }
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; margin-top: 8px; }
+.bars .bar { flex: 1; min-width: 28px; background: var(--accent-soft); border-radius: 6px 6px 0 0; position: relative; }
+.bars .bar.hi { background: var(--accent); }
+.bars .bar .bv { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+/* ── Tooltip ── */
+.tip { display: inline-flex; width: 16px; height: 16px; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--border); color: var(--muted); font-size: 10px; cursor: help; vertical-align: middle; margin-left: 4px; }
+.hint-tip { display: none; }
+.hint-tip-global { position: fixed; z-index: 100; max-width: 260px; background: var(--fg); color: #fff; font-size: 12px; line-height: 1.45; padding: 10px 12px; border-radius: 10px; display: none; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 30%, transparent); }
+.hint-tip-global::after { content: ''; position: absolute; bottom: 100%; left: 12px; border: 6px solid transparent; border-bottom-color: var(--fg); }
+
+@media (max-width: 640px) {
+  .admin-top { padding: 12px 16px; }
+  .admin-content { padding: 12px 16px 24px; }
+  .top-actions { width: 100%; }
+  .admin-search { width: 100%; }
+  .field-row { grid-template-columns: 1fr; gap: 12px; }
+  .edit-cols { grid-template-columns: 1fr; gap: 0; }
+  .modal-b { padding: 16px; }
+  .modal-h, .modal-f { padding: 12px 16px; }
+  .data-table thead th, .data-table tbody td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+<header class="admin-top">
+  <h1>Spese di spedizione</h1>
+  <div class="top-actions">
+    <div class="admin-search">
+      <span class="search-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      </span>
+      <input id="reg-search" type="text" placeholder="Cerca destinazione…" aria-label="Cerca destinazione">
+    </div>
+    <select id="reg-filter" class="input filter-select" aria-label="Filtra per stato">
+      <option value="tutti">Tutti gli stati</option>
+      <option value="ok">Configurate</option>
+      <option value="pausa">In pausa</option>
+      <option value="configura">Da configurare</option>
+    </select>
+    <div class="action-buttons">
+      <button class="btn btn-secondary" id="btn-sim" type="button">Simulatore di costo</button>
+      <button class="btn btn-primary" id="btn-nuova" type="button">Crea nuovo</button>
+    </div>
+  </div>
+</header>
+
+<div class="admin-content">
+  <div class="content-header">
+    <span class="meta" id="reg-meta">—</span>
+  </div>
+
+  <div class="data-table">
+    <div class="data-table-scroll">
+      <table>
+        <colgroup>
+          <col style="width:300px">
+          <col style="width:90px">
+          <col>
+          <col style="width:130px">
+          <col style="width:140px">
+          <col style="width:120px">
+          <col style="width:96px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Destinazione</th>
+            <th class="num">% base</th>
+            <th>Scaglioni sconto medio</th>
+            <th class="num">Impatto medio</th>
+            <th class="num">Soglia gratuita</th>
+            <th style="text-align:center">Stato</th>
+            <th style="text-align:right">Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="reg-tbody"></tbody>
+      </table>
+    </div>
+    <div class="data-table-footer">
+      <span id="reg-range">—</span>
+      <div class="pager">
+        <button id="pg-prev" type="button" aria-label="Pagina precedente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <span class="pager-current" id="reg-page">1 / 1</span>
+        <button id="pg-next" type="button" aria-label="Pagina successiva">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <p class="hint">Gli scaglioni cambiano la percentuale in base allo sconto medio praticato al cliente rispetto al listino. Se l'imponibile supera la soglia, la spedizione è gratuita.</p>
+</div>
+
+<!-- Editor destinazione -->
+<div class="modal-back" id="edit-modal" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <div class="modal-h">
+      <h2 id="edit-title">Destinazione</h2>
+      <button class="modal-close" id="edit-close" type="button" title="Chiudi" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <div class="modal-b">
+      <div id="edit-dest-picker">
+        <div class="field">
+          <label>La tariffa vale per</label>
+          <div class="seg" id="edit-livello">
+            <button class="seg-btn" data-lv="regione" type="button">Regione</button>
+            <button class="seg-btn active" data-lv="nazione" type="button">Nazione</button>
+            <button class="seg-btn" data-lv="EUROPA" type="button">Europa</button>
+            <button class="seg-btn" data-lv="ROW" type="button">Resto del mondo</button>
+          </div>
+        </div>
+        <div class="field" id="edit-nazione-field">
+          <label>Nazione</label>
+          <div class="combobox">
+            <input class="combobox-input" id="edit-nazione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Nazione">
+            <div class="combobox-dropdown" id="edit-nazione-dropdown"></div>
+            <input type="hidden" id="edit-nazione">
+          </div>
+        </div>
+        <div class="field" id="edit-regione-field" style="display:none">
+          <label>Regione (Italia)</label>
+          <div class="combobox">
+            <input class="combobox-input" id="edit-regione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Regione">
+            <div class="combobox-dropdown" id="edit-regione-dropdown"></div>
+            <input type="hidden" id="edit-regione">
+          </div>
+        </div>
+        <div class="field" id="edit-zona-field" style="display:none">
+          <div class="zona-panel">
+            <h3 id="edit-zona-title">Europa</h3>
+            <p id="edit-zona-sub"></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-dest-desc" style="display:none">
+        <div class="dest-desc">
+          <h3 id="edit-desc-title"></h3>
+          <p id="edit-desc-text"></p>
+        </div>
+        <div class="hier" id="edit-hier" aria-label="Livello gerarchico della tariffa">
+          <span class="lvl" data-h="regione">Regione</span>
+          <span class="arrow">→</span>
+          <span class="lvl" data-h="nazione">Nazione</span>
+          <span class="arrow">→</span>
+          <span class="lvl" data-h="europa">Area</span>
+          <span class="arrow">→</span>
+          <span class="lvl" data-h="row">Default</span>
+        </div>
+      </div>
+
+      <div class="edit-cols">
+        <div class="col">
+          <div class="field">
+            <label>Percentuale sull'importo fattura (senza IVA)</label>
+            <input class="input" id="edit-base" type="number" step="0.1" min="0" value="3">
+          </div>
+          <div class="field">
+            <label>Stato</label>
+            <select class="input" id="edit-stato">
+              <option value="ok">Configurata</option>
+              <option value="pausa">In pausa</option>
+              <option value="configura">Da configurare</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
+            <input class="input" id="edit-soglia" type="number" step="50" min="0">
+          </div>
+          <div class="field">
+            <label>Anteprima calcolo</label>
+            <div class="field-row">
+              <div class="field">
+                <label>Importo (€)</label>
+                <input class="input" id="prev-amount" type="number" step="50" min="0" value="10000">
+              </div>
+              <div class="field">
+                <label>Sconto medio (%)</label>
+                <input class="input" id="prev-discount" type="number" step="0.5" min="0" max="30" value="8">
+              </div>
+            </div>
+            <div class="prev-result" id="prev-result">€ 0,00</div>
+            <p class="prev-note" id="prev-note"></p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="field">
+            <label>Scaglioni per sconto medio <span class="tip" tabindex="0" aria-label="Aiuto sugli scaglioni">?<span class="hint-tip">Gli scaglioni cambiano la percentuale in base allo sconto medio praticato al cliente rispetto al listino. Il primo parte da 0% e l'ultimo arriva a "oltre": imposta solo il limite superiore di ciascuno.</span></span></label>
+            <div class="ranges" id="edit-ranges"></div>
+            <button class="btn btn-sm" id="add-range" type="button" style="margin-top:8px">+ Aggiungi scaglione</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-danger" id="edit-delete" type="button">Elimina</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="edit-cancel" type="button">Annulla</button>
+      <button class="btn btn-primary" id="edit-save" type="button">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Simulatore -->
+<div class="modal-back" id="sim-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sim-title">
+    <div class="modal-h">
+      <h2 id="sim-title">Simulatore di costo</h2>
+      <button class="modal-close" id="sim-close" type="button" title="Chiudi" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <div class="modal-b">
+      <div class="field">
+        <label>Nazione di consegna</label>
+        <div class="combobox">
+          <input class="combobox-input" id="sim-nazione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Nazione di consegna">
+          <div class="combobox-dropdown" id="sim-nazione-dropdown"></div>
+          <input type="hidden" id="sim-nazione">
+        </div>
+      </div>
+      <div class="field" id="sim-regione-field" style="display:none">
+        <label>Regione</label>
+        <div class="combobox">
+          <input class="combobox-input" id="sim-regione-search" type="text" placeholder="Cerca o seleziona…" autocomplete="off" aria-label="Regione">
+          <div class="combobox-dropdown" id="sim-regione-dropdown"></div>
+          <input type="hidden" id="sim-regione">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Importo fattura senza IVA (€)</label>
+          <input class="input" id="sim-amount" type="number" step="50" min="0" value="10000">
+        </div>
+        <div class="field">
+          <label>Sconto medio su listino (%)</label>
+          <input class="input" id="sim-discount" type="number" step="0.5" min="0" max="30" value="8">
+        </div>
+      </div>
+      <div class="field">
+        <p class="sim-source" id="sim-source"></p>
+        <div class="sim-result" id="sim-result">—</div>
+        <p class="sim-note" id="sim-note"></p>
+      </div>
+      <div class="field">
+        <label>Riepilogo</label>
+        <div class="sim-steps">
+          <div class="sim-step"><div class="k">Importo netto</div><div class="v" id="sim-step-amount">—</div></div>
+          <div class="sim-step"><div class="k">Sconto medio</div><div class="v" id="sim-step-discount">—</div></div>
+          <div class="sim-step"><div class="k">Tariffa applicata</div><div class="v" id="sim-step-tariffa">—</div></div>
+          <div class="sim-step"><div class="k">Soglia gratuita</div><div class="v" id="sim-step-soglia">—</div></div>
+          <div class="sim-step"><div class="k">Percentuale</div><div class="v" id="sim-step-pct">—</div></div>
+          <div class="sim-step"><div class="k">Spese di spedizione</div><div class="v" id="sim-step-fee">—</div></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Percentuale per sconto medio</label>
+        <div class="bars" id="sim-bars"></div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-primary" id="sim-ok" type="button">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Dati di riferimento ── */
+var ZONE_KEYS = { EUROPA: 'Europa', ROW: 'Resto del mondo' };
+var ZONE_ORDER = ['EUROPA', 'ROW'];
+function isZona(n) { return n === 'EUROPA' || n === 'ROW'; }
+function zonaOf(n) { return NAZIONI[n] && NAZIONI[n].z === 'EU' ? 'EUROPA' : 'ROW'; }
+
+var NAZIONI = {
+  AF: { n: 'Afghanistan', z: 'ROW' },
+  AL: { n: 'Albania', z: 'ROW' },
+  DZ: { n: 'Algeria', z: 'ROW' },
+  AD: { n: 'Andorra', z: 'ROW' },
+  AO: { n: 'Angola', z: 'ROW' },
+  AI: { n: 'Anguilla', z: 'ROW' },
+  AG: { n: 'Antigua e Barbuda', z: 'ROW' },
+  SA: { n: 'Arabia Saudita', z: 'ROW' },
+  AR: { n: 'Argentina', z: 'ROW' },
+  AM: { n: 'Armenia', z: 'ROW' },
+  AW: { n: 'Aruba', z: 'ROW' },
+  AU: { n: 'Australia', z: 'ROW' },
+  AT: { n: 'Austria', z: 'EU' },
+  AX: { n: '\u00c5land', z: 'ROW' },
+  AZ: { n: 'Azerbaigian', z: 'ROW' },
+  BS: { n: 'Bahamas', z: 'ROW' },
+  BH: { n: 'Bahrein', z: 'ROW' },
+  BD: { n: 'Bangladesh', z: 'ROW' },
+  BB: { n: 'Barbados', z: 'ROW' },
+  BE: { n: 'Belgio', z: 'EU' },
+  BZ: { n: 'Belize', z: 'ROW' },
+  BM: { n: 'Bermuda', z: 'ROW' },
+  BT: { n: 'Bhutan', z: 'ROW' },
+  BY: { n: 'Bielorussia', z: 'ROW' },
+  MM: { n: 'Birmania (Myanmar)', z: 'ROW' },
+  BO: { n: 'Bolivia', z: 'ROW' },
+  BA: { n: 'Bosnia ed Erzegovina', z: 'ROW' },
+  BW: { n: 'Botswana', z: 'ROW' },
+  BR: { n: 'Brasile', z: 'ROW' },
+  BN: { n: 'Brunei', z: 'ROW' },
+  BG: { n: 'Bulgaria', z: 'EU' },
+  BF: { n: 'Burkina Faso', z: 'ROW' },
+  BI: { n: 'Burundi', z: 'ROW' },
+  KH: { n: 'Cambogia', z: 'ROW' },
+  CM: { n: 'Camerun', z: 'ROW' },
+  CA: { n: 'Canada', z: 'ROW' },
+  CV: { n: 'Capo Verde', z: 'ROW' },
+  TD: { n: 'Ciad', z: 'ROW' },
+  CL: { n: 'Cile', z: 'ROW' },
+  CN: { n: 'Cina', z: 'ROW' },
+  CY: { n: 'Cipro', z: 'EU' },
+  CO: { n: 'Colombia', z: 'ROW' },
+  KM: { n: 'Comore', z: 'ROW' },
+  CG: { n: 'Congo (Brazzaville)', z: 'ROW' },
+  CD: { n: 'Congo (Kinshasa)', z: 'ROW' },
+  KP: { n: 'Corea del Nord', z: 'ROW' },
+  KR: { n: 'Corea del Sud', z: 'ROW' },
+  CI: { n: "Costa d'Avorio", z: 'ROW' },
+  CR: { n: 'Costa Rica', z: 'ROW' },
+  HR: { n: 'Croazia', z: 'EU' },
+  CU: { n: 'Cuba', z: 'ROW' },
+  CW: { n: 'Cura\u00e7ao', z: 'ROW' },
+  DK: { n: 'Danimarca', z: 'EU' },
+  DM: { n: 'Dominica', z: 'ROW' },
+  EC: { n: 'Ecuador', z: 'ROW' },
+  EG: { n: 'Egitto', z: 'ROW' },
+  SV: { n: 'El Salvador', z: 'ROW' },
+  AE: { n: 'Emirati Arabi Uniti', z: 'ROW' },
+  ER: { n: 'Eritrea', z: 'ROW' },
+  EE: { n: 'Estonia', z: 'EU' },
+  SZ: { n: 'eSwatini', z: 'ROW' },
+  ET: { n: 'Etiopia', z: 'ROW' },
+  FJ: { n: 'Figi', z: 'ROW' },
+  PH: { n: 'Filippine', z: 'ROW' },
+  FI: { n: 'Finlandia', z: 'EU' },
+  FK: { n: 'Falkland (Isole)', z: 'ROW' },
+  FR: { n: 'Francia', z: 'EU' },
+  GA: { n: 'Gabon', z: 'ROW' },
+  GM: { n: 'Gambia', z: 'ROW' },
+  GE: { n: 'Georgia', z: 'ROW' },
+  DE: { n: 'Germania', z: 'EU' },
+  GH: { n: 'Ghana', z: 'ROW' },
+  JM: { n: 'Giamaica', z: 'ROW' },
+  JP: { n: 'Giappone', z: 'ROW' },
+  GI: { n: 'Gibilterra', z: 'ROW' },
+  JO: { n: 'Giordania', z: 'ROW' },
+  GR: { n: 'Grecia', z: 'EU' },
+  GD: { n: 'Grenada', z: 'ROW' },
+  GL: { n: 'Groenlandia', z: 'ROW' },
+  GP: { n: 'Guadalupa', z: 'ROW' },
+  GU: { n: 'Guam', z: 'ROW' },
+  GT: { n: 'Guatemala', z: 'ROW' },
+  GG: { n: 'Guernsey', z: 'ROW' },
+  GN: { n: 'Guinea', z: 'ROW' },
+  GQ: { n: 'Guinea Equatoriale', z: 'ROW' },
+  GW: { n: 'Guinea-Bissau', z: 'ROW' },
+  GY: { n: 'Guyana', z: 'ROW' },
+  GF: { n: 'Guiana francese', z: 'ROW' },
+  HT: { n: 'Haiti', z: 'ROW' },
+  HN: { n: 'Honduras', z: 'ROW' },
+  HK: { n: 'Hong Kong', z: 'ROW' },
+  IN: { n: 'India', z: 'ROW' },
+  ID: { n: 'Indonesia', z: 'ROW' },
+  IR: { n: 'Iran', z: 'ROW' },
+  IQ: { n: 'Iraq', z: 'ROW' },
+  IE: { n: 'Irlanda', z: 'EU' },
+  IS: { n: 'Islanda', z: 'ROW' },
+  IM: { n: 'Isola di Man', z: 'ROW' },
+  MH: { n: 'Isole Marshall', z: 'ROW' },
+  SB: { n: 'Isole Salomone', z: 'ROW' },
+  KY: { n: 'Isole Cayman', z: 'ROW' },
+  CK: { n: 'Isole Cook', z: 'ROW' },
+  FO: { n: 'Isole F\u00e6r \u00d8er', z: 'ROW' },
+  VI: { n: 'Isole Vergini americane', z: 'ROW' },
+  VG: { n: 'Isole Vergini britanniche', z: 'ROW' },
+  IL: { n: 'Israele', z: 'ROW' },
+  IT: { n: 'Italia', z: 'EU' },
+  JE: { n: 'Jersey', z: 'ROW' },
+  KZ: { n: 'Kazakistan', z: 'ROW' },
+  KE: { n: 'Kenya', z: 'ROW' },
+  KG: { n: 'Kirghizistan', z: 'ROW' },
+  KI: { n: 'Kiribati', z: 'ROW' },
+  XK: { n: 'Kosovo', z: 'ROW' },
+  KW: { n: 'Kuwait', z: 'ROW' },
+  LA: { n: 'Laos', z: 'ROW' },
+  LS: { n: 'Lesotho', z: 'ROW' },
+  LV: { n: 'Lettonia', z: 'EU' },
+  LB: { n: 'Libano', z: 'ROW' },
+  LR: { n: 'Liberia', z: 'ROW' },
+  LY: { n: 'Libia', z: 'ROW' },
+  LI: { n: 'Liechtenstein', z: 'ROW' },
+  LT: { n: 'Lituania', z: 'EU' },
+  LU: { n: 'Lussemburgo', z: 'EU' },
+  MO: { n: 'Macao', z: 'ROW' },
+  MK: { n: 'Macedonia del Nord', z: 'ROW' },
+  MG: { n: 'Madagascar', z: 'ROW' },
+  MW: { n: 'Malawi', z: 'ROW' },
+  MY: { n: 'Malaysia', z: 'ROW' },
+  MV: { n: 'Maldive', z: 'ROW' },
+  ML: { n: 'Mali', z: 'ROW' },
+  MT: { n: 'Malta', z: 'EU' },
+  MA: { n: 'Marocco', z: 'ROW' },
+  MQ: { n: 'Martinica', z: 'ROW' },
+  MR: { n: 'Mauritania', z: 'ROW' },
+  MU: { n: 'Mauritius', z: 'ROW' },
+  YT: { n: 'Mayotte', z: 'ROW' },
+  MX: { n: 'Messico', z: 'ROW' },
+  FM: { n: 'Micronesia', z: 'ROW' },
+  MD: { n: 'Moldavia', z: 'ROW' },
+  MN: { n: 'Mongolia', z: 'ROW' },
+  ME: { n: 'Montenegro', z: 'ROW' },
+  MS: { n: 'Montserrat', z: 'ROW' },
+  MZ: { n: 'Mozambico', z: 'ROW' },
+  NA: { n: 'Namibia', z: 'ROW' },
+  NR: { n: 'Nauru', z: 'ROW' },
+  NP: { n: 'Nepal', z: 'ROW' },
+  NI: { n: 'Nicaragua', z: 'ROW' },
+  NE: { n: 'Niger', z: 'ROW' },
+  NG: { n: 'Nigeria', z: 'ROW' },
+  NU: { n: 'Niue', z: 'ROW' },
+  NO: { n: 'Norvegia', z: 'ROW' },
+  NC: { n: 'Nuova Caledonia', z: 'ROW' },
+  NZ: { n: 'Nuova Zelanda', z: 'ROW' },
+  OM: { n: 'Oman', z: 'ROW' },
+  NL: { n: 'Paesi Bassi', z: 'EU' },
+  PK: { n: 'Pakistan', z: 'ROW' },
+  PW: { n: 'Palau', z: 'ROW' },
+  PS: { n: 'Palestina', z: 'ROW' },
+  PA: { n: 'Panama', z: 'ROW' },
+  PG: { n: 'Papua Nuova Guinea', z: 'ROW' },
+  PY: { n: 'Paraguay', z: 'ROW' },
+  PE: { n: 'Per\u00f9', z: 'ROW' },
+  PF: { n: 'Polinesia francese', z: 'ROW' },
+  PL: { n: 'Polonia', z: 'EU' },
+  PT: { n: 'Portogallo', z: 'EU' },
+  PR: { n: 'Porto Rico', z: 'ROW' },
+  QA: { n: 'Qatar', z: 'ROW' },
+  GB: { n: 'Regno Unito', z: 'ROW' },
+  CZ: { n: 'Repubblica Ceca', z: 'EU' },
+  CF: { n: 'Repubblica Centrafricana', z: 'ROW' },
+  DO: { n: 'Repubblica Dominicana', z: 'ROW' },
+  RE: { n: 'Riunione', z: 'ROW' },
+  RO: { n: 'Romania', z: 'EU' },
+  RW: { n: 'Ruanda', z: 'ROW' },
+  RU: { n: 'Russia', z: 'ROW' },
+  WS: { n: 'Samoa', z: 'ROW' },
+  SM: { n: 'San Marino', z: 'ROW' },
+  SH: { n: "Sant'Elena", z: 'ROW' },
+  LC: { n: 'Santa Lucia', z: 'ROW' },
+  ST: { n: 'S\u00e3o Tom\u00e9 e Pr\u00edncipe', z: 'ROW' },
+  KN: { n: 'Saint Kitts e Nevis', z: 'ROW' },
+  PM: { n: 'Saint-Pierre e Miquelon', z: 'ROW' },
+  VC: { n: 'Saint Vincent e Grenadine', z: 'ROW' },
+  SN: { n: 'Senegal', z: 'ROW' },
+  RS: { n: 'Serbia', z: 'ROW' },
+  SC: { n: 'Seychelles', z: 'ROW' },
+  SL: { n: 'Sierra Leone', z: 'ROW' },
+  SG: { n: 'Singapore', z: 'ROW' },
+  SY: { n: 'Siria', z: 'ROW' },
+  SK: { n: 'Slovacchia', z: 'EU' },
+  SI: { n: 'Slovenia', z: 'EU' },
+  SO: { n: 'Somalia', z: 'ROW' },
+  ES: { n: 'Spagna', z: 'EU' },
+  LK: { n: 'Sri Lanka', z: 'ROW' },
+  US: { n: 'Stati Uniti', z: 'ROW' },
+  ZA: { n: 'Sudafrica', z: 'ROW' },
+  SD: { n: 'Sudan', z: 'ROW' },
+  SS: { n: 'Sudan del Sud', z: 'ROW' },
+  SR: { n: 'Suriname', z: 'ROW' },
+  SE: { n: 'Svezia', z: 'EU' },
+  CH: { n: 'Svizzera', z: 'ROW' },
+  SX: { n: 'Sint Maarten', z: 'ROW' },
+  TJ: { n: 'Tagikistan', z: 'ROW' },
+  TW: { n: 'Taiwan', z: 'ROW' },
+  TZ: { n: 'Tanzania', z: 'ROW' },
+  TH: { n: 'Thailandia', z: 'ROW' },
+  TL: { n: 'Timor Est', z: 'ROW' },
+  TG: { n: 'Togo', z: 'ROW' },
+  TO: { n: 'Tonga', z: 'ROW' },
+  TT: { n: 'Trinidad e Tobago', z: 'ROW' },
+  TC: { n: 'Turks e Caicos', z: 'ROW' },
+  TN: { n: 'Tunisia', z: 'ROW' },
+  TR: { n: 'Turchia', z: 'ROW' },
+  TM: { n: 'Turkmenistan', z: 'ROW' },
+  TV: { n: 'Tuvalu', z: 'ROW' },
+  UA: { n: 'Ucraina', z: 'ROW' },
+  UG: { n: 'Uganda', z: 'ROW' },
+  HU: { n: 'Ungheria', z: 'EU' },
+  UY: { n: 'Uruguay', z: 'ROW' },
+  UZ: { n: 'Uzbekistan', z: 'ROW' },
+  VU: { n: 'Vanuatu', z: 'ROW' },
+  VA: { n: 'Citt\u00e0 del Vaticano', z: 'ROW' },
+  VE: { n: 'Venezuela', z: 'ROW' },
+  VN: { n: 'Vietnam', z: 'ROW' },
+  WF: { n: 'Wallis e Futuna', z: 'ROW' },
+  YE: { n: 'Yemen', z: 'ROW' },
+  ZM: { n: 'Zambia', z: 'ROW' },
+  ZW: { n: 'Zimbabwe', z: 'ROW' }
+};
+var NAZIONI_ORDER = Object.keys(NAZIONI).sort(function (a, b) {
+  return NAZIONI[a].n.localeCompare(NAZIONI[b].n, 'it');
+});
+var REGIONI_IT = [
+  'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 'Friuli-Venezia Giulia',
+  'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise', 'Piemonte', 'Puglia', 'Sardegna',
+  'Sicilia', 'Toscana', 'Trentino-Alto Adige', 'Umbria', "Valle d'Aosta", 'Veneto'
+];
+
+var DESTINAZIONI = [
+  { id: 1, nazione: 'IT', regione: null, base: 3.0, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 4.5], [5, 10, 3.6], [10, null, 3.0]], updated: '03/08/2026' },
+  { id: 2, nazione: 'IT', regione: 'Lombardia', prov: 12, addr: 1840, base: 2.5, stato: 'ok', soglia: 3000,
+    ranges: [[0, 5, 4.0], [5, 10, 3.2], [10, 15, 2.5], [15, null, 2.0]], updated: '02/08/2026' },
+  { id: 3, nazione: 'IT', regione: 'Veneto', prov: 7, addr: 1120, base: 2.8, stato: 'ok', soglia: 3000,
+    ranges: [[0, 5, 4.2], [5, 10, 3.4], [10, null, 2.8]], updated: '02/08/2026' },
+  { id: 4, nazione: 'IT', regione: 'Piemonte', prov: 8, addr: 940, base: 2.6, stato: 'ok', soglia: 3000,
+    ranges: [[0, 5, 4.0], [5, 10, 3.2], [10, null, 2.6]], updated: '31/07/2026' },
+  { id: 5, nazione: 'IT', regione: 'Emilia-Romagna', prov: 9, addr: 1180, base: 3.0, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 4.5], [5, 10, 3.6], [10, null, 3.0]], updated: '31/07/2026' },
+  { id: 6, nazione: 'IT', regione: 'Toscana', prov: 10, addr: 760, base: 3.2, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 4.8], [5, 10, 3.9], [10, null, 3.2]], updated: '30/07/2026' },
+  { id: 7, nazione: 'IT', regione: 'Lazio', prov: 5, addr: 830, base: 3.4, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 5.0], [5, 10, 4.0], [10, null, 3.4]], updated: '30/07/2026' },
+  { id: 8, nazione: 'IT', regione: 'Liguria', prov: 4, addr: 410, base: 3.8, stato: 'ok', soglia: 2000,
+    ranges: [[0, 5, 5.5], [5, 10, 4.5], [10, null, 3.8]], updated: '29/07/2026' },
+  { id: 9, nazione: 'IT', regione: 'Friuli-Venezia Giulia', prov: 4, addr: 290, base: 3.1, stato: 'pausa', soglia: 2500,
+    ranges: [], updated: '28/07/2026' },
+  { id: 10, nazione: 'IT', regione: 'Trentino-Alto Adige', prov: 2, addr: 180, base: 3.3, stato: 'pausa', soglia: null,
+    ranges: [], updated: '28/07/2026' },
+  { id: 11, nazione: 'IT', regione: "Valle d'Aosta", prov: 1, addr: 60, base: 4.0, stato: 'configura', soglia: null,
+    ranges: [], updated: '—' },
+  { id: 12, nazione: 'IT', regione: 'Marche', prov: 5, addr: 480, base: 3.2, stato: 'ok', soglia: 2000,
+    ranges: [[0, 5, 4.8], [5, 10, 3.8], [10, null, 3.2]], updated: '26/07/2026' },
+  { id: 13, nazione: 'IT', regione: 'Umbria', prov: 2, addr: 220, base: 3.5, stato: 'ok', soglia: 2000,
+    ranges: [[0, 5, 5.2], [5, 10, 4.2], [10, null, 3.5]], updated: '26/07/2026' },
+  { id: 14, nazione: 'IT', regione: 'Abruzzo', prov: 4, addr: 350, base: 3.6, stato: 'ok', soglia: 2000,
+    ranges: [[0, 5, 5.4], [5, 10, 4.4], [10, null, 3.6]], updated: '25/07/2026' },
+  { id: 15, nazione: 'IT', regione: 'Molise', prov: 2, addr: 90, base: 4.2, stato: 'configura', soglia: null,
+    ranges: [], updated: '—' },
+  { id: 16, nazione: 'IT', regione: 'Campania', prov: 5, addr: 780, base: 4.0, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 6.0], [5, 10, 4.9], [10, null, 4.0]], updated: '25/07/2026' },
+  { id: 17, nazione: 'IT', regione: 'Puglia', prov: 6, addr: 690, base: 4.1, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 6.1], [5, 10, 5.0], [10, null, 4.1]], updated: '24/07/2026' },
+  { id: 18, nazione: 'IT', regione: 'Basilicata', prov: 2, addr: 120, base: 4.3, stato: 'configura', soglia: null,
+    ranges: [], updated: '—' },
+  { id: 19, nazione: 'IT', regione: 'Calabria', prov: 5, addr: 260, base: 4.4, stato: 'ok', soglia: 2000,
+    ranges: [[0, 5, 6.5], [5, 10, 5.3], [10, null, 4.4]], updated: '24/07/2026' },
+  { id: 20, nazione: 'IT', regione: 'Sicilia', prov: 9, addr: 720, base: 4.5, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 6.8], [5, 10, 5.5], [10, null, 4.5]], updated: '23/07/2026' },
+  { id: 21, nazione: 'IT', regione: 'Sardegna', prov: 8, addr: 310, base: 4.6, stato: 'ok', soglia: 2500,
+    ranges: [[0, 5, 7.0], [5, 10, 5.7], [10, null, 4.6]], updated: '23/07/2026' },
+  { id: 22, nazione: 'DE', regione: null, base: 3.6, stato: 'ok', soglia: 2000,
+    ranges: [[0, 10, 4.2], [10, null, 3.6]], updated: '01/08/2026' },
+  { id: 23, nazione: 'FR', regione: null, base: 3.9, stato: 'ok', soglia: 2500,
+    ranges: [[0, 10, 4.6], [10, null, 3.9]], updated: '01/08/2026' },
+  { id: 24, nazione: 'ES', regione: null, base: 4.2, stato: 'ok', soglia: 2000,
+    ranges: [[0, 10, 5.0], [10, null, 4.2]], updated: '31/07/2026' },
+  { id: 25, nazione: 'AT', regione: null, base: 3.4, stato: 'configura', soglia: null,
+    ranges: [], updated: '—' },
+  { id: 26, nazione: 'EUROPA', regione: null, base: 4.0, stato: 'ok', soglia: 2000,
+    ranges: [[0, 10, 4.8], [10, null, 4.0]], updated: '01/08/2026' },
+  { id: 27, nazione: 'ROW', regione: null, base: 6.0, stato: 'ok', soglia: 1000,
+    ranges: [[0, 10, 7.0], [10, null, 6.0]], updated: '01/08/2026' }
+];
+
+var _nextId = 100;
+function nextId() { return _nextId++; }
+
+/* ── Helpers dominio ── */
+function destName(d) {
+  if (isZona(d.nazione)) return ZONE_KEYS[d.nazione];
+  return d.regione !== null ? d.regione + ' (' + d.nazione + ')' : (NAZIONI[d.nazione] ? NAZIONI[d.nazione].n : d.nazione);
+}
+
+function destTitle(d) {
+  if (d.regione !== null) return 'Tariffa regione — ' + destName(d);
+  if (isZona(d.nazione)) return 'Tariffa ' + destName(d);
+  return 'Tariffa nazione — ' + destName(d);
+}
+
+function euCount() {
+  return Object.keys(NAZIONI).filter(function (n) { return NAZIONI[n].z === 'EU'; }).length;
+}
+
+function describeTariffa(d) {
+  if (d.regione !== null) {
+    return {
+      hier: 'regione',
+      title: destName(d),
+      text: 'Eccezione di livello regionale: vale per le consegne in questa regione italiana e prevale sulla tariffa della nazione e delle aree.'
+    };
+  }
+  if (isZona(d.nazione)) {
+    if (d.nazione === 'EUROPA') {
+      return {
+        hier: 'europa',
+        title: 'Europa',
+        text: 'Tariffa d\u2019area: vale per i ' + euCount() + ' paesi dell\u2019area europea senza una tariffa di nazione o regione.'
+      };
+    }
+    return {
+      hier: 'row',
+      title: 'Resto del mondo',
+      text: 'Default globale: vale per tutti i paesi del mondo senza una tariffa più specifica. Resta sempre attivo in mancanza di altre tariffe.'
+    };
+  }
+  return {
+    hier: 'nazione',
+    title: destName(d),
+    text: 'Tariffa di riferimento per ' + (NAZIONI[d.nazione] ? NAZIONI[d.nazione].n : d.nazione) + ': vale per tutti gli indirizzi del paese, salvo le eccezioni regionali configurate.'
+  };
+}
+
+function findTariffa(nazione, regione) {
+  return DESTINAZIONI.filter(function (d) { return d.nazione === nazione && d.regione === regione; })[0] || null;
+}
+
+function resolveTariffa(nazione, regione) {
+  if (regione !== null && !isZona(nazione)) {
+    var reg = findTariffa(nazione, regione);
+    if (reg && reg.stato === 'ok') return { t: reg, source: 'regione' };
+  }
+  var naz = findTariffa(nazione, null);
+  if (naz && naz.stato === 'ok') return { t: naz, source: 'nazione' };
+  if (isZona(nazione)) return null;
+  var zona = zonaOf(nazione);
+  var zon = findTariffa(zona, null);
+  if (zon && zon.stato === 'ok') return { t: zon, source: zona === 'EUROPA' ? 'europa' : 'row' };
+  if (zona === 'EUROPA') {
+    var row = findTariffa('ROW', null);
+    if (row && row.stato === 'ok') return { t: row, source: 'row' };
+  }
+  return null;
+}
+
+/* ── Elenco ── */
+var PAGE_SIZE = 10;
+var page = 1;
+
+var fmtEur = function (n) {
+  return '€ ' + n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+var fmtPct = function (n) {
+  return (String(n).replace('.', ',') + (Number.isInteger(n) ? ',0' : '')) + '%';
+};
+
+function pctOf(r, discount) {
+  for (var i = 0; i < r.ranges.length; i++) {
+    var rng = r.ranges[i];
+    if (discount >= rng[0] && (rng[1] === null || discount < rng[1])) {
+      return { pct: rng[2], rng: rng };
+    }
+  }
+  return { pct: r.base, rng: null };
+}
+
+var statoLabel = { ok: "Configurata", pausa: "In pausa", configura: "Da configurare" };
+var statoCls = { ok: "status-active", pausa: "status-warn", configura: "status-config" };
+
+function destLevel(d) {
+  if (d.regione !== null) return 'Regione';
+  if (d.nazione === 'EUROPA') return 'Area';
+  if (d.nazione === 'ROW') return 'Default';
+  return 'Nazione';
+}
+
+function sortedDest() {
+  return DESTINAZIONI.slice().sort(function (a, b) {
+    var za = isZona(a.nazione) ? 0 : 1;
+    var zb = isZona(b.nazione) ? 0 : 1;
+    if (za !== zb) return za - zb;
+    if (za === 0) return ZONE_ORDER.indexOf(a.nazione) - ZONE_ORDER.indexOf(b.nazione);
+    var ia = NAZIONI_ORDER.indexOf(a.nazione);
+    var ib = NAZIONI_ORDER.indexOf(b.nazione);
+    if (ia !== ib) return ia - ib;
+    if (a.regione === null && b.regione !== null) return -1;
+    if (a.regione !== null && b.regione === null) return 1;
+    if (a.regione === null && b.regione === null) return 0;
+    return a.regione.localeCompare(b.regione, 'it');
+  });
+}
+
+function filtered() {
+  var q = (document.getElementById('reg-search').value || '').toLowerCase();
+  var f = document.getElementById('reg-filter').value;
+  return sortedDest().filter(function (d) {
+    var okF = f === 'tutti' || d.stato === f;
+    var okQ = !q || destName(d).toLowerCase().indexOf(q) !== -1;
+    return okF && okQ;
+  });
+}
+
+function chipsHtml(r) {
+  if (!r.ranges.length) return '<span class="cell-empty">—</span>';
+  var shown = r.ranges.slice(0, 3);
+  var more = r.ranges.length - shown.length;
+  var html = '<span class="chip-set">';
+  shown.forEach(function (rg) {
+    var max = rg[1] === null ? 'oltre' : rg[1];
+    html += '<span class="chip">' + rg[0] + '\u2013' + max + '% \u2192 ' + fmtPct(rg[2]) + '</span>';
+  });
+  if (more > 0) html += '<span class="chip more">+' + more + '</span>';
+  return html + '</span>';
+}
+
+function renderRows() {
+  var list = filtered();
+  var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  if (page > pages) page = pages;
+  var rows = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  var tbody = document.getElementById('reg-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="data-table-empty">Nessuna destinazione trovata</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(function (d) {
+      var impatto = pctOf(d, 8).pct / 100 * 10000;
+      var initial = (destName(d) || '?').charAt(0).toUpperCase();
+      return '<tr>' +
+        '<td><div class="cell-entity">' +
+          '<span class="cell-entity-thumb">' + initial + '</span>' +
+          '<div class="cell-entity-text">' +
+            '<span class="cell-entity-title">' + destName(d) + '</span>' +
+            '<span class="cell-entity-sub' + (isZona(d.nazione) ? ' mono' : '') + '">' + destLevel(d) + '</span>' +
+          '</div>' +
+        '</div></td>' +
+        '<td class="num mono">' + fmtPct(d.base) + '</td>' +
+        '<td>' + chipsHtml(d) + '</td>' +
+        '<td class="num mono">' + fmtEur(Math.round(impatto)) + '</td>' +
+        '<td class="num mono">' + (d.soglia == null ? '<span class="cell-empty">—</span>' : fmtEur(d.soglia)) + '</td>' +
+        '<td><span class="status ' + statoCls[d.stato] + '">' + statoLabel[d.stato] + '</span></td>' +
+        '<td class="data-table-actions">' +
+          '<button class="row-action" data-act="edit" data-id="' + d.id + '" data-tip="Modifica" aria-label="Modifica ' + destName(d) + '">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+          '</button>' +
+          '<button class="row-action" data-act="toggle" data-id="' + d.id + '" data-tip="' + (d.stato === 'pausa' ? 'Riprendi' : 'Metti in pausa') + '" aria-label="' + (d.stato === 'pausa' ? 'Riprendi' : 'Metti in pausa') + '">' +
+            (d.stato === 'pausa'
+              ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'
+              : '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>') +
+          '</button>' +
+        '</td></tr>';
+    }).join('');
+  }
+  document.getElementById('reg-range').textContent = list.length === 0
+    ? '0 risultati'
+    : ((page - 1) * PAGE_SIZE + 1) + '\u2013' + ((page - 1) * PAGE_SIZE + rows.length) + ' di ' + list.length;
+  document.getElementById('reg-page').textContent = page + ' / ' + pages;
+  document.getElementById('pg-prev').disabled = page <= 1;
+  document.getElementById('pg-next').disabled = page >= pages;
+  var zone = DESTINAZIONI.filter(function (d) { return isZona(d.nazione); }).length;
+  var nazioni = DESTINAZIONI.filter(function (d) { return d.regione === null && !isZona(d.nazione); }).length;
+  var reg = DESTINAZIONI.filter(function (d) { return d.regione !== null; }).length;
+  var ok = DESTINAZIONI.filter(function (d) { return d.stato === 'ok'; }).length;
+  var cfg = DESTINAZIONI.filter(function (d) { return d.stato === 'configura'; }).length;
+  var pausa = DESTINAZIONI.filter(function (d) { return d.stato === 'pausa'; }).length;
+  document.getElementById('reg-meta').textContent = DESTINAZIONI.length + ' tariffe · ' + zone + ' zone · ' + nazioni + ' nazioni · ' + reg + ' eccezioni regionali · ' + ok + ' configurate · ' + cfg + ' da configurare · ' + pausa + ' in pausa';
+}
+
+document.getElementById('reg-search').addEventListener('input', function () { page = 1; renderRows(); });
+document.getElementById('reg-filter').addEventListener('change', function () { page = 1; renderRows(); });
+document.getElementById('pg-prev').addEventListener('click', function () { if (page > 1) { page--; renderRows(); } });
+document.getElementById('pg-next').addEventListener('click', function () { page++; renderRows(); });
+
+document.getElementById('btn-sim').addEventListener('click', openSim);
+function creaNuovo() {
+  var n = { id: nextId(), nazione: 'IT', regione: null, base: 3.0, stato: 'configura', soglia: null, ranges: [], updated: '—', isNew: true };
+  DESTINAZIONI.push(n);
+  openEditor(n);
+}
+document.getElementById('btn-nuova').addEventListener('click', creaNuovo);
+
+document.getElementById('reg-tbody').addEventListener('click', function (e) {
+  var btn = e.target.closest('.row-action');
+  if (!btn) return;
+  var d = DESTINAZIONI.filter(function (x) { return x.id === Number(btn.dataset.id); })[0];
+  if (!d) return;
+  if (btn.dataset.act === 'edit') openEditor(d);
+  if (btn.dataset.act === 'toggle') {
+    if (d.stato === 'pausa') { d.stato = 'ok'; } else if (d.stato === 'ok') { d.stato = 'pausa'; }
+    renderRows();
+  }
+});
+
+/* ── Combobox riutilizzabile ── */
+var current = null;
+var currentLevel = 'nazione';
+var editModal = document.getElementById('edit-modal');
+var editNazione = document.getElementById('edit-nazione');
+var editRegione = document.getElementById('edit-regione');
+var currentComboboxNazione = null;
+var currentComboboxRegione = null;
+var simComboboxNazione = null;
+var simComboboxRegione = null;
+
+function buildComboboxOptions() {
+  var nazioniOpts = [{ value: '', label: 'Usa tariffa automatica', meta: '' }].concat(NAZIONI_ORDER.map(function (n) {
+    return { value: n, label: NAZIONI[n].n, meta: NAZIONI[n].z === 'EU' ? 'EU' : 'ROW' };
+  }));
+  var regioniOpts = [{ value: '', label: 'Usa tariffa automatica', meta: '' }].concat(REGIONI_IT.map(function (name) {
+    return { value: name, label: name, meta: 'IT' };
+  }));
+  return { nazioni: nazioniOpts, regioni: regioniOpts };
+}
+
+var comboboxCache = null;
+function getComboboxOptions() {
+  if (!comboboxCache) comboboxCache = buildComboboxOptions();
+  return comboboxCache;
+}
+
+function createCombobox(inputId, dropdownId, hiddenInputId, options, filterFn, onSelect) {
+  var input = document.getElementById(inputId);
+  var dropdown = document.getElementById(dropdownId);
+  var hiddenInput = document.getElementById(hiddenInputId);
+  var opts = options || [];
+  var selectCallback = onSelect || null;
+  var highlightedIndex = -1;
+  var isOpen = false;
+
+  function filterOptions(query) {
+    if (!query) return opts;
+    var q = query.toLowerCase();
+    return opts.filter(function (opt) {
+      if (opt.value === '') return true;
+      return opt.value.toLowerCase().indexOf(q) !== -1 ||
+             (opt.label && opt.label.toLowerCase().indexOf(q) !== -1);
+    });
+  }
+
+  function renderOptions(filter) {
+    var filtered = filterOptions(filter);
+    var html = '';
+    if (!filtered.length) {
+      html = '<div class="combobox-empty">Nessun risultato</div>';
+    } else {
+      filtered.forEach(function (opt) {
+        var isAuto = opt.value === '';
+        html += '<div class="combobox-option' + (isAuto ? ' auto-option' : '') + '" data-value="' + opt.value + '">' +
+          '<span class="option-label">' + opt.label + '</span>' +
+          (opt.meta ? '<span class="option-meta">' + opt.meta + '</span>' : '') +
+          '</div>';
+      });
+    }
+    dropdown.innerHTML = html;
+    dropdown.querySelectorAll('.combobox-option').forEach(function (el) {
+      el.addEventListener('click', function () {
+        selectOption(this.dataset.value);
+      });
+    });
+  }
+
+  function open() {
+    dropdown.classList.add('open');
+    isOpen = true;
+    renderOptions(input.value);
+    var els = dropdown.querySelectorAll('.combobox-option');
+    if (els.length > 0) {
+      highlightedIndex = 0;
+      highlight(0);
+    }
+  }
+
+  function close() {
+    dropdown.classList.remove('open');
+    isOpen = false;
+    highlightedIndex = -1;
+  }
+
+  function highlight(index) {
+    var els = dropdown.querySelectorAll('.combobox-option');
+    if (index < 0 || index >= els.length) return;
+    els.forEach(function (el, i) {
+      el.classList.toggle('highlighted', i === index);
+    });
+    highlightedIndex = index;
+  }
+
+  function selectOption(value) {
+    var opt = null;
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].value === value) { opt = opts[i]; break; }
+    }
+    hiddenInput.value = value;
+    input.value = opt ? opt.label : '';
+    dropdown.classList.remove('open');
+    isOpen = false;
+    highlightedIndex = -1;
+    if (selectCallback) selectCallback(value);
+  }
+
+  input.addEventListener('input', function () {
+    renderOptions(this.value);
+    if (!isOpen) {
+      dropdown.classList.add('open');
+      isOpen = true;
+    }
+    highlightedIndex = -1;
+  });
+
+  input.addEventListener('focus', function () {
+    renderOptions(this.value);
+    dropdown.classList.add('open');
+    isOpen = true;
+  });
+
+  input.addEventListener('blur', function () {
+    setTimeout(close, 150);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    var els = dropdown.querySelectorAll('.combobox-option');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) { open(); return; }
+      highlightedIndex = Math.min(highlightedIndex + 1, els.length - 1);
+      highlight(highlightedIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex - 1, 0);
+      highlight(highlightedIndex);
+    } else if (e.key === 'Enter' && highlightedIndex >= 0 && highlightedIndex < els.length) {
+      e.preventDefault();
+      selectOption(els[highlightedIndex].dataset.value);
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.combobox')) close();
+  });
+
+  return {
+    close: close,
+    open: open,
+    getValue: function () { return hiddenInput.value; },
+    setValue: function (value, label) {
+      hiddenInput.value = value || '';
+      input.value = label || '';
+      dropdown.classList.remove('open');
+      isOpen = false;
+      highlightedIndex = -1;
+    },
+    clearSearch: function () {
+      input.value = '';
+      hiddenInput.value = '';
+      dropdown.classList.remove('open');
+      isOpen = false;
+      highlightedIndex = -1;
+    },
+    selectOption: selectOption
+  };
+}
+
+function initComboboxes() {
+  var opts = getComboboxOptions();
+  currentComboboxNazione = createCombobox(
+    'edit-nazione-search', 'edit-nazione-dropdown', 'edit-nazione',
+    opts.nazioni, null,
+    function (val) { setLevel(currentLevel); destPreview(); }
+  );
+  currentComboboxRegione = createCombobox(
+    'edit-regione-search', 'edit-regione-dropdown', 'edit-regione',
+    opts.regioni, null,
+    function (val) { destPreview(); }
+  );
+  simComboboxNazione = createCombobox(
+    'sim-nazione-search', 'sim-nazione-dropdown', 'sim-nazione',
+    opts.nazioni.slice(1), null,
+    function (val) { simNazioneChange(); }
+  );
+  simComboboxRegione = createCombobox(
+    'sim-regione-search', 'sim-regione-dropdown', 'sim-regione',
+    opts.regioni, null,
+    function (val) { simCalc(); }
+  );
+}
+
+/* ── Editor destinazione ── */
+function setLevel(lv) {
+  currentLevel = lv;
+  document.querySelectorAll('#edit-livello .seg-btn').forEach(function (b) {
+    b.classList.toggle('active', b.dataset.lv === lv);
+  });
+  var nazField = document.getElementById('edit-nazione-field');
+  var regField = document.getElementById('edit-regione-field');
+  var zonaField = document.getElementById('edit-zona-field');
+  if (lv === 'regione') {
+    if (currentComboboxNazione) {
+      if (currentComboboxNazione.getValue() !== 'IT') currentComboboxNazione.setValue('IT', NAZIONI.IT.n);
+    } else {
+      editNazione.value = 'IT';
+    }
+    nazField.style.display = 'none';
+    regField.style.display = '';
+    zonaField.style.display = 'none';
+  } else if (lv === 'nazione') {
+    nazField.style.display = '';
+    regField.style.display = 'none';
+    zonaField.style.display = 'none';
+  } else {
+    nazField.style.display = 'none';
+    regField.style.display = 'none';
+    zonaField.style.display = '';
+    if (lv === 'EUROPA') {
+      document.getElementById('edit-zona-title').textContent = 'Europa';
+      document.getElementById('edit-zona-sub').textContent = 'Per i ' + euCount() + ' paesi dell\u2019area europea senza una tariffa di nazione o regione.';
+    } else {
+      document.getElementById('edit-zona-title').textContent = 'Resto del mondo';
+      document.getElementById('edit-zona-sub').textContent = 'Default globale: per tutti i paesi del mondo senza una tariffa pi\u00f9 specifica.';
+    }
+  }
+  destPreview();
+}
+
+function destPreview() {
+  var d = {
+    nazione: isZona(currentLevel) ? currentLevel : editNazione.value,
+    regione: currentLevel === 'regione' && editNazione.value === 'IT' ? (editRegione.value || null) : null
+  };
+  document.getElementById('edit-title').textContent = destTitle(d);
+  renderDestDesc(d);
+}
+
+function renderDestDesc(d) {
+  var info = describeTariffa(d);
+  if (!info) return;
+  document.getElementById('edit-desc-title').textContent = info.title;
+  document.getElementById('edit-desc-text').textContent = info.text;
+  document.querySelectorAll('#edit-hier span').forEach(function (s) {
+    s.classList.toggle('on', s.dataset.h === info.hier);
+  });
+}
+
+document.querySelectorAll('#edit-livello .seg-btn').forEach(function (b) {
+  b.addEventListener('click', function () { setLevel(b.dataset.lv); });
+});
+
+function openEditor(d) {
+  current = d;
+  document.getElementById('edit-title').textContent = destTitle(d);
+  var nazione = (d.regione !== null || !isZona(d.nazione)) ? d.nazione : 'IT';
+  if (currentComboboxNazione) {
+    currentComboboxNazione.setValue(nazione, NAZIONI[nazione] ? NAZIONI[nazione].n : (ZONE_KEYS[nazione] || ''));
+    currentComboboxRegione.setValue(d.regione || '', d.regione || '');
+  } else {
+    editNazione.value = nazione;
+    editRegione.value = d.regione || '';
+  }
+  var isNew = !!d.isNew;
+  document.getElementById('edit-dest-picker').style.display = isNew ? '' : 'none';
+  document.getElementById('edit-dest-desc').style.display = isNew ? 'none' : '';
+  setLevel(d.regione !== null ? 'regione' : (isZona(d.nazione) ? d.nazione : 'nazione'));
+  document.getElementById('edit-base').value = d.base;
+  document.getElementById('edit-stato').value = d.stato;
+  document.getElementById('edit-soglia').value = d.soglia == null ? '' : d.soglia;
+  renderRanges(d.ranges.slice());
+  recompute();
+  editModal.hidden = false;
+  document.getElementById('edit-base').focus();
+}
+
+function closeEditor() { editModal.hidden = true; }
+
+function renderRanges(ranges) {
+  var box = document.getElementById('edit-ranges');
+  if (!ranges.length) {
+    box.innerHTML = '<div class="range-table"><div class="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div></div>';
+    return;
+  }
+  var html = '<div class="range-table"><div class="range-head">' +
+    '<span class="range-from" style="color:inherit">Sconto da</span>' +
+    '<span class="range-arrow" style="color:inherit"></span>' +
+    '<span class="range-max" style="color:inherit;width:96px">Fino a</span>' +
+    '<span class="range-pct" style="color:inherit;width:96px">Percentuale</span>' +
+    '<span></span>' +
+    '</div>';
+  var from = 0;
+  ranges.forEach(function (rg, i) {
+    var max = rg[1];
+    var isOltre = max === null;
+    html += '<div class="range-row" data-idx="' + i + '">' +
+      '<span class="range-from">' + fmtPct(from) + '</span>' +
+      '<span class="range-arrow">→</span>' +
+      (isOltre
+        ? '<span class="range-oltre" style="width:96px">oltre</span>'
+        : '<span class="range-max" style="width:96px"><input class="range-input" data-k="max" type="number" min="0" step="0.5" value="' + max + '"><span class="unit">%</span></span>') +
+      '<span class="range-pct" style="width:96px"><input class="range-input" data-k="pct" type="number" min="0" step="0.1" value="' + rg[2] + '"><span class="unit">%</span></span>' +
+      '<button class="range-del" data-del="' + i + '" type="button" title="Rimuovi" aria-label="Rimuovi scaglione">' +
+        '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>' +
+      '</button>' +
+    '</div>';
+    if (!isOltre) from = max;
+  });
+  box.innerHTML = html + '</div>';
+  box.querySelectorAll('.range-del').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var idx = Number(b.dataset.del);
+      current.ranges.splice(idx, 1);
+      renderRanges(current.ranges.slice());
+      recompute();
+    });
+  });
+  box.querySelectorAll('.range-input').forEach(function (inp) {
+    inp.addEventListener('input', recompute);
+  });
+  box.querySelectorAll('.range-input[data-k="max"]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      var row = inp.closest('.range-row');
+      var next = row.nextElementSibling;
+      if (next && next.querySelector('.range-from')) {
+        next.querySelector('.range-from').textContent = fmtPct(parseFloat(inp.value) || 0);
+      }
+    });
+  });
+}
+
+document.getElementById('add-range').addEventListener('click', function () {
+  var last = current.ranges[current.ranges.length - 1];
+  if (!last) {
+    current.ranges.push([0, null, current.base]);
+  } else if (last[1] === null) {
+    var split = last[0] + 5;
+    current.ranges[current.ranges.length - 1] = [last[0], split, last[2]];
+    current.ranges.push([split, null, current.base]);
+  } else {
+    current.ranges.push([last[1], null, current.base]);
+  }
+  renderRanges(current.ranges.slice());
+  recompute();
+});
+
+function currentRanges() {
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#edit-ranges .range-row'));
+  var from = 0;
+  return rows.map(function (row) {
+    var maxEl = row.querySelector('[data-k="max"]');
+    var max = maxEl && maxEl.value !== '' ? parseFloat(maxEl.value) : null;
+    if (max !== null && isNaN(max)) max = null;
+    var pct = parseFloat(row.querySelector('[data-k="pct"]').value);
+    var r = [from, max, isNaN(pct) ? 0 : pct];
+    if (max !== null) from = max;
+    return r;
+  });
+}
+
+function recompute() {
+  var base = parseFloat(document.getElementById('edit-base').value);
+  var ranges = currentRanges();
+  var amount = parseFloat(document.getElementById('prev-amount').value);
+  var discount = parseFloat(document.getElementById('prev-discount').value);
+  var sogliaVal = document.getElementById('edit-soglia').value;
+  if (isNaN(base)) base = 0;
+  if (isNaN(amount) || amount < 0) amount = 0;
+  if (isNaN(discount) || discount < 0) discount = 0;
+  var soglia = sogliaVal === '' ? null : parseFloat(sogliaVal);
+  if (soglia !== null && isNaN(soglia)) soglia = null;
+
+  var res = { pct: base, rng: null };
+  for (var i = 0; i < ranges.length; i++) {
+    var rg = ranges[i];
+    if (discount >= rg[0] && (rg[1] === null || discount < rg[1])) { res = { pct: rg[2], rng: rg }; break; }
+  }
+  var free = soglia !== null && amount >= soglia;
+  var fee = free ? 0 : amount * res.pct / 100;
+  var prevResult = document.getElementById('prev-result');
+  prevResult.textContent = fmtEur(fee);
+  prevResult.classList.toggle('free', free);
+  var note;
+  if (free) {
+    note = 'Spedizione <b>gratuita</b>: importo ≥ soglia <b>' + fmtEur(soglia) + '</b> della destinazione.';
+  } else if (res.rng) {
+    var maxL = res.rng[1] === null ? 'oltre' : res.rng[1];
+    note = 'Scaglione ' + res.rng[0] + '\u2013' + maxL + '% · <b>' + fmtPct(res.pct) + '</b> su ' +
+      fmtEur(amount) + ' (sconto medio ' + fmtPct(discount) + ')' +
+      (soglia !== null ? ' · sotto soglia gratuita di ' + fmtEur(soglia) : '');
+  } else {
+    note = 'Percentuale di base <b>' + fmtPct(base) + '</b> su ' + fmtEur(amount) + ' · nessuno scaglione per sconto ' + fmtPct(discount) +
+      (soglia !== null ? ' · sotto soglia gratuita di ' + fmtEur(soglia) : '');
+  }
+  document.getElementById('prev-note').innerHTML = note;
+}
+
+['edit-base', 'edit-soglia', 'prev-amount', 'prev-discount'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', recompute);
+});
+
+function backToList() { closeEditor(); renderRows(); }
+
+document.getElementById('edit-close').addEventListener('click', backToList);
+editModal.addEventListener('click', function (e) { if (e.target === editModal) backToList(); });
+document.getElementById('edit-save').addEventListener('click', function () {
+  if (!current) return;
+  var nazione = isZona(currentLevel) ? currentLevel : editNazione.value;
+  var regione = currentLevel === 'regione' && nazione === 'IT' ? editRegione.value : null;
+  var clash = null;
+  DESTINAZIONI.forEach(function (x) {
+    if (x !== current && x.nazione === nazione && x.regione === regione) clash = x;
+  });
+  if (clash) DESTINAZIONI.splice(DESTINAZIONI.indexOf(clash), 1);
+  current.nazione = nazione;
+  current.regione = regione;
+  var base = parseFloat(document.getElementById('edit-base').value);
+  current.base = isNaN(base) ? 0 : base;
+  current.ranges = currentRanges();
+  current.stato = document.getElementById('edit-stato').value;
+  var sogliaVal = document.getElementById('edit-soglia').value;
+  var soglia = sogliaVal === '' ? null : parseFloat(sogliaVal);
+  current.soglia = soglia !== null && !isNaN(soglia) ? soglia : null;
+  current.isNew = false;
+  backToList();
+});
+document.getElementById('edit-cancel').addEventListener('click', backToList);
+document.getElementById('edit-delete').addEventListener('click', function () {
+  if (!current) return;
+  var i = DESTINAZIONI.indexOf(current);
+  if (i >= 0) DESTINAZIONI.splice(i, 1);
+  backToList();
+});
+
+/* ── Simulatore ── */
+var simModal = document.getElementById('sim-modal');
+var simNazione = document.getElementById('sim-nazione');
+var simRegione = document.getElementById('sim-regione');
+var simRegioneField = document.getElementById('sim-regione-field');
+
+function openSim() {
+  simModal.hidden = false;
+  if (simComboboxNazione) {
+    if (simComboboxNazione.getValue() !== 'IT') simComboboxNazione.setValue('IT', NAZIONI.IT.n);
+  } else {
+    simNazione.value = 'IT';
+  }
+  if (simComboboxRegione) simComboboxRegione.setValue('', '');
+  else simRegione.value = '';
+  simRegioneField.style.display = simNazione.value === 'IT' ? '' : 'none';
+  simCalc();
+  document.getElementById('sim-amount').focus();
+}
+function closeSim() { simModal.hidden = true; }
+document.getElementById('sim-close').addEventListener('click', closeSim);
+document.getElementById('sim-ok').addEventListener('click', closeSim);
+simModal.addEventListener('click', function (e) { if (e.target === simModal) closeSim(); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (!editModal.hidden) closeEditor();
+  else if (!simModal.hidden) closeSim();
+});
+
+function simNazioneChange() {
+  simRegioneField.style.display = simNazione.value === 'IT' ? '' : 'none';
+  if (simNazione.value !== 'IT') {
+    simRegione.value = '';
+    if (simComboboxRegione) simComboboxRegione.setValue('', '');
+  }
+  simCalc();
+}
+
+function simCalc() {
+  var nazione = simNazione.value;
+  var regioneVal = simRegione.value;
+  var amount = parseFloat(document.getElementById('sim-amount').value);
+  var discount = parseFloat(document.getElementById('sim-discount').value);
+  if (isNaN(amount) || amount < 0) amount = 0;
+  if (isNaN(discount) || discount < 0) discount = 0;
+
+  var resolved = resolveTariffa(nazione, regioneVal === '' ? null : regioneVal);
+  var simResult = document.getElementById('sim-result');
+  var simSource = document.getElementById('sim-source');
+  var simNote = document.getElementById('sim-note');
+  var feeEl = document.getElementById('sim-step-fee');
+  var pctEl = document.getElementById('sim-step-pct');
+
+  if (!resolved) {
+    simResult.textContent = '\u2014';
+    simResult.classList.remove('free');
+    simSource.innerHTML = '<b>Tariffa da confermare</b>';
+    simNote.innerHTML = 'Nessuna tariffa attiva per ' + (NAZIONI[nazione] ? NAZIONI[nazione].n : nazione) +
+      (regioneVal !== '' ? ' \u2013 ' + regioneVal : '') + ': da configurare una tariffa di nazione, regione o area.';
+    document.getElementById('sim-step-tariffa').textContent = '—';
+    document.getElementById('sim-step-soglia').textContent = '—';
+    pctEl.textContent = '—';
+    feeEl.textContent = '—';
+    feeEl.classList.remove('free');
+    document.getElementById('sim-bars').innerHTML = '';
+    return;
+  }
+
+  var r = resolved.t;
+  var tariffaLabel, sourceSuffix;
+  if (resolved.source === 'regione') {
+    tariffaLabel = 'Regione ' + destName(r);
+    sourceSuffix = ' (eccezione sopra la tariffa nazione)';
+  } else if (resolved.source === 'nazione') {
+    tariffaLabel = 'Nazione ' + (NAZIONI[r.nazione] ? NAZIONI[r.nazione].n : r.nazione);
+    sourceSuffix = ' (fallback)';
+  } else if (resolved.source === 'europa') {
+    tariffaLabel = 'Europa';
+    sourceSuffix = ' (tariffa d\u2019area)';
+  } else {
+    tariffaLabel = 'Resto del mondo';
+    sourceSuffix = ' (default globale)';
+  }
+  simSource.innerHTML = 'Tariffa applicata: <b>' + tariffaLabel + '</b>' + sourceSuffix;
+
+  var res = pctOf(r, discount);
+  var free = r.soglia != null && amount >= r.soglia;
+  var fee = free ? 0 : amount * res.pct / 100;
+
+  simResult.textContent = fmtEur(fee);
+  simResult.classList.toggle('free', free);
+  var note;
+  if (free) {
+    note = 'Spedizione <b>gratuita</b>: importo ≥ soglia <b>' + fmtEur(r.soglia) + '</b> della tariffa ' + tariffaLabel + '.';
+  } else if (res.rng) {
+    var maxL = res.rng[1] === null ? 'oltre' : res.rng[1];
+    note = 'Percentuale <b>' + fmtPct(res.pct) + '</b> · scaglione ' + res.rng[0] + '\u2013' + maxL + '% (sconto medio ' + fmtPct(discount) + ')' +
+      (r.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(r.soglia) : '');
+  } else {
+    note = 'Percentuale di base <b>' + fmtPct(r.base) + '</b> · nessuno scaglione per sconto ' + fmtPct(discount) +
+      (r.soglia != null ? ' · sotto soglia gratuita di ' + fmtEur(r.soglia) : '');
+  }
+  simNote.innerHTML = note;
+  document.getElementById('sim-step-amount').textContent = fmtEur(amount);
+  document.getElementById('sim-step-discount').textContent = fmtPct(discount);
+  document.getElementById('sim-step-tariffa').textContent = tariffaLabel;
+  document.getElementById('sim-step-soglia').textContent = r.soglia == null ? 'Nessuna' : fmtEur(r.soglia);
+  pctEl.textContent = free ? '0,0%' : fmtPct(res.pct);
+  feeEl.textContent = fmtEur(fee);
+  feeEl.classList.toggle('free', free);
+
+  var steps = [0, 5, 10, 15, 20];
+  var bars = steps.map(function (s) {
+    var p = pctOf(r, s).pct;
+    return '<div class="bar' + (s === Math.round(discount) ? ' hi' : '') + '" style="height:' + Math.max(3, p / 8 * 84) + 'px"><span class="bv">' + fmtPct(p) + '</span></div>';
+  }).join('');
+  document.getElementById('sim-bars').innerHTML = bars;
+}
+
+['sim-amount', 'sim-discount'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', simCalc);
+});
+
+/* ── Tooltip "?" ── */
+(function () {
+  var tip = document.createElement('div');
+  tip.className = 'hint-tip-global';
+  document.body.appendChild(tip);
+  function show(hint) {
+    var src = hint.querySelector('.hint-tip');
+    if (!src) return;
+    tip.innerHTML = src.innerHTML;
+    tip.style.display = 'block';
+    var r = hint.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    var top = r.bottom + 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hide() { tip.style.display = 'none'; }
+  document.querySelectorAll('.hint, .tip').forEach(function (hint) {
+    hint.addEventListener('mouseenter', function () { show(hint); });
+    hint.addEventListener('mouseleave', hide);
+    hint.addEventListener('focusin', function () { show(hint); });
+    hint.addEventListener('focusout', hide);
+  });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+})();
+
+/* ── Init ── */
+initComboboxes();
+renderRows();
+</script>
+</body>
+</html>
