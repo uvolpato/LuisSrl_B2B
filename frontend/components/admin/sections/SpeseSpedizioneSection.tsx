@@ -152,8 +152,12 @@ export default function SpeseSpedizioneSection() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Destinazione</th>
-                  <th className="num">% base</th>
+                  <th className={sortKey === "destinazione" ? "sorted" : ""} onClick={() => handleSort("destinazione")} style={{ cursor: "pointer" }}>
+                    Destinazione {sortKey === "destinazione" && <span className="sort-arrow">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                  </th>
+                  <th className={`num${sortKey === "base" ? " sorted" : ""}`} onClick={() => handleSort("base")} style={{ cursor: "pointer" }}>
+                    % base {sortKey === "base" && <span className="sort-arrow">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                  </th>
                   <th className="col-resizable">
                     Scaglioni sconto medio
                     <span
@@ -162,7 +166,9 @@ export default function SpeseSpedizioneSection() {
                       onMouseDown={e => { e.preventDefault(); resizing.current = true; document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none"; }}
                     />
                   </th>
-                  <th className="num">Soglia gratuita</th>
+                  <th className={`num${sortKey === "soglia" ? " sorted" : ""}`} onClick={() => handleSort("soglia")} style={{ cursor: "pointer" }}>
+                    Soglia gratuita {sortKey === "soglia" && <span className="sort-arrow">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                  </th>
                   <th style={{ textAlign: "right" }}>Azioni</th>
                 </tr>
               </thead>
