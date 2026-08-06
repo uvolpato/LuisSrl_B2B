@@ -402,7 +402,7 @@ var ADDRESSES = [
 var selectedAddrId = 1;
 
 /* ── FORMATTER ── */
-function fmtEur(n) { return '€ ' + n.toFixed(2).replace('.', ','); }
+function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
 
 /* ── COMPUTE ── */
 function computeSubtotal() {
@@ -418,8 +418,8 @@ function renderSummary() {
     var tot = it.qty * it.prezzo;
     html += ''
       + '<div class="summary-item">'
-      + '<span class="summary-item-name"><span class="badge code">' + it.codice + '</span>' + it.nome + '</span>'
-      + '<span class="summary-item-meta">' + it.qty + ' pz × ' + fmtEur(it.prezzo) + '</span>'
+      + '<span class="summary-item-name"><span class="badge code">' + it.codice + '</span><span>' + it.nome + '</span></span>'
+      + '<span class="summary-item-meta">' + it.qty + ' pz ' + String.fromCharCode(215) + ' ' + fmtEur(it.prezzo) + '</span>'
       + '<span class="summary-item-price">' + fmtEur(tot) + '</span>'
       + '</div>';
   }
@@ -449,12 +449,13 @@ function updateShipTo() {
     if (ADDRESSES[i].id === selectedAddrId) { addr = ADDRESSES[i]; break; }
   }
   var el = document.getElementById('summary-ship-to');
+  var parent = el.parentNode;
   if (addr) {
     document.getElementById('ship-name').textContent = addr.nome;
-    document.getElementById('ship-addr').textContent = addr.indirizzo + ' — ' + addr.cap + ' ' + addr.citta + ' ' + addr.prov;
-    el.hidden = false;
+    document.getElementById('ship-addr').textContent = addr.indirizzo + ' ' + addr.cap + ' ' + addr.citta + ' ' + addr.prov;
+    if (el.parentNode !== parent) parent.insertBefore(el, document.getElementById('summary-items'));
   } else {
-    el.hidden = true;
+    if (el.parentNode === parent) parent.removeChild(el);
   }
 }
 
@@ -462,8 +463,17 @@ function updateShipTo() {
 function updateModalita(mode) {
   document.getElementById('opt-ritiro').classList.toggle('selected', mode === 'RITIRO');
   document.getElementById('opt-spedizione').classList.toggle('selected', mode === 'SPEDIZIONE');
-  document.getElementById('sede-section').hidden = mode === 'RITIRO';
-  document.getElementById('summary-ship-to').hidden = mode === 'RITIRO';
+  var sede = document.getElementById('sede-section');
+  var shipEl = document.getElementById('summary-ship-to');
+  var parent = shipEl.parentNode;
+  if (mode === 'RITIRO') {
+    sede.hidden = true;
+    if (shipEl.parentNode === parent && parent) parent.removeChild(shipEl);
+  } else {
+    sede.hidden = false;
+    if (shipEl.parentNode !== parent && parent) parent.insertBefore(shipEl, document.getElementById('summary-items'));
+    updateShipTo();
+  }
 }
 
 /* ── VALIDATE ── */
