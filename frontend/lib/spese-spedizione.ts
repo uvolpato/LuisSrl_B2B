@@ -14,7 +14,7 @@ export interface Resolved {
   source: string;
 }
 
-const NAZIONI: Record<string, { n: string; z: 'EU' | 'ROW' }> = {
+export const NAZIONI: Record<string, { n: string; z: 'EU' | 'ROW' }> = {
   AF:{n:'Afghanistan',z:'ROW'},AL:{n:'Albania',z:'ROW'},DZ:{n:'Algeria',z:'ROW'},AD:{n:'Andorra',z:'ROW'},
   AO:{n:'Angola',z:'ROW'},AI:{n:'Anguilla',z:'ROW'},AG:{n:'Antigua e Barbuda',z:'ROW'},SA:{n:'Arabia Saudita',z:'ROW'},
   AR:{n:'Argentina',z:'ROW'},AM:{n:'Armenia',z:'ROW'},AW:{n:'Aruba',z:'ROW'},AU:{n:'Australia',z:'ROW'},
