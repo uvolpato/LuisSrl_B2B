@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Req, UseGuards, Query, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Req, UseGuards, Query, Param, ParseIntPipe } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
@@ -63,6 +63,14 @@ export class CheckoutController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.checkout.eliminaIndirizzo(req.user.id, id);
+  }
+
+  @Patch('indirizzo/:id/predefinito')
+  impostaPredefinito(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.checkout.impostaPredefinito(req.user.id, id);
   }
 
   @Post('conferma')
