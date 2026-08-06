@@ -195,9 +195,9 @@ export default function CheckoutPage() {
   const totale = subScontato + spedizioneFee;
 
   useEffect(() => {
-    if (!indirizzoSelezionato?.provincia) return;
     const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
-    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${indirizzoSelezionato.provincia}&imponibile=${subScontato}&sconto=${avgDiscount}`)
+    const prov = indirizzoSelezionato?.provincia ?? '';
+    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&imponibile=${subScontato}&sconto=${avgDiscount}`)
       .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
   }, [indirizzoSelezionato?.provincia, subScontato, subtotalListino, subtotalAmount]);
 
