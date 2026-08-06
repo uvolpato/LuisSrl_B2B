@@ -134,6 +134,12 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
   color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 999px;
   align-self: flex-start; margin-top: 4px;
 }
+.btn-set-default {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 12px; padding: 2px 0; text-align: left; align-self: flex-start;
+}
+.btn-set-default:hover { color: var(--accent); }
+.btn-set-default.hidden { display: none; }
 
 /* ══ Nuovo indirizzo ══ */
 .catalogo-page.cart-page.checkout-page .addr-add-btn { margin-top: 14px; }
@@ -273,8 +279,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
                 <div class="addr-l"><b>Città</b><span>Bergamo</span></div>
                 <div class="addr-l"><b>Provincia</b><span>BG</span></div>
                 <span class="addr-badge">Abituale</span>
+                <button type="button" class="btn-set-default hidden" data-id="1">Imposta come predefinito</button>
               </label>
-              <label class="addr-card" data-id="2">
+              <label class="addr-card" data-id="2" id="addr-2">
                 <input type="radio" name="indirizzo">
                 <div class="addr-card-h">
                   <span class="status st-amber"><span class="sd">●</span>Spedizione</span>
@@ -283,6 +290,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
                 <div class="addr-l"><b>CAP</b><span>20122</span></div>
                 <div class="addr-l"><b>Città</b><span>Milano</span></div>
                 <div class="addr-l"><b>Provincia</b><span>MI</span></div>
+                <button type="button" class="btn-set-default" data-id="2">Imposta come predefinito</button>
               </label>
             </div>
 
@@ -597,11 +605,36 @@ function confermaOrdine() {
     document.getElementById('nRagione').value = '';
   });
 
+  // Set default button handlers
+  var defBtns = document.querySelectorAll('.btn-set-default');
+  for (var k = 0; k < defBtns.length; k++) {
+    defBtns[k].addEventListener('click', function(e) {
+      e.stopPropagation();
+      var id = Number(this.dataset.id);
+      // Remove default from all
+      for (var a = 0; a < ADDRESSES.length; a++) ADDRESSES[a].abituale = (ADDRESSES[a].id === id);
+      selectAddr(id);
+      // Refresh badges and buttons
+      for (var b = 0; b < defBtns.length; b++) defBtns[b].classList.toggle('hidden', Number(defBtns[b].dataset.id) === id);
+      var badges = document.querySelectorAll('#addr-grid .addr-badge');
+      for (var c = 0; c < badges.length; c++) {
+        badges[c].hidden = Number(badges[c].parentElement.dataset.id) !== id;
+      }
+      renderSummary();
+    });
+  }
+
   // Delivery mode radios
   var modeRadios = document.querySelectorAll('input[name="modalita"]');
   for (var j = 0; j < modeRadios.length; j++) {
     modeRadios[j].addEventListener('change', function() {
-      updateModalita(this.value);
+      var mode = this.value;
+      updateModalita(mode);
+      if (mode === 'SPEDIZIONE') {
+        var def = null;
+        for (var d = 0; d < ADDRESSES.length; d++) { if (ADDRESSES[d].abituale) { def = ADDRESSES[d]; break; } }
+        if (def) selectAddr(def.id);
+      }
     });
   }
 
