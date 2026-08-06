@@ -102,9 +102,12 @@ export class SpeseSpedizioneService implements OnModuleInit {
   async create(data: { nazione: string; regione?: string; basePercent: number; stato: string; sogliaImporto?: number; ranges?: number[][] }): Promise<Row> {
     if (data.regione && data.nazione !== 'IT') throw new BadRequestException('Regione richiede nazione IT');
     if (isZona(data.nazione) && data.regione) throw new BadRequestException('Le aree non hanno regione');
-    const existing = await this.findByDest(data.nazione, data.regione ?? null);
+    const existing = await this.prisma.tariffaSpedizione.findFirst({
+      where: { nazione: data.nazione, regione: data.regione ?? null },
+    });
     if (existing) throw new ConflictException('Destinazione già esistente');
-    return this.prisma.tariffaSpedizione.create({
+    try {
+      return await this.prisma.tariffaSpedizione.create({
       data: {
         nazione: data.nazione,
         regione: data.regione ?? null,
@@ -114,6 +117,10 @@ export class SpeseSpedizioneService implements OnModuleInit {
         ranges: data.ranges ?? [],
       },
     });
+    } catch (e: any) {
+      if (e?.code === 'P2002') throw new ConflictException('Destinazione già esistente');
+      throw e;
+    }
   }
 
   async update(id: number, data: { basePercent?: number; stato?: string; sogliaImporto?: number; ranges?: number[][] }): Promise<Row> {
