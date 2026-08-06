@@ -293,7 +293,14 @@ export default function CheckoutPage() {
                 <section className="checkout-section">
                   <h2 className="checkout-section-title">Sede di spedizione</h2>
                   {dati.indirizzi.length === 0 && !showNuovo ? (
-                    <p className="checkout-note">La merce verrà inviata alla sede dell&apos;anagrafica.</p>
+                    <div>
+                      <p className="checkout-note">La merce verrà inviata alla sede dell&apos;anagrafica.</p>
+                      {dati.allowNewAddress && (
+                        <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
+                          + Indica un nuovo indirizzo
+                        </button>
+                      )}
+                    </div>
                   ) : dati.indirizzi.length > 0 ? (
                     <div className="addr-grid">
                       {dati.indirizzi.map((a) => (
