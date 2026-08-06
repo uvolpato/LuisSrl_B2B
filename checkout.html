@@ -909,7 +909,11 @@ var provinciaCombobox = null;
       msg.textContent = 'Codice non valido';
       msg.classList.add('err');
     }
-    document.getElementById('btn-coupon-remove').hidden = !_couponActive;
+    if (_couponActive) {
+      document.getElementById('coupon-code').hidden = true;
+      document.getElementById('btn-coupon').hidden = true;
+      document.getElementById('btn-coupon-remove').hidden = false;
+    }
     renderSummary();
     if (_currentSpedizione > 0) updateSpedizione();
   }
@@ -917,6 +921,8 @@ var provinciaCombobox = null;
   function removeCoupon() {
     _couponActive = false;
     document.getElementById('coupon-code').value = '';
+    document.getElementById('coupon-code').hidden = false;
+    document.getElementById('btn-coupon').hidden = false;
     document.getElementById('coupon-msg').hidden = true;
     document.getElementById('btn-coupon-remove').hidden = true;
     renderSummary();
