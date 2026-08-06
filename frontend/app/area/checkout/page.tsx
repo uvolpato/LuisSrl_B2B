@@ -28,7 +28,7 @@ interface CartItem {
   prezzo: PrezzoInfo | null;
 }
 
-type ModalitaConsegna = "RITIRO" | "SPEDIZIONE" | "MEZZI_PROPRI";
+type ModalitaConsegna = "RITIRO" | "SPEDIZIONE";
 
 interface DatiCheckout {
   cliente: {
@@ -285,22 +285,10 @@ export default function CheckoutPage() {
                       <span className="opt-desc">Consegnamo tramite vettore all'indirizzo indicato.</span>
                     </span>
                   </label>
-                  <label className={"opt-card" + (modalita === "MEZZI_PROPRI" ? " selected" : "")}>
-                    <input
-                      type="radio"
-                      name="modalita"
-                      checked={modalita === "MEZZI_PROPRI"}
-                      onChange={() => setModalita("MEZZI_PROPRI")}
-                    />
-                    <span className="opt-main">
-                      <span className="opt-name">Consegna a mezzi propri</span>
-                      <span className="opt-desc">Ritira con tuo mezzo all'indirizzo indicato.</span>
-                    </span>
-                  </label>
                 </div>
               </section>
 
-              {/* Sede di spedizione (solo per spedizione/mezzi propri) */}
+              {/* Sede di spedizione (solo per spedizione) */}
               {modalita !== "RITIRO" && (
                 <section className="checkout-section">
                   <h2 className="checkout-section-title">Sede di spedizione</h2>
