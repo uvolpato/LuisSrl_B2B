@@ -5,6 +5,7 @@ import { api } from "../../../lib/api";
 import ComboboxField from "../ComboboxField";
 import type { ComboboxOption } from "../ComboboxField";
 import Modal from "../../common/Modal";
+import { useConfirm } from "../../common/ConfirmProvider";
 import type { Tariffa } from "../../../lib/spese-spedizione";
 import {
   resolveTariffa, pctOf, calcFee, destName, destTitle, describeTariffa,
@@ -246,6 +247,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   const [stato, setStato] = useState(tariffa?.stato ?? "configura");
   const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? 0);
   const [ranges, setRanges] = useState<(number | null)[][]>(() => (tariffa?.ranges ?? []).map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]));
+  const confirm = useConfirm();
   const [error, setError] = useState("");
 
   const nazioniOpts: ComboboxOption[] = NAZIONI_ORDER.map(k => ({ value: k, label: k }));
@@ -324,10 +326,10 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
     <Modal size="sm" title={isNew ? "Nuova tariffa" : destTitle(tariffa!)} onClose={onClose}
       footer={
         <>
-          {!isNew && tariffa!.nazione !== "ROW" && <button className="btn btn-danger" type="button" onClick={() => onDelete(tariffa!.id)}>Elimina</button>}
+          {!isNew && tariffa!.nazione !== "ROW" && <button className="btn btn-danger" type="button" onClick={async () => { if (await confirm({ message: `Eliminare la tariffa "${destName(tariffa!)}"?`, tone: "danger", confirmLabel: "Elimina" })) { onDelete(tariffa!.id); onClose(); } }}>Elimina</button>}
           <div style={{ flex: 1 }} />
           <button className="btn btn-ghost" type="button" onClick={onClose}>Annulla</button>
-          <button className="btn btn-primary" type="button" onClick={save}>Salva</button>
+          <button className="btn btn-primary" type="button" onClick={async () => { if (await confirm({ message: isNew ? "Creare la nuova tariffa?" : "Salvare le modifiche?", confirmLabel: "Salva" })) save(); }}>Salva</button>
         </>
       }
     >
