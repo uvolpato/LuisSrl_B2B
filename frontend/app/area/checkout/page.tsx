@@ -412,15 +412,22 @@ export default function CheckoutPage() {
                             </button>
                           </>
                         )}
-                        {a.id !== -1 && !a.abituale && (
-                            <button type="button" className="btn-set-default" onClick={async e => {
-                              e.stopPropagation();
+                        {!a.abituale && (
+                          <button type="button" className="btn-set-default" onClick={async e => {
+                            e.stopPropagation();
+                            if (a.id === -1) {
+                              try { await api.patch('/api/checkout/indirizzo/0/predefinito'); } catch {}
+                              const updated = tuttiIndirizzi.map(addr => ({ ...addr, abituale: false }));
+                              setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
+                              setIndirizzoId(-1);
+                            } else {
                               try { await api.patch(`/api/checkout/indirizzo/${a.id}/predefinito`); } catch {}
                               const updated = tuttiIndirizzi.map(addr => ({ ...addr, abituale: addr.id === a.id }));
                               setDati({ ...dati!, indirizzi: updated.filter(x => x.id !== -1) });
                               setIndirizzoId(a.id);
-                            }}>Imposta come predefinito</button>
-                          )}
+                            }
+                          }}>Imposta come predefinito</button>
+                        )}
                       </label>
                     ))}
                   </div>

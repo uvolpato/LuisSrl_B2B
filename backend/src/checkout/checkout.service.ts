@@ -196,7 +196,9 @@ export class CheckoutService {
 
   async impostaPredefinito(clienteId: number, id: number) {
     await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
-    await this.prisma.indirizzoCliente.update({ where: { id }, data: { flagAbituale: true } });
+    if (id > 0) {
+      await this.prisma.indirizzoCliente.update({ where: { id }, data: { flagAbituale: true } });
+    }
   }
 
   async confermaOrdine(
