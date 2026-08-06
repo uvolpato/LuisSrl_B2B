@@ -197,7 +197,8 @@ export default function CheckoutPage() {
   }, [dati]);
 
   const tuttiIndirizzi = useMemo(() => {
-    const list = sedeLegale ? [sedeLegale, ...dati!.indirizzi] : dati!.indirizzi;
+    if (!dati) return [];
+    const list = sedeLegale ? [sedeLegale, ...dati.indirizzi] : dati.indirizzi;
     return list;
   }, [dati, sedeLegale]);
 
