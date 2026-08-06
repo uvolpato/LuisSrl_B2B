@@ -384,7 +384,16 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
                 </div>
                 </div>
               </div>
-              <button type="button" class="btn-ghost addr-cancel" id="btn-annulla">Annulla</button>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg);cursor:pointer">
+                  <input type="checkbox" id="nDefault" style="accent-color:var(--accent);width:15px;height:15px">
+                  Imposta come predefinito
+                </label>
+                <div style="display:flex;gap:8px">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-annulla">Annulla</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-salva-indirizzo">Salva indirizzo</button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -921,6 +930,7 @@ var provinciaCombobox = null;
     document.getElementById('nCap').value = '';
     document.getElementById('nCitta').value = '';
     document.getElementById('nRagione').value = '';
+    document.getElementById('nDefault').checked = false;
     if (provinciaCombobox) provinciaCombobox.clearSearch();
   });
 
@@ -942,6 +952,65 @@ var provinciaCombobox = null;
       renderSummary();
     });
   }
+
+  function refreshBadgesAndDefaults() {
+    var btns = document.querySelectorAll('.btn-set-default');
+    var badges = document.querySelectorAll('#addr-grid .addr-badge');
+    for (var i = 0; i < ADDRESSES.length; i++) {
+      for (var b = 0; b < btns.length; b++) {
+        if (Number(btns[b].dataset.id) === ADDRESSES[i].id) btns[b].classList.toggle('hidden', ADDRESSES[i].abituale);
+      }
+      for (var c = 0; c < badges.length; c++) {
+        if (Number(badges[c].parentElement.dataset.id) === ADDRESSES[i].id) badges[c].hidden = !ADDRESSES[i].abituale;
+      }
+    }
+  }
+
+  // Save new address
+  var newId = 100;
+  document.getElementById('btn-salva-indirizzo').addEventListener('click', function() {
+    var rag = document.getElementById('nRagione').value.trim();
+    var ind = document.getElementById('nIndirizzo').value.trim();
+    var cap = document.getElementById('nCap').value.trim();
+    var cit = document.getElementById('nCitta').value.trim();
+    var prv = provinciaCombobox ? provinciaCombobox.getValue() : '';
+    if (!ind || !cap || !cit) return;
+    var isDef = document.getElementById('nDefault').checked;
+    if (isDef) for (var a2 = 0; a2 < ADDRESSES.length; a2++) ADDRESSES[a2].abituale = false;
+    var addr = { id: newId++, nome: rag || 'Nuovo indirizzo', indirizzo: ind, cap: cap, citta: cit, prov: prv, tipo: 'SPEDIZIONE', abituale: isDef };
+    ADDRESSES.push(addr);
+    var grid = document.getElementById('addr-grid');
+    var card = document.createElement('label');
+    card.className = 'addr-card';
+    card.dataset.id = addr.id;
+    card.innerHTML = '<input type="radio" name="indirizzo">'
+      + '<div class="addr-card-h"><span class="status st-muted"><span class="sd">&#9679;</span>' + addr.nome + '</span></div>'
+      + '<div class="addr-l"><b>Indirizzo</b><span>' + addr.indirizzo + '</span></div>'
+      + '<div class="addr-l"><b>CAP</b><span>' + addr.cap + '</span></div>'
+      + '<div class="addr-l"><b>Citt\u00E0</b><span>' + addr.citta + '</span></div>'
+      + '<div class="addr-l"><b>Provincia</b><span>' + addr.prov + '</span></div>'
+      + (addr.abituale ? '<span class="addr-badge">Abituale</span>' : '')
+      + '<button type="button" class="btn-set-default' + (addr.abituale ? ' hidden' : '') + '" data-id="' + addr.id + '">Imposta come predefinito</button>';
+    card.addEventListener('click', function(e) {
+      if (e.target.tagName === 'BUTTON') return;
+      selectAddr(addr.id);
+    });
+    var setDefBtn = card.querySelector('.btn-set-default');
+    if (setDefBtn) {
+      setDefBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        for (var a3 = 0; a3 < ADDRESSES.length; a3++) ADDRESSES[a3].abituale = (ADDRESSES[a3].id === addr.id);
+        selectAddr(addr.id);
+        refreshBadgesAndDefaults();
+        renderSummary();
+      });
+    }
+    grid.appendChild(card);
+    document.getElementById('btn-annulla').click();
+    selectAddr(addr.id);
+    refreshBadgesAndDefaults();
+    renderSummary();
+  });
 
   // Delivery mode radios
   var modeRadios = document.querySelectorAll('input[name="modalita"]');
