@@ -375,6 +375,18 @@ export default function CheckoutPage() {
 
                   {dati.indirizzi.length > 0 && (
                     <div className="addr-grid">
+                      {dati.cliente.indirizzo && (
+                        <label className={"addr-card" + (indirizzoId === 0 ? " selected" : "")} style={{ cursor: "pointer" }} onClick={() => selezionaIndirizzo(0)}>
+                          <input type="radio" name="indirizzo" checked={indirizzoId === 0} onChange={() => selezionaIndirizzo(0)} style={{ position: "absolute", opacity: 0 }} />
+                          <div className="addr-card-h">
+                            <span className="status st-blue"><span className="sd">●</span>Sede legale</span>
+                          </div>
+                          <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
+                          <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
+                          <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
+                          <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
+                        </label>
+                      )}
                       {dati.indirizzi.map(a => (
                         <label key={a.id} className={"addr-card" + (a.id === indirizzoId ? " selected" : "")} style={{ cursor: "pointer" }}>
                           <input type="radio" name="indirizzo" checked={a.id === indirizzoId} onChange={() => selezionaIndirizzo(a.id)} style={{ position: "absolute", opacity: 0 }} />
