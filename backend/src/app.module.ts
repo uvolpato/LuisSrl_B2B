@@ -18,6 +18,7 @@ import { EventsModule } from './events/events.module';
 import { InsightModule } from './insight/insight.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ImgModule } from './img/img.module';
+import { SpeseSpedizioneModule } from './spese-spedizione/spese-spedizione.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 
@@ -42,6 +43,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     InsightModule,
     DashboardModule,
     ImgModule,
+    SpeseSpedizioneModule,
   ],
   controllers: [HealthController],
   providers: [
