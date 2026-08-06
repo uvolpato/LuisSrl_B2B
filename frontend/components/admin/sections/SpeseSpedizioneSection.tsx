@@ -166,12 +166,23 @@ export default function SpeseSpedizioneSection() {
                         {ranges.length === 0 ? (
                           <span className="cell-empty">—</span>
                         ) : (
-                          <span className="chip-set">
-                            {ranges.slice(0, 3).map((rg, i) => (
-                              <span key={i} className="chip">{rg[0]}–{rg[1] === null ? "oltre" : rg[1]}% → {fmtPct(rg[2])}</span>
-                            ))}
-                            {ranges.length > 3 && <span className="chip more">+{ranges.length - 3}</span>}
-                          </span>
+                          (() => {
+                            const maxChips = scaglioniW < 180 ? 2 : 3;
+                            const shown = ranges.slice(0, maxChips);
+                            const rest = ranges.slice(maxChips);
+                            return (
+                              <span className="chip-set">
+                                {shown.map((rg, i) => (
+                                  <span key={i} className="chip">{rg[0]}–{rg[1] === null ? "oltre" : rg[1]}% → {fmtPct(rg[2])}</span>
+                                ))}
+                                {rest.length > 0 && (
+                                  <span className="chip more" title={rest.map(rg => `${rg[0]}–${rg[1] === null ? "oltre" : rg[1]}% → ${fmtPct(rg[2])}`).join(" · ")}>
+                                    +{rest.length}
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })()
                         )}
                       </td>
                       <td className="num">{d.sogliaImporto != null ? fmtEur(d.sogliaImporto) : <span className="cell-empty">—</span>}</td>
