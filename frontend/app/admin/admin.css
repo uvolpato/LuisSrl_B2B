@@ -3330,7 +3330,9 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .hier .lvl.on { background: var(--accent); color: #fff; font-weight: 600; }
 .hier .arrow { color: var(--muted); }
 .range-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.range-row { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--border); }
+.range-head, .range-row { display: flex; gap: 8px; align-items: center; padding: 8px 10px; }
+.range-head { background: var(--table-head-bg); font-size: 11px; letter-spacing: .03em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+.range-row { border-top: 1px solid var(--border); }
 .range-from { width: 72px; font-family: var(--font-mono); flex-shrink: 0; }
 .range-arrow { color: var(--muted); }
 .range-max, .range-pct { position: relative; }

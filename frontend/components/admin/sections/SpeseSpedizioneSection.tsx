@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "../../../lib/api";
 import ComboboxField from "../ComboboxField";
 import type { ComboboxOption } from "../ComboboxField";
+import Modal from "../../common/Modal";
 import type { Tariffa } from "../../../lib/spese-spedizione";
 import {
   resolveTariffa, pctOf, calcFee, destName, destTitle, describeTariffa,
@@ -322,123 +323,137 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   }
 
   return (
-    <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal modal-wide" role="dialog" aria-modal="true">
-        <div className="modal-h">
-          <h2>{isNew ? "Nuova tariffa" : destTitle(tariffa!)}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Chiudi">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div className="modal-b">
-          {error && <div style={{ marginBottom: 12, color: "var(--danger)", fontSize: 13 }}>{error}</div>}
-
-          {isNew ? (
-            <div>
-              <div className="field">
-                <label>La tariffa vale per</label>
-                <div className="seg">
-                  {(["regione","nazione","EUROPA","ROW"] as const).map(lv => (
-                    <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => { setLivello(lv); setRegione(""); }} type="button">
-                      {lv === "regione" ? "Regione" : lv === "nazione" ? "Nazione" : lv === "EUROPA" ? "Europa" : "Resto del mondo"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {livello !== "regione" && livello !== "EUROPA" && livello !== "ROW" && (
-                <div className="field">
-                  <label>Nazione</label>
-                  <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
-                </div>
-              )}
-              {livello === "regione" && (
-                <div className="field">
-                  <label>Regione (Italia)</label>
-                  <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
-                </div>
-              )}
-              {(livello === "EUROPA" || livello === "ROW") && (
-                <div className="field">
-                  <div className="zona-panel">
-                    <h3>{ZONE_KEYS[livello]}</h3>
-                    <p>{livello === "EUROPA" ? `Per i ${euCount()} paesi dell'area europea senza una tariffa di nazione o regione.` : "Default globale: vale per tutti i paesi del mondo senza una tariffa più specifica."}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div className="dest-desc">
-                <h3>{desc!.title}</h3>
-                <p>{desc!.text}</p>
-              </div>
-              <div className="hier" aria-label="Livello gerarchico della tariffa">
-                <span className={`lvl${desc!.hier === "regione" ? " on" : ""}`}>Regione</span>
-                <span className="arrow">→</span>
-                <span className={`lvl${desc!.hier === "nazione" ? " on" : ""}`}>Nazione</span>
-                <span className="arrow">→</span>
-                <span className={`lvl${desc!.hier === "europa" ? " on" : ""}`}>Area</span>
-                <span className="arrow">→</span>
-                <span className={`lvl${desc!.hier === "row" ? " on" : ""}`}>Default</span>
-              </div>
-            </div>
-          )}
-
-          <div className="edit-cols">
-            <div className="col">
-              <div className="field">
-                <label>Percentuale sull&apos;importo fattura (senza IVA)</label>
-                <input className="input" type="number" step="0.1" min="0" value={base} onChange={e => setBase(Number(e.target.value))} />
-              </div>
-              <div className="field">
-                <label>Stato</label>
-                <select className="input" value={stato} onChange={e => setStato(e.target.value)}>
-                  <option value="ok">Configurata</option>
-                  <option value="pausa">In pausa</option>
-                  <option value="configura">Da configurare</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
-                <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
-              </div>
-              <div className="field">
-                <button className="btn btn-secondary" type="button" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
-              </div>
-            </div>
-            <div className="col">
-              <div className="field">
-                <label>Scaglioni per sconto medio</label>
-                <div className="range-table">
-                  {ranges.length === 0 && <div className="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div>}
-                  {ranges.map((r, i) => (
-                    <div key={i} className="range-row">
-                      <span className="range-from">{r[0] ?? 0}%</span><span className="range-arrow">→</span>
-                      <span className="range-max">
-                        {r[1] === null ? <span className="range-oltre">oltre</span> : <input className="range-input" type="number" step="0.5" min={(r[0] ?? 0) + 0.5} value={r[1] ?? ""} onChange={e => updateRange(i, 1, e.target.value)} style={{ width: 70 }} />}
-                        <span className="unit">%</span>
-                      </span>
-                      <span className="range-pct">
-                        <input className="range-input" type="number" step="0.1" min="0" value={r[2] ?? ""} onChange={e => updateRange(i, 2, e.target.value)} style={{ width: 70 }} />
-                        <span className="unit">%</span>
-                      </span>
-                      <button className="range-del" onClick={() => removeRange(i)}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                    </div>
-                  ))}
-                </div>
-                <button className="btn btn-sm" type="button" style={{ marginTop: 8 }} onClick={addRange}>+ Aggiungi scaglione</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="modal-f">
+    <Modal size="sm" title={isNew ? "Nuova tariffa" : destTitle(tariffa!)} onClose={onClose}
+      footer={
+        <>
           {!isNew && tariffa!.nazione !== "ROW" && <button className="btn btn-danger" type="button" onClick={() => onDelete(tariffa!.id)}>Elimina</button>}
           <div style={{ flex: 1 }} />
           <button className="btn btn-ghost" type="button" onClick={onClose}>Annulla</button>
           <button className="btn btn-primary" type="button" onClick={save}>Salva</button>
+        </>
+      }
+    >
+      {error && <div style={{ marginBottom: 12, color: "var(--danger)", fontSize: 13 }}>{error}</div>}
+
+      {isNew ? (
+        <div>
+          <div className="field">
+            <label>La tariffa vale per</label>
+            <div className="seg">
+              {(["regione","nazione","EUROPA","ROW"] as const).map(lv => (
+                <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => { setLivello(lv); setRegione(""); }} type="button">
+                  {lv === "regione" ? "Regione" : lv === "nazione" ? "Nazione" : lv === "EUROPA" ? "Europa" : "Resto del mondo"}
+                </button>
+              ))}
+            </div>
+          </div>
+          {(livello === "regione" || livello === "nazione") && (
+            <div className="field">
+              <label>Nazione</label>
+              <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
+            </div>
+          )}
+          {livello === "regione" && (
+            <div className="field">
+              <label>Regione (Italia)</label>
+              <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
+            </div>
+          )}
+          {(livello === "EUROPA" || livello === "ROW") && (
+            <div className="field">
+              <div className="zona-panel">
+                <h3>{ZONE_KEYS[livello]}</h3>
+                <p>{livello === "EUROPA" ? `Per i ${euCount()} paesi dell'area europea senza una tariffa di nazione o regione.` : "Default globale: vale per tutti i paesi del mondo senza una tariffa più specifica."}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className="dest-desc">
+            <h3>{desc!.title}</h3>
+            <p>{desc!.text}</p>
+          </div>
+          <div className="hier" aria-label="Livello gerarchico della tariffa">
+            <span className={`lvl${desc!.hier === "regione" ? " on" : ""}`}>Regione</span>
+            <span className="arrow">→</span>
+            <span className={`lvl${desc!.hier === "nazione" ? " on" : ""}`}>Nazione</span>
+            <span className="arrow">→</span>
+            <span className={`lvl${desc!.hier === "europa" ? " on" : ""}`}>Area</span>
+            <span className="arrow">→</span>
+            <span className={`lvl${desc!.hier === "row" ? " on" : ""}`}>Default</span>
+          </div>
+        </div>
+      )}
+
+      <div className="edit-cols">
+        <div className="col">
+          <div className="field">
+            <label>Percentuale sull&apos;importo fattura (senza IVA)</label>
+            <input className="input" type="number" step="0.1" min="0" value={base} onChange={e => setBase(Number(e.target.value))} />
+          </div>
+          <div className="field">
+            <label>Stato</label>
+            <select className="input" value={stato} onChange={e => setStato(e.target.value)}>
+              <option value="ok">Configurata</option>
+              <option value="pausa">In pausa</option>
+              <option value="configura">Da configurare</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
+            <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
+          </div>
+          <div className="field">
+            <button className="btn btn-secondary" type="button" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
+          </div>
+        </div>
+        <div className="col">
+          <div className="field">
+            <label>Scaglioni per sconto medio</label>
+            <div className="range-table">
+              {ranges.length === 0 ? (
+                <div className="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div>
+              ) : (
+                <>
+                  <div className="range-head">
+                    <span className="range-from" style={{ color: "inherit" }}>Sconto da</span>
+                    <span className="range-arrow" style={{ color: "inherit" }} />
+                    <span className="range-max" style={{ color: "inherit", width: 96 }}>Fino a</span>
+                    <span className="range-pct" style={{ color: "inherit", width: 96 }}>Percentuale</span>
+                    <span />
+                  </div>
+                  {ranges.map((r, i) => (
+                    <div key={i} className="range-row">
+                      <span className="range-from">{fmtPct(r[0] ?? 0)}</span>
+                      <span className="range-arrow">{r[1] === null ? "" : "→"}</span>
+                      <span className="range-max" style={{ width: 96 }}>
+                        {r[1] === null ? (
+                          <span className="range-oltre">oltre</span>
+                        ) : (
+                          <>
+                            <input className="range-input" type="number" step="0.5" min={(r[0] ?? 0) + 0.5} value={r[1]} onChange={e => updateRange(i, 1, e.target.value)} />
+                            <span className="unit">%</span>
+                          </>
+                        )}
+                      </span>
+                      <span className="range-pct" style={{ width: 96 }}>
+                        <input className="range-input" type="number" step="0.1" min="0" value={r[2] ?? ""} onChange={e => updateRange(i, 2, e.target.value)} />
+                        <span className="unit">%</span>
+                      </span>
+                      <button className="range-del" type="button" onClick={() => removeRange(i)} title="Rimuovi" aria-label="Rimuovi scaglione">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+            <button className="btn btn-sm" type="button" style={{ marginTop: 8 }} onClick={addRange}>+ Aggiungi scaglione</button>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -480,15 +495,9 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
   };
 
   return (
-    <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" role="dialog" aria-modal="true">
-        <div className="modal-h">
-          <h2>{title}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Chiudi">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div className="modal-b">
+    <Modal size="sm" title={title} onClose={onClose}
+      footer={<button className="btn btn-primary" type="button" onClick={onClose}>Chiudi</button>}
+    >
           {!isPrev && (
             <>
               <div className="field">
@@ -566,11 +575,6 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
               })}
             </div>
           </div>
-        </div>
-        <div className="modal-f">
-          <button className="btn btn-primary" type="button" onClick={onClose}>Chiudi</button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
