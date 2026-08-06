@@ -587,7 +587,7 @@ function renderSummary() {
  * SPECIFICA PAGAMENTO / COORDINATE LUIS:
  *   La modalità di pagamento arriva da Integra (codicePagamento dall'anagrafica).
  *   Le coordinate bancarie del CLIENTE NON vengono mai mostrate.
- *   Solo per pagamenti anticipati (es. bonifico anticipato) si mostrano le
+ *   Per tutte le modalità di pagamento che prevedono un bonifico
  *   coordinate bancarie della LUIS S.r.l., lette da un parametro di configurazione:
  *
  *   CONFIG (backend — file .env o tabella Impostazioni):
@@ -1027,11 +1027,12 @@ var provinciaCombobox = null;
     }
   });
 
-  // Payment method toggle — mostra coordinate LUIS solo per bonifico anticipato
+  // Payment method toggle — mostra coordinate LUIS per tutti i bonifici (BB30, BB60, ANT)
   var pmSel = document.getElementById('payment-method');
   var luisBank = document.getElementById('luis-bank');
   pmSel.addEventListener('change', function() {
-    luisBank.hidden = this.value !== 'ANT';
+    var isBonifico = this.value === 'ANT' || this.value === 'BB30' || this.value === 'BB60';
+    luisBank.hidden = !isBonifico;
   });
 
   // Confirm
