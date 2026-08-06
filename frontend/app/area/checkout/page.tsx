@@ -386,8 +386,7 @@ export default function CheckoutPage() {
                              : a.tipoDestinazione === "FILIALE" ? "Filiale"
                              : a.ragioneSociale ?? a.tipoDestinazione ?? "Filiale"}
                           </span>
-                          {a.ragioneSociale && <div className="addr-card-title">{a.ragioneSociale}</div>}
-                          {a.id === -1 && dati.cliente.ragioneSociale && <div className="addr-card-title">{dati.cliente.ragioneSociale}</div>}
+                          {a.ragioneSociale && a.id !== -1 && <div className="addr-card-title">{a.ragioneSociale}</div>}
                         </div>
                         <div className="addr-l"><b>Indirizzo</b><span>{a.indirizzo || "—"}</span></div>
                         <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
@@ -395,9 +394,22 @@ export default function CheckoutPage() {
                         <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
                         {a.abituale && <span className="addr-badge">Predefinito</span>}
                         {a.id !== -1 && !a.daIntegra && (
-                          <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); openEditForm(a); }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
+                          <>
+                            <button type="button" className="addr-edit-btn" onClick={e => { e.stopPropagation(); openEditForm(a); }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button type="button" className="addr-edit-btn" style={{ right: 40, color: "var(--red)" }}
+                              onClick={async e => {
+                                e.stopPropagation();
+                                try { await api.del(`/api/checkout/indirizzo/${a.id}`); } catch {}
+                                const updated = dati!.indirizzi.filter(x => x.id !== a.id);
+                                setDati({ ...dati!, indirizzi: updated });
+                                if (indirizzoId === a.id) setIndirizzoId(updated[0]?.id ?? -1);
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                          </>
                         )}
                         {a.id !== -1 && !a.abituale && (
                           <button type="button" className="btn-set-default" onClick={e => {
