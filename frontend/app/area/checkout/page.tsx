@@ -452,23 +452,23 @@ export default function CheckoutPage() {
                         </label>
                         <div style={{ display: "flex", gap: 8 }}>
                           <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setShowNuovo(false); setNRagione(""); setNIndirizzo(""); setNCap(""); setNCitta(""); setNProvincia(""); setNDefault(false); }}>Annulla</button>
-                          <button type="button" className="btn btn-primary btn-sm" onClick={() => {
+                          <button type="button" className="btn btn-primary btn-sm" onClick={async () => {
                             if (!nIndirizzo.trim() || !nCap.trim() || !nCitta.trim()) return;
-                            const newId = Date.now();
-                            const nuovo: Indirizzo = {
-                              id: newId,
-                              nome: nRagione.trim() || "Nuovo indirizzo",
-                              indirizzo: nIndirizzo.trim(),
-                              cap: nCap.trim(),
-                              citta: nCitta.trim(),
-                              provincia: nProvincia || null,
-                              tipo: "SPEDIZIONE",
-                              abituale: nDefault,
-                              daIntegra: false,
-                            };
-                            if (nDefault) dati.indirizzi.forEach(a => a.abituale = false);
-                            setDati({ ...dati, indirizzi: [...dati.indirizzi, nuovo] });
-                            setIndirizzoId(newId);
+                            try {
+                              const saved = await api.post<Indirizzo>("/api/checkout/indirizzo", {
+                                ragioneSociale: nRagione || undefined,
+                                indirizzo: nIndirizzo.trim(),
+                                cap: nCap.trim(),
+                                citta: nCitta.trim(),
+                                provincia: nProvincia || undefined,
+                                abituale: nDefault,
+                              });
+                              const aggiornati = nDefault
+                                ? dati.indirizzi.map(a => ({ ...a, abituale: false }))
+                                : dati.indirizzi;
+                              setDati({ ...dati, indirizzi: [...aggiornati, saved] });
+                              setIndirizzoId(saved.id);
+                            } catch {}
                             setShowNuovo(false);
                             setNRagione(""); setNIndirizzo(""); setNCap(""); setNCitta(""); setNProvincia(""); setNDefault(false);
                           }}>Salva indirizzo</button>
