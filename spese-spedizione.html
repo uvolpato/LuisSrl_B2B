@@ -360,7 +360,6 @@ select.input:not(:disabled) { cursor: pointer; }
           <col style="width:300px">
           <col style="width:90px">
           <col id="col-scaglioni" style="width:220px; min-width:140px">
-          <col style="width:130px">
           <col style="width:140px">
           <col style="width:96px">
         </colgroup>
@@ -369,7 +368,6 @@ select.input:not(:disabled) { cursor: pointer; }
             <th>Destinazione</th>
             <th class="num">% base</th>
             <th class="col-resizable">Scaglioni sconto medio<span class="th-resize" id="th-resize" data-tip="Trascina per ridimensionare" aria-hidden="true"></span></th>
-            <th class="num">Impatto medio</th>
             <th class="num">Soglia gratuita</th>
             <th style="text-align:right">Azioni</th>
           </tr>
@@ -1008,10 +1006,9 @@ function renderRows() {
   var rows = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   var tbody = document.getElementById('reg-tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="data-table-empty">Nessuna destinazione trovata</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="data-table-empty">Nessuna destinazione trovata</td></tr>';
   } else {
     tbody.innerHTML = rows.map(function (d) {
-      var impatto = pctOf(d, 8).pct / 100 * 10000;
       return '<tr>' +
         '<td><div class="cell-entity">' +
           '<span class="cell-dot ' + d.stato + '" data-tip="' + statoLabel[d.stato] + '"></span>' +
@@ -1022,7 +1019,6 @@ function renderRows() {
         '</div></td>' +
         '<td class="num mono">' + fmtPct(d.base) + '</td>' +
         '<td>' + chipsHtml(d) + '</td>' +
-        '<td class="num mono">' + fmtEur(Math.round(impatto)) + '</td>' +
         '<td class="num mono">' + (d.soglia == null ? '<span class="cell-empty">—</span>' : fmtEur(d.soglia)) + '</td>' +
         '<td class="data-table-actions">' +
           '<button class="row-action" data-act="edit" data-id="' + d.id + '" data-tip="Modifica" aria-label="Modifica ' + destName(d) + '">' +

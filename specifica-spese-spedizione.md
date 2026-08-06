@@ -144,7 +144,7 @@ La derivazione dei limiti inferiori avviene in `currentRanges()`: partendo da `f
 - Bottoni: **Simulatore di costo** (apre modale) e **Crea nuovo** (apre editor in modalità creazione).
 
 ### 5.2 Tabella elenco
-Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impatto medio** · **Soglia gratuita** · **Azioni**.
+Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Soglia gratuita** · **Azioni**.
 
 - **Header fisso (sticky)**: tutte le colonne restano visibili durante lo scroll, compresa "Scaglioni sconto medio" (la cella ridimensionabile **non deve** sovrascrivere `position: sticky` con `position: relative`, altrimenti l'header sale con lo scroll).
 - **Colonna "Scaglioni sconto medio" ridimensionabile**: trascinando il bordo destro dell'header; larghezza **persistita** in `localStorage('spese-scaglioni-w')` (default 220px, min 140px).
@@ -152,10 +152,9 @@ Colonne: **Destinazione** · **% base** · **Scaglioni sconto medio** · **Impat
 
 - Ordinamento: zone prima (Europa → Resto del mondo), poi nazioni in ordine alfabetico italiano, poi regioni della stessa nazione (la tariffa nazione precede le sue regioni).
 - Scaglioni: chip `0–5% → 4,5%` (max primi 3, poi `+N`); senza scaglioni mostra `—`.
-- **Impatto medio**: `pctOf(tariffa, 8%) × 10.000 €`, arrotondato (esempio dimostrativo; il reale può calcolare a sconto 0 o mostrare la pct).
 - Soglia: `€ 2.500,00` o `—` se assente.
 - Azioni per riga: **Modifica** (apre editor) e **toggle pausa/riprendi** (scambia `ok ↔ pausa`, non tocca `configura`).
-- Paginazione: **15 righe/pagina**; testo `"1–15 di 27"` e contatore `"1 / 2"`; ricerca/filtro resettano a pagina 1; empty state a tutta larghezza (`colspan="6"`).
+- Paginazione: **15 righe/pagina**; testo `"1–15 di 27"` e contatore `"1 / 2"`; ricerca/filtro resettano a pagina 1; empty state a tutta larghezza (`colspan="5"`).
 
 ### 5.3 Editor destinazione (modale)
 
@@ -331,7 +330,7 @@ Portare in una libreria pura senza dipendenze DOM (`frontend/lib/spese-spedizion
 6. **Editor**: picker solo in creazione (`isNew`), scheda + gerarchia in modifica; il cambio di livello aggiorna titolo/descrizione in tempo reale; nazione non-IT nasconde e resetta la regione.
 7. **Combobox**: "Usa tariffa automatica" (`value:''`) sempre visibile (anche a query non vuota) e mai auto-selezionata; a query vuota nessuna auto-selezione; reset delle ricerche all'apertura modali e al cambio nazione (non-IT).
 8. **Chiusura modali**: ×, click su backdrop, `Escape` con catena di priorità (editor → calcolatore). `role="dialog"` + `aria-modal`, `aria-label`/`title` sui pulsanti icona.
-9. **Paginazione 15**, reset a pagina 1 su ricerca/filtro, empty state `colspan="6"`, meta conteggi ricalcolati ad ogni render.
+9. **Paginazione 15**, reset a pagina 1 su ricerca/filtro, empty state `colspan="5"`, meta conteggi ricalcolati ad ogni render.
 10. **Chip scaglioni**: `0–5% → 4,5%` con `+N` oltre i primi 3; `—` senza scaglioni.
 
 ### 11.5 Mapping CSS (token e classi del prototipo)
