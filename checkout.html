@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Prototipo</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(95% 0.03 45);
+  --danger: oklch(55% 0.18 25);
+  --danger-soft: color-mix(in oklch, var(--danger) 14%, transparent);
+  --green: oklch(55% 0.15 145);
+  --green-soft: oklch(92% 0.06 145);
+  --amber: oklch(60% 0.13 65);
+  --blue: oklch(55% 0.15 250);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --fs-h1: clamp(28px, 3.5vw, 36px);
+  --fs-h2: clamp(22px, 2.8vw, 28px);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; display: flex; flex-direction: column;
+  font-family: var(--font-body); font-size: 14px; color: var(--fg);
+  background: var(--bg); -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* ── Barra superiore (Top Nav) ── */
+.top-nav {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.top-nav .brand { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* ── Contenuto pagine ── */
+.catalogo-page { min-height: 100vh; display: flex; flex-direction: column; }
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Titolo pagina ── */
+.page-title { padding-block: 28px 20px; }
+.page-title h1 { font-family: var(--font-display); font-size: var(--fs-h2); margin: 0; }
+
+/* ── Button ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+  font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  text-decoration: none; font-family: var(--font-body);
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+
+/* ── Checkout layout ── */
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 40px;
+  padding-block: 8px 64px;
+  align-items: start;
+}
+.checkout-form { display: flex; flex-direction: column; gap: 28px; }
+
+/* ── Sezioni form ── */
+.checkout-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+}
+.checkout-section-title {
+  font-family: var(--font-display); font-size: 19px; margin: 0 0 16px;
+}
+.checkout-note { color: var(--muted); margin: 0 0 14px; }
+
+/* ── Option cards (modalità consegna) ── */
+.opt-list { display: flex; flex-direction: column; gap: 12px; }
+.opt-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease;
+}
+.opt-card:hover { border-color: var(--accent); }
+.opt-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+.opt-card input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; }
+.opt-main { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.opt-name { font-weight: 500; font-size: 15px; color: var(--fg); }
+.opt-desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+/* ── Address cards ── */
+.addr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.addr-card {
+  position: relative; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease;
+}
+.addr-card:hover { border-color: var(--accent); }
+.addr-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+.addr-card input[type="radio"] { position: absolute; opacity: 0; }
+.addr-card-h { display: flex; align-items: center; gap: 8px; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.status .sd { font-size: 9px; }
+.st-amber { color: var(--amber); }
+.st-blue { color: var(--blue); }
+.st-muted { color: var(--muted); }
+.addr-l { display: flex; gap: 8px; font-size: 13px; }
+.addr-l b { color: var(--muted); min-width: 75px; font-weight: 500; }
+.addr-l .mono { font-family: var(--font-mono); }
+.addr-badge {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 500;
+}
+.addr-add-btn { margin-top: 14px; }
+
+/* ── Nuovo indirizzo form ── */
+.addr-new {
+  margin-top: 16px; padding: 16px 18px;
+  background: var(--fg-soft); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.addr-cancel { background: none; border: none; color: var(--muted); cursor: pointer; font: inherit; font-size: 13px; padding: 0; text-decoration: underline; margin-top: 12px; }
+
+/* ── Grid campi ── */
+.checkout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.form-select, .form-textarea {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--fg); font: inherit; font-size: 14px;
+}
+.form-select:focus, .form-textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.form-textarea { resize: vertical; line-height: 1.5; }
+
+/* ── Riepilogo ordine (sidebar) ── */
+.order-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  position: sticky; top: 80px;
+}
+.order-summary h2 { font-family: var(--font-display); font-size: 19px; margin: 0 0 16px; }
+.summary-ship {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px; margin-bottom: 16px;
+  background: var(--fg-soft); border-radius: var(--radius);
+}
+.summary-ship .label { font-size: 12px; color: var(--muted); }
+.summary-ship .value { font-weight: 500; font-size: 14px; color: var(--fg); }
+.summary-ship-line { font-size: 13px; color: var(--muted); }
+.summary-rows {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 320px; overflow-y: auto; margin-bottom: 8px;
+}
+.summary-item { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; }
+.summary-item-name { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); flex-wrap: wrap; }
+.summary-item-name .badge.code {
+  background: var(--green-soft); color: oklch(38% 0.12 145);
+  font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px;
+}
+.summary-item-meta { font-size: 12px; color: var(--muted); grid-column: 1; }
+.summary-item-price { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--fg); grid-row: 1 / span 2; align-self: center; }
+.summary-divider { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
+.summary-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; }
+.summary-row .label { color: var(--muted); }
+.summary-row .value { font-family: var(--font-mono); font-size: 14px; }
+.summary-total {
+  display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 0;
+}
+.summary-total .label { font-weight: 600; }
+.summary-total .value { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
+.checkout-btn {
+  width: 100%; padding: 14px; font-size: 16px; font-weight: 600;
+  margin-top: 20px; justify-content: center;
+}
+.checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.checkout-error {
+  margin-top: 12px; font-size: 13px; color: oklch(55% 0.18 30);
+  background: oklch(92% 0.04 30); border-radius: var(--radius); padding: 8px 12px;
+}
+
+/* ── Conferma ordine ── */
+.checkout-confirm {
+  max-width: 520px; margin: 64px auto; text-align: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 48px 32px;
+}
+.checkout-confirm-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--green-soft); color: oklch(45% 0.13 145);
+  display: grid; place-items: center; margin: 0 auto 20px;
+}
+.checkout-confirm h1 { font-family: var(--font-display); font-size: 28px; margin: 0 0 8px; }
+.checkout-confirm-sub { color: var(--muted); margin: 0 0 24px; }
+.checkout-confirm-sub strong { color: var(--fg); font-family: var(--font-mono); }
+.checkout-confirm-total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 16px 20px; background: var(--fg-soft); border-radius: var(--radius); margin-bottom: 24px;
+}
+.checkout-confirm-total span { color: var(--muted); font-size: 14px; }
+.checkout-confirm-total strong { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
+.checkout-confirm-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.checkout-confirm-actions .btn { min-width: 160px; justify-content: center; }
+
+/* ── Loading / Generic states ── */
+.loading-msg { padding-block: 48px; color: var(--muted); }
+.empty-msg { padding-block: 48px; text-align: center; }
+.empty-msg p { color: var(--muted); margin-bottom: 20px; }
+
+/* ── Mobile ── */
+@media (max-width: 920px) {
+  .checkout-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .top-nav { padding: 12px 16px; }
+  .container { padding: 0 16px; }
+  .checkout-grid { grid-template-columns: 1fr; }
+  .checkout-section { padding: 16px 18px; }
+  .order-summary { position: static; padding: 20px; }
+  .addr-grid { grid-template-columns: 1fr; }
+  .page-title { padding-block: 16px; }
+  .page-title h1 { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ CHECKOUT PAGE ══ -->
+<div id="view-checkout">
+  <header class="top-nav">
+    <span class="brand">Luis B2B</span>
+    <a href="#" class="btn btn-secondary">← Catalogo</a>
+  </header>
+  <main id="content">
+    <div class="container">
+      <div class="page-title"><h1>Checkout</h1></div>
+      <div class="checkout-layout">
+        <div class="checkout-form">
+
+          <!-- Modalità di consegna -->
+          <section class="checkout-section" data-od-id="checkout-modalita">
+            <h2 class="checkout-section-title">Modalità di consegna</h2>
+            <div class="opt-list">
+              <label class="opt-card" id="opt-ritiro">
+                <input type="radio" name="modalita" value="RITIRO">
+                <span class="opt-main">
+                  <span class="opt-name">Ritiro in sede</span>
+                  <span class="opt-desc">Ritiri tu stesso la merce presso la nostra sede.</span>
+                </span>
+              </label>
+              <label class="opt-card selected" id="opt-spedizione">
+                <input type="radio" name="modalita" value="SPEDIZIONE" checked>
+                <span class="opt-main">
+                  <span class="opt-name">Spedizione corriere</span>
+                  <span class="opt-desc">Consegnamo tramite vettore all'indirizzo indicato.</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <!-- Sede di spedizione -->
+          <section class="checkout-section" id="sect-indirizzi" data-od-id="checkout-indirizzi">
+            <h2 class="checkout-section-title">Sede di spedizione</h2>
+            <div class="addr-grid" id="addr-grid"></div>
+            <button type="button" class="btn btn-secondary addr-add-btn" id="btn-nuovo-indirizzo">+ Nuovo indirizzo</button>
+            <div class="addr-new" id="addr-new-form" hidden>
+              <div class="checkout-grid">
+                <div class="form-field">
+                  <label for="nRagione">Intestazione</label>
+                  <input id="nRagione" class="form-select" placeholder="Es. Nome destinatario">
+                </div>
+                <div class="form-field">
+                  <label for="nIndirizzo">Indirizzo *</label>
+                  <input id="nIndirizzo" class="form-select" required>
+                </div>
+                <div class="form-field">
+                  <label for="nCap">CAP *</label>
+                  <input id="nCap" class="form-select" required>
+                </div>
+                <div class="form-field">
+                  <label for="nCitta">Città *</label>
+                  <input id="nCitta" class="form-select" required>
+                </div>
+                <div class="form-field">
+                  <label for="nProvincia">Provincia</label>
+                  <input id="nProvincia" class="form-select" maxlength="2">
+                </div>
+              </div>
+              <button type="button" class="btn btn-ghost addr-cancel" id="btn-annulla-indirizzo">Annulla</button>
+            </div>
+          </section>
+
+          <!-- Note -->
+          <section class="checkout-section" data-od-id="checkout-note">
+            <h2 class="checkout-section-title">Note</h2>
+            <div class="checkout-grid">
+              <div class="form-field">
+                <label for="notaSpedizione">Nota di spedizione</label>
+                <textarea id="notaSpedizione" class="form-textarea" rows="3" placeholder="Es. consegna al piano, orari preferiti…"></textarea>
+              </div>
+              <div class="form-field">
+                <label for="notaOrdine">Nota d'ordine</label>
+                <textarea id="notaOrdine" class="form-textarea" rows="3" placeholder="Es. riferimento commessa interna…"></textarea>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Riepilogo -->
+        <aside class="order-summary" id="order-summary">
+          <h2>Riepilogo ordine</h2>
+          <div class="summary-ship" id="summary-ship"></div>
+          <div class="summary-rows" id="summary-items"></div>
+          <hr class="summary-divider">
+          <div class="summary-row">
+            <span class="label" id="sub-label">Subtotale (0 pz)</span>
+            <span class="value" id="sub-amount">€&nbsp;0,00</span>
+          </div>
+          <div class="summary-total">
+            <span class="label">Totale IVA esclusa</span>
+            <span class="value" id="total-amount">€&nbsp;0,00</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0 0">IVA non inclusa · Spese di trasporto da confermare</p>
+          <div id="checkout-error-container"></div>
+          <button class="btn btn-primary checkout-btn" id="btn-conferma">Conferma ordine</button>
+          <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:8px">Torna al carrello</a>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══ CONFERMA ══ -->
+<div id="view-confirm" hidden>
+  <header class="top-nav">
+    <span class="brand">Luis B2B</span>
+  </header>
+  <main id="content">
+    <div class="container">
+      <div class="checkout-confirm">
+        <div class="checkout-confirm-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1>Ordine inviato</h1>
+        <p class="checkout-confirm-sub">
+          Ordine <strong id="confirm-numero">—</strong> creato con successo.
+        </p>
+        <div class="checkout-confirm-total">
+          <span>Totale (IVA esclusa)</span>
+          <strong id="confirm-totale">—</strong>
+        </div>
+        <div class="checkout-confirm-actions">
+          <a href="#" class="btn btn-primary">Continua lo shopping</a>
+          <a href="#" class="btn btn-secondary">Area personale</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div id="view-loading" hidden>
+  <header class="top-nav"><span class="brand">Luis B2B</span></header>
+  <main id="content"><div class="container"><div class="loading-msg">Caricamento…</div></div></main>
+</div>
+
+<!-- ══ ERROR / EMPTY CART ══ -->
+<div id="view-error" hidden>
+  <header class="top-nav"><span class="brand">Luis B2B</span></header>
+  <main id="content"><div class="container"><div class="empty-msg">
+    <p id="error-msg" style="color:var(--muted);margin-bottom:20px">Impossibile caricare i dati di checkout.</p>
+    <a href="#" class="btn btn-primary">Torna al carrello</a>
+  </div></div></main>
+</div>
+
+<script>
+'use strict';
+
+/* ── Demo data ── */
+const DEMO = {
+  cliente: {
+    id: 1,
+    ragioneSociale: 'Green Garden S.r.l.',
+    indirizzo: 'Via Roma 123',
+    cap: '20121',
+    citta: 'Milano',
+    provincia: 'MI',
+    codicePagamento: 'BON30',
+    codicePorto: 'FCO',
+    codiceVettore: 'BRT',
+  },
+  indirizzi: [
+    { id: 1, codiceDestinazione:'001', ragioneSociale:'Sede legale', indirizzo:'Via Roma 123', cap:'20121', citta:'Milano', provincia:'MI', flagSpedizione:false, flagAbituale:false, tipoDestinazione:'SEDE', codicePorto:null, codiceVettore:null },
+    { id: 2, codiceDestinazione:'002', ragioneSociale:'Magazzino Nord', indirizzo:'Via Industria 45', cap:'10125', citta:'Torino', provincia:'TO', flagSpedizione:true, flagAbituale:true, tipoDestinazione:'SPEDIZIONE', codicePorto:'FCO', codiceVettore:'BRT' },
+  ],
+  allowNewAddress: true,
+  pagamenti: [{ codice:'BON30', descrizione:'Bonifico 30 gg' }, { codice:'RB', descrizione:'Ricevuta bancaria' }],
+  porti: [{ codice:'FCO', descrizione:'Franco destino' }, { codice:'POR', descrizione:'Porto assegnato' }],
+  spedizioni: [{ codice:'001', descrizione:'Ritiro in sede' }, { codice:'002', descrizione:'Corriere espresso' }],
+  vettori: [{ codice:'BRT', descrizione:'BRT' }, { codice:'SDA', descrizione:'SDA' }],
+  descrizioni: { pagamento:'Bonifico 30 gg', porto:'Franco destino', spedizione:'Corriere espresso', vettore:'BRT' },
+};
+
+const CART = [
+  { id:1, varianteCodice:'VAS-01-TER', quantita:3, articoloNome:'Vaso Terracotta Toscano', dimensioni:'30×35 cm', prezzo:{ prezzoNetto:12.50, prezzoListino:18.00, sconto:30 }, multiplo:1, immagineUrl:null, salvato:false },
+  { id:2, varianteCodice:'CUB-02-BIA', quantita:6, articoloNome:'Cubica Fiberstone Bianco', dimensioni:'40×40×40 cm', prezzo:{ prezzoNetto:24.80, prezzoListino:35.00, sconto:29 }, multiplo:2, immagineUrl:null, salvato:false },
+  { id:3, varianteCodice:'CES-05-MET', quantita:2, articoloNome:'Cesto Metallico Rame', dimensioni:'28×28 cm', prezzo:{ prezzoNetto:46.00, prezzoListino:65.00, sconto:29 }, multiplo:1, immagineUrl:null, salvato:false },
+];
+
+/* ── Formatters ── */
+function fmtPrice(n) {
+  return '€\u00a0' + n.toLocaleString('it-IT', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+/* ── State ── */
+let indirizzoId = DEMO.indirizzi.find(i => i.flagSpedizione)?.id ?? null;
+let modalita = 'SPEDIZIONE';
+let showNuovo = false;
+
+/* ── DOM refs ── */
+const $viewCheckout = document.getElementById('view-checkout');
+const $viewConfirm  = document.getElementById('view-confirm');
+const $viewLoading  = document.getElementById('view-loading');
+const $viewError    = document.getElementById('view-error');
+const $errorMsg     = document.getElementById('error-msg');
+const $confirmNumero = document.getElementById('confirm-numero');
+const $confirmTotale = document.getElementById('confirm-totale');
+
+function showView(view) {
+  $viewCheckout.hidden = true;
+  $viewConfirm.hidden  = true;
+  $viewLoading.hidden  = true;
+  $viewError.hidden    = true;
+  view.hidden = false;
+}
+
+/* ── Init ── */
+showView($viewLoading);
+setTimeout(() => { showView($viewCheckout); renderAll(); }, 600);
+
+function renderAll() {
+  renderModalita();
+  renderIndirizzi();
+  renderNuovoIndirizzo();
+  renderSummary();
+}
+
+/* ── Modalità consegna ── */
+document.querySelectorAll('input[name="modalita"]').forEach(r => {
+  r.addEventListener('change', () => {
+    modalita = r.value;
+    renderModalita();
+    renderSummary();
+  });
+});
+
+function renderModalita() {
+  document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
+  if (modalita === 'RITIRO') {
+    document.getElementById('opt-ritiro').classList.add('selected');
+  } else {
+    document.getElementById('opt-spedizione').classList.add('selected');
+  }
+  document.getElementById('sect-indirizzi').hidden = (modalita === 'RITIRO');
+}
+
+/* ── Indirizzi ── */
+function renderIndirizzi() {
+  const grid = document.getElementById('addr-grid');
+  if (DEMO.indirizzi.length === 0) {
+    grid.innerHTML = '<p class="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell\'anagrafica.</p>';
+    return;
+  }
+  grid.innerHTML = DEMO.indirizzi.map(a => {
+    const sel = a.id === indirizzoId ? ' selected' : '';
+    const badge = a.flagAbituale ? '<span class="addr-badge">Abituale</span>' : '';
+    let tipo = a.ragioneSociale ?? 'Sede';
+    let cls = 'st-muted';
+    if (a.tipoDestinazione === 'SPEDIZIONE') cls = 'st-amber';
+    else if (a.flagSpedizione) cls = 'st-blue';
+    return `<label class="addr-card${sel}" data-id="${a.id}">
+      <input type="radio" name="indirizzo" ${sel ? 'checked' : ''}>
+      ${badge}
+      <div class="addr-card-h">
+        <span class="status ${cls}"><span class="sd">●</span>${tipo}</span>
+      </div>
+      <div class="addr-l"><b>Indirizzo</b><span>${a.indirizzo || '—'}</span></div>
+      <div class="addr-l"><b>CAP</b><span class="mono">${a.cap || '—'}</span></div>
+      <div class="addr-l"><b>Città</b><span>${a.citta || '—'}</span></div>
+      <div class="addr-l"><b>Provincia</b><span class="mono">${a.provincia || '—'}</span></div>
+    </label>`;
+  }).join('');
+
+  grid.querySelectorAll('.addr-card').forEach(card => {
+    card.addEventListener('click', () => {
+      indirizzoId = Number(card.dataset.id);
+      renderIndirizzi();
+      renderSummary();
+    });
+  });
+}
+
+/* ── Nuovo indirizzo ── */
+document.getElementById('btn-nuovo-indirizzo').addEventListener('click', () => {
+  showNuovo = true;
+  renderNuovoIndirizzo();
+});
+document.getElementById('btn-annulla-indirizzo').addEventListener('click', () => {
+  showNuovo = false;
+  renderNuovoIndirizzo();
+});
+
+function renderNuovoIndirizzo() {
+  document.getElementById('addr-new-form').hidden = !showNuovo;
+  document.getElementById('btn-nuovo-indirizzo').hidden = showNuovo;
+}
+
+/* ── Riepilogo ── */
+function renderSummary() {
+  const indirizzo = DEMO.indirizzi.find(i => i.id === indirizzoId) ?? null;
+
+  // Ship banner
+  const ship = document.getElementById('summary-ship');
+  if (indirizzo && modalita !== 'RITIRO') {
+    ship.innerHTML = `
+      <span class="label">Spedizione a</span>
+      <span class="value">${indirizzo.ragioneSociale ?? DEMO.cliente.ragioneSociale}</span>
+      <span class="summary-ship-line">${[indirizzo.indirizzo, indirizzo.cap, indirizzo.citta, indirizzo.provincia].filter(Boolean).join(' ')}</span>`;
+    ship.hidden = false;
+  } else {
+    ship.hidden = true;
+  }
+
+  // Items
+  const qty = CART.reduce((s, i) => s + i.quantita, 0);
+  const amount = CART.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+
+  document.getElementById('summary-items').innerHTML = CART.map(i => `
+    <div class="summary-item">
+      <span class="summary-item-name">
+        <span class="badge code">${i.varianteCodice}</span>
+        <span>${i.articoloNome}</span>
+      </span>
+      <span class="summary-item-meta">${i.quantita} pz × ${fmtPrice(i.prezzo?.prezzoNetto ?? 0)}</span>
+      <span class="summary-item-price">${fmtPrice(i.quantita * (i.prezzo?.prezzoNetto ?? 0))}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('sub-label').textContent = 'Subtotale (' + qty + ' pz)';
+  document.getElementById('sub-amount').textContent = fmtPrice(amount);
+  document.getElementById('total-amount').textContent = fmtPrice(amount);
+}
+
+/* ── Conferma ── */
+document.getElementById('btn-conferma').addEventListener('click', () => {
+  if (modalita === 'SPEDIZIONE' && !indirizzoId) {
+    showError('Seleziona un indirizzo di spedizione.');
+    return;
+  }
+  const newAddr = showNuovo
+    ? { ragione: document.getElementById('nRagione').value, indirizzo: document.getElementById('nIndirizzo').value, cap: document.getElementById('nCap').value, citta: document.getElementById('nCitta').value, provincia: document.getElementById('nProvincia').value }
+    : null;
+  if (showNuovo) {
+    if (!newAddr.indirizzo.trim() || !newAddr.cap.trim() || !newAddr.citta.trim()) {
+      showError('Nuovo indirizzo: indirizzo, cap e città sono obbligatori.');
+      return;
+    }
+  }
+  const amount = CART.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+  const numero = 'B2B-' + Date.now();
+  document.getElementById('confirm-numero').textContent = numero;
+  document.getElementById('confirm-totale').textContent = fmtPrice(amount);
+  showView($viewConfirm);
+});
+
+function showError(msg) {
+  const c = document.getElementById('checkout-error-container');
+  c.innerHTML = '<p class="checkout-error">' + msg + '</p>';
+}
+</script>
+</body>
+</html>
