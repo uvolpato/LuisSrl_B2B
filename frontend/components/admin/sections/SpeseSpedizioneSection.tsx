@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api } from "../../../lib/api";
 import ComboboxField from "../ComboboxField";
 import type { ComboboxOption } from "../ComboboxField";
+import Modal from "../../common/Modal";
 import type { Tariffa } from "../../../lib/spese-spedizione";
 import {
   resolveTariffa, pctOf, calcFee, destName, destTitle, describeTariffa,
@@ -322,119 +323,115 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   }
 
   return (
-    <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal modal-wide" role="dialog" aria-modal="true">
-        <div className="modal-h">
-          <h2>{isNew ? "Nuova tariffa" : destTitle(tariffa!)}</h2>
-          <button className="modal-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div className="modal-b">
-          {error && <div style={{ marginBottom: 12, color: "var(--danger)", fontSize: 13 }}>{error}</div>}
-
-          {isNew ? (
-            <div>
-              <div className="field">
-                <label>La tariffa vale per</label>
-                <div className="seg">
-                  {(["regione","nazione","EUROPA","ROW"] as const).map(lv => (
-                    <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => { setLivello(lv); setRegione(""); }}>{lv === "regione" ? "Regione" : lv === "nazione" ? "Nazione" : lv === "EUROPA" ? "Europa" : "Resto del mondo"}</button>
-                  ))}
-                </div>
-              </div>
-              {livello === "nazione" && (
-                <div className="field">
-                  <label>Nazione</label>
-                  <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
-                </div>
-              )}
-              {livello === "regione" && (
-                <div className="field">
-                  <label>Regione (Italia)</label>
-                  <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
-                </div>
-              )}
-              {(livello === "EUROPA" || livello === "ROW") && (
-                <div className="field">
-                  <div className="zona-panel">
-                    <h3>{ZONE_KEYS[livello]}</h3>
-                    <p>{livello === "EUROPA" ? `Per i ${euCount()} paesi dell'area europea senza una tariffa di nazione o regione.` : "Default globale: vale per tutti i paesi del mondo senza una tariffa più specifica."}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div className="dest-desc">
-                <h3>{desc!.title}</h3>
-                <p>{desc!.text}</p>
-              </div>
-              <div className="hier">
-                {["regione","nazione","europa","row"].map(h => (
-                  <span key={h} className={`lvl${desc!.hier === h ? " on" : ""}`}>
-                    {h === "regione" ? "Regione" : h === "nazione" ? "Nazione" : h === "europa" ? "Area" : "Default"}
-                  </span>
-                )).reduce((arr, el, i) => i === 0 ? [el] : [...arr, <span key={"a"+i} className="arrow">→</span>, el], [] as React.ReactNode[])}
-              </div>
-            </div>
-          )}
-
-          <div className="edit-cols">
-            <div className="col">
-              <div className="field">
-                <label>Percentuale sull&apos;importo fattura (senza IVA)</label>
-                <input className="input" type="number" step="0.1" min="0" value={base} onChange={e => setBase(Number(e.target.value))} />
-              </div>
-              <div className="field">
-                <label>Stato</label>
-                <select className="input" value={stato} onChange={e => setStato(e.target.value)}>
-                  <option value="ok">Configurata</option>
-                  <option value="pausa">In pausa</option>
-                  <option value="configura">Da configurare</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
-                <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
-              </div>
-              <div className="field">
-                <button className="btn btn-secondary" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
-              </div>
-            </div>
-            <div className="col">
-              <div className="field">
-                <label>Scaglioni per sconto medio</label>
-                <div className="range-table">
-                  {ranges.length === 0 && <div className="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div>}
-                  {ranges.map((r, i) => (
-                    <div key={i} className={`range-row${i === 0 ? "" : ""}`}>
-                      <span className="range-from">{r[0] ?? 0}%</span><span className="range-arrow">→</span>
-                      <span className="range-max">
-                        {r[1] === null ? <span className="range-oltre">oltre</span> : <input className="range-input" type="number" step="0.5" min={r[0] != null ? (r[0] + 0.5) : 0.5} value={r[1] ?? ""} onChange={e => updateRange(i, 1, e.target.value)} style={{ width: 70 }} />}
-                        <span className="unit">%</span>
-                      </span>
-                      <span className="range-pct">
-                        <input className="range-input" type="number" step="0.1" min="0" value={r[2] ?? ""} onChange={e => updateRange(i, 2, e.target.value)} style={{ width: 70 }} />
-                        <span className="unit">%</span>
-                      </span>
-                      <button className="range-del" onClick={() => removeRange(i)}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                    </div>
-                  ))}
-                </div>
-                <button className="btn btn-sm" style={{ marginTop: 8 }} onClick={addRange}>+ Aggiungi scaglione</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="modal-f">
+    <Modal title={isNew ? "Nuova tariffa" : destTitle(tariffa!)} size="lg" onClose={onClose}
+      footer={
+        <>
           {!isNew && tariffa!.nazione !== "ROW" && <button className="btn btn-danger" onClick={() => onDelete(tariffa!.id)}>Elimina</button>}
           <div style={{ flex: 1 }} />
           <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
           <button className="btn btn-primary" onClick={save}>Salva</button>
+        </>
+      }
+    >
+      {error && <div style={{ marginBottom: 12, color: "var(--danger)", fontSize: 13 }}>{error}</div>}
+
+      {isNew ? (
+        <div>
+          <div className="field">
+            <label>La tariffa vale per</label>
+            <div className="seg">
+              {(["regione","nazione","EUROPA","ROW"] as const).map(lv => (
+                <button key={lv} className={`seg-btn${livello === lv ? " active" : ""}`} onClick={() => { setLivello(lv); setRegione(""); }}>{lv === "regione" ? "Regione" : lv === "nazione" ? "Nazione" : lv === "EUROPA" ? "Europa" : "Resto del mondo"}</button>
+              ))}
+            </div>
+          </div>
+          {livello === "nazione" && (
+            <div className="field">
+              <label>Nazione</label>
+              <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
+            </div>
+          )}
+          {livello === "regione" && (
+            <div className="field">
+              <label>Regione (Italia)</label>
+              <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
+            </div>
+          )}
+          {(livello === "EUROPA" || livello === "ROW") && (
+            <div className="field">
+              <div className="zona-panel">
+                <h3>{ZONE_KEYS[livello]}</h3>
+                <p>{livello === "EUROPA" ? `Per i ${euCount()} paesi dell'area europea senza una tariffa di nazione o regione.` : "Default globale: vale per tutti i paesi del mondo senza una tariffa più specifica."}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className="dest-desc">
+            <h3>{desc!.title}</h3>
+            <p>{desc!.text}</p>
+          </div>
+          <div className="hier">
+            {(["regione","nazione","europa","row"] as const).map((h, i) => (
+              <span key={i}>
+                {i > 0 && <span className="arrow">→</span>}
+                <span className={`lvl${desc!.hier === h ? " on" : ""}`}>
+                  {h === "regione" ? "Regione" : h === "nazione" ? "Nazione" : h === "europa" ? "Area" : "Default"}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="edit-cols">
+        <div className="col">
+          <div className="field">
+            <label>Percentuale sull&apos;importo fattura (senza IVA)</label>
+            <input className="input" type="number" step="0.1" min="0" value={base} onChange={e => setBase(Number(e.target.value))} />
+          </div>
+          <div className="field">
+            <label>Stato</label>
+            <select className="input" value={stato} onChange={e => setStato(e.target.value)}>
+              <option value="ok">Configurata</option>
+              <option value="pausa">In pausa</option>
+              <option value="configura">Da configurare</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
+            <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
+          </div>
+          <div className="field">
+            <button className="btn btn-secondary" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
+          </div>
+        </div>
+        <div className="col">
+          <div className="field">
+            <label>Scaglioni per sconto medio</label>
+            <div className="range-table">
+              {ranges.length === 0 && <div className="range-empty">Nessuno scaglione configurato: vale la percentuale di base.</div>}
+              {ranges.map((r, i) => (
+                <div key={i} className="range-row">
+                  <span className="range-from">{r[0] ?? 0}%</span><span className="range-arrow">→</span>
+                  <span className="range-max">
+                    {r[1] === null ? <span className="range-oltre">oltre</span> : <input className="range-input" type="number" step="0.5" min={(r[0] ?? 0) + 0.5} value={r[1] ?? ""} onChange={e => updateRange(i, 1, e.target.value)} style={{ width: 70 }} />}
+                    <span className="unit">%</span>
+                  </span>
+                  <span className="range-pct">
+                    <input className="range-input" type="number" step="0.1" min="0" value={r[2] ?? ""} onChange={e => updateRange(i, 2, e.target.value)} style={{ width: 70 }} />
+                    <span className="unit">%</span>
+                  </span>
+                  <button className="range-del" onClick={() => removeRange(i)}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-sm" style={{ marginTop: 8 }} onClick={addRange}>+ Aggiungi scaglione</button>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -476,97 +473,86 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
   };
 
   return (
-    <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" role="dialog" aria-modal="true">
-        <div className="modal-h">
-          <h2>{title}</h2>
-          <button className="modal-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div className="modal-b">
-          {!isPrev && (
-            <>
-              <div className="field">
-                <label>Nazione di consegna</label>
-                <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
-              </div>
-              {nazione === "IT" && (
-                <div className="field">
-                  <label>Regione</label>
-                  <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
-                </div>
-              )}
-            </>
-          )}
-          {isPrev && prevTariffa && (
-            <p className="sim-source" style={{ display: "block" }}>
-              <b>{destName(prevTariffa)}</b> · {prevTariffa.stato === "pausa" ? "In pausa" : "Tariffa in modifica (non salvata)"}
-            </p>
-          )}
-          <div className="field-row">
+    <Modal title={title} size="md" onClose={onClose}
+      footer={<button className="btn btn-primary" onClick={onClose}>Chiudi</button>}
+    >
+      {!isPrev && (
+        <>
+          <div className="field">
+            <label>Nazione di consegna</label>
+            <ComboboxField value={nazione} onChange={v => { setNazione(v || "IT"); if (v !== "IT") setRegione(""); }} options={nazioniOpts} placeholder="Cerca o seleziona…" />
+          </div>
+          {nazione === "IT" && (
             <div className="field">
-              <label>Importo fattura senza IVA (€)</label>
-              <input className="input" type="number" step="50" min="0" value={amount} onChange={e => setAmount(Number(e.target.value))} />
+              <label>Regione</label>
+              <ComboboxField value={regione} onChange={v => setRegione(v)} options={regioniOpts} placeholder="Cerca o seleziona…" />
             </div>
-            <div className="field">
-              <label>Sconto medio su listino (%)</label>
-              <input className="input" type="number" step="0.5" min="0" max="30" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
-            </div>
-          </div>
-          <div className="field">
-            {resolved ? (
-              <>
-                <p className="sim-source">
-                  <b>{destName(resolved.t)}</b> · {sourceLabels[resolved.source] ?? resolved.source}
-                  {isPrev ? " (in modifica)" : (resolved.source === "regione" ? " (eccezione sopra la tariffa nazione)" : resolved.source === "row" ? " (default globale)" : " (fallback)")}
-                </p>
-                <div className={`sim-result${calc?.fee === 0 ? " free" : ""}`}>{calc ? fmtEur(calc.fee) : "—"}</div>
-                {calc && (
-                  <p className="sim-note">
-                    {calc.rng ? `Scaglione ${calc.rng[0]}–${calc.rng[1] ?? "oltre"}% → ${fmtPct(calc.pct)}` : `Percentuale base ${fmtPct(calc.pct)}`}
-                    {calc.superaSoglia && ` · spedizione gratuita (superata soglia di ${fmtEur(calc.soglia!)})`}
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="sim-source">Tariffa da confermare</p>
-                <div className="sim-result">—</div>
-                <p className="sim-note">Nessuna tariffa attiva per questa destinazione. Configurala prima di calcolare le spese.</p>
-              </>
-            )}
-          </div>
-          <div className="field">
-            <label>Riepilogo</label>
-            <div className="sim-steps">
-              <div className="sim-step"><div className="k">Importo netto</div><div className="v">{fmtEur(amount)}</div></div>
-              <div className="sim-step"><div className="k">Sconto medio</div><div className="v">{fmtPct(discount)}</div></div>
-              <div className="sim-step"><div className="k">Tariffa applicata</div><div className="v">{resolved ? destName(resolved.t) : "—"}</div></div>
-              <div className="sim-step"><div className="k">Soglia gratuita</div><div className="v">{calc?.soglia ? fmtEur(calc.soglia) : "—"}</div></div>
-              <div className="sim-step"><div className="k">Percentuale</div><div className="v">{calc ? fmtPct(calc.pct) : "—"}</div></div>
-              <div className="sim-step"><div className="k">Spese di spedizione</div><div className="v" style={calc?.fee === 0 ? { color: "var(--ok)" } : undefined}>{calc ? fmtEur(calc.fee) : "—"}</div></div>
-            </div>
-          </div>
-          <div className="field">
-            <label>Percentuale per sconto medio</label>
-            <div className="bars">
-              {[0, 5, 10, 15, 20].map(s => {
-                const p = resolved ? pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, s).pct : 0;
-                const maxPct = resolved ? Math.max(1, ...[0,5,10,15,20].map(x => pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, x).pct)) : 1;
-                return (
-                  <div key={s} className={`bar${s === discount ? " hi" : ""}`} style={{ height: `${Math.max(3, (p / maxPct) * 100)}%` }}>
-                    <span className="bv">{fmtPct(p)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
+        </>
+      )}
+      {isPrev && prevTariffa && (
+        <p className="sim-source" style={{ display: "block" }}>
+          <b>{destName(prevTariffa)}</b> · {prevTariffa.stato === "pausa" ? "In pausa" : "Tariffa in modifica (non salvata)"}
+        </p>
+      )}
+      <div className="field-row">
+        <div className="field">
+          <label>Importo fattura senza IVA (€)</label>
+          <input className="input" type="number" step="50" min="0" value={amount} onChange={e => setAmount(Number(e.target.value))} />
         </div>
-        <div className="modal-f">
-          <button className="btn btn-primary" onClick={onClose}>Chiudi</button>
+        <div className="field">
+          <label>Sconto medio su listino (%)</label>
+          <input className="input" type="number" step="0.5" min="0" max="30" value={discount} onChange={e => setDiscount(Number(e.target.value))} />
         </div>
       </div>
-    </div>
+      <div className="field">
+        {resolved ? (
+          <>
+            <p className="sim-source">
+              <b>{destName(resolved.t)}</b> · {sourceLabels[resolved.source] ?? resolved.source}
+              {isPrev ? " (in modifica)" : (resolved.source === "regione" ? " (eccezione sopra la tariffa nazione)" : resolved.source === "row" ? " (default globale)" : " (fallback)")}
+            </p>
+            <div className={`sim-result${calc?.fee === 0 ? " free" : ""}`}>{calc ? fmtEur(calc.fee) : "—"}</div>
+            {calc && (
+              <p className="sim-note">
+                {calc.rng ? `Scaglione ${calc.rng[0]}–${calc.rng[1] ?? "oltre"}% → ${fmtPct(calc.pct)}` : `Percentuale base ${fmtPct(calc.pct)}`}
+                {calc.superaSoglia && ` · spedizione gratuita (superata soglia di ${fmtEur(calc.soglia!)})`}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="sim-source">Tariffa da confermare</p>
+            <div className="sim-result">—</div>
+            <p className="sim-note">Nessuna tariffa attiva per questa destinazione. Configurala prima di calcolare le spese.</p>
+          </>
+        )}
+      </div>
+      <div className="field">
+        <label>Riepilogo</label>
+        <div className="sim-steps">
+          <div className="sim-step"><div className="k">Importo netto</div><div className="v">{fmtEur(amount)}</div></div>
+          <div className="sim-step"><div className="k">Sconto medio</div><div className="v">{fmtPct(discount)}</div></div>
+          <div className="sim-step"><div className="k">Tariffa applicata</div><div className="v">{resolved ? destName(resolved.t) : "—"}</div></div>
+          <div className="sim-step"><div className="k">Soglia gratuita</div><div className="v">{calc?.soglia ? fmtEur(calc.soglia) : "—"}</div></div>
+          <div className="sim-step"><div className="k">Percentuale</div><div className="v">{calc ? fmtPct(calc.pct) : "—"}</div></div>
+          <div className="sim-step"><div className="k">Spese di spedizione</div><div className="v" style={calc?.fee === 0 ? { color: "var(--ok)" } : undefined}>{calc ? fmtEur(calc.fee) : "—"}</div></div>
+        </div>
+      </div>
+      <div className="field">
+        <label>Percentuale per sconto medio</label>
+        <div className="bars">
+          {[0, 5, 10, 15, 20].map(s => {
+            const p = resolved ? pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, s).pct : 0;
+            const maxPct = resolved ? Math.max(1, ...[0,5,10,15,20].map(x => pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, x).pct)) : 1;
+            return (
+              <div key={s} className={`bar${s === discount ? " hi" : ""}`} style={{ height: `${Math.max(3, (p / maxPct) * 100)}%` }}>
+                <span className="bv">{fmtPct(p)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Modal>
   );
 }
