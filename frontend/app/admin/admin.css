@@ -3358,7 +3358,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .row-action { position: relative; width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; margin-left: 2px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; transition: background .12s ease, color .12s ease; }
 .row-action:hover { background: var(--fg-soft); color: var(--fg); }
 .row-action svg { width: 16px; height: 16px; }
-.row-action::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0; transform: none; padding: 4px 8px; background: var(--fg); color: var(--surface); font-family: var(--font-body); font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .12s ease; z-index: 5; }
+.row-action::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); right: 0; left: auto; transform: none; padding: 4px 8px; background: var(--fg); color: var(--surface); font-family: var(--font-body); font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .12s ease; z-index: 5; }
 .row-action:hover::after { opacity: 1; }
 .chip-set { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .chip { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--fg-soft); white-space: nowrap; }

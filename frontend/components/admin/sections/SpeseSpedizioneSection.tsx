@@ -33,6 +33,8 @@ export default function SpeseSpedizioneSection() {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
   });
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     api.get<{ data: Tariffa[] }>("/api/admin/tariffe-spedizione")
@@ -41,16 +43,33 @@ export default function SpeseSpedizioneSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = sortedDest(tariffe).filter(d => {
-    if (filterStato !== "tutti" && d.stato !== filterStato) return false;
-    if (!search) return true;
-    return destName(d).toLowerCase().includes(search.toLowerCase());
-  });
+  const filtered = (() => {
+    const base = sortedDest(tariffe).filter(d => {
+      if (filterStato !== "tutti" && d.stato !== filterStato) return false;
+      if (!search) return true;
+      return destName(d).toLowerCase().includes(search.toLowerCase());
+    });
+    if (!sortKey) return base;
+    return [...base].sort((a, b) => {
+      let va: string | number, vb: string | number;
+      if (sortKey === "destinazione") { va = destName(a); vb = destName(b); }
+      else if (sortKey === "base") { va = a.basePercent; vb = b.basePercent; }
+      else if (sortKey === "soglia") { va = a.sogliaImporto ?? 0; vb = b.sogliaImporto ?? 0; }
+      else return 0;
+      const cmp = typeof va === "string" ? va.localeCompare(vb as string, "it") : va - (vb as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  })();
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => { setPage(1); }, [search, filterStato]);
+
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  }
 
   // Colonna ridimensionabile
   const resizing = useRef(false);
