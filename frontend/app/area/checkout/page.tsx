@@ -34,6 +34,10 @@ interface DatiCheckout {
   cliente: {
     id: number;
     ragioneSociale: string | null;
+    indirizzo: string | null;
+    cap: string | null;
+    citta: string | null;
+    provincia: string | null;
     codicePagamento: string | null;
     codicePorto: string | null;
     codiceSpedizione: string | null;
@@ -294,7 +298,20 @@ export default function CheckoutPage() {
                   <h2 className="checkout-section-title">Sede di spedizione</h2>
                   {dati.indirizzi.length === 0 && !showNuovo ? (
                     <div>
-                      <p className="checkout-note">La merce verrà inviata alla sede dell&apos;anagrafica.</p>
+                      <p className="checkout-note">Nessun indirizzo di spedizione salvato. La merce verrà inviata alla sede dell&apos;anagrafica:</p>
+                      {(dati.cliente.ragioneSociale || dati.indirizzi.length === 0) && (
+                        <div className="addr-grid">
+                          <div className="addr-card selected" style={{ cursor: "default", opacity: 0.8 }}>
+                            <div className="addr-card-h">
+                              <span className="status st-blue"><span className="sd">●</span>Sede legale</span>
+                            </div>
+                            <div className="addr-l"><b>Indirizzo</b><span>{dati.cliente.indirizzo || "—"}</span></div>
+                            <div className="addr-l"><b>CAP</b><span className="mono">{dati.cliente.cap || "—"}</span></div>
+                            <div className="addr-l"><b>Città</b><span>{dati.cliente.citta || "—"}</span></div>
+                            <div className="addr-l"><b>Provincia</b><span className="mono">{dati.cliente.provincia || "—"}</span></div>
+                          </div>
+                        </div>
+                      )}
                       {dati.allowNewAddress && (
                         <button type="button" className="btn btn-secondary addr-add-btn" onClick={() => setShowNuovo(true)}>
                           + Indica un nuovo indirizzo
