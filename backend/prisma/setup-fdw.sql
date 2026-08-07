@@ -27,6 +27,10 @@ BEGIN
 END
 $$;
 
+-- Opzioni di performance: abilita pushdown dei join e batch fetch
+ALTER SERVER integra_server
+  OPTIONS (ADD fetch_size '5000', ADD use_remote_estimate 'on');
+
 -- Mappa l'utente del portale (postgres) all'utente remoto in SOLA LETTURA
 -- Le credenziali sono le stesse usate dal dblink (postgres/*Lui.2099*).
 DROP USER MAPPING IF EXISTS FOR postgres SERVER integra_server;

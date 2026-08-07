@@ -42,7 +42,6 @@ export default function Tooltip({ text, children }: TooltipProps) {
         maxWidth: 280,
         whiteSpace: "normal" as const,
         wordWrap: "break-word" as const,
-        wordWrap: "break-word" as const,
         zIndex: 9999,
         pointerEvents: "none" as const,
         boxShadow: "0 4px 12px oklch(0% 0 0 / 0.25)",
