@@ -12,3 +12,8 @@ ON CONFLICT (key) DO UPDATE SET value='true', updated_at=NOW();
 INSERT INTO site_config (key, value, updated_at)
 VALUES ('checkout_default_listino', 'LIS1', NOW())
 ON CONFLICT (key) DO UPDATE SET value='LIS1', updated_at=NOW();
+
+-- Flag banner spedizione gratuita (true = visibile)
+INSERT INTO site_config (key, value, updated_at)
+VALUES ('banner_spedizione_attivo', 'true', NOW())
+ON CONFLICT (key) DO NOTHING;
