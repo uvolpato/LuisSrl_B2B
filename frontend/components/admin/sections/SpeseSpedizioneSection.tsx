@@ -155,8 +155,8 @@ export default function SpeseSpedizioneSection() {
         <div className="content-header">
           <span className="meta">{meta}</span>
           <span style={{ flex: 1 }} />
-          <span className="hint" tabIndex={0} onClick={() => setGuidaOpen(true)} style={{ cursor: "pointer" }}>?
-            <span className="hint-tip">Guida all&apos;uso delle tariffe di spedizione</span>
+          <span onClick={() => setGuidaOpen(true)} style={{ cursor: "pointer" }}>
+            <Hint text="Guida all&apos;uso delle tariffe di spedizione" />
           </span>
         </div>
 
