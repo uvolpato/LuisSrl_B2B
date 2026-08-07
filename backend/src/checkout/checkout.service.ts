@@ -48,9 +48,11 @@ export class CheckoutService {
   ) {}
 
   async getSogliaDefault(clienteId: number) {
+    const attivo = (await this.getConfigFlag('banner_spedizione_attivo')) === true;
+    if (!attivo) return { soglia: null, attivo: false };
     const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', null);
-    if (!resolved) return { soglia: null };
-    return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null };
+    if (!resolved) return { soglia: null, attivo: true };
+    return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true };
   }
 
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
