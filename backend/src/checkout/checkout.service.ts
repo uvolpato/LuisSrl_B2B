@@ -53,11 +53,7 @@ export class CheckoutService {
 
     const addr = await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId, flagAbituale: true },
-    }) ?? await this.prisma.indirizzoCliente.findFirst({
-      where: { customerId: clienteId },
-      orderBy: { flagSpedizione: 'desc' },
     });
-
     const provincia = addr?.provincia || null;
     let resolved;
     if (!provincia) {
