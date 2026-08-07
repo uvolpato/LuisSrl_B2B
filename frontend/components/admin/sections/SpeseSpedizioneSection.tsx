@@ -353,7 +353,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
         });
       }
       onSaved();
-    } catch (e) { setError(e instanceof ApiError ? e.message : "Errore salvataggio"); }
+    } catch (e: any) { setError(e instanceof ApiError ? e.message : (e?.message || e?.code || String(e) || "Errore salvataggio")); }
   }
 
   // Versione temporanea per l'anteprima
