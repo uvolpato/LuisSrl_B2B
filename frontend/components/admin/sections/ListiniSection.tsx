@@ -96,11 +96,12 @@ export default function ListiniSection() {
   function loadRighe() {
     if (!selectedListino) return;
     setLoading(true);
+    setError(null);
     api.get<RigheResponse>(
       `/api/integrazione/listini/${selectedListino}/righe?search=${encodeURIComponent(search)}&page=${page}&limit=${PAGE_SIZE}`
     )
       .then((data) => { setItems(data.items); setTotal(data.total); })
-      .catch(() => setError("Errore nel caricamento delle righe"))
+      .catch((e) => setError(e?.message ?? "Errore nel caricamento delle righe"))
       .finally(() => setLoading(false));
   }
 
