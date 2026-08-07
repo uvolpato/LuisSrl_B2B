@@ -20,8 +20,8 @@ CREATE USER MAPPING IF NOT EXISTS FOR postgres
   SERVER integra_server
   OPTIONS (user 'integrams', password 'b*Y3oTcM88');
 
--- Importa solo la vista b2b_prodotti (ex itgprodotti)
+-- Importa le tabelle Integra necessarie
 IMPORT FOREIGN SCHEMA public
-  LIMIT TO (b2b_prodotti)
+  LIMIT TO (b2b_prodotti, listest, listini, prodotti)
   FROM SERVER integra_server
   INTO integra;
