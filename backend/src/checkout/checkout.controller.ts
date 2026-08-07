@@ -10,6 +10,11 @@ import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 export class CheckoutController {
   constructor(private readonly checkout: CheckoutService) {}
 
+  @Get('soglia')
+  getSoglia(@Req() req: AuthenticatedRequest) {
+    return this.checkout.getSogliaDefault(req.user.id);
+  }
+
   @Get('dati')
   getDati(@Req() req: AuthenticatedRequest) {
     return this.checkout.getDatiCheckout(req.user.id);
