@@ -37,7 +37,7 @@ function formatDate(d: string): string {
 
 import AnomalieSection from "./sections/AnomalieSection";
 
-type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "anomalie";
+type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "anomalie" | "accessi";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -335,6 +335,9 @@ export default function AdminPanel() {
         <button className={`admin-panel-tab ${activeTab === "anomalie" ? "active" : ""}`} onClick={() => { setActiveTab("anomalie"); }}>
           Anomalie
         </button>
+        <button className={`admin-panel-tab ${activeTab === "accessi" ? "active" : ""}`} onClick={() => { setActiveTab("accessi"); }}>
+          Accessi
+        </button>
       </div>
 
       <div className="admin-panel-body">
@@ -463,6 +466,14 @@ export default function AdminPanel() {
           )}
           {activeTab === "costi-ai" && (
             <CostiAiSection />
+          )}
+          {activeTab === "anomalie" && (
+            <AnomalieSection />
+          )}
+          {activeTab === "accessi" && (
+            <div className="admin-panel-content">
+              <p style={{ color: "var(--muted)" }}>Sezione in sviluppo</p>
+            </div>
           )}
         </div>
       </div>
