@@ -438,7 +438,7 @@ export class SyncService {
       ]);
       await this.setProgress(logId, 5, `Letti ${clientiRows.length} clienti, ${indirizziRows.length} indirizzi, ${pagamentiRows.length} pagamenti`);
 
-      let totalSteps = clientiRows.length + indirizziRows.length + pagamentiRows.length || 1;
+      const totalSteps = clientiRows.length + indirizziRows.length + pagamentiRows.length || 1;
       let done = 0;
 
       // Crea tabelle _new
@@ -538,8 +538,8 @@ export class SyncService {
       `);
       await this.setProgress(logId, 92, 'Swap tabelle…');
 
-      // Importa testata E righe per listini nuovi (solo per clienti già nel portale)
-      const nuoviListini = await this.prisma.$queryRawUnsafe<{ codice_listino: string }[]>(`
+      // Importa testata per listini nuovi (le righe le importa il sync listini periodico)
+      await this.prisma.$executeRawUnsafe(`
         INSERT INTO integra_listini (codice_listino, descrizione_listino, listino_obsoleto, data_modifica)
         SELECT DISTINCT i.codice_listino, 'Da sync clienti', 0, NOW()
         FROM integra_clienti i
@@ -547,32 +547,7 @@ export class SyncService {
         WHERE i.codice_listino IS NOT NULL AND i.codice_listino != '' AND i.codice_listino != '--'
           AND NOT EXISTS (SELECT 1 FROM integra_listini l WHERE l.codice_listino = i.codice_listino)
           AND i.codice_listino != 'LIS1'
-        RETURNING codice_listino
-      `).catch(() => []);
-      
-      if (nuoviListini.length > 0) {
-        totalSteps += nuoviListini.length;
-        for (const { codice_listino } of nuoviListini) {
-          await this.reportProgress(logId, done, totalSteps, 12, 90, `Listino ${codice_listino}`);
-          try {
-            await this.prisma.$executeRawUnsafe(`BEGIN`);
-            await this.prisma.$executeRawUnsafe(`DELETE FROM integra_listini_righe WHERE codice_listino = $1`, codice_listino);
-            await this.withTimeout(this.prisma.$executeRawUnsafe(
-              `INSERT INTO integra_listini_righe (id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, listino_obsoleto, data_modifica)
-               SELECT id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, 0, data_modifica
-               FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
-              codice_listino
-            ), 300_000, `b2b_listini_righe (${codice_listino})`);
-            const ct = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(`SELECT count(*)::int8 n FROM integra_listini_righe WHERE codice_listino = $1`, codice_listino);
-            await this.prisma.$executeRawUnsafe(`COMMIT`);
-            this.logger.log(`Listino ${codice_listino}: ${Number(ct[0]?.n ?? 0)} righe importate`);
-          } catch (e) {
-            await this.prisma.$executeRawUnsafe(`ROLLBACK`);
-            this.logger.error(`Import righe listino ${codice_listino} fallito: ${e instanceof Error ? e.message : e}`);
-          }
-          done++;
-        }
-      }
+      `).catch(() => {});
 
       // Aggiorna i dati anagrafici dei clienti già importati nel portale
       try {
