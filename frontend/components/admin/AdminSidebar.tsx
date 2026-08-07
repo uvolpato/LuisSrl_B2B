@@ -16,7 +16,6 @@ const NAV_ITEMS = [
       { id: "articoli", label: "Articoli", icon: "grid" },
       { id: "famiglie", label: "Famiglie", icon: "list" },
       { id: "raccolte", label: "Raccolte", icon: "folder" },
-      { id: "box-dashboard", label: "Box dashboard", icon: "layout" },
     ],
   },
   {
@@ -25,12 +24,13 @@ const NAV_ITEMS = [
       { id: "clienti", label: "Clienti", icon: "users" },
       { id: "listini", label: "Listini", icon: "dollar" },
       { id: "ordini", label: "Ordini", icon: "bag" },
-      { id: "spese-spedizione", label: "Spese di spedizione", icon: "truck" },
     ],
   },
   {
     section: "Strumenti",
     items: [
+      { id: "box-dashboard", label: "Box dashboard", icon: "layout" },
+      { id: "spese-spedizione", label: "Spese di spedizione", icon: "truck" },
       { id: "import", label: "Import / Export", icon: "upload" },
       { id: "ai", label: "AI / Ricerca", icon: "star" },
     ],
