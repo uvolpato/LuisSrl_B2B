@@ -42,7 +42,18 @@ export default function ListiniSection() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const [listiniLoaded, setListiniLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  async function syncSelected() {
+    if (!selectedListino) return;
+    setSyncing(true); setSyncMsg(null);
+    try {
+      await api.post("/api/integrazione/sync-config/listini/trigger");
+      setSyncMsg("Sincronizzazione avviata");
+    } catch { setSyncMsg("Errore sincronizzazione"); }
+    setSyncing(false);
+  }
 
   useEffect(() => {
     if (!selectedListino) return;
@@ -185,6 +196,10 @@ export default function ListiniSection() {
               </option>
             ))}
           </select>
+          <button className="btn btn-secondary btn-sm" onClick={syncSelected} disabled={syncing || !selectedListino}>
+            {syncing ? "Sincronizzo…" : "Sincronizza"}
+          </button>
+          {syncMsg && <span style={{ fontSize: 12, color: "var(--muted)" }}>{syncMsg}</span>}
           <div className="admin-search">
             <span className="search-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
