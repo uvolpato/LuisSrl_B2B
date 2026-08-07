@@ -566,7 +566,8 @@ export class SyncService {
         );
         this.logger.log(`Clienti aggiornati nel portale: ${Number(aggiornati[0].n)}`);
       } catch (err) {
-        this.logger.warn(`Aggiornamento clienti portale non riuscito (non bloccante): ${err instanceof Error ? err.message : err}`);
+        this.logger.error(`Aggiornamento clienti portale fallito: ${err instanceof Error ? err.message : err}`);
+        throw err;
       }
 
       const durationMs = Date.now() - startedAt.getTime();
