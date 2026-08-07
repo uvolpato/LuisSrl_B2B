@@ -768,6 +768,9 @@ export class SyncService {
           if (oldN > 0 && newN === 0) {
             throw new Error(`Listino ${codice}: INSERT ha restituito 0 righe (${oldN} rimosse) — possibile errore connessione Integra. Rollback.`);
           }
+          if (oldN === 0 && newN === 0) {
+            this.logger.warn(`Listino ${codice}: nessuna riga importata (0→0) — verifica connessione o dati in b2b_listini_righe`);
+          }
           await this.prisma.$executeRawUnsafe(`COMMIT`);
           this.logger.log(`Listino ${codice}: ${oldN}→${newN} righe`);
         } catch (e) {
