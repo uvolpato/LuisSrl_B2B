@@ -539,11 +539,12 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
 }
 
 /* ── Calcolatore modale ── */
-function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
+function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose, onApply }: {
   mode: "sim" | "prev";
   prevTariffa: Tariffa | null;
   allTariffe: Tariffa[];
   onClose: () => void;
+  onApply?: (base: number, soglia: number, minimo: number) => void;
 }) {
   const [nazione, setNazione] = useState(prevTariffa?.nazione ?? "IT");
   const [regione, setRegione] = useState(prevTariffa?.regione ?? "");
@@ -577,7 +578,12 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
 
   return (
     <Modal size="sm" title={title} onClose={onClose}
-      footer={<button className="btn btn-primary" type="button" onClick={onClose}>Chiudi</button>}
+      footer={<>
+        {isPrev && onApply && (
+          <button className="btn btn-secondary" type="button" onClick={() => onApply(calc?.pct ?? prevTariffa!.basePercent, calc?.soglia ?? prevTariffa!.sogliaImporto ?? 0, calc?.minimo ?? prevTariffa!.minimoImporto ?? 0)}>Riporta valori</button>
+        )}
+        <button className="btn btn-primary" type="button" onClick={onClose}>Chiudi</button>
+      </>}
     >
           {!isPrev && (
             <>
