@@ -3,9 +3,6 @@ INSERT INTO sync_config (tipo, label, cron_expression, attivo, solo_manuale, agg
 VALUES ('lookup', 'Sincronizza lookup (pagamenti, porti, spedizioni, vettori)', '0 0 * * * *', true, false, NOW())
 ON CONFLICT (tipo) DO NOTHING;
 
--- Migration: minimo_importo su tariffe_spedizione
-ALTER TABLE tariffe_spedizione ADD COLUMN IF NOT EXISTS minimo_importo DECIMAL(12,2);
-
 -- Aggiungi site_config per checkout
 INSERT INTO site_config (key, value, updated_at)
 VALUES ('checkout_allow_new_address', 'true', NOW())
