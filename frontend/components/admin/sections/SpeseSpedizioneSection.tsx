@@ -163,6 +163,7 @@ export default function SpeseSpedizioneSection() {
                 <col style={{ width: 90 }} />
                 <col style={{ width: scaglioniW, minWidth: 140 }} />
                 <col style={{ width: 140 }} />
+                <col style={{ width: 110 }} />
                 <col style={{ width: 96 }} />
               </colgroup>
               <thead>
@@ -184,6 +185,7 @@ export default function SpeseSpedizioneSection() {
                   <th className={`num${sortKey === "soglia" ? " sorted" : ""}`} onClick={() => handleSort("soglia")} style={{ cursor: "pointer" }}>
                     Soglia gratuita {sortKey === "soglia" && <span className="sort-arrow">{sortDir === "asc" ? "▲" : "▼"}</span>}
                   </th>
+                  <th className="num">Tariffa min.</th>
                   <th style={{ textAlign: "right" }}>Azioni</th>
                 </tr>
               </thead>
@@ -228,6 +230,7 @@ export default function SpeseSpedizioneSection() {
                         )}
                       </td>
                       <td className="num">{d.sogliaImporto != null ? fmtEur(d.sogliaImporto) : <span className="cell-empty">—</span>}</td>
+                      <td className="num">{d.minimoImporto != null ? fmtEur(d.minimoImporto) : <span className="cell-empty">—</span>}</td>
                       <td className="data-table-actions">
                         <DataTip tip="Modifica">
                           <button className="row-action" onClick={() => openEdit(d)}>
