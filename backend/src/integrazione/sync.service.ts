@@ -538,6 +538,20 @@ export class SyncService {
       `);
       await this.setProgress(logId, 92, 'Swap tabelle…');
 
+      // Importa testata listini nuovi (solo per clienti già nel portale)
+      try {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO integra_listini (codice_listino, descrizione_listino, listino_obsoleto, data_modifica)
+          SELECT DISTINCT i.codice_listino, 'Da sync clienti', 0, NOW()
+          FROM integra_clienti i
+          JOIN customers c ON c.codice_cliente = i.codice_cliente
+          WHERE i.codice_listino IS NOT NULL AND i.codice_listino != '' AND i.codice_listino != '--'
+            AND NOT EXISTS (SELECT 1 FROM integra_listini l WHERE l.codice_listino = i.codice_listino)
+        `);
+      } catch (e) {
+        this.logger.warn(`Import nuovi listini fallito (non bloccante): ${e instanceof Error ? e.message : e}`);
+      }
+
       // Aggiorna i dati anagrafici dei clienti già importati nel portale
       try {
         await this.prisma.$executeRawUnsafe(`
