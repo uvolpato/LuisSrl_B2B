@@ -35,7 +35,9 @@ function formatDate(d: string): string {
   return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai";
+import AnomalieSection from "./sections/AnomalieSection";
+
+type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "anomalie";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -329,6 +331,9 @@ export default function AdminPanel() {
         </button>
         <button className={`admin-panel-tab ${activeTab === "costi-ai" ? "active" : ""}`} onClick={() => { setActiveTab("costi-ai"); }}>
           Costi AI
+        </button>
+        <button className={`admin-panel-tab ${activeTab === "anomalie" ? "active" : ""}`} onClick={() => { setActiveTab("anomalie"); }}>
+          Anomalie
         </button>
       </div>
 

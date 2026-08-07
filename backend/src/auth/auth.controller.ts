@@ -12,7 +12,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { Customer } from '@prisma/client';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -58,6 +58,10 @@ export class AuthController {
     req.session.email = user.email;
     req.session.nome = user.nome;
     req.session.csrfToken = randomBytes(32).toString('hex');
+    req.session.sessionToken = crypto.randomUUID();
+
+    // Salva il session token sul DB per verificare accessi simultanei
+    await this.auth.setSessionToken(user.id, user.userType, req.session.sessionToken);
     req.session.cookie.maxAge = dto.remember ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
     await new Promise<void>((resolve, reject) =>
