@@ -33,8 +33,8 @@ ALTER SERVER integra_server
 
 -- Mappa l'utente del portale (postgres) all'utente remoto in SOLA LETTURA
 -- Le credenziali sono le stesse usate dal dblink (postgres/*Lui.2099*).
-DROP USER MAPPING IF EXISTS FOR postgres SERVER integra_server;
-CREATE USER MAPPING FOR postgres
+DROP USER MAPPING IF EXISTS FOR CURRENT_USER SERVER integra_server;
+CREATE USER MAPPING FOR CURRENT_USER
   SERVER integra_server
   OPTIONS (user 'postgres', password :'pw');
 
