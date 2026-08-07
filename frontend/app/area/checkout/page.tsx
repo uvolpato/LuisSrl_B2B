@@ -326,12 +326,13 @@ export default function CheckoutPage() {
             <section className="checkout-section">
               <h2 className="checkout-section-title">Condizioni di pagamento</h2>
               <p className="checkout-note" style={{ marginBottom: 12 }}>Modalità di pagamento ricevuta da Integra.</p>
-              <div className="form-field" style={{ marginBottom: 14 }}>
-                <label>Pagamento</label>
-                <select className="form-select" style={{ width: "100%" }} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                  {dati.pagamenti.map(p => (<option key={p.codice} value={p.codice}>{p.codice} — {p.descrizione}</option>))}
-                </select>
-              </div>
+              {dati.pagamenti.length > 0 && (
+                <div className="form-field" style={{ marginBottom: 14 }}>
+                  <label>Pagamento</label>
+                  <div className="read-only-field">{paymentMethod || "—"} — {dati.pagamenti.find(p => p.codice === paymentMethod)?.descrizione ?? "—"}</div>
+                  <span className="form-hint">Condizioni di pagamento dall&apos;anagrafica (non modificabili).</span>
+                </div>
+              )}
               {bankData && paymentMethod === "ANT" && (
                 <div className="form-field">
                   <label>Coordinate bancarie LUIS S.r.l.</label>
