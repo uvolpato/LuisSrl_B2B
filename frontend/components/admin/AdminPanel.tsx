@@ -50,6 +50,8 @@ const ALL_PERMISSIONS = [
   { key: "admin.settings.edit", label: "Modificare impostazioni" },
   { key: "admin.sync.view", label: "Visualizzare sincronizzazioni" },
   { key: "admin.sync.manage", label: "Gestire sincronizzazioni" },
+  { key: "admin.anomalie.view", label: "Visualizzare anomalie" },
+  { key: "admin.anomalie.edit", label: "Gestire anomalie" },
   { key: "catalog.articles.view", label: "Visualizzare articoli" },
   { key: "catalog.articles.create", label: "Creare articoli" },
   { key: "catalog.articles.edit", label: "Modificare articoli" },
