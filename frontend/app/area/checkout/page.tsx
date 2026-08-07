@@ -532,7 +532,7 @@ export default function CheckoutPage() {
 
             <table className="total-table">
               <tbody>
-                <tr><td style={{ border: 0 }}>Totale articoli a listino</td><td style={{ border: 0 }}>{fmtEur(subtotalListino)}</td></tr>
+                <tr><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>Totale articoli a listino</td><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>{fmtEur(subtotalListino)}</td></tr>
                 <tr><td colSpan={2} style={{ padding: "4px 0 0", border: 0 }}>
                   <div className="coupon-row">
                     <input type="text" className="coupon-input" placeholder="Codice sconto" value={couponCode} onChange={e => setCouponCode(e.target.value)} autoComplete="off" />
