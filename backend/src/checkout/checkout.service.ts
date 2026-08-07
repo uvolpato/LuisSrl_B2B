@@ -50,7 +50,17 @@ export class CheckoutService {
   async getSogliaDefault(clienteId: number) {
     const attivo = (await this.getConfigFlag('banner_spedizione_attivo')) === true;
     if (!attivo) return { soglia: null, attivo: false };
-    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', null);
+    // Cerca indirizzo predefinito del cliente
+    const addr = await this.prisma.indirizzoCliente.findFirst({
+      where: { customerId: clienteId, flagAbituale: true },
+    }) ?? await this.prisma.indirizzoCliente.findFirst({
+      where: { customerId: clienteId },
+      orderBy: { flagSpedizione: 'desc' },
+    });
+    const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+    const provincia = addr?.provincia || customer?.provincia || null;
+    const regione = provincia ? this.provinciaToRegione(provincia.toUpperCase()) : null;
+    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
     if (!resolved) return { soglia: null, attivo: true };
     return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true };
   }
