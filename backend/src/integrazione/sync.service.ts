@@ -438,7 +438,7 @@ export class SyncService {
       ]);
       await this.setProgress(logId, 5, `Letti ${clientiRows.length} clienti, ${indirizziRows.length} indirizzi, ${pagamentiRows.length} pagamenti`);
 
-      const totalSteps = clientiRows.length + indirizziRows.length + pagamentiRows.length || 1;
+      let totalSteps = clientiRows.length + indirizziRows.length + pagamentiRows.length || 1;
       let done = 0;
 
       // Crea tabelle _new
