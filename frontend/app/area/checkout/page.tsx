@@ -507,6 +507,11 @@ export default function CheckoutPage() {
                 <span className="label">Spedizione a</span>
                 <span className="value">{indirizzoSelezionato.ragioneSociale ?? "Sede"}</span>
                 <span className="summary-ship-line">{[indirizzoSelezionato.indirizzo, indirizzoSelezionato.cap, indirizzoSelezionato.citta, indirizzoSelezionato.provincia].filter(Boolean).join(" ")}</span>
+                {spedizione.soglia != null && spedizione.soglia > 0 && (
+                  <span className="summary-ship-line" style={{ color: "var(--accent)", fontWeight: 500, marginTop: 4 }}>
+                    Spedizione gratuita sopra {fmtEur(spedizione.soglia)}
+                  </span>
+                )}
               </div>
             )}
 
