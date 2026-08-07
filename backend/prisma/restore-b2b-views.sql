@@ -247,48 +247,45 @@ CREATE OR REPLACE VIEW public.b2b_righe_ordini AS
     note_riga
    FROM dblink(:'conn'::text, 'SELECT r.mvr_mvtid, t.mvt_num, t.mvt_dtmov, t.mvt_clacod, r.mvr_id, r.mvr_ordinamento, r.mvr_proid, p.pro_cod, r.mvr_descr, p.pro_descr, r.mvr_qta, r.mvr_umicod, r.mvr_prezzo, r.mvr_prznetto, r.mvr_przivato, r.mvr_importo, r.mvr_sconto1, r.mvr_sconto2, r.mvr_sconto3, r.mvr_sconto4, r.mvr_scontoval, r.mvr_flgsaldo, r.mvr_flgfat, r.mvr_qtafat, r.mvr_impfatt, r.mvr_liberoc1 FROM movrig r JOIN movtest t ON t.mvt_id = r.mvr_mvtid AND t.azi_cdazi = r.azi_cdazi AND t.mvt_obsoleto = 0 AND t.mvt_natmov = ''ORD'' LEFT JOIN prodotti p ON p.pro_id = r.mvr_proid AND p.azi_cdazi = r.azi_cdazi WHERE r.azi_cdazi = ''001'' AND r.mvr_obsoleto = 0'::text) t(id_ordine integer, numero_ordine character varying(20), data_ordine date, id_cliente integer, id_riga integer, ordine_riga integer, id_prodotto integer, codice_prodotto character varying(30), descrizione_riga character varying(240), descrizione_prodotto character varying(240), quantita numeric, unita_misura character(8), prezzo_listino numeric, prezzo_netto numeric, prezzo_ivato numeric, importo numeric, sconto_1 numeric, sconto_2 numeric, sconto_3 numeric, sconto_4 numeric, valore_sconto numeric, stato_saldo character(1), stato_fatturazione character varying(1), quantita_fatturata numeric, importo_fatturato numeric, note_riga character varying(100));
 
--- VIEW public.b2b_listini_testata (fdw)
+-- VIEW public.b2b_listini_testata
 CREATE OR REPLACE VIEW public.b2b_listini_testata AS
- SELECT tls_cod AS codice_listino,
-    tls_descr AS descrizione_listino,
-    tls_tipo AS tipo_listino,
-    tls_flgiva AS listino_con_iva,
-    tls_valcod AS codice_valuta,
-    tls_ndec AS n_decimali,
-    tls_flgnetto AS prezzi_netto,
-    tls_obsoleto AS listino_obsoleto,
-    to_timestamp(extract(epoch from tls_dtins) + tls_orains * 3600 + tls_minins * 60) AS data_inserimento,
-    to_timestamp(extract(epoch from tls_dtvar) + tls_oravar * 3600 + tls_minvar * 60) AS data_modifica
-   FROM integra.listest
-  WHERE azi_cdazi = '001';
+ SELECT codice_listino,
+    descrizione_listino,
+    tipo_listino,
+    listino_con_iva,
+    codice_valuta,
+    n_decimali,
+    prezzi_netto,
+    listino_obsoleto,
+    data_inserimento,
+    data_modifica
+   FROM dblink(:'conn'::text, 'SELECT t.tls_cod, t.tls_descr, t.tls_tipo, t.tls_flgiva, t.tls_valcod, t.tls_ndec, t.tls_flgnetto, t.tls_obsoleto, to_timestamp(extract(epoch from t.tls_dtins) + t.tls_orains * 3600 + t.tls_minins * 60) AS dtins, to_timestamp(extract(epoch from t.tls_dtvar) + t.tls_oravar * 3600 + t.tls_minvar * 60) AS dtvar FROM listest t WHERE t.azi_cdazi = ''001'''::text) t(codice_listino character varying(6), descrizione_listino character varying(40), tipo_listino character varying(3), listino_con_iva smallint, codice_valuta character varying(6), n_decimali smallint, prezzi_netto smallint, listino_obsoleto smallint, data_inserimento timestamp with time zone, data_modifica timestamp with time zone);
 
--- VIEW public.b2b_listini_righe (fdw)
+-- VIEW public.b2b_listini_righe
 CREATE OR REPLACE VIEW public.b2b_listini_righe AS
- SELECT r.lst_id AS id_riga_listino,
-    r.lst_tlscod AS codice_listino,
-    r.lst_proid AS id_prodotto,
-    p.pro_cod AS codice_prodotto,
-    p.pro_descr AS descrizione_prodotto,
-    r.lst_varid AS id_variante,
-    r.lst_prezzo AS prezzo_listino,
-    r.lst_sconto1 AS sconto_1,
-    r.lst_sconto2 AS sconto_2,
-    r.lst_sconto3 AS sconto_3,
-    r.lst_sconto4 AS sconto_4,
-    r.lst_ivacod AS codice_iva,
-    r.lst_qtada AS quantita_da,
-    r.lst_aqta AS quantita_a,
-    r.lst_scala AS scala,
-    r.lst_dtinizio AS data_inizio_validita,
-    r.lst_dtfine AS data_fine_validita,
-    r.lst_clatipo AS tipo_cliente,
-    r.lst_clacod AS id_cliente,
-    r.lst_obsoleto AS listino_obsoleto,
-    to_timestamp(extract(epoch from r.lst_dtins) + r.lst_orains * 3600 + r.lst_minins * 60) AS data_inserimento,
-    to_timestamp(extract(epoch from r.lst_dtvar) + r.lst_oravar * 3600 + r.lst_minvar * 60) AS data_modifica
-   FROM integra.listini r
-   LEFT JOIN integra.prodotti p ON p.azi_cdazi = r.azi_cdazi AND p.pro_id = r.lst_proid
-  WHERE r.azi_cdazi = '001' AND r.lst_obsoleto = 0 AND r.lst_progr = 1;
+ SELECT id_riga_listino,
+    codice_listino,
+    id_prodotto,
+    codice_prodotto,
+    descrizione_prodotto,
+    id_variante,
+    prezzo_listino,
+    sconto_1,
+    sconto_2,
+    sconto_3,
+    sconto_4,
+    codice_iva,
+    quantita_da,
+    quantita_a,
+    scala,
+    data_inizio_validita,
+    data_fine_validita,
+    tipo_cliente,
+    id_cliente,
+    listino_obsoleto,
+    data_inserimento,
+    data_modifica
+   FROM dblink(:'conn'::text, 'SELECT r.lst_id, r.lst_tlscod, r.lst_proid, p.pro_cod, p.pro_descr, r.lst_varid, r.lst_prezzo, r.lst_sconto1, r.lst_sconto2, r.lst_sconto3, r.lst_sconto4, r.lst_ivacod, r.lst_qtada, r.lst_aqta, r.lst_scala, r.lst_dtinizio, r.lst_dtfine, r.lst_clatipo, r.lst_clacod, r.lst_obsoleto, to_timestamp(extract(epoch from r.lst_dtins) + r.lst_orains * 3600 + r.lst_minins * 60) AS dtins, to_timestamp(extract(epoch from r.lst_dtvar) + r.lst_oravar * 3600 + r.lst_minvar * 60) AS dtvar FROM listini r LEFT JOIN prodotti p ON p.azi_cdazi = r.azi_cdazi AND p.pro_id = r.lst_proid WHERE r.azi_cdazi = ''001'' AND r.lst_obsoleto = 0 AND r.lst_progr = 1'::text) t(id_riga_listino integer, codice_listino character varying(6), id_prodotto integer, codice_prodotto character varying(30), descrizione_prodotto character varying(240), id_variante integer, prezzo_listino numeric, sconto_1 numeric, sconto_2 numeric, sconto_3 numeric, sconto_4 numeric, codice_iva character varying(6), quantita_da numeric, quantita_a numeric, scala integer, data_inizio_validita date, data_fine_validita date, tipo_cliente character varying(1), id_cliente integer, listino_obsoleto smallint, data_inserimento timestamp with time zone, data_modifica timestamp with time zone);
 
 -- VIEW public.b2b_tabpag
 CREATE OR REPLACE VIEW public.b2b_tabpag AS
