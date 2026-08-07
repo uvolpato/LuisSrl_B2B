@@ -643,23 +643,43 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
             </div>
           </div>
           <div className="field">
-            <label>Percentuale per sconto medio</label>
+            <label>Simulazione costo per importo ordine</label>
             <div className="bars">
               {(() => {
                 if (!resolved) return null;
-                const rng = resolved.t.ranges ?? [];
-                const base = resolved.t.basePercent;
-                const scaglioni = rng.length > 0 ? rng.map(r => r[0] ?? 0) : [0, 5, 10, 15, 20];
-                const maxPct = Math.max(1, base, ...rng.map(r => r[2] ?? 0));
-                return scaglioni.map((s, i) => {
-                  const p = pctOf(rng, base, s).pct;
-                  const hi = (rng.length > 0 && i < rng.length && discount >= (rng[i][0] ?? 0) && (rng[i][1] === null || discount < rng[i][1]));
+                const soglia = resolved.t.sogliaImporto ?? amount * 2;
+                const steps = 6;
+                const stepSize = soglia / (steps - 1);
+                const fees: number[] = [];
+                for (let i = 0; i < steps; i++) {
+                  const imp = Math.round(stepSize * i);
+                  const c = calcFee(resolved.t, imp || 1, discount);
+                  fees.push(c.fee);
+                }
+                const maxFee = Math.max(1, ...fees);
+                return fees.map((fee, i) => {
+                  const imp = Math.round(stepSize * i) || 1;
+                  const hi = Math.abs(imp - amount) < stepSize / 2;
                   return (
-                    <div key={i} className={`bar${hi ? " hi" : ""}`} style={{ height: `${Math.max(3, (p / maxPct) * 100)}%` }}>
-                      <span className="bv">{fmtPct(p)}</span>
+                    <div key={i} className={`bar${hi ? " hi" : ""}`} style={{ height: `${Math.max(3, (fee / maxFee) * 100)}%` }}>
+                      <span className="bv">{fmtEur(fee)}</span>
                     </div>
                   );
                 });
+              })()}
+            </div>
+            <div className="bars-axis">
+              {(() => {
+                if (!resolved) return null;
+                const soglia = resolved.t.sogliaImporto ?? amount * 2;
+                const steps = 6;
+                const stepSize = soglia / (steps - 1);
+                const labels: string[] = [];
+                for (let i = 0; i < steps; i++) {
+                  const imp = Math.round(stepSize * i) || 1;
+                  labels.push(imp >= 1000 ? `${Math.round(imp / 1000)}k` : String(imp));
+                }
+                return labels.map((l, i) => <span key={i}>{l}</span>);
               })()}
             </div>
           </div>
