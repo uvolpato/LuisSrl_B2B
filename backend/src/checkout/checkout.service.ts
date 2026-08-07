@@ -182,9 +182,12 @@ export class CheckoutService {
     };
   }
 
-  async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string }) {
+  async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string; ragioneSociale?: string; abituale?: boolean }) {
     const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
     if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    if (dto.abituale) {
+      await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
+    }
     const updated = await this.prisma.indirizzoCliente.update({
       where: { id },
       data: {
@@ -192,6 +195,8 @@ export class CheckoutService {
         ...(dto.cap !== undefined ? { cap: dto.cap } : {}),
         ...(dto.citta !== undefined ? { citta: dto.citta } : {}),
         ...(dto.provincia !== undefined ? { provincia: dto.provincia } : {}),
+        ...(dto.ragioneSociale !== undefined ? { ragioneSociale: dto.ragioneSociale } : {}),
+        ...(dto.abituale !== undefined ? { flagAbituale: dto.abituale } : {}),
       },
     });
     return { id: updated.id };
