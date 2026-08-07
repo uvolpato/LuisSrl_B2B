@@ -197,10 +197,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
     const prov = indirizzoSelezionato?.provincia ?? '';
-    console.log('[checkout] chiama spedizione', { prov, subScontato, avgDiscount });
     api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&imponibile=${subScontato}&sconto=${avgDiscount}`)
-      .then(r => { console.log('[checkout] spedizione OK', r); setSpedizione(r); })
-      .catch(e => { console.error('[checkout] spedizione ERR', e); setSpedizione({ importo: 0, descrizione: "", gratuita: false }); });
+      .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
   }, [indirizzoId, subScontato, subtotalListino, subtotalAmount]);
 
   async function applyCoupon() {
