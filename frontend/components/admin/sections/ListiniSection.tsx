@@ -44,6 +44,7 @@ export default function ListiniSection() {
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [listiniLoaded, setListiniLoaded] = useState(false);
 
   async function syncSelected() {
     if (!selectedListino) return;
