@@ -138,6 +138,7 @@ export class CheckoutService {
         descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : calc.minimo && calc.fee === calc.minimo ? ` (minimo ${calc.minimo}€)` : ` (${calc.pct.toFixed(1)}%)`),
         gratuita: calc.superaSoglia,
         soglia: calc.soglia,
+        minimo: calc.minimo,
       };
     }
     const regione = this.provinciaToRegione(provincia?.toUpperCase());

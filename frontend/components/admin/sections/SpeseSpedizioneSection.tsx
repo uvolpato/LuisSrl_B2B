@@ -639,6 +639,7 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
               <div className="sim-step"><div className="k">Tariffa applicata</div><div className="v">{resolved ? destName(resolved.t) : "—"}</div></div>
               <div className="sim-step"><div className="k">Soglia gratuita</div><div className="v">{calc?.soglia ? fmtEur(calc.soglia) : "—"}</div></div>
               <div className="sim-step"><div className="k">Percentuale</div><div className="v">{calc ? fmtPct(calc.pct) : "—"}</div></div>
+              <div className="sim-step"><div className="k">Tariffa minima</div><div className="v">{calc?.minimo ? fmtEur(calc.minimo) : "—"}</div></div>
               <div className="sim-step"><div className="k">Spese di spedizione</div><div className="v" style={calc?.fee === 0 ? { color: "var(--ok)" } : undefined}>{calc ? fmtEur(calc.fee) : "—"}</div></div>
             </div>
           </div>
