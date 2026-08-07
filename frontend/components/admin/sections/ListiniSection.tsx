@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../lib/api";
 import DataTable, { type Column } from "../DataTable";
 import Notice from "../../common/Notice";
 import { PAGE_SIZE } from "../types";
+import { IconRefresh } from "../icons";
+
+type SyncProgress = { running: boolean; pct: number; phase: string; errorText?: string };
 
 
 interface Listino {
@@ -43,20 +46,54 @@ export default function ListiniSection() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncFlash, setSyncFlash] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [listiniLoaded, setListiniLoaded] = useState(false);
 
-  async function syncSelected() {
-    if (!selectedListino) return;
-    setSyncing(true); setSyncMsg(null);
+  async function doSync() {
+    setSyncing(true);
+    setSyncProgress(null);
+    setSyncFlash(null);
+    setSyncError(null);
     try {
-      await api.post("/api/integrazione/sync-config/listini/trigger");
-      setSyncMsg("Sincronizzazione avviata");
-    } catch { setSyncMsg("Errore sincronizzazione"); }
-    setSyncing(false);
+      await api.post<{ status: string }>("/api/integrazione/sync/listini");
+      await new Promise<void>((resolve) => {
+        pollRef.current = setInterval(async () => {
+          try {
+            const p = await api.get<SyncProgress>("/api/integrazione/sync/progress");
+            setSyncProgress(p);
+            if (!p.running) {
+              if (pollRef.current) clearInterval(pollRef.current);
+              pollRef.current = null;
+              if (p.phase.startsWith("Err") || p.phase.startsWith("Errore")) {
+                setSyncFlash("Errore");
+                setSyncError(p.errorText ?? "Errore sconosciuto");
+                flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
+                setSyncing(false);
+              }
+              resolve();
+            }
+          } catch { resolve(); }
+        }, 500);
+      });
+      if (!syncError) {
+        setSyncFlash("OK");
+        flashRef.current = setTimeout(() => setSyncFlash(null), 2000);
+        setSyncing(false);
+        api.get<Listino[]>("/api/integrazione/listini").then((data) => { setListini(data); });
+        if (selectedListino) loadRighe();
+      }
+    } catch {
+      setSyncFlash("Errore");
+      setSyncError("Errore nella sincronizzazione");
+      setSyncing(false);
+    }
   }
 
-  useEffect(() => {
+  function loadRighe() {
     if (!selectedListino) return;
     setLoading(true);
     api.get<RigheResponse>(
@@ -65,7 +102,9 @@ export default function ListiniSection() {
       .then((data) => { setItems(data.items); setTotal(data.total); })
       .catch(() => setError("Errore nel caricamento delle righe"))
       .finally(() => setLoading(false));
-  }, [selectedListino, search, page]);
+  }
+
+  useEffect(() => { loadRighe(); }, [selectedListino, search, page]);
 
   useEffect(() => {
     api.get<Listino[]>("/api/integrazione/listini")
@@ -197,10 +236,10 @@ export default function ListiniSection() {
               </option>
             ))}
           </select>
-          <button className="btn btn-secondary btn-sm" onClick={syncSelected} disabled={syncing || !selectedListino}>
-            {syncing ? "Sincronizzo…" : "Sincronizza"}
+          <button className="btn btn-secondary" onClick={doSync} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
+            <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
+            <span>{syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}</span>
           </button>
-          {syncMsg && <span style={{ fontSize: 12, color: "var(--muted)" }}>{syncMsg}</span>}
           <div className="admin-search">
             <span className="search-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -226,6 +265,7 @@ export default function ListiniSection() {
         )}
 
         {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {syncError && <Notice variant="error" onClose={() => setSyncError(null)} style={{ marginBottom: 8 }}>{syncError}</Notice>}
 
         <DataTable
           columns={columns}
