@@ -547,7 +547,7 @@ export default function CheckoutPage() {
                 {spedizione?.descrizione === "Tariffa da confermare" && (
                   <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0", border: 0 }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
                 )}
-                <tr className="final"><td style={{ border: 0 }}>Totale (IVA esclusa)</td><td style={{ border: 0 }}>{fmtEur(totale)}</td></tr>
+                <tr className="final"><td style={{ border: 0, borderTop: "2px solid var(--fg)" }}>Totale (IVA esclusa)</td><td style={{ border: 0, borderTop: "2px solid var(--fg)" }}>{fmtEur(totale)}</td></tr>
               </tbody>
             </table>
 
