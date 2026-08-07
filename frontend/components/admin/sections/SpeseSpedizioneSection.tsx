@@ -32,7 +32,6 @@ export default function SpeseSpedizioneSection() {
   const [calcMode, setCalcMode] = useState<"sim" | "prev">("sim");
   const [calcPrevTariffa, setCalcPrevTariffa] = useState<Tariffa | null>(null);
   const [guidaOpen, setGuidaOpen] = useState(false);
-  const importaRef = useRef<{ base: number; soglia: number; minimo: number } | null>(null);
   const [scaglioniW, setScaglioniW] = useState(() => {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
@@ -288,7 +287,6 @@ export default function SpeseSpedizioneSection() {
         onSaved={() => { setEditOpen(false); refresh(); }}
         onCalcPreview={(t) => { setCalcMode("prev"); setCalcPrevTariffa(t); setCalcOpen(true); }}
         onDelete={onDeleteTariffa}
-        importaRef={importaRef}
       />}
 
       {guidaOpen && <GuidaModal onClose={() => setGuidaOpen(false)} />}
@@ -298,7 +296,6 @@ export default function SpeseSpedizioneSection() {
         prevTariffa={calcPrevTariffa}
         allTariffe={tariffe}
         onClose={() => setCalcOpen(false)}
-        onApply={calcMode === "prev" ? (base, soglia, minimo) => { importaRef.current = { base, soglia, minimo }; setCalcOpen(false); } : undefined}
       />}
     </div>
   );
@@ -623,7 +620,7 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose, onApply }: {
               <>
                 <p className="sim-source">
                   <b>{destName(resolved.t)}</b> · {sourceLabels[resolved.source] ?? resolved.source}
-                  {isPrev ? " (in modifica)" : (resolved.source === "regione" ? " (eccezione sopra la tariffa nazione)" : resolved.source === "row" ? " (default globale)" : " (fallback)")}
+                  {isPrev ? "" : (resolved.source === "regione" ? " (eccezione sopra la tariffa nazione)" : resolved.source === "row" ? " (default globale)" : " (fallback)")}
                 </p>
                 <div className={`sim-result${calc?.fee === 0 ? " free" : ""}`}>{calc ? fmtEur(calc.fee) : "—"}</div>
                 {calc && (
