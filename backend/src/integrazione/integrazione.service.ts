@@ -685,11 +685,12 @@ export class IntegrazioneService {
       const artMap = new Map(arts.map((a) => [a.id, a]));
       const ordered = ids.map((id) => artMap.get(id)).filter(Boolean) as typeof arts;
 
-      const [prezzi, disponibilita] = await Promise.all([
+      const [prezzi, disponibilita, sconti] = await Promise.all([
         this.getPrezziMinimiArticoli(ids, params.codiceListino ?? 'LIS1'),
         this.getDisponibilitaArticoli(ids),
+        this.getScontoMaxArticoli(ids, params.codiceListino ?? 'LIS1'),
       ]);
-      const articoli = ordered.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
+      const articoli = ordered.map((a) => this.mapArticoloCard(a, prezzi, disponibilita, sconti));
       return {
         articoli: await this.prioritizeExactCode(articoli, params.q),
         total,
@@ -717,11 +718,12 @@ export class IntegrazioneService {
     ]);
 
     const artIds = arts.map((a) => a.id);
-    const [prezzi, disponibilita] = await Promise.all([
+    const [prezzi, disponibilita, sconti] = await Promise.all([
       this.getPrezziMinimiArticoli(artIds, params.codiceListino ?? 'LIS1'),
       this.getDisponibilitaArticoli(artIds),
+      this.getScontoMaxArticoli(artIds, params.codiceListino ?? 'LIS1'),
     ]);
-    const articoli = arts.map((a) => this.mapArticoloCard(a, prezzi, disponibilita));
+    const articoli = arts.map((a) => this.mapArticoloCard(a, prezzi, disponibilita, sconti));
     return {
       articoli: await this.prioritizeExactCode(articoli, params.q),
       total,
@@ -844,7 +846,7 @@ export class IntegrazioneService {
   }
 
   /** Card catalogo da un articolo con include { famiglia, immagini, raccolte, _count }. */
-  private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>, disponibilitaPerArticolo?: Map<number, 'disponibile' | 'scorte_limitate' | 'esaurito'>) {
+  private mapArticoloCard(a: any, prezziPerArticolo?: Map<number, number | null>, disponibilitaPerArticolo?: Map<number, 'disponibile' | 'scorte_limitate' | 'esaurito'>, scontoPerArticolo?: Map<number, number>) {
     const cover = a.immagini.find((i: any) => i.copertina) ?? a.immagini[0];
     let prezzoMin: number | null = null;
     if (prezziPerArticolo) {
@@ -864,9 +866,26 @@ export class IntegrazioneService {
       imgTipo: cover?.tipo ?? null,
       variantiCount: a._count.varianti,
       prezzo: prezzoMin,
+      scontoMax: scontoPerArticolo?.get(a.id) ?? 0,
       disponibilita: disponibilitaPerArticolo?.get(a.id) ?? 'esaurito',
       createdAt: a.createdAt,
     };
+  }
+
+  /** Sconto % massimo tra le varianti di ciascun articolo (0 se nessuno). Per il badge catalogo. */
+  private async getScontoMaxArticoli(artIds: number[], codiceListino: string): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    if (!artIds.length) return map;
+    const nettoExpr = `plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100)`;
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; sconto: number | null }>>(
+      `SELECT v.articolo_id AS art_id, max(round((1 - (${nettoExpr}) / plr.prezzo_listino) * 100)) AS sconto
+         FROM varianti v JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
+        WHERE v.articolo_id = ANY($1::int[]) AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
+        GROUP BY v.articolo_id`,
+      artIds, codiceListino,
+    );
+    for (const r of rows) { const s = r.sconto != null ? Number(r.sconto) : 0; if (s > 0) map.set(r.art_id, s); }
+    return map;
   }
 
   /** Include comune delle card (famiglia, immagini galleria, raccolte attive, conteggio varianti). */
