@@ -155,9 +155,7 @@ export default function SpeseSpedizioneSection() {
         <div className="content-header">
           <span className="meta">{meta}</span>
           <span style={{ flex: 1 }} />
-          <span onClick={() => setGuidaOpen(true)} style={{ cursor: "pointer" }}>
-            <Hint text="Guida all&apos;uso delle tariffe di spedizione" />
-          </span>
+          <span onClick={() => setGuidaOpen(true)} title="Guida all'uso delle tariffe di spedizione" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", border: "1px solid var(--fg)", fontSize: 11, fontWeight: 700 }}>?</span>
         </div>
 
         <div className="data-table">
