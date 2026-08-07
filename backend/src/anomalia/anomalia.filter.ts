@@ -12,9 +12,10 @@ export class AnomaliaFilter implements ExceptionFilter {
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
     const msg = exception instanceof Error ? exception.message : String(exception);
 
-    if (status >= 500) {
+    if (status >= 400) {
       const contesto = req.user ? `user:${req.user.id}` : undefined;
-      this.anomalia.log('api', msg, 'error', contesto, {
+      const gravita = status >= 500 ? 'error' : status === 429 ? 'warning' : 'info';
+      this.anomalia.log('api', msg, gravita, contesto, {
         url: req.url,
         method: req.method,
         status,
