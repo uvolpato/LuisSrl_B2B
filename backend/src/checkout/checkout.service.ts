@@ -54,7 +54,11 @@ export class CheckoutService {
     const addr = await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId, flagAbituale: true },
     });
-    const provincia = addr?.provincia || null;
+    let provincia = addr?.provincia || null;
+    if (!provincia) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId }, select: { provincia: true } });
+      provincia = customer?.provincia || null;
+    }
     let resolved;
     if (!provincia) {
       resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
