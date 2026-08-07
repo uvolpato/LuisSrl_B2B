@@ -151,8 +151,10 @@ export class SyncManagerService implements OnModuleInit {
           break;
         case 'ordini':
           result = await this.syncService.syncOrdini();
-          // Dopo sync ordini, propaga in ordini_clienti per tutti i clienti con codice_cliente
           await this.propagaOrdiniClienti();
+          break;
+        case 'clienti':
+          result = await this.syncService.syncClienti();
           break;
         default:
           return { esito: 'errore', errore: `Tipo sconosciuto: ${tipo}` };
