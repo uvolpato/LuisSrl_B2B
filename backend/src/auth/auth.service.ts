@@ -19,6 +19,14 @@ export class AuthService {
     private readonly audit: AuditService,
   ) {}
 
+  async setSessionToken(userId: number, userType: string, token: string) {
+    if (userType === 'admin') {
+      await this.prisma.user.update({ where: { id: userId }, data: { sessionToken: token } });
+    } else {
+      await this.prisma.customer.update({ where: { id: userId }, data: { sessionToken: token } });
+    }
+  }
+
   async validateLogin(
     email: string,
     password: string,

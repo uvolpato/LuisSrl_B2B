@@ -33,8 +33,6 @@ const NAV_ITEMS = [
     items: [
       { id: "import", label: "Import / Export", icon: "upload" },
       { id: "ai", label: "AI / Ricerca", icon: "star" },
-      { id: "accessi", label: "Accessi", icon: "clock" },
-      { id: "anomalie", label: "Anomalie", icon: "alert" },
     ],
   },
 ];

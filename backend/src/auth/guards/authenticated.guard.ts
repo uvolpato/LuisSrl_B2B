@@ -20,8 +20,26 @@ export class AuthenticatedGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const userId = req.session?.userId;
     const userType = req.session?.userType as 'admin' | 'customer' | undefined;
+    const sessionToken = req.session?.sessionToken;
     if (!userId || !userType) {
       throw new UnauthorizedException('auth.not_authenticated');
+    }
+
+    // Verifica session token: se non corrisponde, un altro login ha invalidato questa sessione
+    if (sessionToken) {
+      if (userType === 'admin') {
+        const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { sessionToken: true } });
+        if (user?.sessionToken && user.sessionToken !== sessionToken) {
+          await new Promise<void>((resolve) => req.session.destroy(() => resolve()));
+          throw new UnauthorizedException('Connesso da un altro dispositivo');
+        }
+      } else {
+        const customer = await this.prisma.customer.findUnique({ where: { id: userId }, select: { sessionToken: true } });
+        if (customer?.sessionToken && customer.sessionToken !== sessionToken) {
+          await new Promise<void>((resolve) => req.session.destroy(() => resolve()));
+          throw new UnauthorizedException('Connesso da un altro dispositivo');
+        }
+      }
     }
 
     if (userType === 'admin') {

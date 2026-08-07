@@ -58,7 +58,6 @@ export default function AdminPage() {
 
       {section === "listini" && <ListiniSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
-      {section === "anomalie" && <AnomalieSection />}
 
       {["ordini", "import", "ai"].includes(section) && (
         <div className="admin-content">
