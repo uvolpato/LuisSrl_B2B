@@ -526,9 +526,13 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                       <>
                         <div className="price-block">
                           <span className="price-net">{formatPrice(selectedVariant.prezzo.prezzoNetto)}</span>
-                          {selectedVariant.prezzo.sconto > 0 && <span className="price-list">{formatPrice(selectedVariant.prezzo.prezzoListino)}</span>}
-                          {selectedVariant.prezzo.sconto > 0 && <span className="price-discount">−{selectedVariant.prezzo.sconto}%</span>}
                         </div>
+                        {selectedVariant.prezzo.sconto > 0 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                            <span className="price-list">{formatPrice(selectedVariant.prezzo.prezzoListino)}</span>
+                            <span className="price-discount">−{selectedVariant.prezzo.sconto}%</span>
+                          </div>
+                        )}
                         {selectedVariant.prezzo.sconto > 0 && <p className="savings-line">{`Risparmi ${formatPrice(selectedVariant.prezzo.prezzoListino - selectedVariant.prezzo.prezzoNetto)} (${selectedVariant.prezzo.sconto}%)`}</p>}
                       </>
                     )}
@@ -546,9 +550,13 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                         <>
                           <div className="price-block">
                             <span className="price-net">{formatPrice(p?.prezzoNetto ?? 0)}</span>
-                            {(p?.sconto ?? 0) > 0 && <span className="price-list">{formatPrice(p?.prezzoListino ?? 0)}</span>}
-                            {(p?.sconto ?? 0) > 0 && <span className="price-discount">−{p?.sconto ?? 0}%</span>}
                           </div>
+                          {(p?.sconto ?? 0) > 0 && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                              <span className="price-list">{formatPrice(p?.prezzoListino ?? 0)}</span>
+                              <span className="price-discount">−{p?.sconto ?? 0}%</span>
+                            </div>
+                          )}
                           {(p?.sconto ?? 0) > 0 && <p className="savings-line">{`Risparmi ${formatPrice((p?.prezzoListino ?? 0) - (p?.prezzoNetto ?? 0))} (${p?.sconto ?? 0}%)`}</p>}
                         </>
                       );
@@ -688,7 +696,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                               <>
                                 <span className="price-net">{formatPrice(v.prezzo.prezzoNetto)} / pz</span>
                                 {v.prezzo.sconto > 0 && <span className="price-list">{formatPrice(v.prezzo.prezzoListino)}</span>}
-                                {v.prezzo.sconto > 0 && <span className="price-disc">−{v.prezzo.sconto}%</span>}
+                                {v.prezzo.sconto > 0 && <span className="price-disc" style={{ marginLeft: 6 }}>−{v.prezzo.sconto}%</span>}
                               </>
                             ) : (
                               <span className="price-net" style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
