@@ -730,17 +730,24 @@ export class SyncService {
           codice,
         );
 
-        // Full-replace righe (gestisce inserimenti, modifiche e cancellazioni fisiche)
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM integra_listini_righe WHERE codice_listino = $1`,
-          codice,
-        );
-        await this.prisma.$executeRawUnsafe(
-          `INSERT INTO integra_listini_righe (id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, listino_obsoleto, data_modifica)
-           SELECT id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, 0, data_modifica
-           FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
-          codice,
-        );
+        // Transazione: DELETE + INSERT atomici (se INSERT fallisce, DELETE rollback)
+        await this.prisma.$executeRawUnsafe(`BEGIN`);
+        try {
+          await this.prisma.$executeRawUnsafe(
+            `DELETE FROM integra_listini_righe WHERE codice_listino = $1`,
+            codice,
+          );
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO integra_listini_righe (id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, listino_obsoleto, data_modifica)
+             SELECT id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, 0, data_modifica
+             FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
+            codice,
+          );
+          await this.prisma.$executeRawUnsafe(`COMMIT`);
+        } catch (e) {
+          await this.prisma.$executeRawUnsafe(`ROLLBACK`);
+          throw e;
+        }
 
         const pct = 10 + Math.round((80 * (idx + 1)) / codici.length);
         await this.setProgress(logId, pct, `Listino ${codice} (${idx + 1}/${codici.length})`);
