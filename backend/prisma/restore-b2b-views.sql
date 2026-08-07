@@ -361,51 +361,9 @@ SELECT mi.mai_proid AS id_prodotto,
  GROUP BY mi.mai_proid, p.pro_cod;
 
 -- ============================================================
--- Viste locali basate su integrazioni_raw (non FDW, invariate)
+-- Le viste vista_integra_* (prodotti, famiglie, linee) sono
+-- state rimosse perche' dipendevano da integrazioni_raw,
+-- tabella locale di test non piu' presente.
+-- Vanno ricreate usando le foreign table integra.*.
+-- Vedi: backend/prisma/restore-vista-integra.sql (da creare)
 -- ============================================================
-
--- VIEW public.vista_integra_prodotti
-DROP VIEW IF EXISTS public.vista_integra_prodotti;
-CREATE VIEW public.vista_integra_prodotti AS
- SELECT pro_cod,
-    pro_descr,
-    pro_moddescr,
-    pro_cldcod01,
-    pro_clddescr01,
-    pro_clvcod01,
-    pro_cldcod02,
-    pro_clddescr02,
-    pro_clvcod02,
-    pro_cldcod03,
-    pro_clddescr03,
-    pro_clvcod03,
-    pro_funzionalita1,
-    pro_proidfam AS pro_famiglia_id
-   FROM integrazioni_raw
-  WHERE pro_tipo = '01'::text;
-
--- VIEW public.vista_integra_famiglie
-DROP VIEW IF EXISTS public.vista_integra_famiglie;
-CREATE VIEW public.vista_integra_famiglie AS
- SELECT DISTINCT l.pro_proidfam AS fam_id,
-    f.pro_cod AS fam_codice,
-    f.pro_descr AS fam_descrizione,
-    NULL::integer AS fam_parent_id
-   FROM integrazioni_raw l
-     CROSS JOIN ( SELECT integrazioni_raw.pro_cod,
-            integrazioni_raw.pro_descr
-           FROM integrazioni_raw
-          WHERE integrazioni_raw.pro_cod ~~ 'FAM\_%'::text
-         LIMIT 1) f
-  WHERE l.pro_cod ~~ 'linea\_%'::text;
-
--- VIEW public.vista_integra_linee
-DROP VIEW IF EXISTS public.vista_integra_linee;
-CREATE VIEW public.vista_integra_linee AS
- SELECT m.lin_id,
-    r.pro_cod AS lin_codice,
-    r.pro_descr AS lin_descrizione,
-    r.pro_proidfam AS lin_famiglia_id
-   FROM integrazioni_raw r
-     LEFT JOIN integrazioni_linee_map m ON m.lin_cod = r.pro_cod
-  WHERE r.pro_cod ~~ 'linea\_%'::text;
