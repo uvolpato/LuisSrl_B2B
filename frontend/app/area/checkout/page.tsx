@@ -529,6 +529,8 @@ export default function CheckoutPage() {
               })}
             </div>
 
+            <hr className="summary-divider" />
+
             <table className="total-table">
               <tbody>
                 <tr><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
