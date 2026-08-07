@@ -551,7 +551,9 @@ export class SyncService {
       `).catch(() => []);
       if (nuovi.length > 0) {
         this.logger.log(`Nuovi listini da importare: ${nuovi.map(l => l.codice_listino).join(', ')}`);
-        await this.syncListini().catch(e => this.logger.error(`Sync listini dopo clienti fallito: ${e instanceof Error ? e.message : e}`));
+        for (const { codice_listino } of nuovi) {
+          await this.syncListini(codice_listino).catch(e => this.logger.error(`Sync ${codice_listino} fallito: ${e instanceof Error ? e.message : e}`));
+        }
       }
 
       // Aggiorna i dati anagrafici dei clienti già importati nel portale
@@ -707,7 +709,7 @@ export class SyncService {
     await this.syncGiacenza();
   }
 
-  async syncListini(): Promise<SyncResult> {
+  async syncListini(codiceSpecifico?: string): Promise<SyncResult> {
     const startedAt = new Date();
     let logId: number | null = null;
     try {
@@ -725,9 +727,13 @@ export class SyncService {
       const attivi = await this.prisma.$queryRawUnsafe<{ c: string }[]>(
         `SELECT DISTINCT codice_listino AS c FROM integra_listini UNION SELECT 'LIS1'`,
       );
-      const codici = attivi.map(r => r.c).filter(Boolean);
+      let codici = attivi.map(r => r.c).filter(Boolean);
       if (codici.length === 0) {
         codici.push('LIS1');
+      }
+      // Se richiesto un listino specifico, processa solo quello
+      if (codiceSpecifico) {
+        codici = [codiceSpecifico];
       }
 
       await this.setProgress(logId, 5, `Listini da aggiornare: ${codici.length}`);
