@@ -645,15 +645,22 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
           <div className="field">
             <label>Percentuale per sconto medio</label>
             <div className="bars">
-              {[0, 5, 10, 15, 20].map(s => {
-                const p = resolved ? pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, s).pct : 0;
-                const maxPct = resolved ? Math.max(1, ...[0,5,10,15,20].map(x => pctOf(resolved.t.ranges ?? [], resolved.t.basePercent, x).pct)) : 1;
-                return (
-                  <div key={s} className={`bar${s === discount ? " hi" : ""}`} style={{ height: `${Math.max(3, (p / maxPct) * 100)}%` }}>
-                    <span className="bv">{fmtPct(p)}</span>
-                  </div>
-                );
-              })}
+              {(() => {
+                if (!resolved) return null;
+                const rng = resolved.t.ranges ?? [];
+                const base = resolved.t.basePercent;
+                const scaglioni = rng.length > 0 ? rng.map(r => r[0] ?? 0) : [0, 5, 10, 15, 20];
+                const maxPct = Math.max(1, base, ...rng.map(r => r[2] ?? 0));
+                return scaglioni.map((s, i) => {
+                  const p = pctOf(rng, base, s).pct;
+                  const hi = (rng.length > 0 && i < rng.length && discount >= (rng[i][0] ?? 0) && (rng[i][1] === null || discount < rng[i][1]));
+                  return (
+                    <div key={i} className={`bar${hi ? " hi" : ""}`} style={{ height: `${Math.max(3, (p / maxPct) * 100)}%` }}>
+                      <span className="bv">{fmtPct(p)}</span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
     </Modal>
