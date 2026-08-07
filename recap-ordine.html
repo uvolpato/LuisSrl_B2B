@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riepilogo ordine — Luis B2B</title>
+<style>
+/* ══ Tokens (da globals.css) ══ */
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(96% 0.004 80);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --green: oklch(55% 0.15 145);
+  --green-soft: oklch(92% 0.06 145);
+  --amber: oklch(60% 0.15 75);
+  --blue: oklch(55% 0.15 250);
+  --red: oklch(55% 0.18 30);
+  --radius: 12px;
+  --radius-lg: 16px;
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --fs-h2: clamp(26px, 3.5vw, 36px);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; font-family: var(--font-body); font-size: 14px; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* ══ Page wrapper ══ */
+.catalogo-page { min-height: 100vh; display: flex; flex-direction: column; }
+.catalogo-page .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 640px) { .catalogo-page .container { padding: 0 16px; } }
+
+/* ══ Buttons ══ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border-radius: 8px; border: 1px solid transparent;
+  font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  text-decoration: none; font-family: var(--font-body);
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-lg { padding: 14px 28px; font-size: 16px; font-weight: 600; }
+
+/* ══ Stepper ══ */
+.stepper { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 16px 6px; }
+.step { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.step .num { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.step.active .num { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.step.done .num { background: var(--green); color: var(--surface); border-color: var(--green); }
+.step.active { color: var(--fg); }
+.step.done { color: var(--green); }
+.step-line { width: 28px; height: 1px; background: var(--border); }
+
+/* ══ Page title ══ */
+.page-title { padding-block: 28px 20px; }
+.page-title h1 { font-size: var(--fs-h2); margin: 0; }
+
+/* ══ Recap sections ══ */
+.recap-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px 24px; margin-bottom: 14px;
+}
+.recap-section h2 { font-family: var(--font-display); font-size: 17px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+.recap-section h2 svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; }
+.recap-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 14px; }
+.recap-row .label { color: var(--muted); min-width: 160px; flex-shrink: 0; }
+.recap-row .value { font-weight: 500; text-align: right; }
+.recap-row .mono { font-family: var(--font-mono); }
+
+/* ══ Items list (same as checkout sidebar) ══ */
+.recap-items { display: flex; flex-direction: column; gap: 10px; }
+.recap-item { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.recap-item:last-child { border-bottom: none; padding-bottom: 0; }
+.recap-item-row1 { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg); min-width: 0; }
+.recap-item-row1 .badge.code { background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+.recap-item-row1 .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.recap-item-row2 { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; font-size: 12px; padding-top: 2px; }
+.recap-item-row2 .listino { color: var(--muted); text-decoration: line-through; }
+.recap-item-row2 .sconto { color: var(--accent); font-weight: 500; }
+.recap-item-row2 .riga { color: var(--muted); }
+.recap-item-row2 .netto { font-family: var(--font-mono); font-weight: 600; color: var(--fg); font-size: 13px; }
+
+/* ══ Total table ══ */
+.total-table { width: 100%; margin-top: 8px; }
+.total-table td { padding: 5px 0; font-size: 13px; }
+.total-table td:last-child { text-align: right; font-family: var(--font-mono); font-weight: 500; }
+.total-table tr.discount td { color: var(--accent); }
+.total-divider { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
+.total-table tr.final td { font-weight: 700; font-size: 18px; padding-top: 8px; }
+.total-table tr.bold td { font-weight: 700; }
+
+/* ══ Address box ══ */
+.addr-box {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px; background: var(--fg-soft); border-radius: var(--radius);
+}
+.addr-box .name { font-weight: 500; font-size: 14px; }
+.addr-box .line { font-size: 13px; color: var(--muted); }
+
+/* ══ Iban row ══ */
+.iban-row { display: flex; gap: 8px; align-items: flex-start; }
+.iban-field { flex: 1; padding: 10px 14px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--fg-soft); font-size: 13px; line-height: 1.4; }
+
+/* ══ Actions bar ══ */
+.recap-actions { display: flex; gap: 12px; justify-content: flex-end; align-items: center; padding: 20px 0 64px; flex-wrap: wrap; }
+.recap-actions .note { font-size: 12px; color: var(--muted); flex: 1; min-width: 200px; }
+
+/* ══ Confirm state ══ */
+.checkout-confirm {
+  max-width: 520px; margin: 64px auto; text-align: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 48px 32px;
+}
+.checkout-confirm-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: oklch(92% 0.06 145); color: oklch(45% 0.13 145);
+  display: grid; place-items: center; margin: 0 auto 20px;
+}
+.checkout-confirm h1 { font-family: var(--font-display); font-size: 28px; margin: 0 0 8px; }
+.checkout-confirm-sub { color: var(--muted); margin: 0 0 24px; }
+.checkout-confirm-sub strong { color: var(--fg); font-family: var(--font-mono); }
+.checkout-confirm-total { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 20px; background: var(--fg-soft); border-radius: var(--radius); margin-bottom: 24px; }
+.checkout-confirm-total span { color: var(--muted); font-size: 14px; }
+.checkout-confirm-total strong { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
+.checkout-confirm-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.checkout-confirm-actions .btn { min-width: 160px; justify-content: center; }
+
+/* ══ Shipping detail note ══ */
+.shipping-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="catalogo-page cart-page">
+
+<main id="content">
+<div class="container">
+
+<div id="view-recap">
+
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step done"><span class="num">1</span>Carrello</div>
+    <div class="step-line"></div>
+    <div class="step done"><span class="num">2</span>Checkout</div>
+    <div class="step-line"></div>
+    <div class="step active"><span class="num">3</span>Riepilogo</div>
+    <div class="step-line"></div>
+    <div class="step"><span class="num">4</span>Conferma</div>
+  </div>
+
+  <div class="page-title">
+    <h1>Riepilogo ordine</h1>
+  </div>
+
+  <!-- 1. Articoli -->
+  <div class="recap-section">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      Articoli (<span id="recap-qty">0</span> prodotti)
+    </h2>
+    <div class="recap-items" id="recap-items"></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+      Sconto medio ordine: <span id="sconto-medio" style="font-family:var(--font-mono)">20%</span>
+    </div>
+  </div>
+
+  <!-- 2. Consegna -->
+  <div class="recap-section" id="recap-consegna">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Consegna
+    </h2>
+    <div class="recap-row"><span class="label">Modalità</span><span class="value" id="recap-modalita">—</span></div>
+    <div id="recap-addr" hidden>
+      <div class="recap-row" style="padding-bottom:8px"><span class="label">Indirizzo</span></div>
+      <div class="addr-box" id="recap-addr-box"></div>
+    </div>
+  </div>
+
+  <!-- 3. Pagamento -->
+  <div class="recap-section" id="recap-pagamento">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Condizioni di pagamento
+    </h2>
+    <div class="recap-row"><span class="label">Metodo</span><span class="value" id="recap-payment">—</span></div>
+    <div id="recap-bank" hidden style="margin-top:12px">
+      <div class="recap-row" style="padding-bottom:6px"><span class="label">Coordinate LUIS</span></div>
+      <div class="iban-row">
+        <div class="iban-field" id="recap-iban-detail"></div>
+        <button type="button" class="btn btn-secondary" id="btn-copy-iban-rec" title="Copia IBAN">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copia IBAN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Note -->
+  <div class="recap-section" id="recap-note" hidden>
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Note
+    </h2>
+    <div class="recap-row" id="recap-nota-sped" hidden><span class="label">Nota spedizione</span><span class="value" id="recap-nota-sped-val">—</span></div>
+    <div class="recap-row" id="recap-nota-ord" hidden><span class="label">Nota d'ordine</span><span class="value" id="recap-nota-ord-val">—</span></div>
+  </div>
+
+  <!-- 5. Riepilogo economico -->
+  <div class="recap-section">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      Riepilogo economico
+    </h2>
+    <table class="total-table" id="total-table">
+      <tr><td>Totale articoli a listino</td><td id="recap-sub-listino">—</td></tr>
+      <tr class="discount" id="recap-row-coupon" hidden><td>Sconto codice</td><td id="recap-val-coupon">—</td></tr>
+      <tr><td colspan="2"><hr class="total-divider"></td></tr>
+      <tr class="bold"><td>Subtotale scontato</td><td id="recap-sub-scontato">—</td></tr>
+      <tr class="bold"><td>Spedizione</td><td id="recap-spedizione">—</td></tr>
+      <tr><td colspan="2"><hr class="total-divider"></td></tr>
+      <tr class="final"><td>Totale (IVA esclusa)</td><td id="recap-total">—</td></tr>
+    </table>
+    <p style="font-size:12px;color:var(--muted);margin:8px 0 0">Confermando, l'ordine sarà trasmesso a Integra per l'evasione.</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="recap-actions">
+    <span class="note">Verifica i dati prima di inviare. Puoi tornare indietro per modificarli.</span>
+    <a href="#" class="btn btn-secondary">← Modifica</a>
+    <button class="btn btn-primary btn-lg" id="btn-conferma-rec">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+      Conferma e invia ordine
+    </button>
+  </div>
+
+</div><!-- /view-recap -->
+
+<!-- ===== CONFERMATO ===== -->
+<div id="view-confermato" hidden>
+  <div class="checkout-confirm">
+    <div class="checkout-confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+        <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Ordine inviato!</h1>
+    <p class="checkout-confirm-sub">
+      Ordine <strong id="confirm-num">ORD-2026-07842</strong> creato con successo.
+    </p>
+    <div class="checkout-confirm-total">
+      <span>Totale (IVA esclusa)</span>
+      <strong id="confirm-total">—</strong>
+    </div>
+    <div class="checkout-confirm-actions">
+      <a href="#" class="btn btn-primary">Continua lo shopping</a>
+      <a href="#" class="btn btn-secondary">Area personale</a>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+</main>
+</div><!-- /catalogo-page -->
+
+<script>
+/* ── DATA (condivisi con checkout) ── */
+var ITEMS = [
+  { codice: "CAPI0101", nome: "Vaso Torchio Terracotta Ø30 H35", qty: 12, prezzo: 12.40, listino: 16.53 },
+  { codice: "CAPI0203", nome: "Vaso Amphora Cotto H50", qty: 6, prezzo: 25.74, listino: 32.18 },
+  { codice: "CAPI0301", nome: "Vaso Oliva Terracotta Ø40 H50", qty: 8, prezzo: 18.90, listino: 23.63 },
+  { codice: "CAPI1804", nome: "Ciotola Rustica Ø25 H18", qty: 12, prezzo: 9.60, listino: 12.00 },
+  { codice: "CAPI0710", nome: "Orcio Decorato H65", qty: 4, prezzo: 32.50, listino: 40.63 },
+  { codice: "CAPI1105", nome: "Piatto Portavaso Ø50", qty: 14, prezzo: 14.16, listino: 18.88 },
+];
+
+var RECAP = {
+  modalita: "SPEDIZIONE",
+  indirizzo: { nome: "Magazzino", indirizzo: "Via delle Gardenie, 15", cap: "24121", citta: "Bergamo", prov: "BG" },
+  payment: "BB30 — Bonifico 30 gg d.f.",
+  paymentCode: "BB30",
+  coupon: { active: true, code: "B2B10", label: "B2B10: −10%" },
+  notaSpedizione: "Consegna al piano terra, orario 8–12",
+  notaOrdine: "",
+  spedizione: { importo: 11.34, descrizione: "Lombardia (1.2%)", gratuita: false }
+};
+
+function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
+
+/* ── RENDER ── */
+(function() {
+  // Items
+  var container = document.getElementById('recap-items');
+  var html = '';
+  var subtotal = 0, subtotalListino = 0, qty = 0;
+  for (var i = 0; i < ITEMS.length; i++) {
+    var it = ITEMS[i];
+    var tot = it.qty * it.prezzo;
+    subtotal += tot;
+    subtotalListino += it.qty * it.listino;
+    qty += it.qty;
+    var scontoPct = Math.round((1 - it.prezzo / it.listino) * 100);
+    html += ''
+      + '<div class="recap-item">'
+      + '<div class="recap-item-row1"><span class="badge code">' + it.codice + '</span><span class="desc">' + it.nome + '</span></div>'
+      + '<div class="recap-item-row2">'
+      + '<span class="listino">' + fmtEur(it.listino) + '</span>'
+      + '<span class="sconto">' + (scontoPct > 0 ? '\u2212' + scontoPct + '%' : '') + '</span>'
+      + '<span class="riga">' + it.qty + '\u00D7 ' + fmtEur(it.prezzo) + '</span>'
+      + '<span class="netto">' + fmtEur(tot) + '</span>'
+      + '</div></div>';
+  }
+  container.innerHTML = html;
+  document.getElementById('recap-qty').textContent = qty;
+  document.getElementById('sconto-medio').textContent = Math.round((1 - subtotal / subtotalListino) * 100) + '%';
+
+  // Modalità consegna
+  document.getElementById('recap-modalita').textContent = RECAP.modalita === 'RITIRO' ? 'Ritiro in sede' : 'Spedizione corriere';
+
+  // Indirizzo
+  if (RECAP.indirizzo && RECAP.modalita !== 'RITIRO') {
+    document.getElementById('recap-addr').hidden = false;
+    document.getElementById('recap-addr-box').innerHTML = ''
+      + '<div class="name">' + RECAP.indirizzo.nome + '</div>'
+      + '<div class="line">' + RECAP.indirizzo.indirizzo + '</div>'
+      + '<div class="line">' + RECAP.indirizzo.cap + ' ' + RECAP.indirizzo.citta + ' (' + RECAP.indirizzo.prov + ')</div>';
+  }
+
+  // Pagamento
+  document.getElementById('recap-payment').textContent = RECAP.payment;
+  var isBonifico = RECAP.paymentCode === 'ANT' || RECAP.paymentCode === 'BB30' || RECAP.paymentCode === 'BB60';
+  if (isBonifico) {
+    document.getElementById('recap-bank').hidden = false;
+    document.getElementById('recap-iban-detail').innerHTML = ''
+      + '<div style="font-size:13px;color:var(--muted);margin-bottom:2px">Intestatario: LUIS S.r.l.</div>'
+      + '<div style="font-size:14px;margin-bottom:1px">IT 60 X 05428 11101 000000123456</div>'
+      + '<div style="font-size:12px;color:var(--muted)">Intesa Sanpaolo — SWIFT BCITITMM</div>';
+  }
+
+  // Note
+  var hasNote = RECAP.notaSpedizione || RECAP.notaOrdine;
+  if (hasNote) {
+    document.getElementById('recap-note').hidden = false;
+    if (RECAP.notaSpedizione) {
+      document.getElementById('recap-nota-sped').hidden = false;
+      document.getElementById('recap-nota-sped-val').textContent = RECAP.notaSpedizione;
+    }
+    if (RECAP.notaOrdine) {
+      document.getElementById('recap-nota-ord').hidden = false;
+      document.getElementById('recap-nota-ord-val').textContent = RECAP.notaOrdine;
+    }
+  }
+
+  // Coupon
+  var couponVal = 0;
+  if (RECAP.coupon.active) {
+    document.getElementById('recap-row-coupon').hidden = false;
+    if (RECAP.coupon.code === 'B2B10') couponVal = Math.round(subtotal * 0.10 * 100) / 100;
+    else if (RECAP.coupon.code === 'B2B20') couponVal = Math.round(subtotal * 0.20 * 100) / 100;
+    else if (RECAP.coupon.code === 'SPRING50') couponVal = 50;
+    document.getElementById('recap-val-coupon').textContent = '\u2212' + fmtEur(couponVal);
+  }
+
+  // Economic summary
+  var subScontato = subtotal - couponVal;
+  var sped = RECAP.modalita === 'RITIRO' ? 0 : RECAP.spedizione.importo;
+  var totale = subScontato + sped;
+
+  document.getElementById('recap-sub-listino').textContent = fmtEur(subtotalListino);
+  document.getElementById('recap-sub-scontato').textContent = fmtEur(subScontato);
+  var spedEl = document.getElementById('recap-spedizione');
+  spedEl.textContent = sped === 0 ? (RECAP.modalita === 'RITIRO' ? '0,00 \u20AC' : 'Gratuita') : fmtEur(sped);
+  if (sped === 0 && RECAP.modalita !== 'RITIRO') spedEl.style.color = 'var(--green)';
+  document.getElementById('recap-total').textContent = fmtEur(totale);
+  document.getElementById('confirm-total').textContent = fmtEur(totale);
+
+  // Confirm button
+  var submitting = false;
+  document.getElementById('btn-conferma-rec').addEventListener('click', function() {
+    if (submitting) return;
+    submitting = true;
+    this.disabled = true;
+    this.textContent = 'Invio in corso…';
+    var num = 'ORD-' + new Date().getFullYear() + '-' + String(Math.floor(10000 + Math.random() * 90000));
+    document.getElementById('confirm-num').textContent = num;
+    setTimeout(function() {
+      document.getElementById('view-recap').hidden = true;
+      document.getElementById('view-confermato').hidden = false;
+    }, 1200);
+  });
+
+  // Copy IBAN
+  document.getElementById('btn-copy-iban-rec').addEventListener('click', function() {
+    var iban = 'IT60X0542811101000000123456';
+    var btn = this;
+    var orig = btn.innerHTML;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(iban).then(function() {
+        btn.textContent = 'Copiato!';
+        setTimeout(function() { btn.innerHTML = orig; }, 2000);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = iban; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      btn.textContent = 'Copiato!';
+      setTimeout(function() { btn.innerHTML = orig; }, 2000);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
