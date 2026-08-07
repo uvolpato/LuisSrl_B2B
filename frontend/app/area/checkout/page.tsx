@@ -532,8 +532,8 @@ export default function CheckoutPage() {
 
             <table className="total-table">
               <tbody>
-                <tr><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
-                <tr><td colSpan={2} style={{ padding: "4px 0 0" }}>
+                <tr><td style={{ border: 0 }}>Totale articoli a listino</td><td style={{ border: 0 }}>{fmtEur(subtotalListino)}</td></tr>
+                <tr><td colSpan={2} style={{ padding: "4px 0 0", border: 0 }}>
                   <div className="coupon-row">
                     <input type="text" className="coupon-input" placeholder="Codice sconto" value={couponCode} onChange={e => setCouponCode(e.target.value)} autoComplete="off" />
                     <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: 12, padding: "5px 10px" }} onClick={applyCoupon}>Applica</button>
@@ -541,7 +541,7 @@ export default function CheckoutPage() {
                     {couponMsg && <span className={`coupon-msg ${couponActive ? "ok" : "err"}`} style={{ fontSize: 11 }}>{couponMsg}</span>}
                   </div>
                 </td></tr>
-                {couponActive && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                {couponActive && <tr className="discount"><td style={{ border: 0 }}>Sconto codice</td><td style={{ border: 0 }}>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr className="bold"><td style={{ border: 0 }}>Subtotale scontato</td><td style={{ border: 0 }}>{fmtEur(subScontato)}</td></tr>
                 <tr className="bold"><td style={{ border: 0 }}>Spedizione</td><td style={{ ...(spedizione?.gratuita ? { color: "var(--green)" } : {}), border: 0 }}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
                 {spedizione?.descrizione === "Tariffa da confermare" && (
