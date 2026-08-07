@@ -114,6 +114,7 @@ export class CheckoutService {
         importo: Math.round(calc.fee * 100) / 100,
         descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : calc.minimo && calc.fee === calc.minimo ? ` (minimo ${calc.minimo}€)` : ` (${calc.pct.toFixed(1)}%)`),
         gratuita: calc.superaSoglia,
+        soglia: calc.soglia,
       };
     }
     const regione = this.provinciaToRegione(provincia?.toUpperCase());
@@ -127,6 +128,7 @@ export class CheckoutService {
       importo: Math.round(calc.fee * 100) / 100,
       descrizione: regione + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
       gratuita: calc.superaSoglia,
+      soglia: calc.soglia,
     };
   }
 

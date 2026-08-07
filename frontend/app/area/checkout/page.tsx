@@ -59,6 +59,7 @@ interface ShippingResult {
   importo: number;
   descrizione: string;
   gratuita: boolean;
+  soglia: number | null;
 }
 
 interface OrdineConfermato {
@@ -125,7 +126,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [bankData, setBankData] = useState<{ intestatario: string; nome: string; iban: string; swift: string } | null>(null);
 
-  const [spedizione, setSpedizione] = useState<ShippingResult>({ importo: 0, descrizione: "", gratuita: false });
+  const [spedizione, setSpedizione] = useState<ShippingResult>({ importo: 0, descrizione: "", gratuita: false, soglia: null });
   const [couponCode, setCouponCode] = useState("");
   const [couponActive, setCouponActive] = useState(false);
   const [couponValue, setCouponValue] = useState(0);
@@ -198,7 +199,7 @@ export default function CheckoutPage() {
     const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
     const prov = indirizzoSelezionato?.provincia ?? '';
     api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&imponibile=${subScontato}&sconto=${avgDiscount}`)
-      .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
+      .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false, soglia: null }));
   }, [indirizzoId, subScontato, subtotalListino, subtotalAmount]);
 
   async function applyCoupon() {
@@ -506,6 +507,13 @@ export default function CheckoutPage() {
                 <span className="label">Spedizione a</span>
                 <span className="value">{indirizzoSelezionato.ragioneSociale ?? "Sede"}</span>
                 <span className="summary-ship-line">{[indirizzoSelezionato.indirizzo, indirizzoSelezionato.cap, indirizzoSelezionato.citta, indirizzoSelezionato.provincia].filter(Boolean).join(" ")}</span>
+              </div>
+            )}
+
+            {!isRitiro && spedizione.soglia != null && spedizione.soglia > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", marginBottom: 12, background: "var(--accent-soft)", borderRadius: 8, fontSize: 12 }}>
+                <span style={{ color: "var(--accent)", fontWeight: 600 }}>Spese di spedizione gratuite per importi superiori a {fmtEur(spedizione.soglia)}</span>
+                <span title="Le spese gratuite sono calcolate in base all'indirizzo di spedizione selezionato. Verifica in fase di checkout." style={{ cursor: "help", fontWeight: 700, fontSize: 11, width: 16, height: 16, borderRadius: "50%", border: "1px solid var(--fg)", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>?</span>
               </div>
             )}
 
