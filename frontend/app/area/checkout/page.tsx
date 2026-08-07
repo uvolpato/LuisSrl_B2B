@@ -542,7 +542,7 @@ export default function CheckoutPage() {
                   </div>
                 </td></tr>
                 {couponActive && <tr className="discount"><td style={{ border: 0 }}>Sconto codice</td><td style={{ border: 0 }}>−{fmtEur(couponDiscount)}</td></tr>}
-                <tr className="bold"><td style={{ border: 0, borderTop: "2px solid var(--border)", borderBottom: "1px solid var(--border)" }}>Subtotale scontato</td><td style={{ border: 0, borderTop: "2px solid var(--border)", borderBottom: "1px solid var(--border)" }}>{fmtEur(subScontato)}</td></tr>
+                <tr className="bold"><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>Subtotale scontato</td><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>{fmtEur(subScontato)}</td></tr>
                 <tr className="bold"><td style={{ border: 0 }}>Spedizione</td><td style={{ ...(spedizione?.gratuita ? { color: "var(--green)" } : {}), border: 0 }}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
                 {spedizione?.descrizione === "Tariffa da confermare" && (
                   <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0", border: 0 }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
