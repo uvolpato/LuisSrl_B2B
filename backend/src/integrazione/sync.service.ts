@@ -697,6 +697,13 @@ export class SyncService {
       logId = await this.startLog('listini');
       await this.setProgress(logId, 0, 'Avvio sincronizzazione listini…');
 
+      // Pre-check: verifica connessione Integra prima di toccare dati
+      try {
+        await this.prisma.$executeRawUnsafe(`SELECT 1 FROM b2b_listini_testata LIMIT 1`);
+      } catch {
+        throw new Error('Connessione a Integra non disponibile — sync annullato, dati esistenti preservati');
+      }
+
       // Listini da mantenere: quelli già presenti in cache + il default LIS1
       const attivi = await this.prisma.$queryRawUnsafe<{ c: string }[]>(
         `SELECT DISTINCT codice_listino AS c FROM integra_listini UNION SELECT 'LIS1'`,
