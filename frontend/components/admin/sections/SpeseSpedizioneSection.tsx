@@ -32,6 +32,7 @@ export default function SpeseSpedizioneSection() {
   const [calcMode, setCalcMode] = useState<"sim" | "prev">("sim");
   const [calcPrevTariffa, setCalcPrevTariffa] = useState<Tariffa | null>(null);
   const [guidaOpen, setGuidaOpen] = useState(false);
+  const importaRef = useRef<{ base: number; soglia: number; minimo: number } | null>(null);
   const [scaglioniW, setScaglioniW] = useState(() => {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
@@ -287,6 +288,7 @@ export default function SpeseSpedizioneSection() {
         onSaved={() => { setEditOpen(false); refresh(); }}
         onCalcPreview={(t) => { setCalcMode("prev"); setCalcPrevTariffa(t); setCalcOpen(true); }}
         onDelete={onDeleteTariffa}
+        importaRef={importaRef}
       />}
 
       {guidaOpen && <GuidaModal onClose={() => setGuidaOpen(false)} />}
@@ -296,19 +298,21 @@ export default function SpeseSpedizioneSection() {
         prevTariffa={calcPrevTariffa}
         allTariffe={tariffe}
         onClose={() => setCalcOpen(false)}
+        onApply={calcMode === "prev" ? (base, soglia, minimo) => { importaRef.current = { base, soglia, minimo }; setCalcOpen(false); } : undefined}
       />}
     </div>
   );
 }
 
 /* ── Editor modale ── */
-function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, onDelete }: {
+function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, onDelete, importaRef }: {
   tariffa: Tariffa | null;
   allTariffe: Tariffa[];
   onClose: () => void;
   onSaved: () => void;
   onCalcPreview: (t: Tariffa) => void;
   onDelete: (id: number) => void;
+  importaRef: React.MutableRefObject<{ base: number; soglia: number; minimo: number } | null>;
 }) {
   const isNew = !tariffa;
   const [livello, setLivello] = useState(tariffa ? (tariffa.regione ? "regione" : isZona(tariffa.nazione) ? tariffa.nazione : "nazione") : "nazione");
