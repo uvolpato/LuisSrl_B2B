@@ -47,6 +47,12 @@ export class CheckoutService {
     private speseSpedizione: SpeseSpedizioneService,
   ) {}
 
+  async getSogliaDefault(clienteId: number) {
+    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', null);
+    if (!resolved) return { soglia: null };
+    return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null };
+  }
+
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
     const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
     if (!customer) throw new NotFoundException('Cliente non trovato');
