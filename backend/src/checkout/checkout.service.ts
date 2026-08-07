@@ -112,7 +112,7 @@ export class CheckoutService {
       const calc = Calcola(resolved.t, imponibile, sconto);
       return {
         importo: Math.round(calc.fee * 100) / 100,
-        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : calc.minimo && calc.fee === calc.minimo ? ` (minimo ${calc.minimo}€)` : ` (${calc.pct.toFixed(1)}%)`),
         gratuita: calc.superaSoglia,
       };
     }

@@ -585,9 +585,10 @@ model TariffaSpedizione {
   nazione        String   @map("nazione")
   regione        String?  @map("regione")
   basePercent    Decimal  @map("base_percent") @db.Decimal(5, 2)
-  stato          String   @default("configura") @map("stato") // ok | pausa | configura
+  stato          String   @default("configura") @map("stato")
   sogliaImporto  Decimal? @map("soglia_importo") @db.Decimal(12, 2)
-  ranges         Json?    @map("ranges") // [[min, max, pct], ...]
+  minimoImporto  Decimal? @map("minimo_importo") @db.Decimal(12, 2)
+  ranges         Json?    @map("ranges")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

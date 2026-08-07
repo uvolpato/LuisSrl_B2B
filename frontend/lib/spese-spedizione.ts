@@ -5,6 +5,7 @@ export interface Tariffa {
   basePercent: number;
   stato: string;
   sogliaImporto: number | null;
+  minimoImporto: number | null;
   ranges: number[][];
   updatedAt: string;
 }
@@ -175,10 +176,12 @@ export function calcFee(t: Tariffa, amount: number, discount: number) {
   const base = t.basePercent;
   const ranges = t.ranges ?? [];
   const soglia = t.sogliaImporto;
+  const minimo = t.minimoImporto;
   const { pct, rng } = pctOf(ranges, base, discount);
   const superaSoglia = soglia !== null && soglia > 0 && amount >= soglia;
-  const fee = superaSoglia ? 0 : (amount * pct) / 100;
-  return { pct, rng, soglia, superaSoglia, fee };
+  let fee = superaSoglia ? 0 : (amount * pct) / 100;
+  if (!superaSoglia && minimo !== null && fee < minimo) fee = minimo;
+  return { pct, rng, soglia, minimo, superaSoglia, fee };
 }
 
 export function currentRanges(ranges: number[][]): number[][] {

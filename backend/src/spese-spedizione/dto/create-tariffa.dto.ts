@@ -24,6 +24,11 @@ export class CreateTariffaDto {
   sogliaImporto?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  minimoImporto?: number;
+
+  @IsOptional()
   @IsArray()
   ranges?: number[][];
 }

@@ -291,6 +291,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   const [base, setBase] = useState(tariffa?.basePercent ?? 3);
   const [stato, setStato] = useState(tariffa?.stato ?? "configura");
   const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? 0);
+  const [minimo, setMinimo] = useState(tariffa?.minimoImporto ?? 0);
   const [ranges, setRanges] = useState<(number | null)[][]>(() => (tariffa?.ranges ?? []).map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]));
   const confirm = useConfirm();
   const [error, setError] = useState("");
@@ -342,6 +343,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
           basePercent: base,
           stato,
           sogliaImporto: soglia || null,
+          minimoImporto: minimo || null,
           ranges: rng,
         });
       } else {
@@ -349,6 +351,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
           basePercent: base,
           stato,
           sogliaImporto: soglia || null,
+          minimoImporto: minimo || null,
           ranges: rng,
         });
       }
@@ -362,7 +365,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
     return {
       id: 0, regione: livello === "regione" ? regione || null : null,
       nazione: livello === "regione" ? "IT" : livello === "nazione" ? nazione : livello,
-      basePercent: base, stato, sogliaImporto: soglia || null,
+      basePercent: base, stato, sogliaImporto: soglia || null, minimoImporto: minimo || null,
       ranges: r, updatedAt: new Date().toISOString(),
     };
   }
@@ -448,10 +451,14 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
               <option value="configura">Da configurare</option>
             </select>
           </div>
-          <div className="field">
-            <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
-            <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
-          </div>
+              <div className="field">
+                <label>Soglia spedizione gratuita (€, vuoto = nessuna)</label>
+                <input className="input" type="number" step="50" min="0" value={soglia || ""} onChange={e => setSoglia(Number(e.target.value) || 0)} />
+              </div>
+              <div className="field">
+                <label>Minimo spesa spedizione (€, vuoto = nessuno)</label>
+                <input className="input" type="number" step="0.1" min="0" value={minimo || ""} onChange={e => setMinimo(Number(e.target.value) || 0)} />
+              </div>
           <div className="field">
             <button className="btn btn-secondary" type="button" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
           </div>

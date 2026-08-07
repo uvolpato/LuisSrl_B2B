@@ -99,7 +99,7 @@ export class SpeseSpedizioneService implements OnModuleInit {
     return this.prisma.tariffaSpedizione.findUnique({ where: { id } });
   }
 
-  async create(data: { nazione: string; regione?: string; basePercent: number; stato: string; sogliaImporto?: number; ranges?: number[][] }): Promise<Row> {
+  async create(data: { nazione: string; regione?: string; basePercent: number; stato: string; sogliaImporto?: number; minimoImporto?: number; ranges?: number[][] }): Promise<Row> {
     if (data.regione && data.nazione !== 'IT') throw new BadRequestException('Regione richiede nazione IT');
     if (isZona(data.nazione) && data.regione) throw new BadRequestException('Le aree non hanno regione');
     const existing = await this.prisma.tariffaSpedizione.findFirst({
@@ -114,6 +114,7 @@ export class SpeseSpedizioneService implements OnModuleInit {
         basePercent: data.basePercent,
         stato: data.stato,
         sogliaImporto: data.sogliaImporto ?? null,
+        minimoImporto: data.minimoImporto ?? null,
         ranges: data.ranges ?? [],
       },
     });
@@ -123,7 +124,7 @@ export class SpeseSpedizioneService implements OnModuleInit {
     }
   }
 
-  async update(id: number, data: { basePercent?: number; stato?: string; sogliaImporto?: number; ranges?: number[][] }): Promise<Row> {
+  async update(id: number, data: { basePercent?: number; stato?: string; sogliaImporto?: number; minimoImporto?: number; ranges?: number[][] }): Promise<Row> {
     const t = await this.findById(id);
     if (!t) throw new NotFoundException('Tariffa non trovata');
     return this.prisma.tariffaSpedizione.update({
@@ -132,6 +133,7 @@ export class SpeseSpedizioneService implements OnModuleInit {
         ...(data.basePercent !== undefined ? { basePercent: data.basePercent } : {}),
         ...(data.stato !== undefined ? { stato: data.stato } : {}),
         ...(data.sogliaImporto !== undefined ? { sogliaImporto: data.sogliaImporto } : {}),
+        ...(data.minimoImporto !== undefined ? { minimoImporto: data.minimoImporto } : {}),
         ...(data.ranges !== undefined ? { ranges: data.ranges } : {}),
       },
     });
@@ -217,6 +219,7 @@ export class SpeseSpedizioneService implements OnModuleInit {
       basePercent: Number(t.basePercent),
       stato: t.stato,
       sogliaImporto: t.sogliaImporto ? Number(t.sogliaImporto) : null,
+      minimoImporto: t.minimoImporto ? Number(t.minimoImporto) : null,
       ranges: (t.ranges as number[][]) ?? [],
       updatedAt: t.updatedAt,
     };
@@ -261,8 +264,10 @@ export function Calcola(t: Row, amount: number, discount: number) {
   const base = Number(t.basePercent);
   const ranges = (t.ranges as number[][]) ?? [];
   const soglia = t.sogliaImporto ? Number(t.sogliaImporto) : null;
+  const minimo = t.minimoImporto ? Number(t.minimoImporto) : null;
   const { pct, rng } = PctOf(ranges, base, discount);
   const superaSoglia = soglia !== null && soglia > 0 && amount >= soglia;
-  const fee = superaSoglia ? 0 : amount * pct / 100;
-  return { pct, rng, soglia, superaSoglia, fee };
+  let fee = superaSoglia ? 0 : amount * pct / 100;
+  if (!superaSoglia && minimo !== null && fee < minimo) fee = minimo;
+  return { pct, rng, soglia, minimo, superaSoglia, fee };
 }
