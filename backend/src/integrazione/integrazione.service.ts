@@ -55,22 +55,13 @@ export function hexToLab(hex: string): { L: number; a: number; b: number } {
 // cambi i nomi view e/o le colonne qui, il resto del codice resta identico.
 const CONFIG = {
   famiglie: {
-    view: 'vista_integra_famiglie',
-    cols: { pro_cod: 'codice', fam_descrizione: 'nome', fam_parent_id: 'codicePadre' } as const,
+    table: 'integra_famiglie',
   },
   linee: {
-    view: 'vista_integra_linee',
-    cols: { pro_cod: 'codiceLinea', lin_descrizione: 'nome', lin_famiglia_id: 'famigliaCodice' } as const,
+    table: 'integra_linee',
   },
   prodotti: {
-    view: 'vista_integra_prodotti',
-    cols: {
-      pro_cod: 'codice', pro_descr: 'descrizione', pro_moddescr: 'modificabile',
-      pro_cldcod01: 'cl1Cod', pro_clddescr01: 'cl1Descr', pro_clvcod01: 'cl1Val',
-      pro_cldcod02: 'cl2Cod', pro_clddescr02: 'cl2Descr', pro_clvcod02: 'cl2Val',
-      pro_cldcod03: 'cl3Cod', pro_clddescr03: 'cl3Descr', pro_clvcod03: 'cl3Val',
-      pro_funzionalita1: 'funzionalita', pro_famiglia_id: 'famigliaId',
-    } as const,
+    table: 'integra_articoli',
   },
 };
 
@@ -92,8 +83,6 @@ async function purgeThumbCache(rel: string): Promise<void> {
   } catch { /* cache dir assente */ }
 }
 
-type ViewType = keyof typeof CONFIG;
-
 @Injectable()
 export class IntegrazioneService {
   constructor(
@@ -103,22 +92,12 @@ export class IntegrazioneService {
     private readonly events: EventsService,
   ) {}
 
-  /** Mappa una riga della vista sui nomi di portale del CONFIG (BigInt → Number: non serializzabile in JSON). */
-  private mapRow(cols: Record<string, string>, row: Record<string, unknown>) {
-    const mapped: Record<string, unknown> = {};
-    for (const [src, dst] of Object.entries(cols)) {
-      const val = row[src];
-      mapped[dst] = typeof val === 'bigint' ? Number(val) : (val ?? null);
-    }
-    return mapped;
-  }
-
-  private async queryView<T extends ViewType>(view: T) {
+  private async queryView<T extends keyof typeof CONFIG>(view: T) {
     const cfg = CONFIG[view];
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM ${cfg.view}`,
+      `SELECT * FROM ${cfg.table}`,
     );
-    return rows.map((row) => this.mapRow(cfg.cols, row));
+    return rows;
   }
 
   async getFamiglie() { return this.queryView('famiglie'); }
