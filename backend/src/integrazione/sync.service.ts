@@ -538,6 +538,19 @@ export class SyncService {
       `);
       await this.setProgress(logId, 92, 'Swap tabelle…');
 
+      // Prima di aggiornare i clienti: importa eventuali nuovi listini non ancora presenti
+      try {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO integra_listini (codice_listino, descrizione_listino, listino_obsoleto, data_modifica)
+          SELECT DISTINCT NULLIF(NULLIF(i.codice_listino, ''), '--'), 'Importato da sync clienti', 0, NOW()
+          FROM integra_clienti i
+          WHERE NULLIF(NULLIF(i.codice_listino, ''), '--') IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM integra_listini l WHERE l.codice_listino = NULLIF(NULLIF(i.codice_listino, ''), '--'))
+        `);
+      } catch (e) {
+        this.logger.warn(`Import nuovi listini fallito (non bloccante): ${e instanceof Error ? e.message : e}`);
+      }
+
       // Aggiorna i dati anagrafici dei clienti già importati nel portale
       try {
         await this.prisma.$executeRawUnsafe(`
@@ -731,9 +744,12 @@ export class SyncService {
           codice,
         );
 
-        // Transazione: DELETE + INSERT atomici (se INSERT fallisce, DELETE rollback)
+        // Transazione: DELETE + INSERT atomici (se INSERT fallisce o restituisce 0 righe, rollback)
         await this.prisma.$executeRawUnsafe(`BEGIN`);
         try {
+          const oldCount = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+            `SELECT count(*)::int8 n FROM integra_listini_righe WHERE codice_listino = $1`, codice
+          );
           await this.prisma.$executeRawUnsafe(
             `DELETE FROM integra_listini_righe WHERE codice_listino = $1`,
             codice,
@@ -744,7 +760,16 @@ export class SyncService {
              FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
             codice,
           );
+          const newCount = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+            `SELECT count(*)::int8 n FROM integra_listini_righe WHERE codice_listino = $1`, codice
+          );
+          const oldN = Number(oldCount[0]?.n ?? 0);
+          const newN = Number(newCount[0]?.n ?? 0);
+          if (oldN > 0 && newN === 0) {
+            throw new Error(`Listino ${codice}: INSERT ha restituito 0 righe (${oldN} rimosse) — possibile errore connessione Integra. Rollback.`);
+          }
           await this.prisma.$executeRawUnsafe(`COMMIT`);
+          this.logger.log(`Listino ${codice}: ${oldN}→${newN} righe`);
         } catch (e) {
           await this.prisma.$executeRawUnsafe(`ROLLBACK`);
           throw e;
