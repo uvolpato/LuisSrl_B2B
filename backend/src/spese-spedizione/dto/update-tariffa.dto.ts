@@ -18,6 +18,11 @@ export class UpdateTariffaDto {
   sogliaImporto?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  minimoImporto?: number;
+
+  @IsOptional()
   @IsArray()
   ranges?: number[][];
 }
