@@ -32,6 +32,7 @@ export default function SpeseSpedizioneSection() {
   const [calcMode, setCalcMode] = useState<"sim" | "prev">("sim");
   const [calcPrevTariffa, setCalcPrevTariffa] = useState<Tariffa | null>(null);
   const [guidaOpen, setGuidaOpen] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<{ nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; ranges: number[][] } | null>(null);
   const [scaglioniW, setScaglioniW] = useState(() => {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
@@ -108,16 +109,11 @@ export default function SpeseSpedizioneSection() {
   }
 
   async function duplicate(t: Tariffa) {
-    await api.post("/api/admin/tariffe-spedizione", {
-      nazione: t.nazione,
-      regione: t.regione ?? null,
-      basePercent: t.basePercent,
-      stato: "configura",
-      sogliaImporto: t.sogliaImporto ?? null,
-      minimoImporto: t.minimoImporto ?? null,
-      ranges: t.ranges ?? [],
-    });
-    await refresh();
+    // Apre l'editor in creazione con i dati clonati (nazione/regione da cambiare)
+    setEditTarget(null);
+    // Passiamo i dati via state temporaneo
+    setDuplicateData({ nazione: t.nazione, regione: t.regione ?? null, basePercent: t.basePercent, sogliaImporto: t.sogliaImporto ?? null, minimoImporto: t.minimoImporto ?? null, ranges: t.ranges ?? [] });
+    setEditOpen(true);
   }
 
   async function onDeleteTariffa(id: number) {
@@ -287,6 +283,7 @@ export default function SpeseSpedizioneSection() {
         onSaved={() => { setEditOpen(false); refresh(); }}
         onCalcPreview={(t) => { setCalcMode("prev"); setCalcPrevTariffa(t); setCalcOpen(true); }}
         onDelete={onDeleteTariffa}
+        duplicateData={duplicateData}
       />}
 
       {guidaOpen && <GuidaModal onClose={() => setGuidaOpen(false)} />}
@@ -302,23 +299,27 @@ export default function SpeseSpedizioneSection() {
 }
 
 /* ── Editor modale ── */
-function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, onDelete }: {
+function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, onDelete, duplicateData }: {
   tariffa: Tariffa | null;
   allTariffe: Tariffa[];
   onClose: () => void;
   onSaved: () => void;
   onCalcPreview: (t: Tariffa) => void;
   onDelete: (id: number) => void;
+  duplicateData: { nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; ranges: number[][] } | null;
 }) {
   const isNew = !tariffa;
-  const [livello, setLivello] = useState(tariffa ? (tariffa.regione ? "regione" : isZona(tariffa.nazione) ? tariffa.nazione : "nazione") : "nazione");
-  const [nazione, setNazione] = useState(tariffa?.nazione ?? "IT");
-  const [regione, setRegione] = useState(tariffa?.regione ?? "");
-  const [base, setBase] = useState(tariffa?.basePercent ?? 3);
+  const [livello, setLivello] = useState(tariffa ? (tariffa.regione ? "regione" : isZona(tariffa.nazione) ? tariffa.nazione : "nazione") : duplicateData ? (duplicateData.regione ? "regione" : isZona(duplicateData.nazione) ? duplicateData.nazione : "nazione") : "nazione");
+  const [nazione, setNazione] = useState(tariffa?.nazione ?? duplicateData?.nazione ?? "IT");
+  const [regione, setRegione] = useState(tariffa?.regione ?? duplicateData?.regione ?? "");
+  const [base, setBase] = useState(tariffa?.basePercent ?? duplicateData?.basePercent ?? 3);
   const [stato, setStato] = useState(tariffa?.stato ?? "configura");
-  const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? 0);
-  const [minimo, setMinimo] = useState(tariffa?.minimoImporto ?? 0);
-  const [ranges, setRanges] = useState<(number | null)[][]>(() => (tariffa?.ranges ?? []).map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]));
+  const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? duplicateData?.sogliaImporto ?? 0);
+  const [minimo, setMinimo] = useState(tariffa?.minimoImporto ?? duplicateData?.minimoImporto ?? 0);
+  const [ranges, setRanges] = useState<(number | null)[][]>(() => {
+    const src = tariffa?.ranges ?? duplicateData?.ranges ?? [];
+    return src.map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]);
+  });
   const confirm = useConfirm();
   const [error, setError] = useState("");
 
