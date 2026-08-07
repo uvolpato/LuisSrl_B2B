@@ -754,12 +754,12 @@ export class SyncService {
             `DELETE FROM integra_listini_righe WHERE codice_listino = $1`,
             codice,
           );
-          await this.prisma.$executeRawUnsafe(
+          await this.withTimeout(this.prisma.$executeRawUnsafe(
             `INSERT INTO integra_listini_righe (id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, listino_obsoleto, data_modifica)
              SELECT id_riga_listino, codice_listino, codice_prodotto, id_variante, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4, 0, data_modifica
              FROM b2b_listini_righe WHERE codice_listino = $1 AND (listino_obsoleto IS NULL OR listino_obsoleto = 0)`,
             codice,
-          );
+          ), 300_000, `b2b_listini_righe (${codice})`);
           const newCount = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
             `SELECT count(*)::int8 n FROM integra_listini_righe WHERE codice_listino = $1`, codice
           );
