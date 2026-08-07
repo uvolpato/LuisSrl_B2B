@@ -23,6 +23,7 @@ interface CatalogoArticolo {
   imgTipo: string | null;
   variantiCount: number;
   prezzo: number | null;
+  scontoMax?: number;
   disponibilita?: "disponibile" | "scorte_limitate" | "esaurito";
   dimensioni?: Record<string, { min: number; max: number }> | null;
   createdAt: string;
@@ -614,6 +615,12 @@ try {
                   <Link href={`/area/catalogo/${a.id}${catalogQs ? `?back=${encodeURIComponent(catalogQs)}` : ""}`} key={a.id} className="product-card" onClick={saveCatalogState}>
                     <PositionedImage className="product-img" src={a.img} css={a.imgCss} aspect={4 / 3} alt={a.nome} thumbWidth={400}>
                       {a.imgTipo === "AI" && <span className="ai-badge" title="Immagine generata con AI">AI</span>}
+                      {(a.scontoMax ?? 0) > 0 && (
+                        <span className="sconto-badge" title={`Sconto fino al ${a.scontoMax}%`}
+                          style={{ position: "absolute", top: 8, right: 8, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, padding: "2px 7px", borderRadius: 6, zIndex: 3 }}>
+                          −{a.scontoMax}%
+                        </span>
+                      )}
                     </PositionedImage>
                     <div className="product-body">
                       <div className="product-famiglia">
