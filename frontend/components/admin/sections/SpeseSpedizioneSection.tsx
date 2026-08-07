@@ -31,6 +31,7 @@ export default function SpeseSpedizioneSection() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcMode, setCalcMode] = useState<"sim" | "prev">("sim");
   const [calcPrevTariffa, setCalcPrevTariffa] = useState<Tariffa | null>(null);
+  const [guidaOpen, setGuidaOpen] = useState(false);
   const [scaglioniW, setScaglioniW] = useState(() => {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
@@ -153,6 +154,10 @@ export default function SpeseSpedizioneSection() {
       <div className="admin-content">
         <div className="content-header">
           <span className="meta">{meta}</span>
+          <span style={{ flex: 1 }} />
+          <span className="hint" tabIndex={0} onClick={() => setGuidaOpen(true)} style={{ cursor: "pointer" }}>?
+            <span className="hint-tip">Guida all&apos;uso delle tariffe di spedizione</span>
+          </span>
         </div>
 
         <div className="data-table">
@@ -285,6 +290,8 @@ export default function SpeseSpedizioneSection() {
         onCalcPreview={(t) => { setCalcMode("prev"); setCalcPrevTariffa(t); setCalcOpen(true); }}
         onDelete={onDeleteTariffa}
       />}
+
+      {guidaOpen && <GuidaModal onClose={() => setGuidaOpen(false)} />}
 
       {calcOpen && <TariffaCalcModal
         mode={calcMode}
@@ -651,6 +658,48 @@ function TariffaCalcModal({ mode, prevTariffa, allTariffe, onClose }: {
               })}
             </div>
           </div>
+    </Modal>
+  );
+}
+
+function GuidaModal({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal size="sm" title="Guida alle tariffe di spedizione" onClose={onClose}
+      footer={<button className="btn btn-primary" type="button" onClick={onClose}>Chiudi</button>}
+    >
+      <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+        <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Gerarchia</h3>
+        <p>Le tariffe seguono una catena di risoluzione a 4 livelli:</p>
+        <ol style={{ paddingLeft: 20, margin: "8px 0" }}>
+          <li><b>Regione</b> (Italia) — eccezione sopra la tariffa nazionale</li>
+          <li><b>Nazione</b> — tariffa per un paese specifico</li>
+          <li><b>Europa</b> — tariffa d&apos;area per i 27 paesi UE senza tariffa specifica</li>
+          <li><b>Resto del mondo</b> — default globale, sempre presente</li>
+        </ol>
+
+        <h3 style={{ margin: "16px 0 8px", fontSize: 16 }}>Stati</h3>
+        <ul style={{ paddingLeft: 20, margin: "8px 0" }}>
+          <li><b>Configurata</b> — attiva, partecipa alla risoluzione</li>
+          <li><b>In pausa</b> — non attiva, ignorata nella risoluzione</li>
+          <li><b>Da configurare</b> — bozza, non ancora attiva</li>
+        </ul>
+
+        <h3 style={{ margin: "16px 0 8px", fontSize: 16 }}>Scaglioni sconto medio</h3>
+        <p>La percentuale applicata varia in base allo sconto medio del cliente sul listino. Gli scaglioni formano una catena da 0% a &quot;oltre&quot;. Se non configurati, vale la percentuale base.</p>
+
+        <h3 style={{ margin: "16px 0 8px", fontSize: 16 }}>Soglia gratuita</h3>
+        <p>Se l&apos;importo dell&apos;ordine (senza IVA) supera questa soglia, la spedizione è gratuita. Vuoto = nessuna soglia.</p>
+
+        <h3 style={{ margin: "16px 0 8px", fontSize: 16 }}>Tariffa minima</h3>
+        <p>Se la percentuale calcolata è inferiore a questo importo, viene applicato il minimo. Es: 2% di 100€ = 2€, ma con minimo 5€ → 5€.</p>
+
+        <h3 style={{ margin: "16px 0 8px", fontSize: 16 }}>Regole</h3>
+        <ul style={{ paddingLeft: 20, margin: "8px 0" }}>
+          <li>Non possono esistere due tariffe attive per la stessa destinazione</li>
+          <li>La tariffa Resto del mondo non può essere eliminata</li>
+          <li>Usa <b>Duplica</b> per creare una copia in bozza di una tariffa esistente</li>
+        </ul>
+      </div>
     </Modal>
   );
 }
