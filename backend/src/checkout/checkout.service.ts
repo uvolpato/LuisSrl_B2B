@@ -50,17 +50,22 @@ export class CheckoutService {
   async getSogliaDefault(clienteId: number) {
     const attivo = (await this.getConfigFlag('banner_spedizione_attivo')) === true;
     if (!attivo) return { soglia: null, attivo: false };
-    // Cerca indirizzo predefinito del cliente
+
     const addr = await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId, flagAbituale: true },
     }) ?? await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId },
       orderBy: { flagSpedizione: 'desc' },
     });
-    const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
-    const provincia = addr?.provincia || customer?.provincia || null;
-    const regione = provincia ? this.provinciaToRegione(provincia.toUpperCase()) : null;
-    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
+
+    const provincia = addr?.provincia || null;
+    let resolved;
+    if (!provincia) {
+      resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+    } else {
+      const regione = this.provinciaToRegione(provincia.toUpperCase());
+      resolved = regione ? await this.speseSpedizione.resolveTariffaAsync('IT', regione) : null;
+    }
     if (!resolved) return { soglia: null, attivo: true };
     return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true };
   }
