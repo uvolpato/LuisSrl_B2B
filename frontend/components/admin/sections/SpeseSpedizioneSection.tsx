@@ -99,7 +99,7 @@ export default function SpeseSpedizioneSection() {
 
   function openEdit(t?: Tariffa) {
     setEditTarget(t ?? null);
-    setEditOpen(true);
+    setDuplicateData(null);
   }
 
   async function toggleStato(t: Tariffa) {
