@@ -54,16 +54,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .btn-secondary:hover { border-color: var(--fg); }
 .btn-lg { padding: 14px 28px; font-size: 16px; font-weight: 600; }
 
-/* ══ Stepper ══ */
-.stepper { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 16px 6px; }
-.step { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
-.step .num { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
-.step.active .num { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-.step.done .num { background: var(--green); color: var(--surface); border-color: var(--green); }
-.step.active { color: var(--fg); }
-.step.done { color: var(--green); }
-.step-line { width: 28px; height: 1px; background: var(--border); }
-
 /* ══ Page title ══ */
 .page-title { padding-block: 28px 20px; }
 .page-title h1 { font-size: var(--fs-h2); margin: 0; }
@@ -149,17 +139,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 <div class="container">
 
 <div id="view-recap">
-
-  <!-- Stepper -->
-  <div class="stepper">
-    <div class="step done"><span class="num">1</span>Carrello</div>
-    <div class="step-line"></div>
-    <div class="step done"><span class="num">2</span>Checkout</div>
-    <div class="step-line"></div>
-    <div class="step active"><span class="num">3</span>Riepilogo</div>
-    <div class="step-line"></div>
-    <div class="step"><span class="num">4</span>Conferma</div>
-  </div>
 
   <div class="page-title">
     <h1>Riepilogo ordine</h1>
