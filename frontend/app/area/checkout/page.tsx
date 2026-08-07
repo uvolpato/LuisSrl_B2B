@@ -199,7 +199,7 @@ export default function CheckoutPage() {
     const prov = indirizzoSelezionato?.provincia ?? '';
     api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&imponibile=${subScontato}&sconto=${avgDiscount}`)
       .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false }));
-  }, [indirizzoSelezionato?.provincia, subScontato, subtotalListino, subtotalAmount]);
+  }, [indirizzoId, subScontato, subtotalListino, subtotalAmount]);
 
   async function applyCoupon() {
     setCouponMsg("");
