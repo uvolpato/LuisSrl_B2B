@@ -33,8 +33,8 @@ ALTER SERVER integra_server
 
 -- Mappa l'utente locale al DB Integra (stesso server, trust/peer)
 -- Se serve password passarla con -v pw="xxx"
-DROP USER MAPPING IF EXISTS FOR postgres SERVER integra_server;
-CREATE USER MAPPING FOR postgres
+DROP USER MAPPING IF EXISTS FOR CURRENT_USER SERVER integra_server;
+CREATE USER MAPPING FOR CURRENT_USER
   SERVER integra_server
   OPTIONS (user 'postgres', password :'pw' || '');
 
