@@ -320,14 +320,6 @@ export default function CheckoutPage() {
     <div className="catalogo-page cart-page checkout-page">
       <main id="content"><div className="container">
         <div className="page-title"><h1>Checkout</h1></div>
-
-        {!isRitiro && spedizione.soglia != null && spedizione.soglia > 0 && (
-          <div style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "8px 16px", marginBottom: 16, background: "var(--accent-soft)", borderRadius: 8, fontSize: 13 }}>
-            <span style={{ color: "var(--accent)", fontWeight: 600 }}>Spese di spedizione gratuite per importi superiori a {fmtEur(spedizione.soglia)}</span>
-            <span title="Le spese gratuite sono calcolate in base all'indirizzo di spedizione selezionato. Verifica in fase di checkout." style={{ cursor: "help", fontWeight: 700, fontSize: 11, width: 16, height: 16, borderRadius: "50%", border: "1px solid var(--fg)", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>?</span>
-          </div>
-        )}
-
         <div className="checkout-layout">
           <div className="checkout-form">
 

@@ -354,6 +354,11 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
         }
       `}</style>
 
+      <div style={{ position: "sticky", top: 0, zIndex: 99, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "6px 16px", background: "var(--accent)", color: "#fff", fontSize: 13 }}>
+        <span style={{ fontWeight: 600 }}>Spese di spedizione gratis per ordini sopra soglia</span>
+        <span title="La soglia dipende dall'indirizzo di spedizione selezionato. Verifica in fase di checkout." style={{ cursor: "help", fontWeight: 700, fontSize: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid #fff", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>?</span>
+      </div>
+
       <header className="area-header">
         <div className={`area-header-inner${isCompact ? " compact" : ""}`}>
           <div className={`logo-wrap${isCompact ? " compact" : ""}`}>
