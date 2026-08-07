@@ -13,7 +13,6 @@ import RaccolteSection from "../../components/admin/sections/RaccolteSection";
 import BoxSuggerimentiSection from "../../components/admin/sections/BoxSuggerimentiSection";
 import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 import ListiniSection from "../../components/admin/sections/ListiniSection";
-import AnomalieSection from "../../components/admin/sections/AnomalieSection";
 import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";
 
 const SECTION_TITLES: Record<string, string> = {
@@ -24,12 +23,8 @@ const SECTION_TITLES: Record<string, string> = {
   "box-dashboard": "Box dashboard cliente",
   listini: "Listini",
   ordini: "Ordini",
-  import: "Import / Export",
-  ai: "AI / Ricerca",
   "admin-panel": "Pannello di Amministrazione",
-  accessi: "Accessi",
   "spese-spedizione": "Spese di spedizione",
-  anomalie: "Anomalie",
 };
 
 export default function AdminPage() {
@@ -58,17 +53,6 @@ export default function AdminPage() {
 
       {section === "listini" && <ListiniSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
-
-      {["ordini", "import", "ai"].includes(section) && (
-        <div className="admin-content">
-          <div className="content-header">
-            <div>
-              <h2>{SECTION_TITLES[section]}</h2>
-              <span className="meta">Sezione in sviluppo</span>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminLayout>
   );
 }

@@ -31,8 +31,6 @@ const NAV_ITEMS = [
     items: [
       { id: "box-dashboard", label: "Box dashboard", icon: "layout" },
       { id: "spese-spedizione", label: "Spese di spedizione", icon: "truck" },
-      { id: "import", label: "Import / Export", icon: "upload" },
-      { id: "ai", label: "AI / Ricerca", icon: "star" },
     ],
   },
 ];
