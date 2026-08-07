@@ -156,6 +156,9 @@ export class SyncManagerService implements OnModuleInit {
         case 'clienti':
           result = await this.syncService.syncClienti();
           break;
+        case 'lookup':
+          result = await this.syncService.syncLookup();
+          break;
         default:
           return { esito: 'errore', errore: `Tipo sconosciuto: ${tipo}` };
       }
