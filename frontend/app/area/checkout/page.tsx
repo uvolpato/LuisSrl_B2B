@@ -140,6 +140,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confermato, setConfermato] = useState<OrdineConfermato | null>(null);
+  type Step = "checkout" | "recap" | "confermato";
+  const [step, setStep] = useState<Step>("checkout");
 
   const fetchAll = useCallback(async () => {
     try {
@@ -270,6 +272,7 @@ export default function CheckoutPage() {
         notaSpedizione: notaSpedizione || undefined, notaOrdine: notaOrdine || undefined,
       });
       setConfermato(res);
+      setStep("confermato");
       window.dispatchEvent(new CustomEvent("cart-updated"));
     } catch (e) { setSubmitError(e instanceof ApiError ? e.code : "errors.generic"); }
     setSubmitting(false);
@@ -317,10 +320,43 @@ export default function CheckoutPage() {
     </div></main></div>
   );
 
+  const isBonifico = ["BB30", "BB60", "ANT"].includes(paymentMethod);
+  const scontoMedioPct = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
+
   return (
     <div className="catalogo-page cart-page checkout-page">
       <main id="content"><div className="container">
-        <div className="page-title"><h1>Checkout</h1></div>
+
+        {/* Stepper */}
+        {(step === "checkout" || step === "recap") && (
+          <div style={{ paddingBlock: 24 }}>
+            <div className="stepper">
+              <div className="step done">
+                <div className="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <span className="label-text">Carrello</span>
+              </div>
+              <div className="step-line done" />
+              <div className={"step" + (step === "checkout" ? " active" : " done")}>
+                <div className="dot">{step === "recap" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> : <span>2</span>}</div>
+                <span className="label-text">Checkout</span>
+              </div>
+              <div className={"step-line" + (step === "recap" ? " done" : "")} />
+              <div className={"step" + (step === "recap" ? " active" : "")}>
+                <div className="dot">{step === "recap" ? "3" : <span style={{ opacity: 0.5 }}>3</span>}</div>
+                <span className="label-text">Riepilogo</span>
+              </div>
+              <div className="step-line" />
+              <div className="step">
+                <div className="dot" style={{ opacity: 0.5 }}>4</div>
+                <span className="label-text" style={{ opacity: 0.5 }}>Conferma</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CHECKOUT ── */}
+        {step === "checkout" && (
+          <><div className="page-title"><h1>Checkout</h1></div>
         <div className="checkout-layout">
           <div className="checkout-form">
 
@@ -562,12 +598,155 @@ export default function CheckoutPage() {
             </table>
 
             {submitError && <div className="checkout-error">{submitError}</div>}
-            <button className="btn btn-primary checkout-btn" disabled={submitting} onClick={conferma}>
-              {submitting ? "Invio in corso…" : "Conferma ordine"}
+            <button className="btn btn-primary checkout-btn" disabled={submitting} onClick={() => setStep("recap")}>
+              Conferma ordine
             </button>
             <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>Torna al carrello</Link>
           </aside>
-        </div>
+        </div></>
+        )}
+
+        {/* ── RIEPILOGO ── */}
+        {step === "recap" && (
+          <div id="view-recap">
+            <div className="page-title"><h1>Riepilogo ordine</h1></div>
+
+            {/* 1. Articoli */}
+            <div className="recap-section">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                Articoli ({subtotalQty} prodotti)
+              </h2>
+              <div className="recap-items">
+                {items.map(item => {
+                  const tot = item.quantita * (item.prezzo?.prezzoNetto ?? 0);
+                  const scontoPct = item.prezzo?.sconto ?? item.prezzo?.scontoListino ?? 0;
+                  return (
+                    <div key={item.varianteCodice} className="recap-item">
+                      <div className="recap-item-row1">
+                        <span className="badge code">{item.varianteCodice}</span>
+                        <span className="desc">{item.articoloNome ?? item.varianteCodice}</span>
+                      </div>
+                      <div className="recap-item-row2">
+                        <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>
+                        {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
+                        <span className="riga">{item.quantita} × {fmtEur(item.prezzo?.prezzoNetto ?? 0)}</span>
+                        <span className="netto">{fmtEur(tot)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--border)" }}>
+                Sconto medio ordine: <span style={{ fontFamily: "var(--font-mono)" }}>{scontoMedioPct}%</span>
+              </div>
+            </div>
+
+            {/* 2. Consegna */}
+            <div className="recap-section">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                Consegna
+              </h2>
+              <div className="recap-row">
+                <span className="label">Modalità</span>
+                <span className="value">{modalita === "RITIRO" ? "Ritiro in sede" : "Spedizione corriere"}</span>
+              </div>
+              {!isRitiro && indirizzoSelezionato && (
+                <>
+                  <div className="recap-row" style={{ paddingBottom: 8 }}><span className="label">Indirizzo</span></div>
+                  <div className="recap-addr-box">
+                    <div className="name">{indirizzoSelezionato.ragioneSociale ?? "Sede"}</div>
+                    <div className="line">{indirizzoSelezionato.indirizzo}</div>
+                    <div className="line">{indirizzoSelezionato.cap} {indirizzoSelezionato.citta} ({indirizzoSelezionato.provincia})</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 3. Pagamento */}
+            <div className="recap-section">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Condizioni di pagamento
+              </h2>
+              <div className="recap-row">
+                <span className="label">Metodo</span>
+                <span className="value">{paymentMethod || "—"} — {dati.pagamenti.find(p => p.codice === paymentMethod)?.descrizione ?? "—"}</span>
+              </div>
+              {isBonifico && bankData && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="recap-row" style={{ paddingBottom: 6 }}><span className="label">Coordinate LUIS</span></div>
+                  <div className="iban-row">
+                    <div className="read-only-field iban-field">
+                      <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 2 }}>Intestatario: {bankData.intestatario}</div>
+                      <div style={{ fontSize: 14, marginBottom: 1 }}>{bankData.iban}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)" }}>{bankData.nome} — SWIFT {bankData.swift}</div>
+                    </div>
+                    <button type="button" className="btn btn-secondary" onClick={async () => {
+                      const iban = bankData?.iban?.replace(/\s/g, "") ?? "";
+                      try { await navigator.clipboard.writeText(iban); } catch {}
+                      const btn = document.activeElement as HTMLButtonElement | null;
+                      if (btn) { const orig = btn.textContent; btn.textContent = "Copiato!"; setTimeout(() => { btn.textContent = orig; }, 2000); }
+                    }} title="Copia IBAN">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      Copia IBAN
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Note */}
+            {(notaSpedizione || notaOrdine) && (
+              <div className="recap-section">
+                <h2>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Note
+                </h2>
+                {notaSpedizione && (
+                  <div className="recap-row"><span className="label">Nota spedizione</span><span className="value">{notaSpedizione}</span></div>
+                )}
+                {notaOrdine && (
+                  <div className="recap-row"><span className="label">Nota d&apos;ordine</span><span className="value">{notaOrdine}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* 5. Riepilogo economico */}
+            <div className="recap-section">
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                Riepilogo economico
+              </h2>
+              <table className="total-table">
+                <tbody>
+                  <tr><td style={{ border: 0 }}>Totale articoli a listino</td><td style={{ border: 0 }}>{fmtEur(subtotalListino)}</td></tr>
+                  {couponActive && (
+                    <tr className="discount"><td style={{ border: 0 }}>Sconto codice {couponCode}</td><td style={{ border: 0 }}>−{fmtEur(couponDiscount)}</td></tr>
+                  )}
+                  <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                  <tr className="bold"><td style={{ border: 0 }}>Subtotale scontato</td><td style={{ border: 0 }}>{fmtEur(subScontato)}</td></tr>
+                  <tr className="bold"><td style={{ border: 0 }}>Spedizione</td><td style={{ ...(spedizione?.gratuita ? { color: "var(--green)", fontWeight: 700 } : {}), border: 0 }}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
+                  <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                  <tr className="final"><td style={{ border: 0 }}>Totale (IVA esclusa)</td><td style={{ border: 0 }}>{fmtEur(totale)}</td></tr>
+                </tbody>
+              </table>
+              <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>Confermando, l&apos;ordine sarà trasmesso a Integra per l&apos;evasione.</p>
+            </div>
+
+            {/* Azioni */}
+            <div className="recap-actions">
+              <span className="note">Verifica i dati prima di inviare. Puoi tornare indietro per modificarli.</span>
+              <button type="button" className="btn btn-secondary" onClick={() => setStep("checkout")}>
+                ← Modifica
+              </button>
+              <button className="btn btn-primary btn-lg" disabled={submitting} onClick={conferma}>
+                {submitting ? "Invio in corso…" : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>Conferma e invia ordine</>}
+              </button>
+            </div>
+          </div>
+        )}
       </div></main>
     </div>
   );
