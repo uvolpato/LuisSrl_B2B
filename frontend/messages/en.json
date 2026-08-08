@@ -123,7 +123,8 @@
     },
     "errors": {
       "generic": "Something went wrong. Please try again.",
-      "too_many_requests": "Too many attempts. Wait a minute and try again."
+      "too_many_requests": "Too many attempts. Wait a minute and try again.",
+      "HTTP 500": "Internal server error. Please try again later."
     }
   }
 }

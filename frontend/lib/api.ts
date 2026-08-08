@@ -37,9 +37,9 @@ async function request<T>(
     const body = data as { message?: string | string[] } | null;
     const rawMsg =
       (Array.isArray(body?.message) ? body?.message[0] : body?.message) ??
-      `HTTP ${res.status}`;
+      `errors.HTTP ${res.status}`;
     if (res.status === 429) throw new ApiError(429, "errors.too_many_requests");
-    if (!rawMsg.includes('.')) throw new ApiError(res.status, rawMsg);
+    if (!rawMsg.includes('.')) throw new ApiError(res.status, `errors.HTTP ${res.status}`);
     throw new ApiError(res.status, rawMsg);
   }
   return data as T;
