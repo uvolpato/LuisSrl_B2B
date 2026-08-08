@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ordini — Admin</title>
+<title>Ordini ÔÇö Admin</title>
 <style>
 :root {
   --bg: oklch(97% 0.005 80);
@@ -39,7 +39,7 @@ html, body { height: 100%; }
 body { margin: 0; display: flex; flex-direction: column; font-family: var(--font-body); font-size: 14px; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 
-/* ── AdminTopBar ── */
+/* ÔöÇÔöÇ AdminTopBar ÔöÇÔöÇ */
 .admin-top {
   position: sticky; top: 0; z-index: 10;
   background: color-mix(in oklch, var(--bg) 92%, transparent);
@@ -61,7 +61,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .admin-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .admin-search .search-icon svg { width: 16px; height: 16px; }
 
-/* ── Buttons ── */
+/* ÔöÇÔöÇ Buttons ÔöÇÔöÇ */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
@@ -80,14 +80,15 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .btn-ghost:hover { color: var(--accent); }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
 
-/* ── Date picker ── */
+/* ÔöÇÔöÇ Date picker ÔöÇÔöÇ */
 .date-nav { display: flex; align-items: center; gap: 6px; }
 .date-nav button {
   width: 32px; height: 32px; padding: 0; display: grid; place-items: center;
   border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--fg); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
-.date-nav button:hover { border-color: var(--accent); color: var(--accent); }
+.date-nav button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .date-nav button svg { width: 16px; height: 16px; }
 .date-input {
   padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -96,24 +97,25 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 }
 .date-input:focus { border-color: var(--accent); }
 
-/* ── Content ── */
+/* ÔöÇÔöÇ Content ÔöÇÔöÇ */
 .admin-content { flex: 1; min-height: 0; padding: 16px 32px 24px; display: flex; flex-direction: column; }
 
-/* ── Dashboard cards ── */
+/* ÔöÇÔöÇ Dashboard cards ÔöÇÔöÇ */
 .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; flex-shrink: 0; }
 @media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .dash-grid { grid-template-columns: 1fr; } }
 
 .dash-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 18px 20px;
+  border-radius: var(--radius-lg); padding: 20px 22px;
+  border-left: 3px solid var(--accent);
 }
-.dash-card .label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
-.dash-card .value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; }
+.dash-card .label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.dash-card .value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; line-height: 1.1; }
 .dash-card .value.green { color: var(--green); }
-.dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
-/* ── DataTable ── */
+/* ÔöÇÔöÇ DataTable ÔöÇÔöÇ */
 .data-table {
   position: relative; flex: 1; min-height: 0;
   display: flex; flex-direction: column;
@@ -166,8 +168,17 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 }
 .data-table-footer .pager { display: flex; align-items: center; gap: 8px; }
 .data-table-footer .pager-current { min-width: 56px; text-align: center; }
+.data-table-footer .pager button {
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--fg); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.data-table-footer .pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.data-table-footer .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.data-table-footer .pager button svg { width: 16px; height: 16px; display: block; }
 
-/* ── Status pill ── */
+/* ÔöÇÔöÇ Status pill ÔöÇÔöÇ */
 .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
 .status-pill .sd { font-size: 8px; }
 .st-ok { color: var(--green); }
@@ -175,13 +186,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .st-blue { color: var(--blue); }
 .st-red { color: var(--red); }
 
-/* ── Cella entità ── */
+/* ÔöÇÔöÇ Cella entit├á ÔöÇÔöÇ */
 .cell-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .cell-entity-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .cell-entity-title { font-weight: 600; font-size: 14px; }
 .cell-entity-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
 
-/* ── Modal ── */
+/* ÔöÇÔöÇ Modal ÔöÇÔöÇ */
 .modal-overlay {
   display: none; position: fixed; inset: 0; z-index: 90;
   background: color-mix(in oklch, var(--fg) 40%, transparent);
@@ -195,42 +206,48 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
   animation: fadeIn 0.15s ease-out;
 }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; }
-.modal-head h2 { font-size: 20px; margin: 0; }
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 24px 28px 16px; border-bottom: 1px solid var(--border); }
+.modal-head h2 { font-size: 20px; margin: 0; line-height: 1.3; }
 .modal-close {
   width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--muted); cursor: pointer;
-  display: grid; place-items: center; padding: 0;
+  display: grid; place-items: center; padding: 0; flex-shrink: 0;
 }
 .modal-close:hover { background: var(--fg-soft); color: var(--fg); }
 .modal-close svg { width: 16px; height: 16px; }
-.modal-body { padding: 20px 24px; overflow-y: auto; }
-.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+.modal-body { padding: 24px 28px; overflow-y: auto; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 28px; border-top: 1px solid var(--border); }
 
-/* ── Detail sections ── */
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* ÔöÇÔöÇ Detail sections ÔöÇÔöÇ */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 500px) { .detail-grid { grid-template-columns: 1fr; } }
-.detail-section { margin-bottom: 18px; }
-.detail-section h3 { font-size: 13px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px; }
-.detail-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 13px; }
-.detail-row .lbl { color: var(--muted); }
-.detail-row .val { font-weight: 500; font-family: var(--font-mono); }
+.detail-section { margin-bottom: 20px; }
+.detail-section h3 { font-size: 11px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.detail-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+.detail-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 13px; }
+.detail-row .lbl { color: var(--muted); min-width: 100px; }
+.detail-row .val { font-weight: 500; font-family: var(--font-mono); text-align: right; }
 .detail-items { margin-bottom: 14px; }
-.detail-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.detail-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .detail-item:last-child { border-bottom: none; }
-.detail-item .code { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 70px; }
-.detail-item .name { flex: 1; min-width: 0; }
+.detail-item .code { font-family: var(--font-mono); font-size: 11px; background: oklch(92% 0.06 145); color: oklch(38% 0.12 145); padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+.detail-item .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .detail-item .qty { font-family: var(--font-mono); color: var(--muted); min-width: 30px; text-align: right; }
-.detail-item .price { font-family: var(--font-mono); min-width: 70px; text-align: right; font-weight: 500; }
-.detail-total { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; font-weight: 700; }
+.detail-item .price { font-family: var(--font-mono); min-width: 75px; text-align: right; font-weight: 600; }
+.detail-total { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 16px; font-weight: 700; border-top: 1px solid var(--border); }
 .detail-total .val { font-family: var(--font-mono); }
 
-/* ── Totals row ── */
+/* ÔöÇÔöÇ Totals row ÔöÇÔöÇ */
 .totals-bar {
   display: flex; align-items: center; gap: 24px; flex-shrink: 0;
-  padding: 6px 16px 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  padding: 8px 18px; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
 }
 .totals-bar strong { color: var(--fg); }
+.totals-bar strong.total { color: var(--accent); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -263,7 +280,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     </div>
     <div class="dash-card">
       <div class="label">Totale venduto</div>
-      <div class="value" id="dash-total">8.452,30 €</div>
+      <div class="value" id="dash-total">8.452,30 Ôé¼</div>
       <div class="sub">IVA esclusa</div>
     </div>
     <div class="dash-card">
@@ -273,7 +290,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     </div>
     <div class="dash-card">
       <div class="label">Spedizione media</div>
-      <div class="value" id="dash-shipping">9,87 €</div>
+      <div class="value" id="dash-shipping">9,87 Ôé¼</div>
       <div class="sub">per ordine con spedizione</div>
     </div>
   </div>
@@ -283,7 +300,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     <span>Ordini: <strong id="meta-count">14</strong></span>
     <span>Pezzi: <strong id="meta-qty">156</strong></span>
     <span>Clienti: <strong id="meta-clients">11</strong></span>
-    <span style="margin-left:auto">Totale: <strong id="meta-totale">8.452,30 €</strong></span>
+    <span style="margin-left:auto">Totale: <strong id="meta-totale">8.452,30 Ôé¼</strong></span>
   </div>
 
   <!-- DataTable -->
@@ -317,7 +334,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <div class="data-table-empty" id="orders-empty" hidden>Nessun ordine trovato per questa data.</div>
     </div>
     <div class="data-table-footer">
-      <span id="footer-range">1–14 di 14</span>
+      <span id="footer-range">1ÔÇô14 di 14</span>
       <div class="pager">
         <button id="pager-prev" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
         <span class="pager-current" id="pager-info">1 / 2</span>
@@ -343,9 +360,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 </div>
 
 <script>
-/* ── DATA ── */
+/* ÔöÇÔöÇ DATA ÔöÇÔöÇ */
 var CLIENTI = {
-  1: "Verdepiù di Bianchi & C.",
+  1: "Verdepi├╣ di Bianchi & C.",
   3: "Floricoltura Lombardi S.n.c.",
   5: "Green Garden Center Srl",
   7: "Piante e Dintorni di Rossi M.",
@@ -378,51 +395,51 @@ var ORDERS = [
   { id: 1, num: "ORD-2026-08142", clienteId: 1, data: "2026-08-10", ora: "09:14", stato: "evaso", pagamento: "BB30", totale: 844.20, pezzi: 56, spedizione: 11.34,
     indirizzo: { nome:"Magazzino", via:"Via delle Gardenie, 15", cap:"24121", citta:"Bergamo", prov:"BG" },
     notaSped: "Consegna al piano terra", items: [
-      { codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:12, prezzo:12.40, listino:16.53 },
+      { codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:12, prezzo:12.40, listino:16.53 },
       { codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:6, prezzo:25.74, listino:32.18 },
-      { codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:8, prezzo:18.90, listino:23.63 },
-      { codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:12, prezzo:9.60, listino:12.00 },
+      { codice:"CAPI0301", nome:"Vaso Oliva Terracotta ├ÿ40 H50", qty:8, prezzo:18.90, listino:23.63 },
+      { codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:12, prezzo:9.60, listino:12.00 },
       { codice:"CAPI0710", nome:"Orcio Decorato H65", qty:4, prezzo:32.50, listino:40.63 },
-      { codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:14, prezzo:14.16, listino:18.88 }
+      { codice:"CAPI1105", nome:"Piatto Portavaso ├ÿ50", qty:14, prezzo:14.16, listino:18.88 }
     ]},
   { id: 2, num: "ORD-2026-08143", clienteId: 3, data: "2026-08-10", ora: "09:32", stato: "inoltrato", pagamento: "BB30", totale: 1523.60, pezzi: 42, spedizione: 18.50,
     indirizzo: { nome:"Sede Milano", via:"Largo Augusto, 7", cap:"20122", citta:"Milano", prov:"MI" },
-    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:20, prezzo:25.74, listino:32.18 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:22, prezzo:9.60, listino:12.00 }]},
+    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:20, prezzo:25.74, listino:32.18 },{ codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:22, prezzo:9.60, listino:12.00 }]},
   { id: 3, num: "ORD-2026-08144", clienteId: 5, data: "2026-08-10", ora: "10:05", stato: "confermato", pagamento: "ANT", totale: 672.80, pezzi: 18, spedizione: 0,
     indirizzo: { nome:"Sede", via:"Corso Italia, 88", cap:"50123", citta:"Firenze", prov:"FI" },
-    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:8, prezzo:32.50, listino:40.63 },{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:10, prezzo:14.16, listino:18.88 }]},
+    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:8, prezzo:32.50, listino:40.63 },{ codice:"CAPI1105", nome:"Piatto Portavaso ├ÿ50", qty:10, prezzo:14.16, listino:18.88 }]},
   { id: 4, num: "ORD-2026-08145", clienteId: 7, data: "2026-08-10", ora: "10:21", stato: "attesa", pagamento: "BB60", totale: 2189.40, pezzi: 87, spedizione: 25.00,
     indirizzo: { nome:"Deposito Est", via:"Via Roma, 1", cap:"37121", citta:"Verona", prov:"VR" },
-    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:25, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:32, prezzo:9.60, listino:12.00 }]},
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta ├ÿ40 H50", qty:25, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:32, prezzo:9.60, listino:12.00 }]},
   { id: 5, num: "ORD-2026-08146", clienteId: 9, data: "2026-08-10", ora: "11:03", stato: "confermato", pagamento: "BB30", totale: 345.60, pezzi: 14, spedizione: 12.50,
     indirizzo: { nome:"Sede", via:"Via del Vivaio, 5", cap:"35129", citta:"Padova", prov:"PD" },
-    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:14, prezzo:14.16, listino:18.88 },{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:10, prezzo:12.40, listino:16.53 }]},
+    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso ├ÿ50", qty:14, prezzo:14.16, listino:18.88 },{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:10, prezzo:12.40, listino:16.53 }]},
   { id: 6, num: "ORD-2026-08147", clienteId: 10, data: "2026-08-10", ora: "11:45", stato: "evaso", pagamento: "RB30", totale: 912.00, pezzi: 31, spedizione: 0,
     indirizzo: { nome:"Negozio", via:"Piazza Duomo, 3", cap:"24129", citta:"Bergamo", prov:"BG" },
     notaSped: "Ritiro in sede", items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 },{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:16, prezzo:32.50, listino:40.63 }]},
   { id: 7, num: "ORD-2026-08148", clienteId: 12, data: "2026-08-10", ora: "14:12", stato: "confermato", pagamento: "BB30", totale: 456.30, pezzi: 22, spedizione: 9.80,
     indirizzo: { nome:"Magazzino", via:"Via Donizetti, 10", cap:"24121", citta:"Bergamo", prov:"BG" },
-    items: [{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:12, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:10, prezzo:9.60, listino:12.00 }]},
+    items: [{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta ├ÿ40 H50", qty:12, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:10, prezzo:9.60, listino:12.00 }]},
   { id: 8, num: "ORD-2026-08149", clienteId: 14, data: "2026-08-10", ora: "14:38", stato: "annullato", pagamento: "BB30", totale: 0, pezzi: 0, spedizione: 0,
     indirizzo: null, items: []},
   { id: 9, num: "ORD-2026-08150", clienteId: 1, data: "2026-08-10", ora: "15:05", stato: "inoltrato", pagamento: "ANT", totale: 1890.00, pezzi: 60, spedizione: 22.40,
     indirizzo: { nome:"Magazzino", via:"Via delle Gardenie, 15", cap:"24121", citta:"Bergamo", prov:"BG" },
-    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:25, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:20, prezzo:18.90, listino:23.63 },{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 }]},
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:25, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta ├ÿ40 H50", qty:20, prezzo:18.90, listino:23.63 },{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 }]},
   { id: 10, num: "ORD-2026-08151", clienteId: 18, data: "2026-08-10", ora: "15:42", stato: "confermato", pagamento: "BB60", totale: 1203.40, pezzi: 48, spedizione: 15.30,
     indirizzo: { nome:"Cooperativa", via:"Strada Prov., 22", cap:"40127", citta:"Bologna", prov:"BO" },
-    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:18, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:30, prezzo:9.60, listino:12.00 }]},
+    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:18, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:30, prezzo:9.60, listino:12.00 }]},
   { id: 11, num: "ORD-2026-08152", clienteId: 21, data: "2026-08-10", ora: "16:10", stato: "evaso", pagamento: "RB60", totale: 520.50, pezzi: 18, spedizione: 0,
     indirizzo: { nome:"Sede", via:"Viale Europa, 45", cap:"80143", citta:"Napoli", prov:"NA" },
-    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:18, prezzo:12.40, listino:16.53 }]},
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:18, prezzo:12.40, listino:16.53 }]},
   { id: 12, num: "ORD-2026-08153", clienteId: 3, data: "2026-08-10", ora: "16:35", stato: "attesa", pagamento: "BB30", totale: 345.00, pezzi: 12, spedizione: 8.50,
     indirizzo: { nome:"Sede Milano", via:"Largo Augusto, 7", cap:"20122", citta:"Milano", prov:"MI" },
-    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:12, prezzo:14.16, listino:18.88 }]},
+    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso ├ÿ50", qty:12, prezzo:14.16, listino:18.88 }]},
   { id: 13, num: "ORD-2026-08154", clienteId: 24, data: "2026-08-10", ora: "17:00", stato: "confermato", pagamento: "BB30", totale: 780.20, pezzi: 29, spedizione: 11.20,
     indirizzo: { nome:"Negozio", via:"Corso Garibaldi, 12", cap:"10122", citta:"Torino", prov:"TO" },
-    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:14, prezzo:18.90, listino:23.63 }]},
+    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta ├ÿ40 H50", qty:14, prezzo:18.90, listino:23.63 }]},
   { id: 14, num: "ORD-2026-08155", clienteId: 10, data: "2026-08-10", ora: "17:28", stato: "attesa", pagamento: "ANT", totale: 1890.50, pezzi: 72, spedizione: 19.90,
     indirizzo: { nome:"Negozio", via:"Piazza Duomo, 3", cap:"24129", citta:"Bergamo", prov:"BG" },
-    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:12, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:30, prezzo:9.60, listino:12.00 }]}
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta ├ÿ30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:12, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica ├ÿ25 H18", qty:30, prezzo:9.60, listino:12.00 }]}
 ];
 
 var PAGE_SIZE = 10;
@@ -433,7 +450,7 @@ var searchQuery = "";
 function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
 function fmtDate(d) { var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 
-/* ── FILTERED ORDERS ── */
+/* ÔöÇÔöÇ FILTERED ORDERS ÔöÇÔöÇ */
 function filteredOrders() {
   return ORDERS.filter(function(o) {
     if (o.data !== currentDate) return false;
@@ -444,7 +461,7 @@ function filteredOrders() {
   });
 }
 
-/* ── RENDER DASHBOARD ── */
+/* ÔöÇÔöÇ RENDER DASHBOARD ÔöÇÔöÇ */
 function renderDashboard() {
   var filtered = filteredOrders();
   var count = filtered.length, total = 0, attesa = 0, totalListino = 0, shipSum = 0, shipCount = 0, qtyTot = 0, clients = {};
@@ -461,7 +478,7 @@ function renderDashboard() {
   document.getElementById('dash-count').textContent = count;
   document.getElementById('dash-total').textContent = fmtEur(total);
   document.getElementById('dash-discount').textContent = scontoMedio.toFixed(1).replace('.', ',') + '%';
-  document.getElementById('dash-shipping').textContent = shipCount > 0 ? fmtEur(Math.round(shipSum / shipCount * 100) / 100) : '—';
+  document.getElementById('dash-shipping').textContent = shipCount > 0 ? fmtEur(Math.round(shipSum / shipCount * 100) / 100) : 'ÔÇö';
   document.getElementById('meta-count').textContent = count;
   document.getElementById('meta-qty').textContent = qtyTot;
   document.getElementById('meta-clients').textContent = Object.keys(clients).length;
@@ -473,7 +490,7 @@ function renderDashboard() {
   }
 }
 
-/* ── RENDER TABLE ── */
+/* ÔöÇÔöÇ RENDER TABLE ÔöÇÔöÇ */
 function renderTable() {
   var filtered = filteredOrders();
   var totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
@@ -486,10 +503,10 @@ function renderTable() {
     var o = page[i];
     html += '<tr>'
       + '<td class="mono" style="font-weight:600;color:var(--accent)">' + o.num + '</td>'
-      + '<td><div class="cell-entity"><div class="cell-entity-text"><div class="cell-entity-title">' + (CLIENTI[o.clienteId] || '—') + '</div></div></div></td>'
+      + '<td><div class="cell-entity"><div class="cell-entity-text"><div class="cell-entity-title">' + (CLIENTI[o.clienteId] || 'ÔÇö') + '</div></div></div></td>'
       + '<td class="mono">' + fmtDate(o.data) + ' ' + o.ora + '</td>'
       + '<td class="num mono">' + o.pezzi + '</td>'
-      + '<td class="num mono" style="font-weight:600">' + (o.totale > 0 ? fmtEur(o.totale) : '—') + '</td>'
+      + '<td class="num mono" style="font-weight:600">' + (o.totale > 0 ? fmtEur(o.totale) : 'ÔÇö') + '</td>'
       + '<td><span class="status-pill ' + (STATO_CLS[o.stato] || 'st-muted') + '"><span class="sd">&#9679;</span>' + STATI[o.stato] + '</span></td>'
       + '<td class="mono" style="font-size:12px">' + o.pagamento + '</td>'
       + '<td class="data-table-actions">'
@@ -506,18 +523,18 @@ function renderTable() {
   document.getElementById('pager-next').disabled = currentPage >= totalPages;
 }
 
-/* ── REFRESH ALL ── */
+/* ÔöÇÔöÇ REFRESH ALL ÔöÇÔöÇ */
 function refreshAll() {
   renderDashboard();
   renderTable();
 }
 
-/* ── RENDER DETAIL ── */
+/* ÔöÇÔöÇ RENDER DETAIL ÔöÇÔöÇ */
 function renderDetail(o) {
   document.getElementById('detail-title').textContent = 'Ordine ' + o.num;
   var html = '';
   html += '<div class="detail-grid">';
-  html += '<div class="detail-section"><h3>Cliente</h3><div style="font-weight:600">' + (CLIENTI[o.clienteId] || '—') + '</div></div>';
+  html += '<div class="detail-section"><h3>Cliente</h3><div style="font-weight:600">' + (CLIENTI[o.clienteId] || 'ÔÇö') + '</div></div>';
   html += '<div class="detail-section"><h3>Data</h3><div class="mono">' + fmtDate(o.data) + ' ' + o.ora + '</div></div>';
   html += '<div class="detail-section"><h3>Stato</h3><span class="status-pill ' + (STATO_CLS[o.stato] || 'st-muted') + '"><span class="sd">&#9679;</span>' + STATI[o.stato] + '</span></div>';
   html += '<div class="detail-section"><h3>Pagamento</h3><div class="mono">' + o.pagamento + '</div></div>';
@@ -526,12 +543,13 @@ function renderDetail(o) {
     html += '<div class="detail-section"><h3>Spedizione</h3>';
     html += '<div class="detail-row"><span class="lbl">Destinatario</span><span class="val">' + o.indirizzo.nome + '</span></div>';
     html += '<div class="detail-row"><span class="lbl">Indirizzo</span><span class="val">' + o.indirizzo.via + '</span></div>';
-    html += '<div class="detail-row"><span class="lbl">CAP / Città</span><span class="val">' + o.indirizzo.cap + ' ' + o.indirizzo.citta + ' (' + o.indirizzo.prov + ')</span></div>';
+    html += '<div class="detail-row"><span class="lbl">CAP / Citt├á</span><span class="val">' + o.indirizzo.cap + ' ' + o.indirizzo.citta + ' (' + o.indirizzo.prov + ')</span></div>';
     if (o.notaSped) html += '<div class="detail-row"><span class="lbl">Nota</span><span class="val" style="font-family:var(--font-body)">' + o.notaSped + '</span></div>';
     html += '</div>';
   } else {
     html += '<div class="detail-section"><h3>Spedizione</h3><div style="color:var(--muted)">Annullato / nessuna spedizione</div></div>';
   }
+  html += '<hr class="detail-divider">';
   html += '<div class="detail-section"><h3>Articoli</h3><div class="detail-items">';
   var totQty = 0;
   for (var i = 0; i < (o.items || []).length; i++) {
@@ -545,10 +563,10 @@ function renderDetail(o) {
   document.getElementById('detail-modal').classList.add('open');
 }
 
-/* ── CLOSE DETAIL ── */
+/* ÔöÇÔöÇ CLOSE DETAIL ÔöÇÔöÇ */
 function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
 
-/* ── INIT ── */
+/* ÔöÇÔöÇ INIT ÔöÇÔöÇ */
 (function() {
   refreshAll();
 
@@ -614,3 +632,4 @@ function closeDetail() { document.getElementById('detail-modal').classList.remov
 
 </body>
 </html>
+
