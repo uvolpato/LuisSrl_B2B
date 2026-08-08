@@ -167,6 +167,8 @@ export default function CheckoutPage() {
     if (!authLoading && user) fetchAll();
   }, [authLoading, user, fetchAll]);
 
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
+
   const sedeLegale: Indirizzo | null = useMemo(() => {
     if (!dati?.cliente.citta && !dati?.cliente.indirizzo) return null;
     return {
@@ -278,9 +280,13 @@ export default function CheckoutPage() {
     setSubmitting(false);
   }
 
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
   async function copyIban() {
     const iban = bankData?.iban?.replace(/\s/g, "") ?? "";
     try { await navigator.clipboard.writeText(iban); } catch {}
+    setCopyFeedback(true);
+    setTimeout(() => setCopyFeedback(false), 2000);
   }
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
@@ -327,33 +333,6 @@ export default function CheckoutPage() {
     <div className="catalogo-page cart-page checkout-page">
       <main id="content"><div className="container">
 
-        {/* Stepper */}
-        {(step === "checkout" || step === "recap") && (
-          <div style={{ paddingBlock: 24 }}>
-            <div className="stepper">
-              <div className="step done">
-                <div className="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <span className="label-text">Carrello</span>
-              </div>
-              <div className="step-line done" />
-              <div className={"step" + (step === "checkout" ? " active" : " done")}>
-                <div className="dot">{step === "recap" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> : <span>2</span>}</div>
-                <span className="label-text">Checkout</span>
-              </div>
-              <div className={"step-line" + (step === "recap" ? " done" : "")} />
-              <div className={"step" + (step === "recap" ? " active" : "")}>
-                <div className="dot">{step === "recap" ? "3" : <span style={{ opacity: 0.5 }}>3</span>}</div>
-                <span className="label-text">Riepilogo</span>
-              </div>
-              <div className="step-line" />
-              <div className="step">
-                <div className="dot" style={{ opacity: 0.5 }}>4</div>
-                <span className="label-text" style={{ opacity: 0.5 }}>Conferma</span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── CHECKOUT ── */}
         {step === "checkout" && (
           <><div className="page-title"><h1>Checkout</h1></div>
@@ -371,7 +350,7 @@ export default function CheckoutPage() {
                   <span className="form-hint">Condizioni di pagamento dall&apos;anagrafica (non modificabili).</span>
                 </div>
               )}
-              {bankData && paymentMethod === "ANT" && (
+              {bankData && isBonifico && (
                 <div className="form-field">
                   <label>Coordinate bancarie LUIS S.r.l.</label>
                   <p className="checkout-note" style={{ marginBottom: 8 }}>Effettuare il bonifico alle seguenti coordinate. L&apos;ordine sarà evaso a pagamento ricevuto.</p>
@@ -383,7 +362,7 @@ export default function CheckoutPage() {
                     </div>
                     <button type="button" className="btn btn-sm btn-secondary" onClick={copyIban}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                      Copia IBAN
+                      {copyFeedback ? "Copiato!" : "Copia IBAN"}
                     </button>
                   </div>
                 </div>
@@ -563,7 +542,7 @@ export default function CheckoutPage() {
                       <span className="desc">{item.articoloNome ?? item.varianteCodice}</span>
                     </div>
                     <div className="summary-item-row2">
-                      <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>
+                      {scontoPct > 0 && <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>}
                       {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
                       <span className="riga">{item.quantita} × {fmtEur(item.prezzo?.prezzoNetto ?? 0)}</span>
                       <span className="netto">{fmtEur(tot)}</span>
@@ -575,8 +554,8 @@ export default function CheckoutPage() {
 
             <table className="total-table">
               <tbody>
-                <tr><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>Totale articoli a listino</td><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>{fmtEur(subtotalListino)}</td></tr>
-                <tr><td colSpan={2} style={{ padding: "4px 0 8px", border: 0 }}>
+                <tr><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
+                <tr><td colSpan={2} style={{ padding: "4px 0 0" }}>
                   <div className="coupon-row">
                     <input type="text" className="coupon-input" placeholder="Codice sconto" value={couponCode} onChange={e => setCouponCode(e.target.value)} autoComplete="off" />
                     <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: 12, padding: "5px 10px" }} onClick={applyCoupon}>Applica</button>
@@ -584,16 +563,18 @@ export default function CheckoutPage() {
                     {couponMsg && <span className={`coupon-msg ${couponActive ? "ok" : "err"}`} style={{ fontSize: 11 }}>{couponMsg}</span>}
                   </div>
                 </td></tr>
-                {couponActive && <tr className="discount"><td style={{ border: 0 }}>Sconto codice</td><td style={{ border: 0 }}>−{fmtEur(couponDiscount)}</td></tr>}
-                <tr className="bold"><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>Subtotale scontato</td><td style={{ border: 0, borderTop: "2px solid var(--border)" }}>{fmtEur(subScontato)}</td></tr>
-                <tr className="bold"><td style={{ border: 0 }}>Spedizione</td><td style={{ ...(spedizione?.gratuita ? { color: "var(--ok)", fontWeight: 700 } : {}), border: 0 }}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
+                {couponActive && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
+                <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
                 {!isRitiro && Number(spedizione?.minimo) > 0 && (
-                  <tr><td style={{ border: 0, fontSize: 12, color: "var(--muted)" }}>di cui minimo</td><td style={{ border: 0, fontSize: 12, color: "var(--muted)" }}>{fmtEur(Number(spedizione?.minimo) || 0)}</td></tr>
+                  <tr><td style={{ fontSize: 12, color: "var(--muted)" }}>di cui minimo</td><td style={{ fontSize: 12, color: "var(--muted)" }}>{fmtEur(Number(spedizione?.minimo) || 0)}</td></tr>
                 )}
                 {spedizione?.descrizione === "Tariffa da confermare" && (
-                  <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0", border: 0 }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
+                  <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0" }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
                 )}
-                <tr className="final"><td style={{ border: 0, borderTop: "2px solid var(--fg)" }}>Totale (IVA esclusa)</td><td style={{ border: 0, borderTop: "2px solid var(--fg)" }}>{fmtEur(totale)}</td></tr>
+                <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
+                <tr className="final"><td>Totale (IVA esclusa)</td><td>{fmtEur(totale)}</td></tr>
               </tbody>
             </table>
 
@@ -628,7 +609,7 @@ export default function CheckoutPage() {
                         <span className="desc">{item.articoloNome ?? item.varianteCodice}</span>
                       </div>
                       <div className="recap-item-row2">
-                        <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>
+                        {scontoPct > 0 && <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>}
                         {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
                         <span className="riga">{item.quantita} × {fmtEur(item.prezzo?.prezzoNetto ?? 0)}</span>
                         <span className="netto">{fmtEur(tot)}</span>
@@ -721,18 +702,17 @@ export default function CheckoutPage() {
               </h2>
               <table className="total-table">
                 <tbody>
-                  <tr><td style={{ border: 0 }}>Totale articoli a listino</td><td style={{ border: 0 }}>{fmtEur(subtotalListino)}</td></tr>
+                  <tr><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
                   {couponActive && (
-                    <tr className="discount"><td style={{ border: 0 }}>Sconto codice {couponCode}</td><td style={{ border: 0 }}>−{fmtEur(couponDiscount)}</td></tr>
+                    <tr className="discount"><td>Sconto codice {couponCode}</td><td>−{fmtEur(couponDiscount)}</td></tr>
                   )}
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
-                  <tr className="bold"><td style={{ border: 0 }}>Subtotale scontato</td><td style={{ border: 0 }}>{fmtEur(subScontato)}</td></tr>
-                  <tr className="bold"><td style={{ border: 0 }}>Spedizione</td><td style={{ ...(spedizione?.gratuita ? { color: "var(--green)", fontWeight: 700 } : {}), border: 0 }}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
+                  <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
+                  <tr className="bold"><td>Spedizione</td><td>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
-                  <tr className="final"><td style={{ border: 0 }}>Totale (IVA esclusa)</td><td style={{ border: 0 }}>{fmtEur(totale)}</td></tr>
+                  <tr className="final"><td>Totale (IVA esclusa)</td><td>{fmtEur(totale)}</td></tr>
                 </tbody>
               </table>
-              <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>Confermando, l&apos;ordine sarà trasmesso a Integra per l&apos;evasione.</p>
             </div>
 
             {/* Azioni */}
