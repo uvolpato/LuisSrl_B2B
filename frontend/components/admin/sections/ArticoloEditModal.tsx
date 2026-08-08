@@ -346,7 +346,7 @@ export default function ArticoloEditModal({
         )}
       </div>
 
-      <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "immagini" ? " modal-body-edit--fill" : ""}`}>
+      <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "immagini" || activeTab === "raccolte" ? " modal-body-edit--fill" : ""}`}>
         {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 16 }}>{error}</Notice>}
 
         {loading && <p style={{ color: "var(--muted)", padding: 40, textAlign: "center" }}>Caricamento…</p>}
@@ -587,8 +587,8 @@ export default function ArticoloEditModal({
             )}
 
             {activeTab === "raccolte" && (
-              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 12 }}>
-                <div className="admin-search" style={{ flexShrink: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 12 }}>
+                <div className="admin-search" style={{ flex: "0 0 auto", maxWidth: "none" }}>
                   <input
                     type="text"
                     placeholder="Cerca raccolta…"

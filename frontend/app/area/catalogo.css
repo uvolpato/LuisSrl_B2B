@@ -1650,9 +1650,10 @@
 
 /* Total table */
 .total-table { width: 100%; }
-.total-table td { padding: 5px 0; font-size: 13px; }
+.total-table td { padding: 5px 0; font-size: 13px; border-bottom: 0; }
 .total-table td:last-child { text-align: right; font-family: var(--font-mono); font-weight: 500; }
 .total-table tr.discount td { color: var(--accent); }
+.total-table tr.bold td { font-weight: 700; }
 .total-divider { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
 .total-table tr.final td { font-weight: 700; font-size: 18px; padding-top: 8px; }
 

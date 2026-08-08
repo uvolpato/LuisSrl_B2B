@@ -50,6 +50,8 @@ export default function CarrelloPage() {
     if (!authLoading && user) fetchCart();
   }, [authLoading, user, fetchCart]);
 
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
   function notifyCart() { window.dispatchEvent(new CustomEvent("cart-updated")); }
 
   async function changeQty(codice: string, delta: number) {
