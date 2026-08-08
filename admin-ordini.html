@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordini — Admin</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(96% 0.004 80);
+  --danger: oklch(55% 0.18 25);
+  --danger-soft: color-mix(in oklch, var(--danger) 14%, transparent);
+  --green: oklch(55% 0.15 145);
+  --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
+  --red: oklch(55% 0.18 25);
+  --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+  --blue: oklch(55% 0.15 250);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --ok: oklch(55% 0.12 150);
+  --ok-soft: color-mix(in oklch, var(--ok) 14%, transparent);
+  --amber: oklch(60% 0.13 65);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; font-family: var(--font-body); font-size: 14px; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* ── AdminTopBar ── */
+.admin-top {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.admin-top h1 { font-size: 20px; letter-spacing: -0.01em; margin: 0; }
+.top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-search { position: relative; width: 280px; max-width: 100%; }
+.admin-search input {
+  width: 100%; padding: 9px 14px 9px 36px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font: inherit; font-size: 14px; color: var(--fg);
+  outline: none; transition: border-color 0.15s ease;
+}
+.admin-search input:focus { border-color: var(--accent); }
+.admin-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.admin-search .search-icon svg { width: 16px; height: 16px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 8px; border: 1px solid transparent;
+  font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  text-decoration: none; font-family: var(--font-body);
+  transition: transform 0.05s ease, background 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+
+/* ── Date picker ── */
+.date-nav { display: flex; align-items: center; gap: 6px; }
+.date-nav button {
+  width: 32px; height: 32px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--fg); cursor: pointer;
+}
+.date-nav button:hover { border-color: var(--accent); color: var(--accent); }
+.date-nav button svg { width: 16px; height: 16px; }
+.date-input {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font: inherit; font-size: 14px; color: var(--fg);
+  font-family: var(--font-mono); outline: none; cursor: pointer;
+}
+.date-input:focus { border-color: var(--accent); }
+
+/* ── Content ── */
+.admin-content { flex: 1; min-height: 0; padding: 16px 32px 24px; display: flex; flex-direction: column; }
+
+/* ── Dashboard cards ── */
+.dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; flex-shrink: 0; }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .dash-grid { grid-template-columns: 1fr; } }
+
+.dash-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 20px;
+}
+.dash-card .label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+.dash-card .value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; }
+.dash-card .value.green { color: var(--green); }
+.dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── DataTable ── */
+.data-table {
+  position: relative; flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 1px solid var(--table-head-bg);
+  border-right: 1px solid var(--table-head-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.data-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead th {
+  position: sticky; top: 0; z-index: 4;
+  background: var(--table-head-bg); color: var(--muted);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; text-transform: uppercase; text-align: left;
+  padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--fg); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.data-table .num { text-align: right; }
+.data-table-empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+.data-table-actions { text-align: right; white-space: nowrap; }
+.data-table .row-action {
+  position: relative; width: 32px; height: 32px; padding: 0;
+  display: inline-grid; place-items: center; margin-left: 2px;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.data-table .row-action:hover { background: var(--fg-soft); color: var(--fg); }
+.data-table .row-action svg { width: 16px; height: 16px; }
+.data-table .row-action::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 4px 8px; background: var(--fg); color: var(--surface);
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  border-radius: 6px; opacity: 0; pointer-events: none;
+  transition: opacity 0.12s ease; z-index: 5;
+}
+.data-table .row-action:hover::after { opacity: 1; }
+.data-table-footer {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+.data-table-footer .pager { display: flex; align-items: center; gap: 8px; }
+.data-table-footer .pager-current { min-width: 56px; text-align: center; }
+
+/* ── Status pill ── */
+.status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
+.status-pill .sd { font-size: 8px; }
+.st-ok { color: var(--green); }
+.st-amber { color: var(--amber); }
+.st-blue { color: var(--blue); }
+.st-red { color: var(--red); }
+
+/* ── Cella entità ── */
+.cell-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cell-entity-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cell-entity-title { font-weight: 600; font-size: 14px; }
+.cell-entity-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 90;
+  background: color-mix(in oklch, var(--fg) 40%, transparent);
+  align-items: center; justify-content: center; padding: 32px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  width: 100%; max-width: 720px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  animation: fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; }
+.modal-head h2 { font-size: 20px; margin: 0; }
+.modal-close {
+  width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--muted); cursor: pointer;
+  display: grid; place-items: center; padding: 0;
+}
+.modal-close:hover { background: var(--fg-soft); color: var(--fg); }
+.modal-close svg { width: 16px; height: 16px; }
+.modal-body { padding: 20px 24px; overflow-y: auto; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+
+/* ── Detail sections ── */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 500px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-section { margin-bottom: 18px; }
+.detail-section h3 { font-size: 13px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px; }
+.detail-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 13px; }
+.detail-row .lbl { color: var(--muted); }
+.detail-row .val { font-weight: 500; font-family: var(--font-mono); }
+.detail-items { margin-bottom: 14px; }
+.detail-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.detail-item:last-child { border-bottom: none; }
+.detail-item .code { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 70px; }
+.detail-item .name { flex: 1; min-width: 0; }
+.detail-item .qty { font-family: var(--font-mono); color: var(--muted); min-width: 30px; text-align: right; }
+.detail-item .price { font-family: var(--font-mono); min-width: 70px; text-align: right; font-weight: 500; }
+.detail-total { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; font-weight: 700; }
+.detail-total .val { font-family: var(--font-mono); }
+
+/* ── Totals row ── */
+.totals-bar {
+  display: flex; align-items: center; gap: 24px; flex-shrink: 0;
+  padding: 6px 16px 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+.totals-bar strong { color: var(--fg); }
+</style>
+</head>
+<body>
+
+<!-- AdminTopBar -->
+<div class="admin-top">
+  <h1>Ordini</h1>
+  <div class="top-actions">
+    <div class="date-nav">
+      <button id="btn-prev-day" title="Giorno precedente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <input type="date" class="date-input" id="date-picker" value="2026-08-10">
+      <button id="btn-today" class="btn btn-sm btn-secondary" style="font-family:var(--font-body);margin-left:4px">Oggi</button>
+      <button id="btn-next-day" title="Giorno successivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="admin-search">
+      <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <input type="text" id="search-input" placeholder="Cerca per cliente o numero ordine...">
+    </div>
+  </div>
+</div>
+
+<div class="admin-content">
+
+  <!-- Dashboard cards -->
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="label">Ordini del giorno</div>
+      <div class="value" id="dash-count">14</div>
+      <div class="sub">3 in attesa di conferma</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">Totale venduto</div>
+      <div class="value" id="dash-total">8.452,30 €</div>
+      <div class="sub">IVA esclusa</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">Sconto medio</div>
+      <div class="value green" id="dash-discount">18,4%</div>
+      <div class="sub">su prezzo di listino</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">Spedizione media</div>
+      <div class="value" id="dash-shipping">9,87 €</div>
+      <div class="sub">per ordine con spedizione</div>
+    </div>
+  </div>
+
+  <!-- Totals bar -->
+  <div class="totals-bar">
+    <span>Ordini: <strong id="meta-count">14</strong></span>
+    <span>Pezzi: <strong id="meta-qty">156</strong></span>
+    <span>Clienti: <strong id="meta-clients">11</strong></span>
+    <span style="margin-left:auto">Totale: <strong id="meta-totale">8.452,30 €</strong></span>
+  </div>
+
+  <!-- DataTable -->
+  <div class="data-table">
+    <div class="data-table-scroll">
+      <table>
+        <colgroup>
+          <col style="width:120px">
+          <col>
+          <col style="width:130px">
+          <col style="width:90px">
+          <col style="width:110px">
+          <col style="width:110px">
+          <col style="width:100px">
+          <col style="width:90px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>N. Ordine</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th class="num">Pezzi</th>
+            <th class="num">Totale</th>
+            <th>Stato</th>
+            <th>Pagamento</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody"></tbody>
+      </table>
+      <div class="data-table-empty" id="orders-empty" hidden>Nessun ordine trovato per questa data.</div>
+    </div>
+    <div class="data-table-footer">
+      <span id="footer-range">1–14 di 14</span>
+      <div class="pager">
+        <button id="pager-prev" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="pager-current" id="pager-info">1 / 2</span>
+        <button id="pager-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal dettaglio ordine -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="detail-title">Ordine ORD-2026-08142</h2>
+      <button class="modal-close" id="btn-detail-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="btn-detail-ok">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+var CLIENTI = {
+  1: "Verdepiù di Bianchi & C.",
+  3: "Floricoltura Lombardi S.n.c.",
+  5: "Green Garden Center Srl",
+  7: "Piante e Dintorni di Rossi M.",
+  9: "Vivai Riuniti del Veneto",
+  10: "Terra e Colore Sas",
+  12: "GardenShop Bergamo",
+  14: "Il Giardino Segreto Srl",
+  18: "Agriverde Cooperativa",
+  21: "Fiori e Foglie di Esposito",
+  24: "Ortoflor Commerciale"
+};
+
+var STATI = {
+  confermato:  "Confermato",
+  inoltrato:   "Inoltrato a fornitore",
+  evaso:       "Evaso",
+  annullato:   "Annullato",
+  attesa:      "In attesa"
+};
+
+var STATO_CLS = {
+  confermato:  "st-ok",
+  inoltrato:   "st-blue",
+  evaso:       "st-ok",
+  annullato:   "st-red",
+  attesa:      "st-amber"
+};
+
+var ORDERS = [
+  { id: 1, num: "ORD-2026-08142", clienteId: 1, data: "2026-08-10", ora: "09:14", stato: "evaso", pagamento: "BB30", totale: 844.20, pezzi: 56, spedizione: 11.34,
+    indirizzo: { nome:"Magazzino", via:"Via delle Gardenie, 15", cap:"24121", citta:"Bergamo", prov:"BG" },
+    notaSped: "Consegna al piano terra", items: [
+      { codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:12, prezzo:12.40, listino:16.53 },
+      { codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:6, prezzo:25.74, listino:32.18 },
+      { codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:8, prezzo:18.90, listino:23.63 },
+      { codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:12, prezzo:9.60, listino:12.00 },
+      { codice:"CAPI0710", nome:"Orcio Decorato H65", qty:4, prezzo:32.50, listino:40.63 },
+      { codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:14, prezzo:14.16, listino:18.88 }
+    ]},
+  { id: 2, num: "ORD-2026-08143", clienteId: 3, data: "2026-08-10", ora: "09:32", stato: "inoltrato", pagamento: "BB30", totale: 1523.60, pezzi: 42, spedizione: 18.50,
+    indirizzo: { nome:"Sede Milano", via:"Largo Augusto, 7", cap:"20122", citta:"Milano", prov:"MI" },
+    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:20, prezzo:25.74, listino:32.18 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:22, prezzo:9.60, listino:12.00 }]},
+  { id: 3, num: "ORD-2026-08144", clienteId: 5, data: "2026-08-10", ora: "10:05", stato: "confermato", pagamento: "ANT", totale: 672.80, pezzi: 18, spedizione: 0,
+    indirizzo: { nome:"Sede", via:"Corso Italia, 88", cap:"50123", citta:"Firenze", prov:"FI" },
+    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:8, prezzo:32.50, listino:40.63 },{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:10, prezzo:14.16, listino:18.88 }]},
+  { id: 4, num: "ORD-2026-08145", clienteId: 7, data: "2026-08-10", ora: "10:21", stato: "attesa", pagamento: "BB60", totale: 2189.40, pezzi: 87, spedizione: 25.00,
+    indirizzo: { nome:"Deposito Est", via:"Via Roma, 1", cap:"37121", citta:"Verona", prov:"VR" },
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:25, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:32, prezzo:9.60, listino:12.00 }]},
+  { id: 5, num: "ORD-2026-08146", clienteId: 9, data: "2026-08-10", ora: "11:03", stato: "confermato", pagamento: "BB30", totale: 345.60, pezzi: 14, spedizione: 12.50,
+    indirizzo: { nome:"Sede", via:"Via del Vivaio, 5", cap:"35129", citta:"Padova", prov:"PD" },
+    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:14, prezzo:14.16, listino:18.88 },{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:10, prezzo:12.40, listino:16.53 }]},
+  { id: 6, num: "ORD-2026-08147", clienteId: 10, data: "2026-08-10", ora: "11:45", stato: "evaso", pagamento: "RB30", totale: 912.00, pezzi: 31, spedizione: 0,
+    indirizzo: { nome:"Negozio", via:"Piazza Duomo, 3", cap:"24129", citta:"Bergamo", prov:"BG" },
+    notaSped: "Ritiro in sede", items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 },{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:16, prezzo:32.50, listino:40.63 }]},
+  { id: 7, num: "ORD-2026-08148", clienteId: 12, data: "2026-08-10", ora: "14:12", stato: "confermato", pagamento: "BB30", totale: 456.30, pezzi: 22, spedizione: 9.80,
+    indirizzo: { nome:"Magazzino", via:"Via Donizetti, 10", cap:"24121", citta:"Bergamo", prov:"BG" },
+    items: [{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:12, prezzo:18.90, listino:23.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:10, prezzo:9.60, listino:12.00 }]},
+  { id: 8, num: "ORD-2026-08149", clienteId: 14, data: "2026-08-10", ora: "14:38", stato: "annullato", pagamento: "BB30", totale: 0, pezzi: 0, spedizione: 0,
+    indirizzo: null, items: []},
+  { id: 9, num: "ORD-2026-08150", clienteId: 1, data: "2026-08-10", ora: "15:05", stato: "inoltrato", pagamento: "ANT", totale: 1890.00, pezzi: 60, spedizione: 22.40,
+    indirizzo: { nome:"Magazzino", via:"Via delle Gardenie, 15", cap:"24121", citta:"Bergamo", prov:"BG" },
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:25, prezzo:12.40, listino:16.53 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:20, prezzo:18.90, listino:23.63 },{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 }]},
+  { id: 10, num: "ORD-2026-08151", clienteId: 18, data: "2026-08-10", ora: "15:42", stato: "confermato", pagamento: "BB60", totale: 1203.40, pezzi: 48, spedizione: 15.30,
+    indirizzo: { nome:"Cooperativa", via:"Strada Prov., 22", cap:"40127", citta:"Bologna", prov:"BO" },
+    items: [{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:18, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:30, prezzo:9.60, listino:12.00 }]},
+  { id: 11, num: "ORD-2026-08152", clienteId: 21, data: "2026-08-10", ora: "16:10", stato: "evaso", pagamento: "RB60", totale: 520.50, pezzi: 18, spedizione: 0,
+    indirizzo: { nome:"Sede", via:"Viale Europa, 45", cap:"80143", citta:"Napoli", prov:"NA" },
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:18, prezzo:12.40, listino:16.53 }]},
+  { id: 12, num: "ORD-2026-08153", clienteId: 3, data: "2026-08-10", ora: "16:35", stato: "attesa", pagamento: "BB30", totale: 345.00, pezzi: 12, spedizione: 8.50,
+    indirizzo: { nome:"Sede Milano", via:"Largo Augusto, 7", cap:"20122", citta:"Milano", prov:"MI" },
+    items: [{ codice:"CAPI1105", nome:"Piatto Portavaso Ø50", qty:12, prezzo:14.16, listino:18.88 }]},
+  { id: 13, num: "ORD-2026-08154", clienteId: 24, data: "2026-08-10", ora: "17:00", stato: "confermato", pagamento: "BB30", totale: 780.20, pezzi: 29, spedizione: 11.20,
+    indirizzo: { nome:"Negozio", via:"Corso Garibaldi, 12", cap:"10122", citta:"Torino", prov:"TO" },
+    items: [{ codice:"CAPI0203", nome:"Vaso Amphora Cotto H50", qty:15, prezzo:25.74, listino:32.18 },{ codice:"CAPI0301", nome:"Vaso Oliva Terracotta Ø40 H50", qty:14, prezzo:18.90, listino:23.63 }]},
+  { id: 14, num: "ORD-2026-08155", clienteId: 10, data: "2026-08-10", ora: "17:28", stato: "attesa", pagamento: "ANT", totale: 1890.50, pezzi: 72, spedizione: 19.90,
+    indirizzo: { nome:"Negozio", via:"Piazza Duomo, 3", cap:"24129", citta:"Bergamo", prov:"BG" },
+    items: [{ codice:"CAPI0101", nome:"Vaso Torchio Terracotta Ø30 H35", qty:30, prezzo:12.40, listino:16.53 },{ codice:"CAPI0710", nome:"Orcio Decorato H65", qty:12, prezzo:32.50, listino:40.63 },{ codice:"CAPI1804", nome:"Ciotola Rustica Ø25 H18", qty:30, prezzo:9.60, listino:12.00 }]}
+];
+
+var PAGE_SIZE = 10;
+var currentPage = 1;
+var currentDate = "2026-08-10";
+var searchQuery = "";
+
+function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
+function fmtDate(d) { var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+
+/* ── FILTERED ORDERS ── */
+function filteredOrders() {
+  return ORDERS.filter(function(o) {
+    if (o.data !== currentDate) return false;
+    if (!searchQuery) return true;
+    var q = searchQuery.toLowerCase();
+    var cliente = (CLIENTI[o.clienteId] || '').toLowerCase();
+    return cliente.indexOf(q) !== -1 || o.num.toLowerCase().indexOf(q) !== -1;
+  });
+}
+
+/* ── RENDER DASHBOARD ── */
+function renderDashboard() {
+  var filtered = filteredOrders();
+  var count = filtered.length, total = 0, attesa = 0, totalListino = 0, shipSum = 0, shipCount = 0, qtyTot = 0, clients = {};
+  for (var i = 0; i < filtered.length; i++) {
+    var o = filtered[i];
+    total += o.totale;
+    qtyTot += o.pezzi;
+    if (o.stato === 'attesa') attesa++;
+    clients[o.clienteId] = true;
+    if (o.spedizione > 0) { shipSum += o.spedizione; shipCount++; }
+    if (o.items) for (var j = 0; j < o.items.length; j++) { totalListino += o.items[j].qty * o.items[j].listino; }
+  }
+  var scontoMedio = totalListino > 0 ? Math.round((1 - total / totalListino) * 1000) / 10 : 0;
+  document.getElementById('dash-count').textContent = count;
+  document.getElementById('dash-total').textContent = fmtEur(total);
+  document.getElementById('dash-discount').textContent = scontoMedio.toFixed(1).replace('.', ',') + '%';
+  document.getElementById('dash-shipping').textContent = shipCount > 0 ? fmtEur(Math.round(shipSum / shipCount * 100) / 100) : '—';
+  document.getElementById('meta-count').textContent = count;
+  document.getElementById('meta-qty').textContent = qtyTot;
+  document.getElementById('meta-clients').textContent = Object.keys(clients).length;
+  document.getElementById('meta-totale').textContent = fmtEur(total);
+  if (attesa > 0) {
+    var dc = document.getElementById('dash-count');
+    var sub = dc.parentNode.querySelector('.sub');
+    if (sub) sub.textContent = attesa + ' in attesa di conferma';
+  }
+}
+
+/* ── RENDER TABLE ── */
+function renderTable() {
+  var filtered = filteredOrders();
+  var totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  var start = (currentPage - 1) * PAGE_SIZE;
+  var page = filtered.slice(start, start + PAGE_SIZE);
+  var tbody = document.getElementById('orders-tbody');
+  var html = '';
+  for (var i = 0; i < page.length; i++) {
+    var o = page[i];
+    html += '<tr>'
+      + '<td class="mono" style="font-weight:600;color:var(--accent)">' + o.num + '</td>'
+      + '<td><div class="cell-entity"><div class="cell-entity-text"><div class="cell-entity-title">' + (CLIENTI[o.clienteId] || '—') + '</div></div></div></td>'
+      + '<td class="mono">' + fmtDate(o.data) + ' ' + o.ora + '</td>'
+      + '<td class="num mono">' + o.pezzi + '</td>'
+      + '<td class="num mono" style="font-weight:600">' + (o.totale > 0 ? fmtEur(o.totale) : '—') + '</td>'
+      + '<td><span class="status-pill ' + (STATO_CLS[o.stato] || 'st-muted') + '"><span class="sd">&#9679;</span>' + STATI[o.stato] + '</span></td>'
+      + '<td class="mono" style="font-size:12px">' + o.pagamento + '</td>'
+      + '<td class="data-table-actions">'
+      + '<button class="row-action" data-tip="Dettaglio" data-id="' + o.id + '" data-action="detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'
+      + '</td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+  document.getElementById('orders-empty').hidden = filtered.length > 0;
+  var end = Math.min(start + PAGE_SIZE, filtered.length);
+  document.getElementById('footer-range').textContent = filtered.length > 0 ? (start + 1) + '\u2013' + end + ' di ' + filtered.length : 'Nessun ordine';
+  document.getElementById('pager-info').textContent = currentPage + ' / ' + totalPages;
+  document.getElementById('pager-prev').disabled = currentPage <= 1;
+  document.getElementById('pager-next').disabled = currentPage >= totalPages;
+}
+
+/* ── REFRESH ALL ── */
+function refreshAll() {
+  renderDashboard();
+  renderTable();
+}
+
+/* ── RENDER DETAIL ── */
+function renderDetail(o) {
+  document.getElementById('detail-title').textContent = 'Ordine ' + o.num;
+  var html = '';
+  html += '<div class="detail-grid">';
+  html += '<div class="detail-section"><h3>Cliente</h3><div style="font-weight:600">' + (CLIENTI[o.clienteId] || '—') + '</div></div>';
+  html += '<div class="detail-section"><h3>Data</h3><div class="mono">' + fmtDate(o.data) + ' ' + o.ora + '</div></div>';
+  html += '<div class="detail-section"><h3>Stato</h3><span class="status-pill ' + (STATO_CLS[o.stato] || 'st-muted') + '"><span class="sd">&#9679;</span>' + STATI[o.stato] + '</span></div>';
+  html += '<div class="detail-section"><h3>Pagamento</h3><div class="mono">' + o.pagamento + '</div></div>';
+  html += '</div>';
+  if (o.indirizzo) {
+    html += '<div class="detail-section"><h3>Spedizione</h3>';
+    html += '<div class="detail-row"><span class="lbl">Destinatario</span><span class="val">' + o.indirizzo.nome + '</span></div>';
+    html += '<div class="detail-row"><span class="lbl">Indirizzo</span><span class="val">' + o.indirizzo.via + '</span></div>';
+    html += '<div class="detail-row"><span class="lbl">CAP / Città</span><span class="val">' + o.indirizzo.cap + ' ' + o.indirizzo.citta + ' (' + o.indirizzo.prov + ')</span></div>';
+    if (o.notaSped) html += '<div class="detail-row"><span class="lbl">Nota</span><span class="val" style="font-family:var(--font-body)">' + o.notaSped + '</span></div>';
+    html += '</div>';
+  } else {
+    html += '<div class="detail-section"><h3>Spedizione</h3><div style="color:var(--muted)">Annullato / nessuna spedizione</div></div>';
+  }
+  html += '<div class="detail-section"><h3>Articoli</h3><div class="detail-items">';
+  var totQty = 0;
+  for (var i = 0; i < (o.items || []).length; i++) {
+    var it = o.items[i];
+    totQty += it.qty;
+    html += '<div class="detail-item"><span class="code">' + it.codice + '</span><span class="name">' + it.nome + '</span><span class="qty">' + it.qty + '\u00D7</span><span class="price">' + fmtEur(it.qty * it.prezzo) + '</span></div>';
+  }
+  html += '</div></div>';
+  html += '<div class="detail-total"><span>Totale (' + totQty + ' pz, IVA esclusa)</span><span class="val">' + fmtEur(o.totale) + '</span></div>';
+  document.getElementById('detail-body').innerHTML = html;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+/* ── CLOSE DETAIL ── */
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+
+/* ── INIT ── */
+(function() {
+  refreshAll();
+
+  // Date picker
+  document.getElementById('date-picker').addEventListener('change', function() {
+    currentDate = this.value; currentPage = 1; refreshAll();
+  });
+
+  // Prev/next day
+  document.getElementById('btn-prev-day').addEventListener('click', function() {
+    var d = new Date(currentDate + 'T00:00:00'); d.setDate(d.getDate() - 1);
+    currentDate = d.toISOString().slice(0, 10); currentPage = 1;
+    document.getElementById('date-picker').value = currentDate;
+    refreshAll();
+  });
+  document.getElementById('btn-next-day').addEventListener('click', function() {
+    var d = new Date(currentDate + 'T00:00:00'); d.setDate(d.getDate() + 1);
+    currentDate = d.toISOString().slice(0, 10); currentPage = 1;
+    document.getElementById('date-picker').value = currentDate;
+    refreshAll();
+  });
+  document.getElementById('btn-today').addEventListener('click', function() {
+    var today = new Date().toISOString().slice(0, 10);
+    currentDate = today; currentPage = 1;
+    document.getElementById('date-picker').value = currentDate;
+    refreshAll();
+  });
+
+  // Search
+  var searchTimer;
+  document.getElementById('search-input').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    var self = this;
+    searchTimer = setTimeout(function() {
+      searchQuery = self.value.trim(); currentPage = 1; refreshAll();
+    }, 250);
+  });
+
+  // Pager
+  document.getElementById('pager-prev').addEventListener('click', function() {
+    if (currentPage > 1) { currentPage--; refreshAll(); }
+  });
+  document.getElementById('pager-next').addEventListener('click', function() {
+    var totalPages = Math.ceil(filteredOrders().length / PAGE_SIZE) || 1;
+    if (currentPage < totalPages) { currentPage++; refreshAll(); }
+  });
+
+  // Row actions (delegation)
+  document.getElementById('orders-tbody').addEventListener('click', function(e) {
+    var btn = e.target.closest('.row-action');
+    if (!btn) return;
+    var id = Number(btn.dataset.id);
+    for (var i = 0; i < ORDERS.length; i++) { if (ORDERS[i].id === id) { renderDetail(ORDERS[i]); return; } }
+  });
+
+  // Detail modal close
+  document.getElementById('btn-detail-close').addEventListener('click', closeDetail);
+  document.getElementById('btn-detail-ok').addEventListener('click', closeDetail);
+  document.getElementById('detail-modal').addEventListener('click', function(e) { if (e.target === this) closeDetail(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDetail(); });
+})();
+</script>
+
+</body>
+</html>
