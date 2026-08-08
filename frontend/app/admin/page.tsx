@@ -14,6 +14,7 @@ import BoxSuggerimentiSection from "../../components/admin/sections/BoxSuggerime
 import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 import ListiniSection from "../../components/admin/sections/ListiniSection";
 import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";
+import AdminOrdiniSection from "../../components/admin/sections/AdminOrdiniSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -52,6 +53,7 @@ export default function AdminPage() {
       {section === "box-dashboard" && <BoxSuggerimentiSection />}
 
       {section === "listini" && <ListiniSection />}
+      {section === "ordini" && <AdminOrdiniSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
     </AdminLayout>
   );
