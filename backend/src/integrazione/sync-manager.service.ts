@@ -145,9 +145,13 @@ export class SyncManagerService implements OnModuleInit {
           if (result.status === 'ok' || result.status === 'completed') {
             try {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
-              this.logger.log(`Aggregazione varianti: ${JSON.stringify(agg)}`);
+              const diag = agg.diagnostica as any;
+              const msg = diag 
+                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti. | senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate} tot=${diag.totaleVarianti}`
+                : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
+              result = { ...result, errorText: result.errorText ? `${result.errorText} | ${msg}` : msg };
             } catch (e) {
-              this.logger.error(`Aggregazione fallita: ${e instanceof Error ? e.message : String(e)}`);
+              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}` };
             }
           }
           break;
