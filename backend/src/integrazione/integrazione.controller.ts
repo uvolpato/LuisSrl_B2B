@@ -123,6 +123,12 @@ export class IntegrazioneController {
     return this.integrazione.splitGroupedArticles();
   }
 
+  @Post('aggregate-ungrouped')
+  @HttpCode(200)
+  async aggregateUngrouped() {
+    return this.integrazione.aggregateUngroupedArticles();
+  }
+
   @Post('undo-split')
   @HttpCode(200)
   async undoSplit() {
