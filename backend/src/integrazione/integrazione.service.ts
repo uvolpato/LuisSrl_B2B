@@ -104,7 +104,7 @@ export class IntegrazioneService {
   async getLinee() { return this.queryView('linee'); }
   async getProdotti() { return this.queryView('prodotti'); }
 
-  async searchProdotti(search?: string, famiglia?: string, page = 1, limit = 50, sort?: string, dir?: 'asc' | 'desc') {
+  async searchProdotti(search?: string, famiglia?: string, page = 1, limit = 50, sort?: string, dir?: 'asc' | 'desc', includeImported = false) {
     const params: unknown[] = [];
     let idx = 1;
     const conds: string[] = [];
@@ -121,7 +121,9 @@ export class IntegrazioneService {
       params.push(famiglia);
       idx++;
     }
-    conds.push(`NOT EXISTS (SELECT 1 FROM varianti WHERE codice = a.pro_cod)`);
+    if (!includeImported) {
+      conds.push(`NOT EXISTS (SELECT 1 FROM varianti WHERE codice = a.pro_cod)`);
+    }
     const whereClause = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 

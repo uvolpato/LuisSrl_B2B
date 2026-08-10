@@ -27,6 +27,7 @@ export default function ImportaArticoliModal({
   const pageRef = useRef(1);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showImported, setShowImported] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function ImportaArticoliModal({
         params.set("sort", sortKey);
         params.set("dir", sortDir);
       }
+      if (showImported) params.set("includeImported", "true");
       const res = await api.get<SearchResult>(`/api/integrazione/prodotti?${params}`);
       setResult(res);
       pageRef.current = p;
@@ -56,13 +58,14 @@ export default function ImportaArticoliModal({
     } finally {
       setLoading(false);
     }
-  }, [debounced, sortKey, sortDir]);
+  }, [debounced, sortKey, sortDir, showImported]);
 
   useEffect(() => {
     if (open) {
       fetchData(1);
     } else {
       setSearch("");
+      setShowImported(false);
       setDebounced("");
       setResult(null);
       setImportResult(null);
@@ -167,6 +170,10 @@ export default function ImportaArticoliModal({
           {IconInfo}
           Cerca gli articoli da importare da Integra. Le varianti selezionate verranno importate creando Famiglia → Articolo → Varianti.
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--muted)", cursor: "pointer", marginBottom: 8 }}>
+          <input type="checkbox" checked={showImported} onChange={(e) => setShowImported(e.target.checked)} style={{ accentColor: "var(--accent)" }} />
+          Mostra già importati (re-import aggiorna descrizione e linea)
+        </label>
         <div className="new-art-search">
           <span className="search-icon">{IconSearch}</span>
           <input
