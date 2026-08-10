@@ -147,12 +147,20 @@ export class SyncManagerService implements OnModuleInit {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const diag = agg.diagnostica as any;
               const msg = diag
-                ? `${agg.aggregati} spostate, ${agg.articoliEliminati} articoli vuoti. senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate} tot=${diag.totaleVarianti}`
-                : `${agg.aggregati} spostate, ${agg.articoliEliminati} articoli vuoti`;
-              // Scrivilo in errorText così appare nel sync panel (non è un errore)
+                ? `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti | noLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
+                : `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
               result = { ...result, errorText: msg };
+              await this.prisma.$executeRawUnsafe(
+                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
+                msg,
+              );
             } catch (e) {
-              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}` };
+              const err = `Aggr err: ${e instanceof Error ? e.message : String(e)}`;
+              result = { ...result, errorText: err };
+              await this.prisma.$executeRawUnsafe(
+                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
+                err,
+              );
             }
           }
           break;
