@@ -142,6 +142,9 @@ export class SyncManagerService implements OnModuleInit {
       switch (tipo) {
         case 'articoli':
           result = await this.syncService.sync();
+          if (result.status === 'ok' || result.status === 'completed') {
+            try { await this.integrazioneService.aggregateUngroupedArticles(); } catch {}
+          }
           break;
         case 'listini':
           result = await this.syncService.syncListini();
