@@ -144,15 +144,24 @@ export class SyncManagerService implements OnModuleInit {
           result = await this.syncService.sync();
           if (result.status === 'ok' || result.status === 'completed') {
             try {
-              await this.syncService.updateProgress(100, 'Aggregazione varianti per linea...');
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const diag = agg.diagnostica as any;
               const msg = diag 
                 ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti | senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
                 : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
-              result = { ...result, errorText: msg, progressPhase: 'Aggregazione completata' };
+              result = { ...result, errorText: msg };
+              // Aggiorna anche il sync_log per visibilità nel poller
+              await this.prisma.$executeRawUnsafe(
+                `UPDATE sync_log SET progress_phase = $1, error_text = $2 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
+                'Aggregazione completata', msg,
+              );
             } catch (e) {
-              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}`, progressPhase: 'Aggregazione fallita' };
+              const errMsg = `Aggr err: ${e instanceof Error ? e.message : String(e)}`;
+              result = { ...result, errorText: errMsg };
+              await this.prisma.$executeRawUnsafe(
+                `UPDATE sync_log SET progress_phase = $1, error_text = $2 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
+                'Aggregazione fallita', errMsg,
+              );
             }
           }
           break;
