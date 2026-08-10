@@ -451,6 +451,8 @@ export class IntegrazioneService {
       }
     } catch { return { aggregati: 0, messaggio: "cache integra non disponibile" }; }
 
+    console.log(`[aggregateUngrouped] famiglie=${famMap.size} linee=${lineaMap.size} articoliConLinea=${cacheLinea.size}`);
+
     const varianti = await this.prisma.variante.findMany({
       include: { articolo: { select: { id: true, codiceLinea: true, famigliaCodice: true } } },
     });
@@ -513,6 +515,10 @@ export class IntegrazioneService {
       toMove.push({ varianteCodice: v.codice, oldArticoloId: v.articolo.id, newArticoloId: targetId });
       toDelete.add(v.articolo.id);
     }
+
+    console.log(`[aggregateUngrouped] fine loop: toMove=${toMove.length} toDelete=${toDelete.size} skippedNoLinea=${skippedNoLinea} skippedNoMapping=${skippedNoMapping} skippedAlreadyOk=${skippedAlreadyOk}`);
+    if (sampleNoLinea.length) console.log(`[aggregateUngrouped] sampleNoLinea: ${sampleNoLinea.join(', ')}`);
+    if (sampleNoMapping.length) console.log(`[aggregateUngrouped] sampleNoMapping: ${sampleNoMapping.map(([c, l]) => `${c}->${l}`).join(', ')}`);
 
     let moved = 0;
     let deleted = 0;
