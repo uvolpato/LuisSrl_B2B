@@ -537,29 +537,26 @@ export class IntegrazioneService {
       descUpdated = res;
     } catch {}
 
-    // Elimina TUTTI gli Articoli rimasti vuoti
+    // Elimina TUTTI gli Articoli senza varianti (oldIds + quelli già orfani)
     let deleted = 0;
-    for (const oldId of oldIds) {
-      const count = await this.prisma.variante.count({ where: { articoloId: oldId } });
-      if (count === 0) {
-        try { await this.prisma.articolo.delete({ where: { id: oldId } }); deleted++; } catch {}
-      }
-    }
-    // Pulizia generale: elimina qualsiasi Articolo senza varianti
-    // Prima cancella record correlati (immagini, raccolte) poi l'articolo
-    const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
-      `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
-    );
-    console.log(`[aggregate] Articoli vuoti trovati: ${vuoti.length} (${vuoti.map(v => v.id).join(', ')})`);
-    for (const v of vuoti) {
-      try {
+    try {
+      const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+        `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
+      );
+      console.log(`[aggregate] Articoli vuoti trovati: ${vuoti.length}`);
+      for (const v of vuoti) {
         await this.prisma.$executeRawUnsafe(`DELETE FROM immagini WHERE articolo_id = $1`, v.id);
         await this.prisma.$executeRawUnsafe(`DELETE FROM articoli_raccolte WHERE articolo_id = $1`, v.id);
-        await this.prisma.$executeRawUnsafe(`DELETE FROM articoli WHERE id = $1`, v.id);
-        deleted++;
-      } catch (e) {
-        console.error(`[aggregate] Eliminazione articolo ${v.id} fallita:`, e instanceof Error ? e.message : e);
       }
+      if (vuoti.length > 0) {
+        const ids = vuoti.map(v => v.id);
+        const res = await this.prisma.$executeRawUnsafe(
+          `DELETE FROM articoli WHERE id = ANY($1::int[])`, ids,
+        );
+        deleted = res;
+      }
+    } catch (e) {
+      console.error(`[aggregate] Pulizia articoli vuoti fallita:`, e instanceof Error ? e.message : e);
     }
 
     console.log(`[aggregate] Completato: ${moved} spostate, ${deleted} articoli eliminati, ${descUpdated} descrizioni aggiornate`);
