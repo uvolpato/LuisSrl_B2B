@@ -518,13 +518,20 @@ export class IntegrazioneService {
       }
     }
 
-    // Elimina Articoli vecchi rimasti vuoti
+    // Elimina TUTTI gli Articoli rimasti vuoti
     let deleted = 0;
     for (const oldId of oldIds) {
       const count = await this.prisma.variante.count({ where: { articoloId: oldId } });
       if (count === 0) {
         try { await this.prisma.articolo.delete({ where: { id: oldId } }); deleted++; } catch {}
       }
+    }
+    // Pulizia generale: elimina qualsiasi Articolo senza varianti
+    const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
+    );
+    for (const v of vuoti) {
+      try { await this.prisma.articolo.delete({ where: { id: v.id } }); deleted++; } catch {}
     }
 
     return { aggregati: moved, articoliEliminati: deleted, diagnostica: { toFixCount: toFix.length } };
