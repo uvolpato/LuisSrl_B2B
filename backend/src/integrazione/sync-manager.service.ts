@@ -149,17 +149,14 @@ export class SyncManagerService implements OnModuleInit {
               const msg = diag
                 ? `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti | noLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
                 : `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
-              result = { ...result, errorText: msg };
               await this.prisma.$executeRawUnsafe(
                 `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
                 msg,
               );
             } catch (e) {
-              const err = `Aggr err: ${e instanceof Error ? e.message : String(e)}`;
-              result = { ...result, errorText: err };
               await this.prisma.$executeRawUnsafe(
                 `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
-                err,
+                `Aggr err: ${e instanceof Error ? e.message : String(e)}`,
               );
             }
           }
