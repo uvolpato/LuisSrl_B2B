@@ -99,6 +99,7 @@ export class IntegrazioneController {
     @Query('limit') limit?: string,
     @Query('sort') sort?: string,
     @Query('dir') dir?: 'asc' | 'desc',
+    @Query('includeImported') includeImported?: string,
   ) {
     return this.integrazione.searchProdotti(
       search,
@@ -107,6 +108,7 @@ export class IntegrazioneController {
       Math.min(Number(limit) || 50, 200),
       sort,
       dir,
+      includeImported === 'true',
     );
   }
 
