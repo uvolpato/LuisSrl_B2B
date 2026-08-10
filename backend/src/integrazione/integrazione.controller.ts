@@ -21,7 +21,7 @@ export class IntegrazioneController {
   @HttpCode(202)
   async syncIntegra(): Promise<{ status: string }> {
     this.syncManager.runSync('articoli').catch((err) =>
-      this.syncManager['logger']?.error?.(`Sync articoli fallito: ${err instanceof Error ? err.message : err}`)
+      console.error(`Sync articoli fallito: ${err instanceof Error ? err.message : err}`)
     );
     return { status: 'started' };
   }

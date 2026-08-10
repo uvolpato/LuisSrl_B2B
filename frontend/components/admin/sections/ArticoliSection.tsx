@@ -121,11 +121,12 @@ export default function ArticoliSection() {
             if (p.phase.startsWith("Err") || p.phase.startsWith("Errore")) {
               setSyncFlash("Errore");
               setSyncError(p.errorText ?? "Errore sconosciuto");
-              flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
             } else {
-              setSyncFlash("OK");
-              flashRef.current = setTimeout(() => setSyncFlash(null), 2000);
+              setSyncFlash(p.phase || "OK");
             }
+            flashRef.current = setTimeout(() => setSyncFlash(null), 5000);
+            const arts = await api.get<Article[]>("/api/integrazione/articoli");
+            setArticles(arts);
           }
         } catch { /* ignore polling errors */ }
       }, 500);
