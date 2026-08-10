@@ -438,29 +438,35 @@ export class IntegrazioneService {
       for (const r of lRows) lineaMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome, famigliaNumerico: r.famiglia_codice || null });
     } catch { return { aggregati: 0, messaggio: "integrazione non disponibile" }; }
 
-    // Mappa variante → linea_codice numerico (da integra_articoli)
+    // Mappa variante → { linea_codice, famiglia_codice } (da integra_articoli)
     const cacheLinea = new Map<string, string>();
+    const cacheFamiglia = new Map<string, string>();
     try {
       const all = await this.prisma.$queryRawUnsafe<{ pro_cod: string; linea_codice: string; famiglia_codice: string }[]>(
         `SELECT pro_cod, linea_codice, famiglia_codice FROM integra_articoli WHERE linea_codice IS NOT NULL AND linea_codice != ''`,
       );
-      for (const r of all) cacheLinea.set(r.pro_cod, r.linea_codice);
+      for (const r of all) {
+        cacheLinea.set(r.pro_cod, r.linea_codice);
+        if (r.famiglia_codice) cacheFamiglia.set(r.pro_cod, r.famiglia_codice);
+      }
     } catch { return { aggregati: 0, messaggio: "cache integra non disponibile" }; }
 
     const varianti = await this.prisma.variante.findMany({
-      include: { articolo: { select: { id: true, codiceLinea: true } } },
+      include: { articolo: { select: { id: true, codiceLinea: true, famigliaCodice: true } } },
     });
 
     const toMove: { varianteCodice: string; oldArticoloId: number; newArticoloId: number }[] = [];
     const lineaArticoli = new Map<string, number>();
     const toDelete = new Set<number>();
+    let skippedNoLinea = 0;
+    let skippedNoMapping = 0;
+    let skippedAlreadyOk = 0;
     let defaultPrompt: string | undefined;
     try {
       const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
       if (sc?.value?.trim()) defaultPrompt = sc.value.trim();
     } catch {}
 
-    // Pre-carica Articoli esistenti con codiceLinea = linea proCod
     const allLineaProCods = [...new Set([...lineaMap.values()].map(l => l.proCod))];
     const existingArts = await this.prisma.articolo.findMany({
       where: { codiceLinea: { in: allLineaProCods } },
@@ -470,16 +476,18 @@ export class IntegrazioneService {
 
     for (const v of varianti) {
       const lineaNum = cacheLinea.get(v.codice);
-      if (!lineaNum) continue;
+      if (!lineaNum) { skippedNoLinea++; continue; }
       const lineaEntry = lineaMap.get(lineaNum);
-      if (!lineaEntry) continue;
-      if (v.articolo.codiceLinea === lineaEntry.proCod) continue;
+      if (!lineaEntry) { skippedNoMapping++; continue; }
+      if (v.articolo.codiceLinea === lineaEntry.proCod) { skippedAlreadyOk++; continue; }
 
-      // Risolvi famiglia
-      let famCodice = 'INTEGRA';
-      if (lineaEntry.famigliaNumerico) {
-        const fm = famMap.get(lineaEntry.famigliaNumerico);
-        if (fm) famCodice = fm.proCod;
+      let famCodice = v.articolo.famigliaCodice || 'INTEGRA';
+      if (!famCodice || famCodice === 'INTEGRA') {
+        const famNum = cacheFamiglia.get(v.codice);
+        if (famNum) {
+          const fm = famMap.get(famNum);
+          if (fm) famCodice = fm.proCod;
+        }
       }
 
       let targetId = lineaArticoli.get(lineaEntry.proCod);
@@ -514,7 +522,16 @@ export class IntegrazioneService {
         try { await this.prisma.articolo.delete({ where: { id: oldId } }); deleted++; } catch {}
       }
     }
-    return { aggregati: moved, articoliEliminati: deleted };
+    return {
+      aggregati: moved,
+      articoliEliminati: deleted,
+      diagnostica: {
+        totaleVarianti: varianti.length,
+        senzaLineaInIntegra: skippedNoLinea,
+        lineaNonMappata: skippedNoMapping,
+        giaAggregate: skippedAlreadyOk,
+      },
+    };
   }
 
   /** Filtri sidebar catalogo (famiglie/raccolte con conteggi) — query leggera. */
