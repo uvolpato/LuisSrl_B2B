@@ -117,17 +117,11 @@ export default function ArticoliSection() {
           if (!p.running) {
             if (pollRef.current) clearInterval(pollRef.current);
             pollRef.current = null;
-            // Aspetta 2s e ri-leggi: l'aggregazione post-sync potrebbe aver aggiornato la phase
-            setTimeout(async () => {
-              try {
-                const p2 = await api.get<SyncProgress>("/api/integrazione/sync/progress");
-                setSyncFlash(p2?.phase || "OK");
-                setSyncing(false);
-              } catch { setSyncing(false); }
-              const arts = await api.get<Article[]>("/api/integrazione/articoli");
-              setArticles(arts);
-              flashRef.current = setTimeout(() => setSyncFlash(null), 5000);
-            }, 2000);
+            setSyncing(false);
+            setSyncFlash("OK");
+            flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
+            const arts = await api.get<Article[]>("/api/integrazione/articoli");
+            setArticles(arts);
           }
         } catch { /* ignore polling errors */ }
       }, 500);
