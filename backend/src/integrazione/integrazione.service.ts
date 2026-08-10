@@ -450,7 +450,8 @@ export class IntegrazioneService {
     );
 
     if (!toFix.length) {
-      console.log('[aggregate] Nessuna variante da spostare (già allineate o senza linea in integra)');
+      const msg = `Nessuna variante da spostare. Controlla: SELECT count(*) FROM varianti v JOIN integra_articoli ia ON ia.pro_cod=v.codice JOIN integra_linee l ON l.codice_numerico=ia.linea_codice WHERE ia.linea_codice IS NOT NULL AND ia.linea_codice!='' AND a.codice_linea!=l.codice`;
+      console.log(`[aggregate] ${msg}`);
       // Conta anche quelli già a posto
       const [{ cnt }] = await this.prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
         `SELECT count(*) AS cnt
@@ -465,6 +466,7 @@ export class IntegrazioneService {
         `SELECT count(*) AS cnt FROM varianti v
          WHERE NOT EXISTS (SELECT 1 FROM integra_articoli ia WHERE ia.pro_cod = v.codice AND ia.linea_codice IS NOT NULL AND ia.linea_codice != '')`,
       );
+      console.log(`[aggregate] Diagnostica: ${cnt} già a posto, ${senzaLinea} senza linea in integra`);
       return {
         aggregati: 0, articoliEliminati: 0,
         diagnostica: { totaleVarianti: 0, senzaLineaInIntegra: Number(senzaLinea), lineaNonMappata: 0, giaAggregate: Number(cnt), toFixCount: 0 },
@@ -548,7 +550,7 @@ export class IntegrazioneService {
     const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
       `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
     );
-    console.log(`[aggregate] Articoli vuoti da eliminare: ${vuoti.length}`);
+    console.log(`[aggregate] Articoli vuoti trovati: ${vuoti.length} (${vuoti.map(v => v.id).join(', ')})`);
     for (const v of vuoti) {
       try {
         await this.prisma.$executeRawUnsafe(`DELETE FROM immagini WHERE articolo_id = $1`, v.id);
@@ -556,7 +558,7 @@ export class IntegrazioneService {
         await this.prisma.$executeRawUnsafe(`DELETE FROM articoli WHERE id = $1`, v.id);
         deleted++;
       } catch (e) {
-        console.log(`[aggregate] Eliminazione articolo ${v.id} fallita: ${e instanceof Error ? e.message : e}`);
+        console.error(`[aggregate] Eliminazione articolo ${v.id} fallita:`, e instanceof Error ? e.message : e);
       }
     }
 
