@@ -544,12 +544,15 @@ export class IntegrazioneService {
       }
     }
     // Pulizia generale: elimina qualsiasi Articolo senza varianti
+    // Prima cancella record correlati (immagini, raccolte) poi l'articolo
     const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
       `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
     );
     console.log(`[aggregate] Articoli vuoti da eliminare: ${vuoti.length}`);
     for (const v of vuoti) {
       try {
+        await this.prisma.$executeRawUnsafe(`DELETE FROM immagini WHERE articolo_id = $1`, v.id);
+        await this.prisma.$executeRawUnsafe(`DELETE FROM articoli_raccolte WHERE articolo_id = $1`, v.id);
         await this.prisma.$executeRawUnsafe(`DELETE FROM articoli WHERE id = $1`, v.id);
         deleted++;
       } catch (e) {
