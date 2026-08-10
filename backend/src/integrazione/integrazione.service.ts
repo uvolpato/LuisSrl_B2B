@@ -253,7 +253,11 @@ export class IntegrazioneService {
 
         const dim = row.dimensione_json || null;
         if (existingSet.has(codice)) {
-          if (dim) await tx.variante.update({ where: { codice }, data: { dimensioni: dim as any } });
+          const updateData: any = { descrizione };
+          if (dim) updateData.dimensioni = dim as any;
+          const existing = await tx.variante.findUnique({ where: { codice }, select: { articoloId: true } });
+          if (existing && existing.articoloId !== art.id) updateData.articoloId = art.id;
+          await tx.variante.update({ where: { codice }, data: updateData });
         } else {
           await tx.variante.create({
             data: { codice, descrizione, articoloId: art.id, ...(dim ? { dimensioni: dim as any } : {}) },
