@@ -123,8 +123,7 @@ export class SyncService {
       );
       if (!row) return { running: false, pct: 0, phase: 'Nessuna sync in corso' };
       if (row.status === 'running') return { running: true, pct: row.pct, phase: row.phase ?? 'In corso…' };
-      const phase = row.status === 'ok' ? 'Completato' : row.status === 'stale' ? '' : 'Errore';
-      return { running: false, pct: 100, phase, errorText: row.error_text ?? undefined };
+      return { running: false, pct: 100, phase: row.phase || 'Completato', errorText: row.error_text ?? undefined };
     } catch {
       return { running: false, pct: 0, phase: 'Errore lettura progresso' };
     }
