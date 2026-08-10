@@ -47,6 +47,8 @@ export default function ArticoliSection() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [aggregating, setAggregating] = useState(false);
+  const [aggregateResult, setAggregateResult] = useState<string | null>(null);
 
   const filteredArticles = articles.filter((a) => {
     if (articleFilter === "attivi") return a.stato === "attivo";
@@ -136,6 +138,22 @@ export default function ArticoliSection() {
       setSyncError("Impossibile avviare la sincronizzazione");
       flashRef.current = setTimeout(() => setSyncFlash(null), 3000);
     }
+  }
+
+  async function doAggregate() {
+    setAggregating(true);
+    setAggregateResult(null);
+    try {
+      const res = await api.post<{ aggregati: number; articoliEliminati: number }>("/api/integrazione/aggregate-ungrouped");
+      setAggregateResult(`${res.aggregati} varianti aggregate, ${res.articoliEliminati} articoli eliminati`);
+      // Reload articles
+      const arts = await api.get<Article[]>("/api/integrazione/articoli");
+      setArticles(arts);
+    } catch {
+      setAggregateResult("Errore");
+    }
+    setAggregating(false);
+    setTimeout(() => setAggregateResult(null), 5000);
   }
 
   const articleColumns: Column<Article>[] = [
@@ -249,6 +267,9 @@ export default function ArticoliSection() {
           <button className="btn btn-secondary" onClick={doSync} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
             <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
             {syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={doAggregate} disabled={aggregating} style={{ minWidth: 130, justifyContent: "center" }}>
+            {aggregating ? "..." : aggregateResult ?? "Aggrega per linea"}
           </button>
           <button className="btn btn-primary btn-sm" onClick={() => setImportModalOpen(true)}>
             {IconPlus}
