@@ -144,14 +144,15 @@ export class SyncManagerService implements OnModuleInit {
           result = await this.syncService.sync();
           if (result.status === 'ok' || result.status === 'completed') {
             try {
+              await this.syncService.updateProgress(100, 'Aggregazione varianti per linea...');
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const diag = agg.diagnostica as any;
               const msg = diag 
-                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti. | senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate} tot=${diag.totaleVarianti}`
+                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti | senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
                 : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
-              result = { ...result, errorText: result.errorText ? `${result.errorText} | ${msg}` : msg };
+              result = { ...result, errorText: msg, progressPhase: 'Aggregazione completata' };
             } catch (e) {
-              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}` };
+              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}`, progressPhase: 'Aggregazione fallita' };
             }
           }
           break;
