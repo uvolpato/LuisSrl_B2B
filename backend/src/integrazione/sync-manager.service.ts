@@ -143,7 +143,12 @@ export class SyncManagerService implements OnModuleInit {
         case 'articoli':
           result = await this.syncService.sync();
           if (result.status === 'ok' || result.status === 'completed') {
-            try { await this.integrazioneService.aggregateUngroupedArticles(); } catch {}
+            try {
+              const agg = await this.integrazioneService.aggregateUngroupedArticles();
+              this.logger.log(`Aggregazione varianti: ${JSON.stringify(agg)}`);
+            } catch (e) {
+              this.logger.error(`Aggregazione fallita: ${e instanceof Error ? e.message : String(e)}`);
+            }
           }
           break;
         case 'listini':
