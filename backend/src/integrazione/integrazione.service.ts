@@ -450,6 +450,7 @@ export class IntegrazioneService {
     );
 
     if (!toFix.length) {
+      console.log('[aggregate] Nessuna variante da spostare (già allineate o senza linea in integra)');
       // Conta anche quelli già a posto
       const [{ cnt }] = await this.prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
         `SELECT count(*) AS cnt
@@ -487,6 +488,7 @@ export class IntegrazioneService {
       byLinea.set(row.linea_procod, arr);
     }
 
+    console.log(`[aggregate] Varianti da spostare: ${toFix.length}, raggruppate in ${byLinea.size} linee`);
     let moved = 0;
     const oldIds = new Set<number>();
 
@@ -545,10 +547,17 @@ export class IntegrazioneService {
     const vuoti = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
       `SELECT a.id FROM articoli a WHERE NOT EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id)`,
     );
+    console.log(`[aggregate] Articoli vuoti da eliminare: ${vuoti.length}`);
     for (const v of vuoti) {
-      try { await this.prisma.articolo.delete({ where: { id: v.id } }); deleted++; } catch {}
+      try {
+        await this.prisma.$executeRawUnsafe(`DELETE FROM articoli WHERE id = $1`, v.id);
+        deleted++;
+      } catch (e) {
+        console.log(`[aggregate] Eliminazione articolo ${v.id} fallita: ${e instanceof Error ? e.message : e}`);
+      }
     }
 
+    console.log(`[aggregate] Completato: ${moved} spostate, ${deleted} articoli eliminati, ${descUpdated} descrizioni aggiornate`);
     return { aggregati: moved, articoliEliminati: deleted, descrizioniAggiornate: descUpdated, diagnostica: { toFixCount: toFix.length } };
   }
 
