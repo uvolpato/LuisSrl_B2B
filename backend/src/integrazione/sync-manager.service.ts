@@ -146,21 +146,20 @@ export class SyncManagerService implements OnModuleInit {
             try {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const diag = agg.diagnostica as any;
-              const msg = diag 
-                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti | senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
-                : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
-              result = { ...result, errorText: msg };
-              // Aggiorna anche il sync_log per visibilità nel poller
+              const msg = diag
+                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} eliminate | noLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
+                : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} eliminate`;
+              result = { ...result, progressPhase: msg, errorText: undefined };
               await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1, error_text = $2 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
-                'Aggregazione completata', msg,
+                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
+                msg,
               );
             } catch (e) {
-              const errMsg = `Aggr err: ${e instanceof Error ? e.message : String(e)}`;
-              result = { ...result, errorText: errMsg };
+              const errMsg = `Aggr errore: ${e instanceof Error ? e.message : String(e)}`;
+              result = { ...result, progressPhase: errMsg, errorText: undefined };
               await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1, error_text = $2 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
-                'Aggregazione fallita', errMsg,
+                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
+                errMsg,
               );
             }
           }
