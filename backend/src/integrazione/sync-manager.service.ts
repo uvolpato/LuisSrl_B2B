@@ -147,20 +147,12 @@ export class SyncManagerService implements OnModuleInit {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const diag = agg.diagnostica as any;
               const msg = diag
-                ? `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} eliminate | noLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate}`
-                : `Aggr: ${agg.aggregati} spostate, ${agg.articoliEliminati} eliminate`;
-              result = { ...result, progressPhase: msg, errorText: undefined };
-              await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
-                msg,
-              );
+                ? `${agg.aggregati} spostate, ${agg.articoliEliminati} articoli vuoti. senzaLinea=${diag.senzaLineaInIntegra} noMap=${diag.lineaNonMappata} ok=${diag.giaAggregate} tot=${diag.totaleVarianti}`
+                : `${agg.aggregati} spostate, ${agg.articoliEliminati} articoli vuoti`;
+              // Scrivilo in errorText così appare nel sync panel (non è un errore)
+              result = { ...result, errorText: msg };
             } catch (e) {
-              const errMsg = `Aggr errore: ${e instanceof Error ? e.message : String(e)}`;
-              result = { ...result, progressPhase: errMsg, errorText: undefined };
-              await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' AND status = 'completed' AND completed_at IS NOT NULL ORDER BY started_at DESC LIMIT 1`,
-                errMsg,
-              );
+              result = { ...result, errorText: `Aggr err: ${e instanceof Error ? e.message : String(e)}` };
             }
           }
           break;

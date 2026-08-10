@@ -436,7 +436,7 @@ export class IntegrazioneService {
       ]);
       for (const r of fRows) famMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
       for (const r of lRows) lineaMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome, famigliaNumerico: r.famiglia_codice || null });
-    } catch { return { aggregati: 0, messaggio: "integrazione non disponibile" }; }
+    } catch (e) { return { aggregati: 0, articoliEliminati: 0, messaggio: "integrazione linee non disponibile", diagnostica: { totaleVarianti: 0, senzaLineaInIntegra: 0, lineaNonMappata: 0, giaAggregate: 0, errore: String(e) } }; }
 
     // Mappa variante → { linea_codice, famiglia_codice } (da integra_articoli)
     const cacheLinea = new Map<string, string>();
@@ -449,7 +449,7 @@ export class IntegrazioneService {
         cacheLinea.set(r.pro_cod, r.linea_codice);
         if (r.famiglia_codice) cacheFamiglia.set(r.pro_cod, r.famiglia_codice);
       }
-    } catch { return { aggregati: 0, messaggio: "cache integra non disponibile" }; }
+    } catch (e) { return { aggregati: 0, articoliEliminati: 0, messaggio: "cache articoli non disponibile", diagnostica: { totaleVarianti: 0, senzaLineaInIntegra: 0, lineaNonMappata: 0, giaAggregate: 0, errore: String(e) } }; }
 
     console.log(`[aggregateUngrouped] famiglie=${famMap.size} linee=${lineaMap.size} articoliConLinea=${cacheLinea.size}`);
 
