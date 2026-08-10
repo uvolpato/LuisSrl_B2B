@@ -518,6 +518,21 @@ export class IntegrazioneService {
       }
     }
 
+    // Aggiorna descrizione e dimensioni di TUTTE le varianti già importate da integra_articoli
+    let descUpdated = 0;
+    try {
+      const res = await this.prisma.$executeRawUnsafe(
+        `UPDATE varianti v SET
+           descrizione = ia.pro_descr,
+           dimensioni = ia.dimensione_json::jsonb
+         FROM integra_articoli ia
+         WHERE ia.pro_cod = v.codice
+           AND ia.pro_descr IS NOT NULL
+           AND v.descrizione IS DISTINCT FROM ia.pro_descr`,
+      );
+      descUpdated = res;
+    } catch {}
+
     // Elimina TUTTI gli Articoli rimasti vuoti
     let deleted = 0;
     for (const oldId of oldIds) {
@@ -534,7 +549,7 @@ export class IntegrazioneService {
       try { await this.prisma.articolo.delete({ where: { id: v.id } }); deleted++; } catch {}
     }
 
-    return { aggregati: moved, articoliEliminati: deleted, diagnostica: { toFixCount: toFix.length } };
+    return { aggregati: moved, articoliEliminati: deleted, descrizioniAggiornate: descUpdated, diagnostica: { toFixCount: toFix.length } };
   }
 
   /** Filtri sidebar catalogo (famiglie/raccolte con conteggi) — query leggera. */
