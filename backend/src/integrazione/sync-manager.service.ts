@@ -145,7 +145,7 @@ export class SyncManagerService implements OnModuleInit {
           if (result.status === 'ok' || result.status === 'completed') {
             try {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
-              const msg = `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti`;
+              const msg = `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti, ${agg.descrizioniAggiornate ?? 0} descrizioni aggiornate`;
               await this.prisma.$executeRawUnsafe(
                 `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
                 msg,
