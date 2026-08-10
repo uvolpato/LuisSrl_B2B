@@ -145,15 +145,13 @@ export default function ArticoliSection() {
     setAggregateResult(null);
     try {
       const res = await api.post<{ aggregati: number; articoliEliminati: number }>("/api/integrazione/aggregate-ungrouped");
-      setAggregateResult(`${res.aggregati} varianti aggregate, ${res.articoliEliminati} articoli eliminati`);
-      // Reload articles
+      setAggregateResult(`OK: ${res.aggregati} aggregate, ${res.articoliEliminati} eliminati`);
       const arts = await api.get<Article[]>("/api/integrazione/articoli");
       setArticles(arts);
     } catch {
       setAggregateResult("Errore");
     }
     setAggregating(false);
-    setTimeout(() => setAggregateResult(null), 5000);
   }
 
   const articleColumns: Column<Article>[] = [
@@ -269,7 +267,7 @@ export default function ArticoliSection() {
             {syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}
           </button>
           <button className="btn btn-secondary btn-sm" onClick={doAggregate} disabled={aggregating} style={{ minWidth: 130, justifyContent: "center" }}>
-            {aggregating ? "..." : aggregateResult ?? "Aggrega per linea"}
+            {aggregating ? <><span className="sync-icon spin">{IconRefresh}</span></> : aggregateResult ?? "Aggrega per linea"}
           </button>
           <button className="btn btn-primary btn-sm" onClick={() => setImportModalOpen(true)}>
             {IconPlus}

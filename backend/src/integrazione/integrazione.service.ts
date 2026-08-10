@@ -460,6 +460,8 @@ export class IntegrazioneService {
     const toDelete = new Set<number>();
     let skippedNoLinea = 0;
     let skippedNoMapping = 0;
+    const sampleNoLinea: string[] = [];
+    const sampleNoMapping: [string, string][] = [];
     let skippedAlreadyOk = 0;
     let defaultPrompt: string | undefined;
     try {
@@ -476,9 +478,13 @@ export class IntegrazioneService {
 
     for (const v of varianti) {
       const lineaNum = cacheLinea.get(v.codice);
-      if (!lineaNum) { skippedNoLinea++; continue; }
-      const lineaEntry = lineaMap.get(lineaNum);
-      if (!lineaEntry) { skippedNoMapping++; continue; }
+      if (!lineaNum) { skippedNoLinea++; if (sampleNoLinea.length < 5) sampleNoLinea.push(v.codice); continue; }
+      let lineaEntry = lineaMap.get(lineaNum);
+      // Se il codice linea non è numerico, prova a cercarlo direttamente come codice
+      if (!lineaEntry && lineaNum.toUpperCase().startsWith('LINEA_')) {
+        lineaEntry = { proCod: lineaNum, nome: lineaNum, famigliaNumerico: null };
+      }
+      if (!lineaEntry) { skippedNoMapping++; if (sampleNoMapping.length < 5) sampleNoMapping.push([v.codice, lineaNum]); continue; }
       if (v.articolo.codiceLinea === lineaEntry.proCod) { skippedAlreadyOk++; continue; }
 
       let famCodice = v.articolo.famigliaCodice || 'INTEGRA';
@@ -530,6 +536,8 @@ export class IntegrazioneService {
         senzaLineaInIntegra: skippedNoLinea,
         lineaNonMappata: skippedNoMapping,
         giaAggregate: skippedAlreadyOk,
+        sampleNoLinea,
+        sampleNoMapping,
       },
     };
   }
