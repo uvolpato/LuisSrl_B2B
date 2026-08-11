@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import ConfirmProvider from "../components/common/ConfirmProvider";
+import SessionTerminatedOverlay from "../components/common/SessionTerminatedOverlay";
 import "./globals.css";
 import "./landing.css";
 // Caricato globalmente (tutto scopato sotto .catalogo-page) così resta sempre
@@ -28,6 +29,7 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ConfirmProvider>{children}</ConfirmProvider>
+          <SessionTerminatedOverlay />
         </NextIntlClientProvider>
       </body>
     </html>
