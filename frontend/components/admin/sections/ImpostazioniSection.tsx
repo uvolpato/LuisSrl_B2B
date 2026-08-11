@@ -43,6 +43,11 @@ export default function ImpostazioniSection() {
       label: "Consenti nuovo indirizzo di spedizione al checkout",
       desc: "Se attivo, il cliente può indicare un indirizzo di consegna non presente in anagrafica.",
     },
+    {
+      key: "banner_spedizione_attivo",
+      label: "Banner spedizione gratuita",
+      desc: "Mostra il banner con la soglia di spedizione gratuita nell'header dell'area clienti.",
+    },
   ];
 
   return (
