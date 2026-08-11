@@ -20,6 +20,11 @@ export class CheckoutController {
     return this.checkout.getDatiCheckout(req.user.id);
   }
 
+  @Post('validate-coupon')
+  validateCoupon(@Req() req: AuthenticatedRequest, @Body() body: { code: string; subtotale: number }) {
+    return this.checkout.validateCoupon(body.code, body.subtotale);
+  }
+
   @Get('spedizione')
   getSpedizione(
     @Req() req: AuthenticatedRequest,

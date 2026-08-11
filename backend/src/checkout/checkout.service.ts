@@ -278,6 +278,7 @@ export class CheckoutService {
       codiceSpedizione?: string;
       codiceVettore?: string;
       codicePagamento?: string;
+      codiceCoupon?: string;
       notaSpedizione?: string;
       notaOrdine?: string;
     },
@@ -383,6 +384,23 @@ export class CheckoutService {
       }
     }
 
+    // Applica coupon se presente
+    let couponCode: string | null = null;
+    if (dto.codiceCoupon) {
+      const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
+      if (campaign && campaign.status === 'active') {
+        if (campaign.type === 'pct') {
+          importoTotale = importoTotale * (1 - Number(campaign.value) / 100);
+        } else if (campaign.type === 'fixed') {
+          importoTotale = Math.max(0, importoTotale - Number(campaign.value));
+        } else if (campaign.type === 'free-ship') {
+          costoTrasporto = 0;
+        }
+        couponCode = campaign.code;
+        await this.prisma.campaign.update({ where: { id: campaign.id }, data: { usedCount: { increment: 1 } } });
+      }
+    }
+
     const numeroOrdine = `B2B-${Date.now()}`;
     const ordine = await this.prisma.ordineCliente.create({
       data: {
@@ -440,6 +458,33 @@ export class CheckoutService {
     if (!articolo) return undefined;
     const max = Math.max(0, ...articolo.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
     return max > 0 ? max : undefined;
+  }
+
+  async validateCoupon(code: string, subtotale: number) {
+    const campaign = await this.prisma.campaign.findUnique({ where: { code: code.toUpperCase() } });
+    if (!campaign) return { valid: false, message: "Codice non valido" };
+    if (campaign.status !== "active") return { valid: false, message: "Campagna non attiva" };
+    const now = new Date();
+    if (campaign.validFrom && new Date(campaign.validFrom) > now) return { valid: false, message: "Campagna non ancora attiva" };
+    if (campaign.validTo && new Date(campaign.validTo) < now) return { valid: false, message: "Campagna scaduta" };
+    if (campaign.minOrder && Number(campaign.minOrder) > subtotale) return { valid: false, message: `Ordine minimo: ${Number(campaign.minOrder).toFixed(2)} €` };
+    if (campaign.usage === "single" && campaign.usedCount > 0) return { valid: false, message: "Codice già utilizzato" };
+
+    let discount = 0;
+    let isPct = false;
+    if (campaign.type === "pct") { discount = Number(campaign.value); isPct = true; }
+    else if (campaign.type === "fixed") { discount = Number(campaign.value); isPct = false; }
+    else if (campaign.type === "free-ship") { discount = 0; isPct = false; }
+
+    return {
+      valid: true,
+      type: campaign.type,
+      value: Number(campaign.value),
+      discount,
+      isPct,
+      label: campaign.type === "free-ship" ? "Spedizione gratuita" : campaign.type === "pct" ? `−${Number(campaign.value)}%` : `−${Number(campaign.value).toFixed(2)} €`,
+      code: campaign.code,
+    };
   }
 }
 
