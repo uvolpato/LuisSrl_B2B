@@ -107,16 +107,20 @@ export class AdminOrdiniService {
         : null,
       notaSped: o.notaSpedizione ?? undefined,
       items: await Promise.all(o.righe.map(async (r) => {
-        let nome = r.descrizione ?? "";
         const codice = r.codiceProdotto ?? "";
-        // Se la descrizione coincide col codice o è vuota, cerca il nome reale
-        if (!nome || nome === codice) {
-          const variante = await this.prisma.variante.findUnique({
-            where: { codice },
-            select: { descrizione: true, articolo: { select: { nome: true } } },
-          });
-          if (variante) nome = variante.articolo.nome || variante.descrizione || codice;
+        const descDB = r.descrizione ?? "";
+        // Cerca sempre il nome dell'articolo via codice variante
+        let nome = descDB;
+        if (codice) {
+          try {
+            const variante = await this.prisma.variante.findUnique({
+              where: { codice },
+              select: { descrizione: true, articolo: { select: { nome: true } } },
+            });
+            if (variante) nome = variante.articolo.nome || variante.descrizione || descDB || codice;
+          } catch {}
         }
+        if (!nome) nome = descDB || codice;
         return {
           codice,
           nome,
