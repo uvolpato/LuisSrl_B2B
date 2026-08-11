@@ -348,7 +348,11 @@ export default function ProfileSection({
           <div className="sec-item">
             <div>
               <div style={{ fontWeight: 500 }}>Ultimo accesso</div>
-              <div className="detail">N/D</div>
+              <div className="detail">
+                {customer.ultimoAccesso
+                  ? new Date(customer.ultimoAccesso).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                  : "N/D"}
+              </div>
             </div>
           </div>
         </div>

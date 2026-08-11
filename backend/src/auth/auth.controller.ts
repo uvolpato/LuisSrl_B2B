@@ -39,6 +39,13 @@ export class AuthController {
       });
       profile.codicePagamentoDescrizione = pag?.descrizione ?? null;
     }
+    const [lastLogin]: any[] = await this.prisma.customerEvent.findMany({
+      where: { customerId: customer.id, tipo: 'login' },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+      select: { createdAt: true },
+    });
+    (profile as any).ultimoAccesso = lastLogin?.createdAt?.toISOString() ?? null;
     return profile;
   }
 
