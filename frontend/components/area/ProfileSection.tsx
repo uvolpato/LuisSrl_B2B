@@ -103,6 +103,21 @@ export default function ProfileSection({
 
   useEffect(() => { fetchIndirizzi(); }, []);
 
+  // Indirizzo virtuale da anagrafica (sede legale), come nel checkout
+  const sedeLegale: Indirizzo | null = (customer.indirizzo || customer.cap || customer.citta) ? {
+    id: -1,
+    ragioneSociale: customer.ragioneSociale ?? customer.nome,
+    indirizzo: customer.indirizzo ?? null,
+    cap: customer.cap ?? null,
+    citta: customer.citta ?? null,
+    provincia: customer.provincia ?? null,
+    tipoDestinazione: "SEDE_LEGALE",
+    abituale: !indirizzi.some(a => a.abituale),
+    daIntegra: true,
+  } : null;
+
+  const tuttiIndirizzi = sedeLegale ? [sedeLegale, ...indirizzi] : indirizzi;
+
   function openNew() {
     setEditId(null); setFRagione(""); setFIndirizzo(""); setFCap(""); setFCitta(""); setFProvincia(""); setFDefault(false); setShowForm(true);
   }
@@ -134,6 +149,16 @@ export default function ProfileSection({
   }
 
   async function setDefault(id: number) {
+    if (id === -1) {
+      // Rimuovi "abituale" da tutti gli indirizzi esistenti -> l'anagrafica diventa default
+      for (const a of indirizzi) {
+        if (a.abituale) {
+          try { await api.patch(`/api/checkout/indirizzo/${a.id}/predefinito`); } catch {}
+        }
+      }
+      await fetchIndirizzi();
+      return;
+    }
     try { await api.patch(`/api/checkout/indirizzo/${id}/predefinito`); } catch {}
     await fetchIndirizzi();
   }
@@ -227,11 +252,11 @@ export default function ProfileSection({
 
         {/* Indirizzi */}
         <div className="profile-card">
-          <h2>{t("profileIndirizzi")} <span className="badge">{indirizzi.length}</span></h2>
-          {addrLoaded && indirizzi.length === 0 && !showForm && (
+          <h2>{t("profileIndirizzi")} <span className="badge">{tuttiIndirizzi.length}</span></h2>
+          {addrLoaded && tuttiIndirizzi.length === 0 && !showForm && (
             <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>Nessun indirizzo salvato.</p>
           )}
-          {indirizzi.map(a => (
+          {tuttiIndirizzi.map(a => (
             <div key={a.id} className="addr-item">
               <div>
                 <strong>{a.ragioneSociale || "—"}</strong><br />
@@ -240,7 +265,8 @@ export default function ProfileSection({
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                 {a.abituale && <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Principale</span>}
-                {!a.daIntegra && (
+                {a.id === -1 && <span className="tag" style={{ background: "var(--fg-soft)" }}>Anagrafica</span>}
+                {a.id !== -1 && !a.daIntegra && (
                   <>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ fontSize: 12 }}>Modifica</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => deleteAddr(a.id)} style={{ fontSize: 12, color: "var(--red)" }}>Elimina</button>
