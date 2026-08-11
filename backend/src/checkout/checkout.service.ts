@@ -139,6 +139,7 @@ export class CheckoutService {
         gratuita: calc.superaSoglia,
         soglia: calc.soglia,
         minimo: calc.minimo,
+        minimoOrdine: calc.minimoOrdine,
       };
     }
     const regione = this.provinciaToRegione(provincia?.toUpperCase());
@@ -153,6 +154,7 @@ export class CheckoutService {
       descrizione: regione + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
       gratuita: calc.superaSoglia,
       soglia: calc.soglia,
+      minimoOrdine: calc.minimoOrdine,
     };
   }
 

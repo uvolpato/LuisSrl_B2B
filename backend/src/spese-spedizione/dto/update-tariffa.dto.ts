@@ -23,6 +23,11 @@ export class UpdateTariffaDto {
   minimoImporto?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  minimoOrdine?: number;
+
+  @IsOptional()
   @IsArray()
   ranges?: number[][];
 }

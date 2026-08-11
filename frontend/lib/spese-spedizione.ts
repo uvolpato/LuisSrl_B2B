@@ -6,6 +6,7 @@ export interface Tariffa {
   stato: string;
   sogliaImporto: number | null;
   minimoImporto: number | null;
+  minimoOrdine: number | null;
   ranges: number[][];
   updatedAt: string;
 }

@@ -32,7 +32,7 @@ export default function SpeseSpedizioneSection() {
   const [calcMode, setCalcMode] = useState<"sim" | "prev">("sim");
   const [calcPrevTariffa, setCalcPrevTariffa] = useState<Tariffa | null>(null);
   const [guidaOpen, setGuidaOpen] = useState(false);
-  const [duplicateData, setDuplicateData] = useState<{ nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; ranges: number[][] } | null>(null);
+  const [duplicateData, setDuplicateData] = useState<{ nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; minimoOrdine: number | null; ranges: number[][] } | null>(null);
   const [scaglioniW, setScaglioniW] = useState(() => {
     if (typeof window !== "undefined") return Number(localStorage.getItem(SCOGLIONI_W_KEY)) || 220;
     return 220;
@@ -113,7 +113,7 @@ export default function SpeseSpedizioneSection() {
     // Apre l'editor in creazione con i dati clonati (nazione/regione da cambiare)
     setEditTarget(null);
     // Passiamo i dati via state temporaneo
-    setDuplicateData({ nazione: t.nazione, regione: t.regione ?? null, basePercent: t.basePercent, sogliaImporto: t.sogliaImporto ?? null, minimoImporto: t.minimoImporto ?? null, ranges: t.ranges ?? [] });
+    setDuplicateData({ nazione: t.nazione, regione: t.regione ?? null, basePercent: t.basePercent, sogliaImporto: t.sogliaImporto ?? null, minimoImporto: t.minimoImporto ?? null, minimoOrdine: t.minimoOrdine ?? null, ranges: t.ranges ?? [] });
     setEditOpen(true);
   }
 
@@ -164,6 +164,7 @@ export default function SpeseSpedizioneSection() {
                 <col style={{ width: scaglioniW, minWidth: 140 }} />
                 <col style={{ width: 140 }} />
                 <col style={{ width: 110 }} />
+                <col style={{ width: 110 }} />
                 <col style={{ width: 96 }} />
               </colgroup>
               <thead>
@@ -186,6 +187,7 @@ export default function SpeseSpedizioneSection() {
                     Soglia gratuita {sortKey === "soglia" && <span className="sort-arrow">{sortDir === "asc" ? "▲" : "▼"}</span>}
                   </th>
                   <th className="num">Tariffa min.</th>
+                  <th className="num">Ordine min.</th>
                   <th style={{ textAlign: "right" }}>Azioni</th>
                 </tr>
               </thead>
@@ -231,6 +233,7 @@ export default function SpeseSpedizioneSection() {
                       </td>
                       <td className="num">{d.sogliaImporto != null ? fmtEur(d.sogliaImporto) : <span className="cell-empty">—</span>}</td>
                       <td className="num">{d.minimoImporto != null ? fmtEur(d.minimoImporto) : <span className="cell-empty">—</span>}</td>
+                      <td className="num">{d.minimoOrdine != null ? fmtEur(d.minimoOrdine) : <span className="cell-empty">—</span>}</td>
                       <td className="data-table-actions">
                         <DataTip tip="Modifica">
                           <button className="row-action" onClick={() => openEdit(d)}>
@@ -307,7 +310,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   onSaved: () => void;
   onCalcPreview: (t: Tariffa) => void;
   onDelete: (id: number) => void;
-  duplicateData: { nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; ranges: number[][] } | null;
+  duplicateData: { nazione: string; regione: string | null; basePercent: number; sogliaImporto: number | null; minimoImporto: number | null; minimoOrdine: number | null; ranges: number[][] } | null;
 }) {
   const isNew = !tariffa;
   const [livello, setLivello] = useState(tariffa ? (tariffa.regione ? "regione" : isZona(tariffa.nazione) ? tariffa.nazione : "nazione") : duplicateData ? (duplicateData.regione ? "regione" : isZona(duplicateData.nazione) ? duplicateData.nazione : "nazione") : "nazione");
@@ -317,6 +320,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   const [stato, setStato] = useState(tariffa?.stato ?? "configura");
   const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? duplicateData?.sogliaImporto ?? 0);
   const [minimo, setMinimo] = useState(tariffa?.minimoImporto ?? duplicateData?.minimoImporto ?? 0);
+  const [minimoOrd, setMinimoOrd] = useState(tariffa?.minimoOrdine ?? 0);
   const [ranges, setRanges] = useState<(number | null)[][]>(() => {
     const src = tariffa?.ranges ?? duplicateData?.ranges ?? [];
     return src.map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]);
@@ -372,6 +376,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
           stato,
           sogliaImporto: soglia || null,
           minimoImporto: minimo || null,
+          minimoOrdine: minimoOrd || null,
           ranges: rng,
         });
       } else {
@@ -380,6 +385,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
           stato,
           sogliaImporto: soglia || null,
           minimoImporto: minimo || null,
+          minimoOrdine: minimoOrd || null,
           ranges: rng,
         });
       }
@@ -393,7 +399,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
     return {
       id: 0, regione: livello === "regione" ? regione || null : null,
       nazione: livello === "regione" ? "IT" : livello === "nazione" ? nazione : livello,
-      basePercent: base, stato, sogliaImporto: soglia || null, minimoImporto: minimo || null,
+      basePercent: base, stato, sogliaImporto: soglia || null, minimoImporto: minimo || null, minimoOrdine: minimoOrd || null,
       ranges: r, updatedAt: new Date().toISOString(),
     };
   }
@@ -486,6 +492,10 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
               <div className="field">
                 <label>Minimo spesa spedizione (€, vuoto = nessuno)</label>
                 <input className="input" type="number" step="0.1" min="0" value={minimo || ""} onChange={e => setMinimo(Number(e.target.value) || 0)} />
+              </div>
+              <div className="field">
+                <label>Ordine minimo (€, vuoto = nessuno)</label>
+                <input className="input" type="number" step="10" min="0" value={minimoOrd || ""} onChange={e => setMinimoOrd(Number(e.target.value) || 0)} />
               </div>
           <div className="field">
             <button className="btn btn-secondary" type="button" onClick={() => onCalcPreview(previewTariffa())}>Anteprima calcolo</button>
