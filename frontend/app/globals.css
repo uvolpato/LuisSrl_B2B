@@ -515,3 +515,14 @@ tr:last-child td { border-bottom: none; }
   padding: 4px 8px;
   z-index: 10;
 }
+
+/* Combobox (condiviso admin e area cliente) */
+.combobox { position: relative; }
+.combobox-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: inherit; color: var(--fg); outline: none; width: 100%; box-sizing: border-box; }
+.combobox-input:focus { border-color: var(--accent); }
+.combobox-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 220px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 16%, transparent); display: none; }
+.combobox-dropdown.open { display: block; }
+.combobox-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+.combobox-option:hover { background: var(--fg-soft); }
+.combobox-option.highlighted { background: var(--accent-soft); }
+.combobox-empty { padding: 10px 12px; color: var(--muted); font-size: 13px; }
