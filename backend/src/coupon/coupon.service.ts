@@ -107,4 +107,16 @@ export class CouponService {
   async delete(id: number) {
     await this.prisma.campaign.delete({ where: { id } });
   }
+
+  async update(id: number, data: any) {
+    return this.prisma.campaign.update({
+      where: { id },
+      data: {
+        name: data.name, type: data.type, value: data.value, scope: data.scope,
+        scopeDetail: data.scopeDetail ?? null, minOrder: data.minOrder ?? null,
+        usage: data.usage, validFrom: new Date(data.validFrom),
+        validTo: data.validTo ? new Date(data.validTo) : null,
+      },
+    });
+  }
 }

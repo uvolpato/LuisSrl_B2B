@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query, HttpCode, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, HttpCode, UseGuards } from "@nestjs/common";
 import { AuthenticatedGuard } from "../auth/guards/authenticated.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { RequirePermission } from "../auth/decorators/permission.decorator";
@@ -21,6 +21,12 @@ export class CouponController {
   @Post()
   @RequirePermission("vendite.coupon.edit")
   create(@Body() body: any) { return this.svc.create(body); }
+
+  @Put(":id")
+  @RequirePermission("vendite.coupon.edit")
+  update(@Param("id") id: string, @Body() body: any) {
+    return this.svc.update(Number(id), body);
+  }
 
   @Post("preview-segment")
   previewSegment(@Body() body: { filters?: any[] }) {
