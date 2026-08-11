@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, HttpCode, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, Req, HttpCode, UseGuards } from "@nestjs/common";
 import { AuthenticatedGuard } from "../auth/guards/authenticated.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { RequirePermission } from "../auth/decorators/permission.decorator";
@@ -38,6 +38,17 @@ export class CouponController {
 
   @Post("qrcode")
   qrcode(@Body() body: { code: string }) { return this.svc.generateQR(body.code); }
+
+  @Get(":id/usage")
+  async getUsage(@Param("id") id: string) {
+    return this.svc.getUsage(Number(id));
+  }
+
+  @Patch(":id/revoke/:usageId")
+  @RequirePermission("vendite.coupon.edit")
+  revoke(@Param("id") id: string, @Param("usageId") usageId: string, @Req() req: any) {
+    return this.svc.revokeUsage(Number(usageId), req.user?.id);
+  }
 
   @Post(":id/send")
   @RequirePermission("vendite.coupon.edit")

@@ -108,6 +108,20 @@ export class CouponService {
     await this.prisma.campaign.delete({ where: { id } });
   }
 
+  async getUsage(campaignId: number) {
+    return this.prisma.campaignUsage.findMany({
+      where: { campaignId },
+      orderBy: { usedAt: "desc" },
+    });
+  }
+
+  async revokeUsage(usageId: number, adminId: number) {
+    return this.prisma.campaignUsage.update({
+      where: { id: usageId },
+      data: { revoked: true, revokedAt: new Date(), revokedBy: adminId },
+    });
+  }
+
   async update(id: number, data: any) {
     return this.prisma.campaign.update({
       where: { id },

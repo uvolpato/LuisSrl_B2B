@@ -452,14 +452,24 @@ export class CheckoutService {
         codiceSpedizione,
         codiceVettore,
         codicePagamento: dto.codicePagamento ?? customer?.codicePagamento ?? null,
+        codiceCoupon: dto.codiceCoupon ?? null,
         notaSpedizione: dto.notaSpedizione ?? null,
         notaOrdine: dto.notaOrdine ?? null,
-        righe: {
-          create: righeFinali,
-        },
+        righe: { create: righeFinali },
       },
       include: { righe: true },
     });
+
+    // Aggiorna CampaignUsage con l'orderId
+    if (dto.codiceCoupon && ordine) {
+      const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
+      if (campaign) {
+        await this.prisma.campaignUsage.updateMany({
+          where: { campaignId: campaign.id, customerId: clienteId, orderId: null },
+          data: { orderId: ordine.id, importo: importoTotale },
+        });
+      }
+    }
     void this.events.track('ordine.create', { entita: 'ordine', entitaId: numeroOrdine, dettagli: { importo: importoTotale, righe: righe.length } });
 
     // Svuota il carrello

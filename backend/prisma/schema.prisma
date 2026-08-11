@@ -216,6 +216,7 @@ model OrdineCliente {
   codicePagamento   String?  @map("codice_pagamento")
   notaSpedizione    String?  @map("nota_spedizione")
   notaOrdine        String?  @map("nota_ordine")
+  codiceCoupon      String?  @map("codice_coupon")
   customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   righe             RigaOrdine[]
 
@@ -640,11 +641,16 @@ model Campaign {
 }
 
 model CampaignUsage {
-  id         Int      @id @default(autoincrement())
-  campaignId Int      @map("campaign_id")
-  customerId Int      @map("customer_id")
-  usedAt     DateTime @default(now()) @map("used_at")
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  campaignId Int       @map("campaign_id")
+  customerId Int       @map("customer_id")
+  orderId    Int?      @map("order_id")
+  importo    Decimal?  @db.Decimal(12, 2)
+  usedAt     DateTime  @default(now()) @map("used_at")
+  revoked    Boolean   @default(false)
+  revokedAt  DateTime? @map("revoked_at")
+  revokedBy  Int?      @map("revoked_by")
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, customerId])
   @@map("campaign_usage")
