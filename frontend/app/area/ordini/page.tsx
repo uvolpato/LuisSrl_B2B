@@ -11,8 +11,6 @@ import { IconEye } from "../../../components/admin/icons";
 import type { OrdineCliente, OrdiniResponse } from "../../../lib/types";
 import { DateRangePicker } from "react-date-range";
 import { it } from "date-fns/locale";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
