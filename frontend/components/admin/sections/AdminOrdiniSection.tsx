@@ -156,39 +156,39 @@ export default function AdminOrdiniSection() {
         onSearchChange={setSearch}
         searchPlaceholder="Cerca per cliente o numero ordine..."
       >
-        <div className="date-nav" style={{ position: "relative" }}>
+        <div className="date-nav">
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 13 }}
             onClick={() => setPickerOpen(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ color: "var(--muted)", flexShrink: 0 }}>
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            {dataDa.split("-").reverse().join("/")}
-            {dataA !== dataDa && <> → {dataA.split("-").reverse().join("/")}</>}
+            {dataDa.split("-").reverse().join("/")} → {dataA.split("-").reverse().join("/")}
           </div>
-          {pickerOpen && (
-            <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", background: "oklch(0% 0 0 / 0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) setPickerOpen(false); }}>
-              <div style={{ background: "var(--surface)", borderRadius: 16, padding: 8, boxShadow: "0 20px 60px oklch(0% 0 0 / 0.3)" }} onClick={e => e.stopPropagation()}>
-                <DateRangePicker
-                  ranges={[dateRange]}
-                  onChange={(r: any) => {
-                    setDataDa(r.selection.startDate.toISOString().slice(0, 10));
-                    setDataA(r.selection.endDate.toISOString().slice(0, 10));
-                    setPage(1);
-                  }}
-                  locale={it}
-                  moveRangeOnFirstSelection={false}
-                  rangeColors={["#d97706"]}
-                  staticRanges={staticRangesIT}
-                  inputRanges={[]}
-                />
-                <div style={{ padding: "0 8px 8px", display: "flex", justifyContent: "flex-end" }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setPickerOpen(false)}>Chiudi</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </AdminTopBar>
+
+      {pickerOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "oklch(0% 0 0 / 0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) setPickerOpen(false); }}>
+          <div style={{ background: "var(--surface)", borderRadius: 16, padding: 8, boxShadow: "0 20px 60px oklch(0% 0 0 / 0.3)" }} onClick={e => e.stopPropagation()}>
+            <DateRangePicker
+              ranges={[dateRange]}
+              onChange={(r: any) => {
+                setDataDa(r.selection.startDate.toISOString().slice(0, 10));
+                setDataA(r.selection.endDate.toISOString().slice(0, 10));
+                setPage(1);
+              }}
+              locale={it}
+              moveRangeOnFirstSelection={false}
+              rangeColors={["#d97706"]}
+              staticRanges={staticRangesIT}
+              inputRanges={[]}
+            />
+            <div style={{ padding: "0 8px 8px", display: "flex", justifyContent: "flex-end" }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPickerOpen(false)}>Chiudi</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="admin-content">
         {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
