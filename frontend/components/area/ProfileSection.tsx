@@ -310,17 +310,19 @@ export default function ProfileSection({
                 <span className="meta">{a.indirizzo || "—"}</span><br />
                 <span className="meta">{[a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                {a.abituale && <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Principale</span>}
-                {a.id === -1 && <span className="tag" style={{ background: "var(--fg-soft)" }}>Anagrafica</span>}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {a.abituale && <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Predefinito</span>}
+                  {a.id === -1 && <span className="tag" style={{ background: "var(--fg-soft)" }}>Anagrafica</span>}
+                  {!a.abituale && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => setDefault(a.id)} style={{ fontSize: 12 }}>Imposta predefinito</button>
+                  )}
+                </div>
                 {a.id !== -1 && !a.daIntegra && (
-                  <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ fontSize: 12 }}>Modifica</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => deleteAddr(a.id)} style={{ fontSize: 12, color: "var(--red)" }}>Elimina</button>
-                  </>
-                )}
-                {!a.abituale && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => setDefault(a.id)} style={{ fontSize: 12 }}>Imposta principale</button>
+                  </div>
                 )}
               </div>
             </div>
@@ -357,7 +359,7 @@ export default function ProfileSection({
                 </div>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10 }}>
-                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0 }} />
+                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0, width: 16, height: 16, padding: 0, margin: 0 }} />
                 Principale
               </label>
               <div style={{ display: "flex", gap: 8 }}>
