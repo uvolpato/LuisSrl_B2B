@@ -128,10 +128,12 @@ export default function IndirizzoEditorModal({
           <ComboboxField value={nazione} onChange={setNazione} options={NAZIONI} allowAuto={false} placeholder="Cerca nazione..." />
         </div>
       </div>
-      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }}>
-        <input type="checkbox" checked={abituale} onChange={e => setAbituale(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0 }} />
-        Principale
-      </label>
+      <div style={{ marginTop: 2 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }}>
+          <input type="checkbox" checked={abituale} onChange={e => setAbituale(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0, margin: 0 }} />
+          Predefinito
+        </label>
+      </div>
     </Modal>
   );
 }
