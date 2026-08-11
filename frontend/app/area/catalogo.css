@@ -2007,6 +2007,9 @@
   flex-shrink: 0;
 }
 
+/* DataTable in modale: permette ai tooltip di uscire */
+.modal-root .data-table { overflow: visible; }
+
 /* Ordine detail modal */
 .ordine-detail-body { display: flex; flex-direction: column; overflow: hidden; }
 .ordine-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 0; }
