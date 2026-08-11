@@ -592,11 +592,11 @@ export default function CheckoutPage() {
 
             {submitError && <div className="checkout-error">{submitError}</div>}
             {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine && (
-              <div style={{ fontSize: 12, color: "var(--red)", marginTop: 8, textAlign: "center" }}>
-                L&apos;importo minimo per questa destinazione è di {fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.
+              <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginTop: 10, lineHeight: 1.5 }}>
+                L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
               </div>
             )}
-            <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
+            <button className="btn btn-primary checkout-btn" disabled={submitting} onClick={() => setStep("recap")}>
               Conferma ordine
             </button>
             <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>Torna al carrello</Link>
