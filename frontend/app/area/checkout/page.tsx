@@ -167,6 +167,8 @@ export default function CheckoutPage() {
   const [couponValue, setCouponValue] = useState(0);
   const [couponIsPct, setCouponIsPct] = useState(false);
   const [couponMsg, setCouponMsg] = useState("");
+  const [couponScope, setCouponScope] = useState<number | null>(null);
+  const [couponScopeLabel, setCouponScopeLabel] = useState<string | null>(null);
 
   const [notaSpedizione, setNotaSpedizione] = useState("");
   const [notaOrdine, setNotaOrdine] = useState("");
@@ -228,7 +230,7 @@ export default function CheckoutPage() {
   const subtotalAmount = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
   const subtotalListino = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoListino ?? 0), 0);
 
-  const couponDiscount = couponActive ? (couponIsPct ? subtotalAmount * couponValue : couponValue) : 0;
+  const couponDiscount = couponActive ? (couponIsPct ? (couponScope ?? subtotalAmount) * couponValue : couponValue) : 0;
   const subScontato = subtotalAmount - couponDiscount;
   const isRitiro = modalita === "RITIRO";
   const [couponType, setCouponType] = useState("");
@@ -256,9 +258,11 @@ export default function CheckoutPage() {
         setCouponActive(true);
         setCouponType(res.type);
         setCouponIsPct(res.isPct);
+        if (res.scopeSubtotale != null) setCouponScope(res.scopeSubtotale);
+        if (res.scopeDetail) setCouponScopeLabel(res.scopeDetail);
         if (res.type === "free-ship") { setCouponValue(0); }
         else if (res.type === "pct") { setCouponValue(res.value / 100); }
-        else { setCouponValue(res.value); }
+        else { setCouponValue(res.discountAmount || res.value); }
         setCouponMsg(res.label || "Codice applicato");
       } else {
         setCouponMsg(res.message || "Codice non valido");
@@ -270,7 +274,7 @@ export default function CheckoutPage() {
     }
   }
 
-  function removeCoupon() { setCouponActive(false); setCouponValue(0); setCouponType(""); setCouponMsg(""); setCouponCode(""); }
+  function removeCoupon() { setCouponActive(false); setCouponValue(0); setCouponType(""); setCouponMsg(""); setCouponCode(""); setCouponScope(null); setCouponScopeLabel(null); }
 
   function openNuovoForm() {
     setShowNuovo(true); setEditingAddrId(null);
@@ -601,7 +605,7 @@ export default function CheckoutPage() {
                   {couponMsg && !couponActive && <span className="coupon-msg err" style={{ fontSize: 11, display: "block", marginTop: 4 }}>{couponMsg}</span>}
                   {couponActive && couponMsg && <span className="coupon-msg ok" style={{ fontSize: 11, display: "block", marginTop: 4 }}>{couponMsg}</span>}
                 </td></tr>
-                {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice{couponScopeLabel ? ` (${couponScopeLabel})` : ""}</td><td>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
                 <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita || couponType === "free-ship" || isRitiro ? { color: "oklch(55% 0.15 145)", fontWeight: 700 } : undefined}>{isRitiro ? "Gratuita" : couponType === "free-ship" ? "Gratuita" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
@@ -747,7 +751,7 @@ export default function CheckoutPage() {
                     <tr style={{ color: "oklch(55% 0.15 145)", fontWeight: 700 }}><td>Coupon {couponCode}</td><td>Spedizione gratuita</td></tr>
                   )}
                   {couponActive && couponType !== "free-ship" && (
-                    <tr className="discount"><td>Sconto codice {couponCode}</td><td>−{fmtEur(couponDiscount)}</td></tr>
+                    <tr className="discount"><td>Sconto codice {couponCode}{couponScopeLabel ? ` (${couponScopeLabel})` : ""}</td><td>−{fmtEur(couponDiscount)}</td></tr>
                   )}
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                   <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
