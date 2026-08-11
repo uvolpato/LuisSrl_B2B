@@ -49,13 +49,7 @@ export class CouponController {
     return this.svc.getTargetClients(Number(id));
   }
 
-  @Patch(":id/revoke/:usageId")
-  @RequirePermission("vendite.coupon.edit")
-  revoke(@Param("id") id: string, @Param("usageId") usageId: string, @Req() req: any) {
-    return this.svc.revokeUsage(Number(usageId), req.user?.id);
-  }
-
-  @Post(":id/send")
+  @Patch(":id/remove-client/:customerId")
   @RequirePermission("vendite.coupon.edit")
   send(@Param("id") id: string, @Body() body: any) {
     return this.svc.sendCampaign(Number(id), body);
@@ -65,6 +59,12 @@ export class CouponController {
   @RequirePermission("vendite.coupon.edit")
   toggleStatus(@Param("id") id: string, @Body() body: { status: string }) {
     return this.svc.updateStatus(Number(id), body.status);
+  }
+
+  @Patch(":id/remove-client/:customerId")
+  @RequirePermission("vendite.coupon.edit")
+  removeClient(@Param("id") id: string, @Param("customerId") custId: string) {
+    return this.svc.removeClient(Number(id), Number(custId));
   }
 
   @Delete(":id")

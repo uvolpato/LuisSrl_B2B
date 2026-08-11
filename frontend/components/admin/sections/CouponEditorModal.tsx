@@ -33,20 +33,16 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   useEffect(() => {
     if (isEdit && initial?.id) {
       Promise.all([
-        api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`),
         api.get<any[]>(`/api/admin/coupon/${initial.id}/clients`),
-      ]).then(([u, c]) => { setUsages(u); setTargetClients(c); }).catch(() => {}).finally(() => setUsagesLoaded(true));
+      ]).then(([c]) => { setTargetClients(c); }).catch(() => {}).finally(() => setUsagesLoaded(true));
     }
   }, [isEdit, initial?.id]);
 
-  async function revokeUsage(usageId: number) {
+  async function removeClient(customerId: number) {
     try {
-      await api.patch(`/api/admin/coupon/${initial.id}/revoke/${usageId}`);
-      const [u, c] = await Promise.all([
-        api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`),
-        api.get<any[]>(`/api/admin/coupon/${initial.id}/clients`),
-      ]);
-      setUsages(u); setTargetClients(c);
+      await api.patch(`/api/admin/coupon/${initial.id}/remove-client/${customerId}`);
+      const c = await api.get<any[]>(`/api/admin/coupon/${initial.id}/clients`);
+      setTargetClients(c);
     } catch {}
   }
 
@@ -180,20 +176,18 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                   { key: "nome", header: "Cliente", grow: true, cell: (c: any) => c.nome },
                   { key: "codiceCliente", header: "Codice", width: "100px", mono: true, cell: (c: any) => c.codiceCliente || "—" },
                   { key: "usato", header: "Utilizzo", width: "160px", cell: (c: any) => c.usato
-                    ? <span style={{ fontSize: 11, color: c.usage?.revoked ? "var(--muted)" : "var(--green)" }}>{c.usage?.revoked ? "Revocato" : `Usato ord.#${c.usage?.orderId || "—"} ${c.usage?.importo ? `€${Number(c.usage.importo).toFixed(0)}` : ""}`}</span>
+                    ? <span style={{ fontSize: 11, color: "var(--green)" }}>Usato {c.usage?.orderId ? `ord.#${c.usage.orderId}` : ""} {c.usage?.importo ? `€${Number(c.usage.importo).toFixed(0)}` : ""}</span>
                     : <span style={{ fontSize: 11, color: "var(--muted)" }}>Non usato</span> },
                 ]}
                 rows={targetClients.filter(c => !targetSearch || c.nome.toLowerCase().includes(targetSearch.toLowerCase()) || (c.codiceCliente || "").toLowerCase().includes(targetSearch.toLowerCase()))}
                 rowKey={(c: any) => c.id}
                 actions={[
                   {
-                    icon: (c: any) => c.usage?.revoked
-                      ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                      : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
-                    tooltip: (c: any) => c.usage?.revoked ? "Riabilita utilizzo" : "Revoca utilizzo",
-                    onClick: (c: any) => { if (c.usato && c.usage?.id) revokeUsage(c.usage.id); },
+                    icon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>,
+                    tooltip: (c: any) => c.usato ? "Già utilizzato — non revocabile" : "Revoca accesso al coupon",
+                    onClick: (c: any) => { if (!c.usato) removeClient(c.id); },
                     variant: "danger" as const,
-                    hidden: (c: any) => !c.usato,
+                    hidden: (c: any) => c.usato,
                   } as RowAction<any>,
                 ]}
                 emptyText="Nessun cliente target"
