@@ -38,7 +38,7 @@ export default function CouponReviewModal({ data, onBack, onClose, onSent }: {
   }
 
   return (
-    <Modal open size="md" onClose={onClose} noHeader>
+    <Modal open size="sm" onClose={onClose} noHeader>
       <div className="modal-root-header"><h2>Riepilogo campagna</h2><button className="modal-root-close" onClick={onClose} aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div className="modal-root-body" style={{ padding: "24px 28px" }}>
         <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Dati campagna</h3>
