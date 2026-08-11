@@ -43,6 +43,9 @@ export default function OrdiniPage() {
     if (q) setSearch(q);
   }, []);
   const [year, setYear] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const [dataDa, setDataDa] = useState(today);
+  const [dataA, setDataA] = useState(today);
   const [sortBy, setSortBy] = useState<SortField>("dataOrdine");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
@@ -62,7 +65,8 @@ export default function OrdiniPage() {
         sortDir,
       });
       if (search) params.set("search", search);
-      if (year) params.set("year", year);
+      params.set("dataDa", dataDa);
+      params.set("dataA", dataA);
       const r = await api.get<OrdiniResponse>(`/api/ordini?${params}`);
       setOrdini(r.items);
       setTotal(r.total);
@@ -71,7 +75,7 @@ export default function OrdiniPage() {
       setError(e instanceof ApiError ? e.code : "errors.generic");
     }
     setLoading(false);
-  }, [page, limit, search, year, sortBy, sortDir]);
+  }, [page, limit, search, dataDa, dataA, sortBy, sortDir]);
 
   useEffect(() => {
     if (!authLoading && user) fetchOrdini();
@@ -79,7 +83,8 @@ export default function OrdiniPage() {
 
   const refetch = () => {
     setSearch("");
-    setYear("");
+    setDataDa(today);
+    setDataA(today);
     setPage(1);
     setSortBy("dataOrdine");
     setSortDir("desc");
@@ -152,12 +157,8 @@ export default function OrdiniPage() {
               </button>
             </div>
             <div className="ordini-filters">
-              {years.length > 0 && (
-                <select className="form-select" value={year} onChange={(e) => { setYear(e.target.value); setPage(1); }}>
-                  <option value="">Tutti gli anni</option>
-                  {years.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              )}
+              <input type="date" className="form-select" value={dataDa} onChange={(e) => { setDataDa(e.target.value); setPage(1); }} style={{ width: "auto" }} title="Da" />
+              <input type="date" className="form-select" value={dataA} onChange={(e) => { setDataA(e.target.value); setPage(1); }} style={{ width: "auto" }} title="A" />
               <button className="btn btn-secondary btn-sm" onClick={handleSync} disabled={syncing} title="Sincronizza ordini da Integra">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, verticalAlign: "middle" }}>
                   <polyline points="23 4 23 10 17 10" />
