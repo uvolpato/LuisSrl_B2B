@@ -162,12 +162,10 @@ export default function CarrelloPage() {
                 </p>
                 {minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine && (
                   <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginTop: 10, lineHeight: 1.5 }}>
-                    Per effettuare l&apos;ordine è necessario raggiungere un importo minimo di <strong>{formatPrice(minimoOrdine)}</strong> (IVA esclusa).
+                    La soglia minima per questo indirizzo è di <strong>{formatPrice(minimoOrdine)}</strong> (IVA esclusa). Potrebbe variare in base alla destinazione scelta al checkout.
                   </div>
                 )}
-                <Link href="/area/checkout" className={`btn btn-primary checkout-btn${minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine ? " disabled-link" : ""}`}
-                  onClick={e => { if (minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine) e.preventDefault(); }}
-                  style={minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
+                <Link href="/area/checkout" className="btn btn-primary checkout-btn">
                   Procedi al checkout
                 </Link>
                 <button className="btn btn-secondary btn-progetto" disabled={!activeItems.length}
