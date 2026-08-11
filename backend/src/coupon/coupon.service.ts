@@ -126,7 +126,7 @@ export class CouponService {
 
     const usages = await this.prisma.campaignUsage.findMany({
       where: { campaignId, customerId: { in: campaign.customerIds } },
-      select: { customerId: true, usedAt: true, orderId: true, revoked: true },
+      select: { customerId: true, usedAt: true, orderId: true, importo: true },
     });
     const usageMap = new Map(usages.map(u => [u.customerId, u]));
 
@@ -139,13 +139,13 @@ export class CouponService {
     }));
   }
 
-  async revokeUsage(usageId: number, adminId: number) {
-    const usage = await this.prisma.campaignUsage.findUnique({ where: { id: usageId } });
-    if (!usage) throw new Error("Utilizzo non trovato");
-    const newRevoked = !usage.revoked;
-    return this.prisma.campaignUsage.update({
-      where: { id: usageId },
-      data: { revoked: newRevoked, revokedAt: new Date(), revokedBy: adminId },
+  async removeClient(campaignId: number, customerId: number) {
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign) throw new Error("Campagna non trovata");
+    const updatedIds = (campaign.customerIds || []).filter(id => id !== customerId);
+    return this.prisma.campaign.update({
+      where: { id: campaignId },
+      data: { customerIds: updatedIds },
     });
   }
 
