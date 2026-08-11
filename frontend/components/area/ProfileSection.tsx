@@ -356,9 +356,9 @@ export default function ProfileSection({
                   <ComboboxField value={fNazione} onChange={setFNazione} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
                 </div>
               </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10, whiteSpace: "nowrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10 }}>
                 <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0 }} />
-                Imposta come indirizzo principale
+                Principale
               </label>
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="btn btn-secondary btn-sm" onClick={closeForm}>Annulla</button>
