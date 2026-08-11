@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import type { CustomerProfile } from "../../lib/types";
 import { api, ApiError } from "../../lib/api";
 import ComboboxField from "../admin/ComboboxField";
-import type { ComboboxOption } from "../admin/ComboboxField";
 
 function BuildingIcon() {
   return (
@@ -35,7 +34,7 @@ interface Indirizzo {
   daIntegra: boolean;
 }
 
-const PROVINCE_OPTS: ComboboxOption[] = [
+const PROVINCE_OPTS = [
   { value:"AG",label:"Agrigento"},{ value:"AL",label:"Alessandria"},{ value:"AN",label:"Ancona"},{ value:"AO",label:"Aosta"},
   { value:"AR",label:"Arezzo"},{ value:"AP",label:"Ascoli Piceno"},{ value:"AT",label:"Asti"},{ value:"AV",label:"Avellino"},
   { value:"BA",label:"Bari"},{ value:"BT",label:"Barletta-Andria-Trani"},{ value:"BL",label:"Belluno"},{ value:"BN",label:"Benevento"},
@@ -65,6 +64,54 @@ const PROVINCE_OPTS: ComboboxOption[] = [
   { value:"VV",label:"Vibo Valentia"},{ value:"VI",label:"Vicenza"},{ value:"VT",label:"Viterbo"},
 ];
 
+const NAZIONI_OPTS = [
+  { value: "IT", label: "Italia (Europa)" },
+  { value: "AT", label: "Austria (Europa)" },
+  { value: "BE", label: "Belgio (Europa)" },
+  { value: "BG", label: "Bulgaria (Europa)" },
+  { value: "CH", label: "Svizzera (Europa)" },
+  { value: "CY", label: "Cipro (Europa)" },
+  { value: "CZ", label: "Rep. Ceca (Europa)" },
+  { value: "DE", label: "Germania (Europa)" },
+  { value: "DK", label: "Danimarca (Europa)" },
+  { value: "EE", label: "Estonia (Europa)" },
+  { value: "ES", label: "Spagna (Europa)" },
+  { value: "FI", label: "Finlandia (Europa)" },
+  { value: "FR", label: "Francia (Europa)" },
+  { value: "GB", label: "Regno Unito (Europa)" },
+  { value: "GR", label: "Grecia (Europa)" },
+  { value: "HR", label: "Croazia (Europa)" },
+  { value: "HU", label: "Ungheria (Europa)" },
+  { value: "IE", label: "Irlanda (Europa)" },
+  { value: "LT", label: "Lituania (Europa)" },
+  { value: "LU", label: "Lussemburgo (Europa)" },
+  { value: "LV", label: "Lettonia (Europa)" },
+  { value: "MT", label: "Malta (Europa)" },
+  { value: "NL", label: "Paesi Bassi (Europa)" },
+  { value: "PL", label: "Polonia (Europa)" },
+  { value: "PT", label: "Portogallo (Europa)" },
+  { value: "RO", label: "Romania (Europa)" },
+  { value: "SE", label: "Svezia (Europa)" },
+  { value: "SI", label: "Slovenia (Europa)" },
+  { value: "SK", label: "Slovacchia (Europa)" },
+  { value: "US", label: "Stati Uniti (America)" },
+  { value: "CA", label: "Canada (America)" },
+  { value: "BR", label: "Brasile (America)" },
+  { value: "MX", label: "Messico (America)" },
+  { value: "AR", label: "Argentina (America)" },
+  { value: "JP", label: "Giappone (Asia)" },
+  { value: "CN", label: "Cina (Asia)" },
+  { value: "KR", label: "Corea del Sud (Asia)" },
+  { value: "IN", label: "India (Asia)" },
+  { value: "AU", label: "Australia (Oceania)" },
+  { value: "NZ", label: "Nuova Zelanda (Oceania)" },
+  { value: "MA", label: "Marocco (Africa)" },
+  { value: "ZA", label: "Sud Africa (Africa)" },
+  { value: "EG", label: "Egitto (Africa)" },
+  { value: "AE", label: "Emirati Arabi (Asia)" },
+  { value: "ROW", label: "Altro (Resto del mondo)" },
+];
+
 export default function ProfileSection({
   customer,
   onPasswordChanged,
@@ -90,6 +137,7 @@ export default function ProfileSection({
   const [fCap, setFCap] = useState("");
   const [fCitta, setFCitta] = useState("");
   const [fProvincia, setFProvincia] = useState("");
+  const [fNazione, setFNazione] = useState("IT");
   const [fDefault, setFDefault] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -119,11 +167,11 @@ export default function ProfileSection({
   const tuttiIndirizzi = sedeLegale ? [sedeLegale, ...indirizzi] : indirizzi;
 
   function openNew() {
-    setEditId(null); setFRagione(""); setFIndirizzo(""); setFCap(""); setFCitta(""); setFProvincia(""); setFDefault(false); setShowForm(true);
+    setEditId(null); setFRagione(""); setFIndirizzo(""); setFCap(""); setFCitta(""); setFProvincia(""); setFNazione("IT"); setFDefault(false); setShowForm(true);
   }
 
   function openEdit(a: Indirizzo) {
-    setEditId(a.id); setFRagione(a.ragioneSociale ?? ""); setFIndirizzo(a.indirizzo ?? ""); setFCap(a.cap ?? ""); setFCitta(a.citta ?? ""); setFProvincia(a.provincia ?? ""); setFDefault(a.abituale); setShowForm(true);
+    setEditId(a.id); setFRagione(a.ragioneSociale ?? ""); setFIndirizzo(a.indirizzo ?? ""); setFCap(a.cap ?? ""); setFCitta(a.citta ?? ""); setFProvincia(a.provincia ?? ""); setFNazione((a as any).nazione ?? "IT"); setFDefault(a.abituale); setShowForm(true);
   }
 
   function closeForm() { setShowForm(false); setEditId(null); }
@@ -133,9 +181,9 @@ export default function ProfileSection({
     setSaving(true);
     try {
       if (editId) {
-        await api.put(`/api/checkout/indirizzo/${editId}`, { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, abituale: fDefault });
+        await api.put(`/api/checkout/indirizzo/${editId}`, { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, nazione: fNazione, abituale: fDefault });
       } else {
-        await api.post("/api/checkout/indirizzo", { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, abituale: fDefault });
+        await api.post("/api/checkout/indirizzo", { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, nazione: fNazione, abituale: fDefault });
       }
       closeForm();
       await fetchIndirizzi();
@@ -301,11 +349,22 @@ export default function ProfileSection({
                 </div>
                 <div>
                   <label style={{ fontSize: 12, color: "var(--muted)" }}>Provincia</label>
-                  <ComboboxField value={fProvincia} onChange={setFProvincia} options={PROVINCE_OPTS} allowAuto={false} placeholder="Cerca..." />
+                  <ComboboxField value={fProvincia} onChange={setFProvincia} options={PROVINCE_OPTS.map(o => ({ value: o.value, label: o.label }))} allowAuto={false} placeholder="Cerca provincia..." />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Nazione</label>
+                  <ComboboxField value={fNazione} onChange={setFNazione} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Nazione</label>
+                  <select style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fNazione} onChange={e => setFNazione(e.target.value)}>
+                    <option value="IT">Italia</option>
+                    <option value="ROW">Altro (Resto del mondo)</option>
+                  </select>
                 </div>
               </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10 }}>
-                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)" }} />
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10, whiteSpace: "nowrap" }}>
+                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0 }} />
                 Imposta come indirizzo principale
               </label>
               <div style={{ display: "flex", gap: 8 }}>
