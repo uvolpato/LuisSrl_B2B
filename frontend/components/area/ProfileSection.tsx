@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CustomerProfile } from "../../lib/types";
 import { api, ApiError } from "../../lib/api";
 import ComboboxField from "../admin/ComboboxField";
+import IndirizzoEditorModal from "./IndirizzoEditorModal";
 import Modal from "../common/Modal";
 
 function BuildingIcon() {
@@ -331,44 +332,22 @@ export default function ProfileSection({
             </div>
           ))}
           <button className="btn btn-secondary btn-sm" onClick={openNew} style={{ marginTop: 8 }}>+ Nuovo indirizzo</button>
-          <Modal open={showForm} onClose={closeForm} title={editId ? "Modifica indirizzo" : "Nuovo indirizzo"} size="md"
-            footer={<>
-              <button className="btn btn-secondary btn-sm" onClick={closeForm}>Annulla</button>
-              <button className="btn btn-primary btn-sm" onClick={saveAddr} disabled={saving}>{editId ? "Aggiorna" : "Salva"}</button>
-            </>}>
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Intestazione</label>
-                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fRagione} onChange={e => setFRagione(e.target.value)} placeholder="Es. Nome destinatario" />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Indirizzo *</label>
-                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fIndirizzo} onChange={e => setFIndirizzo(e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>CAP *</label>
-                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fCap} onChange={e => setFCap(e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Città *</label>
-                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fCitta} onChange={e => setFCitta(e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Provincia</label>
-                  <ComboboxField value={fProvincia} onChange={setFProvincia} options={PROVINCE_OPTS.map(o => ({ value: o.value, label: o.label }))} allowAuto={false} placeholder="Cerca provincia..." />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Nazione</label>
-                  <ComboboxField value={fNazione} onChange={setFNazione} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
-                </div>
-              </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10 }}>
-                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0, width: 16, height: 16, padding: 0, margin: 0 }} />
-                Principale
-              </label>
-            </div>
-          </Modal>
+          <IndirizzoEditorModal
+            open={showForm}
+            title={editId ? "Modifica indirizzo" : "Nuovo indirizzo"}
+            initial={editId ? { ragioneSociale: fRagione, indirizzo: fIndirizzo, cap: fCap, citta: fCitta, provincia: fProvincia, nazione: fNazione, abituale: fDefault } : undefined}
+            onSave={async (data) => {
+              if (editId) {
+                await api.put(`/api/checkout/indirizzo/${editId}`, data);
+              } else {
+                await api.post("/api/checkout/indirizzo", data);
+              }
+              closeForm();
+              await fetchIndirizzi();
+              window.dispatchEvent(new CustomEvent("address-updated"));
+            }}
+            onClose={closeForm}
+          />
         </div>
 
         {/* Modalità di pagamento */}

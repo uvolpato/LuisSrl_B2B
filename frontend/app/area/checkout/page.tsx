@@ -10,6 +10,7 @@ import LoadingScreen from "../../../components/common/LoadingScreen";
 import Modal from "../../../components/common/Modal";
 import ComboboxField from "../../../components/admin/ComboboxField";
 import type { ComboboxOption } from "../../../components/admin/ComboboxField";
+import IndirizzoEditorModal from "../../../components/area/IndirizzoEditorModal";
 
 interface CartItem {
   id: number;
@@ -472,44 +473,21 @@ export default function CheckoutPage() {
                   <button type="button" className="btn btn-secondary addr-add-btn" onClick={openNuovoForm}>+ Indica un nuovo indirizzo</button>
                 )}
 
-                <Modal open={showNuovo} onClose={closeNuovoForm} title={editingAddrId ? "Modifica indirizzo" : "Nuovo indirizzo"} size="md"
-                  footer={<>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={closeNuovoForm}>Annulla</button>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={saveIndirizzo}>{editingAddrId ? "Aggiorna" : "Salva indirizzo"}</button>
-                  </>}>
-                  <div className="addr-new">
-                    <div className="checkout-grid">
-                      <div className="form-field">
-                        <label htmlFor="nRagione">Intestazione</label>
-                        <input id="nRagione" className="form-input" value={nRagione} onChange={e => setNRagione(e.target.value)} placeholder="Es. Nome destinatario" />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="nIndirizzo">Indirizzo *</label>
-                        <input id="nIndirizzo" className="form-input" value={nIndirizzo} onChange={e => setNIndirizzo(e.target.value)} />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="nCap">CAP *</label>
-                        <input id="nCap" className="form-input" value={nCap} onChange={e => setNCap(e.target.value)} />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="nCitta">Città *</label>
-                        <input id="nCitta" className="form-input" value={nCitta} onChange={e => setNCitta(e.target.value)} />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="nProvincia">Provincia</label>
-                        <ComboboxField value={nProvincia} onChange={v => setNProvincia(v)} options={PROVINCE_OPTS} allowAuto={false} placeholder="Cerca provincia..." />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="nNazione">Nazione</label>
-                        <ComboboxField value={nNazione} onChange={v => setNNazione(v)} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
-                      </div>
-                    </div>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--fg)", cursor: "pointer" }}>
-                      <input type="checkbox" checked={nDefault} onChange={e => setNDefault(e.target.checked)} style={{ accentColor: "var(--accent)", width: 15, height: 15 }} />
-                      Imposta come predefinito
-                    </label>
-                  </div>
-                </Modal>
+                <IndirizzoEditorModal
+                  open={showNuovo}
+                  title={editingAddrId ? "Modifica indirizzo" : "Nuovo indirizzo"}
+                  initial={editingAddrId ? { ragioneSociale: nRagione, indirizzo: nIndirizzo, cap: nCap, citta: nCitta, provincia: nProvincia, nazione: nNazione, abituale: nDefault } : undefined}
+                  onSave={async (data) => {
+                    if (editingAddrId) {
+                      await api.put(`/api/checkout/indirizzo/${editingAddrId}`, data);
+                    } else {
+                      await api.post("/api/checkout/indirizzo", data);
+                    }
+                    closeNuovoForm();
+                    try { const d = await api.get<DatiCheckout>("/api/checkout/dati"); setDati(d); } catch {}
+                  }}
+                  onClose={closeNuovoForm}
+                />
               </section>
             )}
 
