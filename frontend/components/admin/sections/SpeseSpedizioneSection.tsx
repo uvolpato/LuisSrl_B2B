@@ -320,7 +320,7 @@ function TariffaEditor({ tariffa, allTariffe, onClose, onSaved, onCalcPreview, o
   const [stato, setStato] = useState(tariffa?.stato ?? "configura");
   const [soglia, setSoglia] = useState(tariffa?.sogliaImporto ?? duplicateData?.sogliaImporto ?? 0);
   const [minimo, setMinimo] = useState(tariffa?.minimoImporto ?? duplicateData?.minimoImporto ?? 0);
-  const [minimoOrd, setMinimoOrd] = useState(tariffa?.minimoOrdine ?? 0);
+  const [minimoOrd, setMinimoOrd] = useState(tariffa?.minimoOrdine ?? duplicateData?.minimoOrdine ?? 0);
   const [ranges, setRanges] = useState<(number | null)[][]>(() => {
     const src = tariffa?.ranges ?? duplicateData?.ranges ?? [];
     return src.map(r => [r[0] ?? 0, r[1] ?? null, r[2] ?? 0] as (number | null)[]);
