@@ -196,7 +196,7 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
             <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>Destinatari</h3>
 
             {isEdit ? (
-              <div style={{ flex: 1, minHeight: 0 }}>
+              <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
               <DataTable
                 columns={[
                   { key: "nome", header: "Cliente", grow: true, cell: (c: any) => c.nome },
