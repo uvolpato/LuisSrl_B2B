@@ -104,7 +104,7 @@ export default function CouponEditorModal({ onClose, onReview }: { onClose: () =
   const stl: Record<string, any> = { width: "100%", padding: "9px 12px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", font: "inherit", fontSize: 14, color: "var(--fg)", boxSizing: "border-box" };
 
   return (
-    <Modal open size="lg" onClose={onClose} noHeader>
+    <Modal open size="sm" onClose={onClose} noHeader>
       <div className="modal-root-header"><h2>Nuova campagna</h2><button className="modal-root-close" onClick={onClose} aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div className="modal-root-body" style={{ padding: "24px 28px" }}>
 
