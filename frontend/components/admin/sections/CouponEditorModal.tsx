@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "../../common/Modal";
+import DataTable from "../DataTable";
+import type { Column, RowAction } from "../DataTable";
 import { api } from "../../../lib/api";
 import { formatPrice } from "../../../lib/helpers";
 
@@ -194,28 +196,34 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
             <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Destinatari</h3>
 
             {isEdit ? (
-              targetClients.length === 0 ? (
-                <p style={{ color: "var(--muted)", fontSize: 13 }}>Nessun cliente target.</p>
-              ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead><tr style={{ textAlign: "left", color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase" }}>
-                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Cliente</th>
-                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Codice</th>
-                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Utilizzo</th>
-                  </tr></thead>
-                  <tbody>{targetClients.map((c: any) => (
-                    <tr key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "6px 8px" }}>{c.nome}</td>
-                      <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.codiceCliente || "—"}</td>
-                      <td style={{ padding: "6px 8px" }}>
-                        {c.usato
-                          ? <span style={{ fontSize: 10, color: c.usage?.revoked ? "var(--muted)" : "var(--green)", background: c.usage?.revoked ? "var(--fg-soft)" : "var(--green-soft)", padding: "2px 6px", borderRadius: 999 }}>{c.usage?.revoked ? "Revocato" : `Usato #${c.usage?.orderId || "—"}`}</span>
-                          : <span style={{ fontSize: 10, color: "var(--muted)" }}>Non usato</span>}
-                      </td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              )
+              <DataTable
+                columns={[
+                  { key: "nome", header: "Cliente", grow: true, cell: (c: any) => c.nome },
+                  { key: "codiceCliente", header: "Codice", width: "100px", mono: true, cell: (c: any) => c.codiceCliente || "—" },
+                  { key: "usato", header: "Utilizzo", width: "160px", cell: (c: any) => c.usato
+                    ? <span style={{ fontSize: 11, color: c.usage?.revoked ? "var(--muted)" : "var(--green)" }}>{c.usage?.revoked ? "Revocato" : `Usato ord.#${c.usage?.orderId || "—"} ${c.usage?.importo ? `€${Number(c.usage.importo).toFixed(0)}` : ""}`}</span>
+                    : <span style={{ fontSize: 11, color: "var(--muted)" }}>Non usato</span> },
+                ]}
+                rows={targetClients}
+                rowKey={(c: any) => c.id}
+                actions={[
+                  {
+                    icon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>,
+                    tooltip: (c: any) => c.usato ? "Già utilizzato" : "Rimuovi destinatario",
+                    onClick: (c: any) => {
+                      if (c.usato) return;
+                      if (!confirm(`Rimuovere ${c.nome} dai destinatari?`)) return;
+                      setTargetClients(prev => prev.filter(x => x.id !== c.id));
+                    },
+                    hidden: (c: any) => c.usato && !c.usage?.revoked,
+                  } as RowAction<any>,
+                ]}
+                emptyText="Nessun cliente target"
+                page={1}
+                pageSize={targetClients.length || 1}
+                total={targetClients.length}
+                onPageChange={() => {}}
+              />
             ) : (
               <>
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}><input style={{ ...stl, flex: 1 }} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Cerca per codice cliente, ragione sociale o P.IVA..." onKeyDown={e => e.key === "Enter" && searchClients()} /><button className="btn btn-secondary btn-sm" onClick={searchClients}>Cerca</button></div>
