@@ -129,31 +129,28 @@ export class CheckoutService {
   }
 
   async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number, sconto: number = 0) {
-    if (!provincia) {
-      const resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
-      if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false };
-      const calc = Calcola(resolved.t, imponibile, sconto);
-      return {
-        importo: Math.round(calc.fee * 100) / 100,
-        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : calc.minimo && calc.fee === calc.minimo ? ` (minimo ${calc.minimo}€)` : ` (${calc.pct.toFixed(1)}%)`),
-        gratuita: calc.superaSoglia,
-        soglia: calc.soglia,
-        minimo: calc.minimo,
-        minimoOrdine: calc.minimoOrdine,
-      };
-    }
-    const regione = this.provinciaToRegione(provincia?.toUpperCase());
-    if (!regione) return { importo: 0, descrizione: 'Provincia non trovata', gratuita: false };
+    // Risolvi con fallback gerarchico: IT+regione → IT → EUROPA → ROW
+    const regione = provincia ? this.provinciaToRegione(provincia.toUpperCase()) : null;
+    let resolved;
 
-    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
-    if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false };
+    if (regione) {
+      // Provincia italiana → cerca IT + regione, fallback IT, fallback EUROPA, fallback ROW
+      resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
+    }
+    if (!resolved) {
+      resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+    }
+
+    if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
 
     const calc = Calcola(resolved.t, imponibile, sconto);
+    const desc = regione ? regione : 'Resto del mondo';
     return {
       importo: Math.round(calc.fee * 100) / 100,
-      descrizione: regione + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+      descrizione: desc + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
       gratuita: calc.superaSoglia,
       soglia: calc.soglia,
+      minimo: calc.minimo,
       minimoOrdine: calc.minimoOrdine,
     };
   }
