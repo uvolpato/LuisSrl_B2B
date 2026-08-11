@@ -39,6 +39,11 @@ async function request<T>(
       (Array.isArray(body?.message) ? body?.message[0] : body?.message) ??
       `errors.HTTP ${res.status}`;
     if (res.status === 429) throw new ApiError(429, "errors.too_many_requests");
+    // Per 401 con messaggio "Connesso da un altro dispositivo", mantieni il messaggio
+    if (res.status === 401 && rawMsg === 'Connesso da un altro dispositivo') {
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('session-stolen'));
+      throw new ApiError(401, rawMsg);
+    }
     if (!rawMsg.includes('.')) throw new ApiError(res.status, `errors.HTTP ${res.status}`);
     throw new ApiError(res.status, rawMsg);
   }
