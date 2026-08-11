@@ -23,6 +23,23 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   const [validFrom, setValidFrom] = useState(initial?.validFrom?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [validTo, setValidTo] = useState(initial?.validTo?.slice(0, 10) ?? "");
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [usages, setUsages] = useState<any[]>([]);
+  const [usagesLoaded, setUsagesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isEdit && initial?.id) {
+      api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`).then(setUsages).catch(() => {}).finally(() => setUsagesLoaded(true));
+    }
+  }, [isEdit, initial?.id]);
+
+  async function revokeUsage(usageId: number) {
+    if (!confirm("Revocare questo utilizzo? Il cliente potrà usare di nuovo il coupon.")) return;
+    try {
+      await api.patch(`/api/admin/coupon/${initial.id}/revoke/${usageId}`);
+      const updated = await api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`);
+      setUsages(updated);
+    } catch {}
+  }
 
   // Step 2: Destinatari
   const [segCount, setSegCount] = useState(0);
@@ -132,6 +149,27 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
               <div style={{ width: 100, height: 100, border: "1px solid var(--border)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--fg-soft)", flexShrink: 0 }}>{qrCode ? <img src={qrCode} alt="QR" style={{ width: 96, height: 96 }} /> : <span style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", padding: 8 }}>Inserisci un codice</span>}</div>
               <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, margin: 0, flex: 1 }}>Il QR code sarà incluso nell'email. Il cliente potrà scansionarlo per applicare lo sconto automaticamente in fase di checkout.</p>
             </div>
+
+            {isEdit && usages.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Utilizzi ({usages.length})</h3>
+                <div style={{ maxHeight: 250, overflow: "auto" }}>
+                  {usages.map((u: any) => (
+                    <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+                      <span style={{ flex: 1, minWidth: 0 }}>ID cliente: <strong>{u.customerId}</strong></span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>Ord.#{u.orderId || "—"}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{u.importo ? `€ ${Number(u.importo).toFixed(2)}` : "—"}</span>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(u.usedAt).toLocaleDateString("it-IT")}</span>
+                      {u.revoked ? (
+                        <span style={{ fontSize: 10, color: "var(--muted)", background: "var(--fg-soft)", padding: "2px 6px", borderRadius: 999 }}>Revocato</span>
+                      ) : (
+                        <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)" }}>Revoca</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div className="modal-root-footer"><button className="btn btn-secondary" onClick={onClose}>Annulla</button><button className="btn btn-primary" onClick={() => setStep("destinatari")}>Destinatari →</button></div>
         </>
