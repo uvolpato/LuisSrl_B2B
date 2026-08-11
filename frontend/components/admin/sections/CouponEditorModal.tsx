@@ -192,10 +192,11 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
 
       {step === "destinatari" && (
         <>
-          <div className="modal-root-body" style={{ padding: "24px 28px" }}>
-            <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Destinatari</h3>
+          <div className="modal-root-body" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>Destinatari</h3>
 
             {isEdit ? (
+              <div style={{ flex: 1, minHeight: 0 }}>
               <DataTable
                 columns={[
                   { key: "nome", header: "Cliente", grow: true, cell: (c: any) => c.nome },
@@ -224,6 +225,7 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                 total={targetClients.length}
                 onPageChange={() => {}}
               />
+              </div>
             ) : (
               <>
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}><input style={{ ...stl, flex: 1 }} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Cerca per codice cliente, ragione sociale o P.IVA..." onKeyDown={e => e.key === "Enter" && searchClients()} /><button className="btn btn-secondary btn-sm" onClick={searchClients}>Cerca</button></div>
