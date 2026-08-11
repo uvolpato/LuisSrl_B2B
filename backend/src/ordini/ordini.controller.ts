@@ -15,10 +15,11 @@ export class OrdiniController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortDir') sortDir?: string,
-    @Query('year') year?: string,
+    @Query('dataDa') dataDa?: string,
+    @Query('dataA') dataA?: string,
   ) {
     if (req.user?.userType !== 'customer') throw new BadRequestException('Utente senza profilo cliente');
     return this.svc.getMieiOrdini(req.user.id, search, Number(page) || 1,
-      Math.min(Number(limit) || 50, 200), sortBy, sortDir, year);
+      Math.min(Number(limit) || 50, 200), sortBy, sortDir, dataDa, dataA);
   }
 }

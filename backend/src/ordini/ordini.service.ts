@@ -14,17 +14,15 @@ export class OrdiniService {
     limit = 50,
     sortBy?: string,
     sortDir?: string,
-    year?: string,
+    dataDa?: string,
+    dataA?: string,
   ) {
     const where: any = { customerId };
 
-    if (year) {
-      const y = parseInt(year, 10);
-      if (!isNaN(y)) {
-        const start = new Date(`${y}-01-01T00:00:00.000Z`);
-        const end = new Date(`${y + 1}-01-01T00:00:00.000Z`);
-        where.dataOrdine = { gte: start, lt: end };
-      }
+    if (dataDa) {
+      const from = new Date(dataDa + 'T00:00:00.000Z');
+      const to = dataA ? new Date(dataA + 'T23:59:59.999Z') : new Date(dataDa + 'T23:59:59.999Z');
+      where.dataOrdine = { gte: from, lte: to };
     }
 
     if (search) {
@@ -72,13 +70,6 @@ export class OrdiniService {
       }
     }
 
-    const years: number[] = await this.prisma.$queryRawUnsafe<{ anno: number }[]>(
-      `SELECT DISTINCT EXTRACT(YEAR FROM data_ordine) AS anno
-       FROM ordini_clienti WHERE customer_id = $1 AND data_ordine IS NOT NULL
-       ORDER BY anno DESC`,
-      customerId,
-    ).then((rows) => rows.map((r) => r.anno));
-
-    return { items, total, years };
+    return { items, total, years: [] as number[] };
   }
 }
