@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coupon e campagne — Admin</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80); --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60); --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70); --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(96% 0.004 80);
+  --green: oklch(55% 0.15 145); --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
+  --red: oklch(55% 0.18 25); --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+  --blue: oklch(55% 0.15 250); --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --amber: oklch(60% 0.13 65); --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px; --radius-lg: 16px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; font-family: var(--font-body); font-size: 14px; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* ── AdminTopBar ── */
+.admin-top { position: sticky; top: 0; z-index: 10; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.admin-top h1 { font-size: 20px; letter-spacing: -0.01em; margin: 0; }
+.top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); padding: 0 32px; background: var(--surface); }
+.tab { padding: 10px 20px; border: none; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.12s, border-color 0.12s; }
+.tab:hover { color: var(--fg); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Buttons ── */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 8px; border: 1px solid transparent; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; text-decoration: none; font-family: var(--font-body); transition: transform 0.05s ease, background 0.15s ease; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+
+/* ── Content ── */
+.admin-content { flex: 1; min-height: 0; padding: 16px 32px 24px; display: flex; flex-direction: column; overflow: auto; }
+
+/* ── Dashboard cards ── */
+.dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; flex-shrink: 0; }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .dash-grid { grid-template-columns: 1fr; } }
+.dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; border-left: 3px solid var(--accent); }
+.dash-card .label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.dash-card .value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; line-height: 1.1; }
+.dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* ── DataTable ── */
+.data-table { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-left: 1px solid var(--table-head-bg); border-right: 1px solid var(--table-head-bg); border-radius: var(--radius-lg); overflow: hidden; }
+.data-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead th { position: sticky; top: 0; z-index: 4; background: var(--table-head-bg); color: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--fg); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.data-table .num { text-align: right; }
+.data-table-empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+
+/* ── Status pills ── */
+.status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
+.status-pill .sd { font-size: 8px; }
+.st-ok { color: var(--green); } .st-blue { color: var(--blue); } .st-amber { color: var(--amber); } .st-red { color: var(--red); }
+
+/* ── Section cards ── */
+.section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 14px; }
+.section-card h2 { font-size: 17px; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+.section-card h2 svg { width: 18px; height: 18px; color: var(--accent); }
+
+/* ── Form fields ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.field input, .field select, .field textarea { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font: inherit; font-size: 14px; color: var(--fg); outline: none; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); outline: 2px solid var(--accent-soft); }
+.field textarea { resize: vertical; min-height: 60px; }
+
+/* ── Editor layout ── */
+.editor-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; align-items: start; }
+@media (max-width: 920px) { .editor-layout { grid-template-columns: 1fr; } }
+
+/* ── Segmentation panel ── */
+.seg-panel { }
+.filter-group { margin-bottom: 14px; }
+.filter-group label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+.filter-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.filter-row select, .filter-row input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font: inherit; font-size: 13px; color: var(--fg); outline: none; }
+.filter-row select:focus, .filter-row input:focus { border-color: var(--accent); }
+.filter-add { font-size: 12px; color: var(--accent); cursor: pointer; background: none; border: none; padding: 0; font-weight: 500; }
+.filter-add:hover { text-decoration: underline; }
+.seg-result { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--fg-soft); border-radius: var(--radius); margin-top: 12px; font-size: 13px; }
+.seg-count { font-family: var(--font-mono); font-weight: 700; color: var(--accent); }
+
+/* ── Anteprima email ── */
+.email-preview { padding: 14px 16px; background: var(--fg-soft); border-radius: var(--radius); border: 1px dashed var(--border); font-size: 13px; line-height: 1.5; }
+.email-preview .subject { font-weight: 600; margin-bottom: 8px; }
+.email-preview .body { color: var(--muted); }
+.email-preview .coupon-code { display: inline-block; margin-top: 8px; padding: 6px 16px; background: var(--accent); color: var(--surface); border-radius: 8px; font-family: var(--font-mono); font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+
+/* ── Riepilogo ── */
+.recap-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+.recap-row .lbl { color: var(--muted); }
+.recap-row .val { font-weight: 500; }
+
+/* ── Search ── */
+.admin-search { position: relative; width: 260px; }
+.admin-search input { width: 100%; padding: 9px 14px 9px 36px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 14px; color: var(--fg); outline: none; }
+.admin-search input:focus { border-color: var(--accent); }
+.admin-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.admin-search .search-icon svg { width: 16px; height: 16px; }
+
+/* ── Client list ── */
+.client-list { max-height: 200px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 8px; }
+.client-list-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.client-list-item:last-child { border-bottom: none; }
+.client-list-item input[type="checkbox"] { accent-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- AdminTopBar -->
+<div class="admin-top">
+  <h1>Coupon e campagne</h1>
+  <div class="top-actions">
+    <div class="admin-search">
+      <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <input type="text" id="search-input" placeholder="Cerca campagna...">
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" data-tab="list">Campagne</button>
+  <button class="tab" data-tab="editor">Nuova campagna</button>
+  <button class="tab" data-tab="review" hidden id="tab-review">Riepilogo</button>
+</div>
+
+<div class="admin-content">
+
+  <!-- ═══════ VIEW 1: ELENCO CAMPAGNE ═══════ -->
+  <div id="view-list">
+    <div class="dash-grid">
+      <div class="dash-card"><div class="label">Coupon attivi</div><div class="value" id="dash-active">5</div><div class="sub">3 in scadenza entro 30 gg</div></div>
+      <div class="dash-card"><div class="label">Utilizzi totali</div><div class="value" id="dash-used">1.247</div><div class="sub">ultimi 30 giorni</div></div>
+      <div class="dash-card"><div class="label">Volume scontato</div><div class="value" id="dash-volume">18.450,00 €</div><div class="sub">risparmio clienti</div></div>
+      <div class="dash-card"><div class="label">Tasso riscatto</div><div class="value" id="dash-rate" style="color:var(--green)">23,8%</div><div class="sub">codici usati / inviati</div></div>
+    </div>
+
+    <div class="data-table">
+      <div class="data-table-scroll">
+        <table>
+          <colgroup><col style="width:140px"><col style="width:120px"><col><col style="width:100px"><col style="width:130px"><col style="width:140px"><col style="width:100px"><col style="width:80px"></colgroup>
+          <thead>
+            <tr><th>Codice</th><th>Campagna</th><th>Ambito</th><th class="num">Utilizzi</th><th>Validità</th><th>Target</th><th>Stato</th><th></th></tr>
+          </thead>
+          <tbody id="campaign-tbody"></tbody>
+        </table>
+      </div>
+      <div class="data-table-footer" style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:12px;color:var(--muted)">
+        <span>5 campagne</span>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('editor')">+ Nuova campagna</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ VIEW 2: EDITOR + SEGMENTAZIONE ═══════ -->
+  <div id="view-editor" hidden>
+    <div class="editor-layout">
+
+      <!-- Colonna sinistra: form coupon -->
+      <div>
+        <div class="section-card">
+          <h2>Dati coupon</h2>
+          <div class="form-grid">
+            <div class="field"><label>Codice</label><input type="text" id="coupon-code" placeholder="es. ESTATE25" style="font-family:var(--font-mono);text-transform:uppercase"></div>
+            <div class="field"><label>Nome campagna</label><input type="text" id="campaign-name" placeholder="es. Promo Estate 2026"></div>
+            <div class="field"><label>Tipo sconto</label>
+              <select id="discount-type">
+                <option value="pct">Percentuale (%)</option>
+                <option value="fixed">Importo fisso (€)</option>
+                <option value="free-ship">Spedizione gratuita</option>
+              </select>
+            </div>
+            <div class="field"><label>Valore</label><input type="number" id="discount-value" placeholder="es. 10" min="1"></div>
+            <div class="field"><label>Ambito</label>
+              <select id="scope">
+                <option value="all">Tutto il catalogo</option>
+                <option value="family">Famiglia specifica</option>
+                <option value="collection">Raccolta</option>
+              </select>
+            </div>
+            <div class="field" id="scope-detail-field" hidden><label>Seleziona</label><select id="scope-detail"></select></div>
+            <div class="field"><label>Soglia min. ordine (€)</label><input type="number" id="min-order" placeholder="Nessuna soglia" min="0"></div>
+            <div class="field"><label>Utilizzo</label>
+              <select id="usage-limit">
+                <option value="unlimited">Illimitato</option>
+                <option value="once">Una volta per cliente</option>
+                <option value="single">Mono-uso (primo che lo usa)</option>
+              </select>
+            </div>
+            <div class="field"><label>Valido dal</label><input type="date" id="valid-from"></div>
+            <div class="field"><label>Valido al</label><input type="date" id="valid-to"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna destra: segmentazione -->
+      <div class="seg-panel">
+        <div class="section-card">
+          <h2>Destinatari</h2>
+
+          <div class="filter-group">
+            <label>Regione</label>
+            <div class="filter-row">
+              <select id="filtro-regione">
+                <option value="">Tutte</option>
+                <option value="Lombardia">Lombardia</option><option value="Veneto">Veneto</option><option value="Piemonte">Piemonte</option>
+                <option value="Lazio">Lazio</option><option value="Campania">Campania</option><option value="Sicilia">Sicilia</option>
+                <option value="Emilia-Romagna">Emilia-Romagna</option><option value="Toscana">Toscana</option>
+                <option value="Puglia">Puglia</option><option value="Calabria">Calabria</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Ultimo ordine</label>
+            <div class="filter-row">
+              <select id="filtro-ultimo-ordine">
+                <option value="">Qualsiasi</option>
+                <option value="30">Ultimi 30 giorni</option>
+                <option value="90">Ultimi 90 giorni</option>
+                <option value="180">Ultimi 6 mesi</option>
+                <option value="365">Ultimo anno</option>
+                <option value="none">Nessun ordine</option>
+                <option value="over90">Oltre 90 giorni fa</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Sconto medio praticato</label>
+            <div class="filter-row">
+              <select id="filtro-sconto">
+                <option value="">Qualsiasi</option>
+                <option value="low">Basso (&lt;10%)</option>
+                <option value="mid">Medio (10–25%)</option>
+                <option value="high">Alto (&gt;25%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Volume ordini (ultimi 12 mesi)</label>
+            <div class="filter-row">
+              <select id="filtro-volume">
+                <option value="">Qualsiasi</option>
+                <option value="small">&lt; 1.000 €</option>
+                <option value="medium">1.000 – 5.000 €</option>
+                <option value="large">5.000 – 20.000 €</option>
+                <option value="xlarge">&gt; 20.000 €</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="seg-result">
+            <span>Clienti selezionati</span>
+            <span class="seg-count" id="seg-count">—</span>
+            <button class="btn btn-ghost btn-sm" id="btn-show-clients" style="font-size:12px">Vedi elenco ▼</button>
+          </div>
+
+          <div class="client-list" id="client-list" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px">
+      <button class="btn btn-secondary" onclick="switchTab('list')">Annulla</button>
+      <button class="btn btn-primary" onclick="goToReview()">Continua → Riepilogo</button>
+    </div>
+  </div>
+
+  <!-- ═══════ VIEW 3: RIEPILOGO E INVIO ═══════ -->
+  <div id="view-review" hidden>
+    <div class="editor-layout">
+      <div>
+        <div class="section-card">
+          <h2>Riepilogo campagna</h2>
+          <div class="recap-row"><span class="lbl">Campagna</span><span class="val" id="review-name">—</span></div>
+          <div class="recap-row"><span class="lbl">Codice</span><span class="val mono" id="review-code" style="color:var(--accent);font-weight:700">—</span></div>
+          <div class="recap-row"><span class="lbl">Tipo</span><span class="val" id="review-type">—</span></div>
+          <div class="recap-row"><span class="lbl">Ambito</span><span class="val" id="review-scope">—</span></div>
+          <div class="recap-row"><span class="lbl">Utilizzo</span><span class="val" id="review-usage">—</span></div>
+          <div class="recap-row"><span class="lbl">Validità</span><span class="val" id="review-validity">—</span></div>
+          <div class="recap-row"><span class="lbl">Destinatari</span><span class="val" id="review-count">—</span></div>
+        </div>
+
+        <div class="section-card">
+          <h2>Anteprima email</h2>
+          <div class="email-preview">
+            <div class="subject">Oggetto: Codice sconto esclusivo — <span id="preview-subject-code">ESTATE25</span></div>
+            <div class="body">
+              Gentile <strong>[Nome Cliente]</strong>,<br><br>
+              in qualità di nostro cliente selezionato, ti riserviamo un codice sconto esclusivo
+              valido fino al <span id="preview-date">—</span>.<br><br>
+              <div class="coupon-code" id="preview-code-badge">ESTATE25</div><br>
+              <span id="preview-desc">−10% su tutto il catalogo</span><br><br>
+              Usa il codice in fase di checkout. Non cumulabile con altre promozioni.<br><br>
+              Cordiali saluti,<br>Luis S.r.l.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card" style="position:sticky;top:80px">
+        <h2>Invio campagna</h2>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">
+          Verranno inviate <strong id="review-email-count">0</strong> email ai clienti selezionati.
+          Le email saranno personalizzate con il nome del cliente e il codice coupon.
+        </p>
+        <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="switchTab('editor')">← Modifica</button>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="btn-send" onclick="sendCampaign()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Invia campagna
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── DATA ── */
+var CAMPAIGNS = [
+  { id:1, code:"ESTATE25", name:"Promo Estate 2026", type:"pct", value:10, scope:"all", scopeName:"Tutto il catalogo", usage:"unlimited", validFrom:"2026-06-01", validTo:"2026-08-31", target:278, used:892, status:"active" },
+  { id:2, code:"B2B10", name:"Sconto B2B permanente", type:"pct", value:10, scope:"all", scopeName:"Tutto il catalogo", usage:"once", validFrom:"2026-01-01", validTo:"", target:0, used:234, status:"active" },
+  { id:3, code:"VASI20", name:"Vasi in promozione", type:"pct", value:20, scope:"family", scopeName:"Vasi in terracotta", usage:"unlimited", validFrom:"2026-07-01", validTo:"2026-09-30", target:156, used:89, status:"active" },
+  { id:4, code:"FREESHIP", name:"Spedizione gratis autunno", type:"free-ship", value:0, scope:"all", scopeName:"Tutto il catalogo", usage:"once", validFrom:"2026-09-01", validTo:"2026-10-31", target:412, used:0, status:"scheduled" },
+  { id:5, code:"XMAS50", name:"Natale 2025", type:"fixed", value:50, scope:"collection", scopeName:"Collezione Natale", usage:"single", validFrom:"2025-11-15", validTo:"2025-12-31", target:89, used:32, status:"expired" }
+];
+
+var SEGMENTED = []; // clienti filtrati
+
+function fmtEur(n) { return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }); }
+function fmtDate(d) { if (!d) return '—'; var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+
+/* ── RENDER LIST ── */
+function renderCampaigns() {
+  var html = '';
+  for (var i = 0; i < CAMPAIGNS.length; i++) {
+    var c = CAMPAIGNS[i];
+    var statoLabel = { active:'Attiva', scheduled:'Programmata', expired:'Scaduta', paused:'In pausa' }[c.status] || c.status;
+    var statoCls = { active:'st-ok', scheduled:'st-blue', expired:'st-muted', paused:'st-amber' }[c.status] || 'st-muted';
+    html += '<tr>'
+      + '<td class="mono" style="font-weight:700;color:var(--accent)">' + c.code + '</td>'
+      + '<td>' + c.name + '</td>'
+      + '<td style="font-size:13px">' + c.scopeName + '</td>'
+      + '<td class="num mono">' + c.used + '</td>'
+      + '<td style="font-size:12px">' + fmtDate(c.validFrom) + ' \u2192 ' + fmtDate(c.validTo || 'Sempre') + '</td>'
+      + '<td style="font-size:12px">' + (c.target || '—') + ' clienti</td>'
+      + '<td><span class="status-pill ' + statoCls + '"><span class="sd">●</span>' + statoLabel + '</span></td>'
+      + '<td></td>'
+      + '</tr>';
+  }
+  document.getElementById('campaign-tbody').innerHTML = html;
+}
+
+/* ── SCOPE TOGGLE ── */
+var FAMILIES = ['Vasi in terracotta', 'Vasi in cotto', 'Vasi in metallo', 'Ciotole e portavasi', 'Arredo giardino'];
+var COLLECTIONS = ['Collezione Estate 2026', 'Collezione Natale', 'Linea Premium', 'Linea Economy'];
+
+document.getElementById('scope').addEventListener('change', function() {
+  var v = this.value;
+  var sel = document.getElementById('scope-detail');
+  sel.innerHTML = '';
+  if (v === 'family') {
+    document.getElementById('scope-detail-field').hidden = false;
+    for (var i = 0; i < FAMILIES.length; i++) sel.innerHTML += '<option value="' + FAMILIES[i] + '">' + FAMILIES[i] + '</option>';
+  } else if (v === 'collection') {
+    document.getElementById('scope-detail-field').hidden = false;
+    for (var j = 0; j < COLLECTIONS.length; j++) sel.innerHTML += '<option value="' + COLLECTIONS[j] + '">' + COLLECTIONS[j] + '</option>';
+  } else {
+    document.getElementById('scope-detail-field').hidden = true;
+  }
+  updateSegCount();
+});
+
+/* ── SEGMENTATION ── */
+var DEMO_CLIENTS = [
+  { id:1, nome:"Verdepiù di Bianchi & C.", regione:"Lombardia", ultimoOrdine:12, scontoMedio:18, volume:14500 },
+  { id:2, nome:"Floricoltura Lombardi S.n.c.", regione:"Lombardia", ultimoOrdine:45, scontoMedio:22, volume:8900 },
+  { id:3, nome:"Green Garden Center Srl", regione:"Toscana", ultimoOrdine:8, scontoMedio:12, volume:3200 },
+  { id:4, nome:"Piante e Dintorni di Rossi M.", regione:"Veneto", ultimoOrdine:3, scontoMedio:25, volume:21500 },
+  { id:5, nome:"Vivai Riuniti del Veneto", regione:"Veneto", ultimoOrdine:120, scontoMedio:8, volume:9800 },
+  { id:6, nome:"Terra e Colore Sas", regione:"Lombardia", ultimoOrdine:60, scontoMedio:15, volume:34000 },
+  { id:7, nome:"GardenShop Bergamo", regione:"Lombardia", ultimoOrdine:15, scontoMedio:20, volume:7200 },
+  { id:8, nome:"Il Giardino Segreto Srl", regione:"Lazio", ultimoOrdine:90, scontoMedio:30, volume:5200 },
+  { id:9, nome:"Agriverde Cooperativa", regione:"Emilia-Romagna", ultimoOrdine:2, scontoMedio:10, volume:18500 },
+  { id:10, nome:"Fiori e Foglie di Esposito", regione:"Campania", ultimoOrdine:200, scontoMedio:5, volume:4200 },
+  { id:11, nome:"Ortoflor Commerciale", regione:"Piemonte", ultimoOrdine:30, scontoMedio:18, volume:26000 },
+  { id:12, nome:"Verde Casa di Martinelli", regione:"Sicilia", ultimoOrdine:180, scontoMedio:28, volume:3100 }
+];
+
+function applyFilters() {
+  var reg = document.getElementById('filtro-regione').value;
+  var ultOrd = document.getElementById('filtro-ultimo-ordine').value;
+  var sconto = document.getElementById('filtro-sconto').value;
+  var volume = document.getElementById('filtro-volume').value;
+  SEGMENTED = DEMO_CLIENTS.filter(function(c) {
+    if (reg && c.regione !== reg) return false;
+    if (ultOrd === 'none' && c.ultimoOrdine < 365) return false;
+    if (ultOrd === 'over90' && c.ultimoOrdine <= 90) return false;
+    if (ultOrd && ultOrd !== 'none' && ultOrd !== 'over90' && c.ultimoOrdine > parseInt(ultOrd)) return false;
+    if (sconto === 'low' && c.scontoMedio >= 10) return false;
+    if (sconto === 'mid' && (c.scontoMedio < 10 || c.scontoMedio > 25)) return false;
+    if (sconto === 'high' && c.scontoMedio <= 25) return false;
+    if (volume === 'small' && c.volume >= 1000) return false;
+    if (volume === 'medium' && (c.volume < 1000 || c.volume > 5000)) return false;
+    if (volume === 'large' && (c.volume < 5000 || c.volume > 20000)) return false;
+    if (volume === 'xlarge' && c.volume <= 20000) return false;
+    return true;
+  });
+  updateSegCount();
+}
+
+function updateSegCount() {
+  document.getElementById('seg-count').textContent = SEGMENTED.length;
+  document.getElementById('review-count').textContent = SEGMENTED.length + ' clienti';
+  document.getElementById('review-email-count').textContent = SEGMENTED.length;
+}
+
+var filterInputs = document.querySelectorAll('#filtro-regione, #filtro-ultimo-ordine, #filtro-sconto, #filtro-volume');
+for (var fi = 0; fi < filterInputs.length; fi++) filterInputs[fi].addEventListener('change', applyFilters);
+
+document.getElementById('btn-show-clients').addEventListener('click', function() {
+  var list = document.getElementById('client-list');
+  if (list.hidden) {
+    var html = '';
+    for (var i = 0; i < SEGMENTED.length; i++) {
+      html += '<label class="client-list-item"><input type="checkbox" checked> ' + SEGMENTED[i].nome + ' <span style="color:var(--muted);font-size:11px;margin-left:auto">' + SEGMENTED[i].regione + '</span></label>';
+    }
+    list.innerHTML = html || '<div style="padding:12px;color:var(--muted)">Nessun cliente corrisponde ai filtri.</div>';
+    list.hidden = false;
+    this.textContent = 'Nascondi ▲';
+  } else {
+    list.hidden = true;
+    this.textContent = 'Vedi elenco ▼';
+  }
+});
+
+/* ── GO TO REVIEW ── */
+function goToReview() {
+  if (!SEGMENTED.length) { alert('Seleziona almeno un cliente destinatario.'); return; }
+  var code = document.getElementById('coupon-code').value.trim().toUpperCase() || 'CODICE';
+  var name = document.getElementById('campaign-name').value.trim() || 'Nuova campagna';
+  var type = document.getElementById('discount-type').value;
+  var val = document.getElementById('discount-value').value;
+  var scope = document.getElementById('scope').value;
+  var scopeName = scope === 'all' ? 'Tutto il catalogo' : (scope === 'family' ? document.getElementById('scope-detail').value : document.getElementById('scope-detail').value);
+  var usage = document.getElementById('usage-limit').value;
+  var vFrom = document.getElementById('valid-from').value;
+  var vTo = document.getElementById('valid-to').value;
+
+  var typeLabel = type === 'pct' ? '\u2212' + val + '%' : (type === 'fixed' ? '\u2212' + fmtEur(Number(val)) : 'Spedizione gratuita');
+  var usageLabel = usage === 'unlimited' ? 'Illimitato' : (usage === 'once' ? 'Una volta per cliente' : 'Mono-uso');
+  var validity = fmtDate(vFrom) + ' \u2192 ' + (vTo ? fmtDate(vTo) : 'Sempre');
+
+  document.getElementById('review-name').textContent = name;
+  document.getElementById('review-code').textContent = code;
+  document.getElementById('review-type').textContent = typeLabel;
+  document.getElementById('review-scope').textContent = scopeName;
+  document.getElementById('review-usage').textContent = usageLabel;
+  document.getElementById('review-validity').textContent = validity;
+  updateSegCount();
+
+  document.getElementById('preview-subject-code').textContent = code;
+  document.getElementById('preview-date').textContent = fmtDate(vTo) || 'sempre';
+  document.getElementById('preview-code-badge').textContent = code;
+  document.getElementById('preview-desc').textContent = typeLabel + (scope === 'all' ? ' su tutto il catalogo' : ' su ' + scopeName);
+
+  switchTab('review');
+  document.getElementById('tab-review').hidden = false;
+}
+
+function sendCampaign() {
+  var btn = document.getElementById('btn-send');
+  btn.disabled = true;
+  btn.innerHTML = 'Invio in corso...';
+  setTimeout(function() {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Campagna inviata!';
+    btn.style.background = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(function() { switchTab('list'); btn.disabled = false; btn.style.background = ''; btn.style.borderColor = ''; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Invia campagna'; }, 3000);
+  }, 1500);
+}
+
+/* ── TABS ── */
+function switchTab(name) {
+  document.getElementById('view-list').hidden = name !== 'list';
+  document.getElementById('view-editor').hidden = name !== 'editor';
+  document.getElementById('view-review').hidden = name !== 'review';
+  document.getElementById('tab-review').hidden = name !== 'review';
+  var tabs = document.querySelectorAll('.tab');
+  for (var t = 0; t < tabs.length; t++) tabs[t].classList.toggle('active', tabs[t].dataset.tab === name);
+}
+
+document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { switchTab(this.dataset.tab); }); });
+
+/* ── INIT ── */
+(function() {
+  renderCampaigns();
+  applyFilters();
+  updateSegCount();
+})();
+</script>
+
+</body>
+</html>
