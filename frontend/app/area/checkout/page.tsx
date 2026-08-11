@@ -593,7 +593,7 @@ export default function CheckoutPage() {
             {submitError && <div className="checkout-error">{submitError}</div>}
             {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine && (
               <div style={{ fontSize: 12, color: "var(--red)", marginTop: 8, textAlign: "center" }}>
-                L&apos;importo minimo per questo ordine è di {fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.
+                L&apos;importo minimo per questa destinazione è di {fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.
               </div>
             )}
             <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
