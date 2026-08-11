@@ -7,6 +7,7 @@ import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
 import { useConfirm } from "../../../components/common/ConfirmProvider";
 import LoadingScreen from "../../../components/common/LoadingScreen";
+import Modal from "../../../components/common/Modal";
 import ComboboxField from "../../../components/admin/ComboboxField";
 import type { ComboboxOption } from "../../../components/admin/ComboboxField";
 
@@ -100,6 +101,17 @@ const PROVINCE_OPTS: ComboboxOption[] = [
   { value:"VV",label:"Vibo Valentia"},{ value:"VI",label:"Vicenza"},{ value:"VT",label:"Viterbo"},
 ];
 
+const NAZIONI_OPTS: ComboboxOption[] = [
+  { value: "IT", label: "Italia" },
+  { value: "FR", label: "Francia" }, { value: "DE", label: "Germania" }, { value: "ES", label: "Spagna" },
+  { value: "AT", label: "Austria" }, { value: "BE", label: "Belgio" }, { value: "CH", label: "Svizzera" },
+  { value: "NL", label: "Paesi Bassi" }, { value: "GB", label: "Regno Unito" }, { value: "PT", label: "Portogallo" },
+  { value: "GR", label: "Grecia" }, { value: "PL", label: "Polonia" }, { value: "RO", label: "Romania" },
+  { value: "US", label: "Stati Uniti" }, { value: "CA", label: "Canada" }, { value: "BR", label: "Brasile" },
+  { value: "JP", label: "Giappone" }, { value: "CN", label: "Cina" }, { value: "AU", label: "Australia" },
+  { value: "ROW", label: "Altro (Resto del mondo)" },
+];
+
 function fmtEur(n: number): string {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
@@ -123,6 +135,7 @@ export default function CheckoutPage() {
   const [nCap, setNCap] = useState("");
   const [nCitta, setNCitta] = useState("");
   const [nProvincia, setNProvincia] = useState("");
+  const [nNazione, setNNazione] = useState("IT");
   const [nDefault, setNDefault] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -221,7 +234,7 @@ export default function CheckoutPage() {
 
   function openNuovoForm() {
     setShowNuovo(true); setEditingAddrId(null);
-    setNRagione(""); setNIndirizzo(""); setNCap(""); setNCitta(""); setNProvincia(""); setNDefault(false);
+    setNRagione(""); setNIndirizzo(""); setNCap(""); setNCitta(""); setNProvincia(""); setNNazione("IT"); setNDefault(false);
   }
 
   function openEditForm(a: Indirizzo) {
@@ -231,6 +244,7 @@ export default function CheckoutPage() {
     setNCap(a.cap ?? "");
     setNCitta(a.citta ?? "");
     setNProvincia(a.provincia ?? "");
+    setNNazione((a as any).nazione ?? "IT");
     setNDefault(a.abituale);
   }
 
@@ -245,12 +259,12 @@ export default function CheckoutPage() {
       if (editingAddrId) {
         await api.put(`/api/checkout/indirizzo/${editingAddrId}`, {
           ragioneSociale: nRagione || undefined, indirizzo: nIndirizzo.trim(), cap: nCap.trim(),
-          citta: nCitta.trim(), provincia: nProvincia || undefined, abituale: nDefault,
+          citta: nCitta.trim(), provincia: nProvincia || undefined, nazione: nNazione, abituale: nDefault,
         });
       } else {
         await api.post("/api/checkout/indirizzo", {
           ragioneSociale: nRagione || undefined, indirizzo: nIndirizzo.trim(), cap: nCap.trim(),
-          citta: nCitta.trim(), provincia: nProvincia || undefined, abituale: nDefault,
+          citta: nCitta.trim(), provincia: nProvincia || undefined, nazione: nNazione, abituale: nDefault,
         });
       }
     } catch {}
@@ -454,11 +468,15 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {dati.allowNewAddress && !showNuovo && (
+                {dati.allowNewAddress && (
                   <button type="button" className="btn btn-secondary addr-add-btn" onClick={openNuovoForm}>+ Indica un nuovo indirizzo</button>
                 )}
 
-                {showNuovo && (
+                <Modal open={showNuovo} onClose={closeNuovoForm} title={editingAddrId ? "Modifica indirizzo" : "Nuovo indirizzo"} size="md"
+                  footer={<>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={closeNuovoForm}>Annulla</button>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={saveIndirizzo}>{editingAddrId ? "Aggiorna" : "Salva indirizzo"}</button>
+                  </>}>
                   <div className="addr-new">
                     <div className="checkout-grid">
                       <div className="form-field">
@@ -481,21 +499,17 @@ export default function CheckoutPage() {
                         <label htmlFor="nProvincia">Provincia</label>
                         <ComboboxField value={nProvincia} onChange={v => setNProvincia(v)} options={PROVINCE_OPTS} allowAuto={false} placeholder="Cerca provincia..." />
                       </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--fg)", cursor: "pointer" }}>
-                        <input type="checkbox" checked={nDefault} onChange={e => setNDefault(e.target.checked)} style={{ accentColor: "var(--accent)", width: 15, height: 15 }} />
-                        Imposta come predefinito
-                      </label>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={closeNuovoForm}>Annulla</button>
-                        <button type="button" className="btn btn-primary btn-sm" onClick={saveIndirizzo}>
-                          {editingAddrId ? "Aggiorna" : "Salva indirizzo"}
-                        </button>
+                      <div className="form-field">
+                        <label htmlFor="nNazione">Nazione</label>
+                        <ComboboxField value={nNazione} onChange={v => setNNazione(v)} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
                       </div>
                     </div>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--fg)", cursor: "pointer" }}>
+                      <input type="checkbox" checked={nDefault} onChange={e => setNDefault(e.target.checked)} style={{ accentColor: "var(--accent)", width: 15, height: 15 }} />
+                      Imposta come predefinito
+                    </label>
                   </div>
-                )}
+                </Modal>
               </section>
             )}
 

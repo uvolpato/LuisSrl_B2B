@@ -194,7 +194,7 @@ export class CheckoutService {
     return map[prov] ?? null;
   }
 
-  async salvaIndirizzo(clienteId: number, dto: { ragioneSociale?: string; indirizzo: string; cap: string; citta: string; provincia?: string; abituale?: boolean }) {
+  async salvaIndirizzo(clienteId: number, dto: { ragioneSociale?: string; indirizzo: string; cap: string; citta: string; provincia?: string; nazione?: string; abituale?: boolean }) {
     if (dto.abituale) {
       await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
     }
@@ -206,6 +206,7 @@ export class CheckoutService {
         cap: dto.cap,
         citta: dto.citta,
         provincia: dto.provincia ?? null,
+        nazione: dto.nazione ?? 'IT',
         flagSpedizione: true,
         flagAbituale: dto.abituale ?? false,
         tipoDestinazione: 'SPEDIZIONE',
@@ -224,7 +225,7 @@ export class CheckoutService {
     };
   }
 
-  async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string; ragioneSociale?: string; abituale?: boolean }) {
+  async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string; nazione?: string; ragioneSociale?: string; abituale?: boolean }) {
     const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
     if (!addr) throw new NotFoundException('Indirizzo non trovato');
     if (dto.abituale) {
@@ -237,6 +238,7 @@ export class CheckoutService {
         ...(dto.cap !== undefined ? { cap: dto.cap } : {}),
         ...(dto.citta !== undefined ? { citta: dto.citta } : {}),
         ...(dto.provincia !== undefined ? { provincia: dto.provincia } : {}),
+        ...(dto.nazione !== undefined ? { nazione: dto.nazione } : {}),
         ...(dto.ragioneSociale !== undefined ? { ragioneSociale: dto.ragioneSociale } : {}),
         ...(dto.abituale !== undefined ? { flagAbituale: dto.abituale } : {}),
       },
