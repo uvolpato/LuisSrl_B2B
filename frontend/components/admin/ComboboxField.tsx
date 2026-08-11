@@ -64,6 +64,13 @@ export default function ComboboxField({
     });
   }, [all, query]);
 
+  // Scroll l'elemento evidenziato nella vista
+  useEffect(() => {
+    if (!open || highlight < 0) return;
+    const el = containerRef.current?.querySelector(`.combobox-option.highlighted`);
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }, [highlight, open]);
+
   function select(opt: ComboboxOption) {
     onChange(opt.value);
     setQuery(opt.label);
