@@ -613,3 +613,27 @@ model AnomaliaLog {
 
   @@map("anomalia_log")
 }
+
+model Campaign {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  type        String
+  value       Decimal  @default(0) @db.Decimal(12, 2)
+  scope       String   @default("all")
+  scopeDetail String?  @map("scope_detail")
+  minOrder    Decimal? @map("min_order") @db.Decimal(12, 2)
+  usage       String   @default("unlimited")
+  validFrom   DateTime @map("valid_from")
+  validTo     DateTime? @map("valid_to")
+  status      String   @default("active")
+  targetCount Int      @default(0) @map("target_count")
+  usedCount   Int      @default(0) @map("used_count")
+  qrCode      String?  @map("qr_code")
+  filters     Json?
+  customerIds Int[]    @map("customer_ids")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("campaigns")
+}

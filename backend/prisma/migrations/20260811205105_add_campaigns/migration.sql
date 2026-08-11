@@ -1,0 +1,21 @@
+CREATE TABLE campaigns (
+  id            SERIAL PRIMARY KEY,
+  code          TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL,
+  type          TEXT NOT NULL,
+  value         DECIMAL(12,2) NOT NULL DEFAULT 0,
+  scope         TEXT NOT NULL DEFAULT 'all',
+  scope_detail  TEXT,
+  min_order     DECIMAL(12,2),
+  usage         TEXT NOT NULL DEFAULT 'unlimited',
+  valid_from    TIMESTAMPTZ NOT NULL,
+  valid_to      TIMESTAMPTZ,
+  status        TEXT NOT NULL DEFAULT 'active',
+  target_count  INTEGER NOT NULL DEFAULT 0,
+  used_count    INTEGER NOT NULL DEFAULT 0,
+  qr_code       TEXT,
+  filters       JSONB,
+  customer_ids  INTEGER[],
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
