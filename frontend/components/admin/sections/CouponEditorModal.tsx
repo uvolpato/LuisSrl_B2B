@@ -27,6 +27,7 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [usages, setUsages] = useState<any[]>([]);
   const [targetClients, setTargetClients] = useState<any[]>([]);
+  const [targetSearch, setTargetSearch] = useState("");
   const [usagesLoaded, setUsagesLoaded] = useState(false);
 
   useEffect(() => {
@@ -197,6 +198,10 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
 
             {isEdit ? (
               <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <div className="admin-search" style={{ flexShrink: 0, marginBottom: 8, width: "100%", maxWidth: "none" }}>
+                <span className="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <input type="text" value={targetSearch} onChange={e => setTargetSearch(e.target.value)} placeholder="Cerca per codice o ragione sociale..." />
+              </div>
               <DataTable
                 columns={[
                   { key: "nome", header: "Cliente", grow: true, cell: (c: any) => c.nome },
@@ -205,7 +210,7 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                     ? <span style={{ fontSize: 11, color: c.usage?.revoked ? "var(--muted)" : "var(--green)" }}>{c.usage?.revoked ? "Revocato" : `Usato ord.#${c.usage?.orderId || "—"} ${c.usage?.importo ? `€${Number(c.usage.importo).toFixed(0)}` : ""}`}</span>
                     : <span style={{ fontSize: 11, color: "var(--muted)" }}>Non usato</span> },
                 ]}
-                rows={targetClients}
+                rows={targetClients.filter(c => !targetSearch || c.nome.toLowerCase().includes(targetSearch.toLowerCase()) || (c.codiceCliente || "").toLowerCase().includes(targetSearch.toLowerCase()))}
                 rowKey={(c: any) => c.id}
                 actions={[
                   {
