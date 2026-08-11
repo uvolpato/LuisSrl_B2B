@@ -298,6 +298,10 @@ export default function CheckoutPage() {
 
   async function conferma() {
     if (!dati) return;
+    if (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine) {
+      setSubmitError(`L'importo minimo per questa destinazione è di ${fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.`);
+      return;
+    }
     setSubmitting(true); setSubmitError(null);
     try {
       const nuovoIndirizzo = showNuovo && !editingAddrId && nIndirizzo.trim() && nCap.trim() && nCitta.trim()
