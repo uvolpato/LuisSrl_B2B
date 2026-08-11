@@ -599,7 +599,7 @@ export default function CheckoutPage() {
                     {couponMsg && <span className={`coupon-msg ${couponActive ? "ok" : "err"}`} style={{ fontSize: 11 }}>{couponMsg}</span>}
                   </div>
                 </td></tr>
-                {couponActive && couponType === "free-ship" && <tr className="discount" style={{ color: "oklch(55% 0.15 145)", fontWeight: 700 }}><td>Coupon {couponCode}</td><td>Spedizione gratuita</td></tr>}
+                {couponActive && couponType === "free-ship" && <tr className="discount" style={{ color: "oklch(55% 0.15 145)", fontWeight: 700 }}><td>Sconto codice</td><td>Gratuito</td></tr>}
                 {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
