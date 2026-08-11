@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "../../common/Modal";
 import DataTable from "../DataTable";
-import type { Column } from "../DataTable";
+import type { Column, RowAction } from "../DataTable";
 import { api } from "../../../lib/api";
 import { formatPrice } from "../../../lib/helpers";
 
@@ -42,8 +42,11 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   async function revokeUsage(usageId: number) {
     try {
       await api.patch(`/api/admin/coupon/${initial.id}/revoke/${usageId}`);
-      const updated = await api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`);
-      setUsages(updated);
+      const [u, c] = await Promise.all([
+        api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`),
+        api.get<any[]>(`/api/admin/coupon/${initial.id}/clients`),
+      ]);
+      setUsages(u); setTargetClients(c);
     } catch {}
   }
 
@@ -182,6 +185,17 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                 ]}
                 rows={targetClients.filter(c => !targetSearch || c.nome.toLowerCase().includes(targetSearch.toLowerCase()) || (c.codiceCliente || "").toLowerCase().includes(targetSearch.toLowerCase()))}
                 rowKey={(c: any) => c.id}
+                actions={[
+                  {
+                    icon: (c: any) => c.usage?.revoked
+                      ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+                    tooltip: (c: any) => c.usage?.revoked ? "Riabilita utilizzo" : "Revoca utilizzo",
+                    onClick: (c: any) => { if (c.usato && c.usage?.id) revokeUsage(c.usage.id); },
+                    variant: "danger" as const,
+                    hidden: (c: any) => !c.usato,
+                  } as RowAction<any>,
+                ]}
                 emptyText="Nessun cliente target"
                 page={1}
                 pageSize={targetClients.length || 1}
