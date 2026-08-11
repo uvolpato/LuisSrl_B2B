@@ -154,45 +154,33 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
               <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, margin: 0, flex: 1 }}>Il QR code sarà incluso nell'email. Il cliente potrà scansionarlo per applicare lo sconto automaticamente in fase di checkout.</p>
             </div>
 
-            {isEdit && usages.length > 0 && (
+            {isEdit && (
               <div style={{ marginTop: 20 }}>
-                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Utilizzi ({usages.length})</h3>
-                <div style={{ maxHeight: 250, overflow: "auto" }}>
-                  {usages.map((u: any) => (
-                    <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-                      <span style={{ flex: 1, minWidth: 0 }}>ID cliente: <strong>{u.customerId}</strong></span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>Ord.#{u.orderId || "—"}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{u.importo ? `€ ${Number(u.importo).toFixed(2)}` : "—"}</span>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(u.usedAt).toLocaleDateString("it-IT")}</span>
-                      {u.revoked ? (
-                        <span style={{ fontSize: 10, color: "var(--muted)", background: "var(--fg-soft)", padding: "2px 6px", borderRadius: 999 }}>Revocato</span>
-                      ) : (
-                        <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)" }}>Revoca</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {isEdit && targetClients.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Clienti target ({targetClients.length})</h3>
-                <div style={{ maxHeight: 250, overflow: "auto" }}>
-                  {targetClients.map((c: any) => (
-                    <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-                      <span style={{ flex: 1 }}>{c.nome}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.codiceCliente || ""}</span>
-                      {c.usato ? (
-                        <span style={{ fontSize: 10, color: c.usage?.revoked ? "var(--muted)" : "var(--green)", background: c.usage?.revoked ? "var(--fg-soft)" : "var(--green-soft)", padding: "2px 6px", borderRadius: 999 }}>
-                          {c.usage?.revoked ? "Revocato" : `Usato #${c.usage?.orderId || "—"}`}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 10, color: "var(--muted)" }}>Non usato</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Utilizzi</h3>
+                {usages.length === 0 ? (
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>Nessun utilizzo registrato.</p>
+                ) : (
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead><tr style={{ textAlign: "left", color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase" }}>
+                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Cliente ID</th>
+                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Ordine</th>
+                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Importo</th>
+                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Data</th>
+                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}></th>
+                    </tr></thead>
+                    <tbody>{usages.map((u: any) => (
+                      <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={{ padding: "6px 8px" }}><strong>{u.customerId}</strong></td>
+                        <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>#{u.orderId || "—"}</td>
+                        <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{u.importo ? `€ ${Number(u.importo).toFixed(2)}` : "—"}</td>
+                        <td style={{ padding: "6px 8px", fontSize: 11, color: "var(--muted)" }}>{new Date(u.usedAt).toLocaleDateString("it-IT")}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right" }}>
+                          {u.revoked ? <span style={{ fontSize: 10, color: "var(--muted)", background: "var(--fg-soft)", padding: "2px 6px", borderRadius: 999 }}>Revocato</span> : <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)", padding: "1px 8px" }}>Revoca</button>}
+                        </td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>
@@ -204,6 +192,32 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
         <>
           <div className="modal-root-body" style={{ padding: "24px 28px" }}>
             <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Destinatari</h3>
+
+            {isEdit ? (
+              targetClients.length === 0 ? (
+                <p style={{ color: "var(--muted)", fontSize: 13 }}>Nessun cliente target.</p>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead><tr style={{ textAlign: "left", color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase" }}>
+                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Cliente</th>
+                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Codice</th>
+                    <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Utilizzo</th>
+                  </tr></thead>
+                  <tbody>{targetClients.map((c: any) => (
+                    <tr key={c.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "6px 8px" }}>{c.nome}</td>
+                      <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.codiceCliente || "—"}</td>
+                      <td style={{ padding: "6px 8px" }}>
+                        {c.usato
+                          ? <span style={{ fontSize: 10, color: c.usage?.revoked ? "var(--muted)" : "var(--green)", background: c.usage?.revoked ? "var(--fg-soft)" : "var(--green-soft)", padding: "2px 6px", borderRadius: 999 }}>{c.usage?.revoked ? "Revocato" : `Usato #${c.usage?.orderId || "—"}`}</span>
+                          : <span style={{ fontSize: 10, color: "var(--muted)" }}>Non usato</span>}
+                      </td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              )
+            ) : (
+              <>
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}><input style={{ ...stl, flex: 1 }} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Cerca per codice cliente, ragione sociale o P.IVA..." onKeyDown={e => e.key === "Enter" && searchClients()} /><button className="btn btn-secondary btn-sm" onClick={searchClients}>Cerca</button></div>
             {searchResults.length > 0 && (<div style={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, marginBottom: 12 }}>{searchResults.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13, cursor: "pointer" }} onClick={() => toggleClient(c.id)}><input type="checkbox" checked={selectedIds.has(c.id)} readOnly style={{ accentColor: "var(--accent)", width: 16, height: 16, flexShrink: 0, margin: 0 }} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.ragioneSociale || c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{c.cod || c.codiceCliente || ""}</span></div>))}</div>)}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 12 }}>
@@ -215,6 +229,8 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
             {aiSuggestions.length > 0 && (<div style={{ padding: "12px 16px", background: "color-mix(in oklch, var(--blue) 8%, transparent)", border: "1px solid var(--blue)", borderRadius: 10, marginBottom: 12 }}><div style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>{iconCal}Suggerimenti AI</div>{aiSuggestions.map((s: any, i: number) => (<div key={i} onClick={() => applyAISuggestion(s)} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 6, marginBottom: 4, background: "var(--surface)", fontSize: 13 }}><div style={{ fontWeight: 500 }}>{s.title}</div><div style={{ color: "var(--muted)", fontSize: 12 }}>{s.description} <strong>{s.count} clienti</strong></div></div>))}</div>)}
             {(segCount > 0 || selectedIds.size > 0) && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--fg-soft)", borderRadius: 8, fontSize: 13 }}><span>Clienti selezionati: <strong style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{segCount + selectedIds.size}</strong></span>{segCount > 0 && (<button className="btn btn-ghost btn-sm" onClick={() => setShowClientList(!showClientList)}>{showClientList ? "Nascondi ▲" : "Vedi elenco ▼"}</button>)}</div>)}
             {showClientList && segged.length > 0 && (<div style={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, marginTop: 8 }}>{segged.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13 }}><input type="checkbox" checked readOnly style={{ accentColor: "var(--accent)" }} /><span style={{ flex: 1 }}>{c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.cod}</span></div>))}</div>)}
+              </>
+            )}
           </div>
           <div className="modal-root-footer"><button className="btn btn-secondary" onClick={() => setStep("dati")}>← Dati coupon</button><button className="btn btn-primary" onClick={handleCreate} disabled={saving}>{saving ? "Creazione…" : isEdit ? "Salva modifiche" : "Crea coupon"}</button></div>
         </>
