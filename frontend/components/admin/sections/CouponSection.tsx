@@ -163,7 +163,7 @@ export default function CouponSection() {
       {editorOpen && (
         <CouponEditorModal
           onClose={() => setEditorOpen(false)}
-          onReview={(data: any) => { setReviewData(data); setEditorOpen(false); }}
+          onSaved={() => { setEditorOpen(false); fetchAll(); }}
         />
       )}
 
