@@ -24,11 +24,15 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   const [validTo, setValidTo] = useState(initial?.validTo?.slice(0, 10) ?? "");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [usages, setUsages] = useState<any[]>([]);
+  const [targetClients, setTargetClients] = useState<any[]>([]);
   const [usagesLoaded, setUsagesLoaded] = useState(false);
 
   useEffect(() => {
     if (isEdit && initial?.id) {
-      api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`).then(setUsages).catch(() => {}).finally(() => setUsagesLoaded(true));
+      Promise.all([
+        api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`),
+        api.get<any[]>(`/api/admin/coupon/${initial.id}/clients`),
+      ]).then(([u, c]) => { setUsages(u); setTargetClients(c); }).catch(() => {}).finally(() => setUsagesLoaded(true));
     }
   }, [isEdit, initial?.id]);
 
@@ -164,6 +168,27 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                         <span style={{ fontSize: 10, color: "var(--muted)", background: "var(--fg-soft)", padding: "2px 6px", borderRadius: 999 }}>Revocato</span>
                       ) : (
                         <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)" }}>Revoca</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isEdit && targetClients.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Clienti target ({targetClients.length})</h3>
+                <div style={{ maxHeight: 250, overflow: "auto" }}>
+                  {targetClients.map((c: any) => (
+                    <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+                      <span style={{ flex: 1 }}>{c.nome}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.codiceCliente || ""}</span>
+                      {c.usato ? (
+                        <span style={{ fontSize: 10, color: c.usage?.revoked ? "var(--muted)" : "var(--green)", background: c.usage?.revoked ? "var(--fg-soft)" : "var(--green-soft)", padding: "2px 6px", borderRadius: 999 }}>
+                          {c.usage?.revoked ? "Revocato" : `Usato #${c.usage?.orderId || "—"}`}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10, color: "var(--muted)" }}>Non usato</span>
                       )}
                     </div>
                   ))}
