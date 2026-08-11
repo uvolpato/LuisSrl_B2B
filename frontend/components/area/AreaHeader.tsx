@@ -369,10 +369,10 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
       `}</style>
 
       <header className="area-header">
-        {bannerAttivo && (
+        {bannerAttivo && bannerSoglia != null && (
           <div style={{ background: "var(--accent)", color: "#fff", fontSize: 13, padding: "5px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <span style={{ fontWeight: 600 }}>
-              {bannerSoglia != null ? `Spese di spedizione gratis sopra ${bannerSoglia.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}` : "Spese di spedizione gratis per ordini sopra soglia"}
+              {`Spese di spedizione gratis sopra ${bannerSoglia!.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}`}
             </span>
             <span title="La soglia dipende dall'indirizzo di spedizione predefinito. Verifica in fase di checkout." style={{ cursor: "help", fontWeight: 700, fontSize: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid #fff", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>?</span>
           </div>
