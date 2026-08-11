@@ -6,6 +6,7 @@ export interface ComboboxOption {
   value: string;
   label: string;
   meta?: string;
+  group?: string;
 }
 
 /**
@@ -137,20 +138,33 @@ export default function ComboboxField({
         {visible.length === 0 ? (
           <div className="combobox-empty">Nessun risultato</div>
         ) : (
-          visible.map((opt, i) => (
-            <div
-              key={opt.value + "|" + i}
-              role="option"
-              aria-selected={opt.value === value}
-              className={`combobox-option${opt.value === "" ? " auto-option" : ""}${i === highlight ? " highlighted" : ""}`}
-              data-value={opt.value}
-              onMouseDown={(e: MouseEvent) => { e.preventDefault(); select(opt); }}
-              onMouseEnter={() => setHighlight(i)}
-            >
-              <span className="option-label">{opt.label}</span>
-              {opt.meta ? <span className="option-meta">{opt.meta}</span> : null}
-            </div>
-          ))
+          visible.flatMap((opt, i) => {
+            const prevGroup = i > 0 ? visible[i - 1].group : undefined;
+            const showHeader = opt.group && opt.group !== prevGroup;
+            const items = [];
+            if (showHeader) {
+              items.push(
+                <div key={`hdr-${opt.group}`} className="combobox-group-header" style={{ padding: "6px 12px 2px", fontSize: 11, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                  {opt.group}
+                </div>
+              );
+            }
+            items.push(
+              <div
+                key={opt.value + "|" + i}
+                role="option"
+                aria-selected={opt.value === value}
+                className={`combobox-option${opt.value === "" ? " auto-option" : ""}${i === highlight ? " highlighted" : ""}`}
+                data-value={opt.value}
+                onMouseDown={(e: MouseEvent) => { e.preventDefault(); select(opt); }}
+                onMouseEnter={() => setHighlight(i)}
+              >
+                <span className="option-label">{opt.label}</span>
+                {opt.meta ? <span className="option-meta">{opt.meta}</span> : null}
+              </div>
+            );
+            return items;
+          })
         )}
       </div>
     </div>
