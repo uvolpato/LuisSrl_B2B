@@ -9,8 +9,18 @@ import OrdineDetailModal from "../../../components/users/OrdineDetailModal";
 import DataTable, { type Column, type RowAction } from "../../../components/admin/DataTable";
 import { IconEye } from "../../../components/admin/icons";
 import type { OrdineCliente, OrdiniResponse } from "../../../lib/types";
-import { DateRangePicker } from "react-date-range";
+import { DateRangePicker, createStaticRanges } from "react-date-range";
 import { it } from "date-fns/locale";
+import { addDays, endOfDay, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
+
+const staticRangesIT = createStaticRanges([
+  { label: "Oggi", range: () => ({ startDate: new Date(), endDate: new Date() }) },
+  { label: "Ieri", range: () => ({ startDate: subDays(new Date(), 1), endDate: subDays(new Date(), 1) }) },
+  { label: "Questa settimana", range: () => ({ startDate: startOfWeek(new Date(), { weekStartsOn: 1 }), endDate: new Date() }) },
+  { label: "Questo mese", range: () => ({ startDate: startOfMonth(new Date()), endDate: new Date() }) },
+  { label: "Ultimi 7 giorni", range: () => ({ startDate: subDays(new Date(), 6), endDate: new Date() }) },
+  { label: "Ultimi 30 giorni", range: () => ({ startDate: subDays(new Date(), 29), endDate: new Date() }) },
+]);
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -191,6 +201,8 @@ export default function OrdiniPage() {
                       locale={it}
                       moveRangeOnFirstSelection={false}
                       rangeColors={["#d97706"]}
+                      staticRanges={staticRangesIT}
+                      inputRanges={[]}
                     />
                     <div style={{ padding: "0 8px 8px", display: "flex", justifyContent: "flex-end" }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setPickerOpen(false)}>Chiudi</button>
