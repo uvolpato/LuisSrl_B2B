@@ -317,7 +317,7 @@ export default function CheckoutPage() {
 
   async function conferma() {
     if (!dati) return;
-    if (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine) {
+    if (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine) {
       setSubmitError(`L'importo minimo per questa destinazione è di ${fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.`);
       return;
     }
@@ -612,12 +612,12 @@ export default function CheckoutPage() {
             </table>
 
             {submitError && <div className="checkout-error">{submitError}</div>}
-            {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine && (
+            {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine && (
               <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginTop: 10, lineHeight: 1.5 }}>
                 L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
               </div>
             )}
-            <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
+            <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
               Conferma ordine
             </button>
             <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>Torna al carrello</Link>
@@ -754,7 +754,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Azioni */}
-            {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine && (
+            {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine && (
               <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginBottom: 12, lineHeight: 1.5 }}>
                 L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
               </div>
@@ -764,7 +764,7 @@ export default function CheckoutPage() {
               <button type="button" className="btn btn-secondary" onClick={() => setStep("checkout")}>
                 ← Modifica
               </button>
-              <button className="btn btn-primary btn-lg" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={conferma}>
+              <button className="btn btn-primary btn-lg" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine)} onClick={conferma}>
                 {submitting ? "Invio in corso…" : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>Conferma e invia ordine</>}
               </button>
             </div>
