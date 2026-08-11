@@ -12,10 +12,11 @@ export class AdminOrdiniController {
 
   @Get("dashboard")
   async dashboard(
-    @Query("data") data: string,
+    @Query("dataDa") dataDa: string,
+    @Query("dataA") dataA?: string,
     @Query("search") search?: string,
   ) {
-    return this.service.getDashboard(data || new Date().toISOString().slice(0, 10), search);
+    return this.service.getDashboard(dataDa || new Date().toISOString().slice(0, 10), dataA, search);
   }
 
   @Get("lookup")
@@ -25,12 +26,13 @@ export class AdminOrdiniController {
 
   @Get()
   async findAll(
-    @Query("data") data: string,
+    @Query("dataDa") dataDa: string,
+    @Query("dataA") dataA?: string,
     @Query("page", ParseIntPipe) page = 1,
     @Query("limit", ParseIntPipe) limit = 10,
     @Query("search") search?: string,
   ) {
-    return this.service.findAll(data || new Date().toISOString().slice(0, 10), page, limit, search);
+    return this.service.findAll(dataDa || new Date().toISOString().slice(0, 10), dataA, page, limit, search);
   }
 
   @Get(":id")

@@ -5,8 +5,8 @@ import { PrismaService } from "../prisma/prisma.service";
 export class AdminOrdiniService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard(data: string, search?: string) {
-    const where = this.buildWhere(data, search);
+  async getDashboard(dataDa: string, dataA?: string, search?: string) {
+    const where = this.buildWhere(dataDa, dataA, search);
     const ordini = await this.prisma.ordineCliente.findMany({
       where,
       include: { righe: true, customer: { select: { id: true, ragioneSociale: true } } },
@@ -35,8 +35,8 @@ export class AdminOrdiniService {
     return { count, totale, scontoMedio, spedizioneMedia: 0, pezzi, clienti, inAttesa };
   }
 
-  async findAll(data: string, page = 1, limit = 10, search?: string) {
-    const where = this.buildWhere(data, search);
+  async findAll(dataDa: string, dataA?: string, page = 1, limit = 10, search?: string) {
+    const where = this.buildWhere(dataDa, dataA, search);
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
       this.prisma.ordineCliente.findMany({
@@ -136,11 +136,11 @@ export class AdminOrdiniService {
     return clienti.map((c) => ({ id: c.id, ragioneSociale: c.ragioneSociale ?? `Cliente #${c.id}` }));
   }
 
-  private buildWhere(data: string, search?: string) {
-    const dayStart = new Date(data + "T00:00:00.000Z");
-    const dayEnd = new Date(data + "T23:59:59.999Z");
+  private buildWhere(dataDa: string, dataA?: string, search?: string) {
+    const from = new Date(dataDa + "T00:00:00.000Z");
+    const to = dataA ? new Date(dataA + "T23:59:59.999Z") : new Date(dataDa + "T23:59:59.999Z");
     const where: any = {
-      dataOrdine: { gte: dayStart, lte: dayEnd },
+      dataOrdine: { gte: from, lte: to },
     };
     if (search) {
       where.OR = [
