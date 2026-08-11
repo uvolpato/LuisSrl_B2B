@@ -246,10 +246,11 @@ export default function CheckoutPage() {
     setCouponMsg("");
     if (!couponCode.trim()) return;
     try {
-      const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string }>("/api/checkout/validate-coupon", {
+      const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string; scopeSubtotale?: number; discountAmount?: number; scopeDetail?: string }>("/api/checkout/validate-coupon", {
         code: couponCode.trim(),
         subtotale: subtotalAmount,
         codici: items.map(i => i.varianteCodice),
+        items: items.map(i => ({ codice: i.varianteCodice, qty: i.quantita, prezzo: i.prezzo?.prezzoNetto ?? 0 })),
       });
       if (res.valid) {
         setCouponActive(true);
