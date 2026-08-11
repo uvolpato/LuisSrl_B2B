@@ -157,8 +157,13 @@ export default function OrdiniPage() {
               </button>
             </div>
             <div className="ordini-filters">
-              <input type="date" className="form-select" value={dataDa} onChange={(e) => { setDataDa(e.target.value); setPage(1); }} style={{ width: "auto" }} title="Da" />
-              <input type="date" className="form-select" value={dataA} onChange={(e) => { setDataA(e.target.value); setPage(1); }} style={{ width: "auto" }} title="A" />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 10px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                <input type="date" value={dataDa} onChange={(e) => { setDataDa(e.target.value); setPage(1); }}
+                  style={{ border: "none", background: "transparent", padding: "6px 0", outline: "none", font: "inherit", fontSize: 13, color: "var(--fg)", fontFamily: "var(--font-mono)" }} />
+                <span style={{ color: "var(--muted)", userSelect: "none" }}>→</span>
+                <input type="date" value={dataA} onChange={(e) => { setDataA(e.target.value); setPage(1); }}
+                  style={{ border: "none", background: "transparent", padding: "6px 0", outline: "none", font: "inherit", fontSize: 13, color: "var(--fg)", fontFamily: "var(--font-mono)" }} />
+              </div>
               <button className="btn btn-secondary btn-sm" onClick={handleSync} disabled={syncing} title="Sincronizza ordini da Integra">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, verticalAlign: "middle" }}>
                   <polyline points="23 4 23 10 17 10" />
