@@ -169,7 +169,7 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
 
       {step === "destinatari" && (
         <>
-          <div className="modal-root-body" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", overflow: "visible" }}>
+          <div className="modal-root-body" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", overflowY: "auto", flex: 1 }}>
             <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>Destinatari</h3>
 
             {isEdit ? (
