@@ -400,7 +400,7 @@ export class CheckoutService {
           const already = await this.prisma.campaignUsage.findUnique({
             where: { campaignId_customerId: { campaignId: campaign.id, customerId: clienteId } },
           });
-          if (already) canUse = false;
+          if (already && !already.revoked) canUse = false;
         } else if (campaign.usage === 'single') {
           if (campaign.usedCount > 0) canUse = false;
         }
