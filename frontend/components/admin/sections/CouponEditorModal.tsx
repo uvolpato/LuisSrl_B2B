@@ -40,7 +40,6 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   }, [isEdit, initial?.id]);
 
   async function revokeUsage(usageId: number) {
-    if (!confirm("Revocare questo utilizzo? Il cliente potrà usare di nuovo il coupon.")) return;
     try {
       await api.patch(`/api/admin/coupon/${initial.id}/revoke/${usageId}`);
       const updated = await api.get<any[]>(`/api/admin/coupon/${initial.id}/usage`);
@@ -178,7 +177,9 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                         <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{u.importo ? `€ ${Number(u.importo).toFixed(2)}` : "—"}</td>
                         <td style={{ padding: "6px 8px", fontSize: 11, color: "var(--muted)" }}>{new Date(u.usedAt).toLocaleDateString("it-IT")}</td>
                         <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                          {u.revoked ? <span style={{ fontSize: 10, color: "var(--muted)", background: "var(--fg-soft)", padding: "2px 6px", borderRadius: 999 }}>Revocato</span> : <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)", padding: "1px 8px" }}>Revoca</button>}
+                          {u.revoked
+                            ? <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--green)", padding: "1px 8px" }}>Ripristina</button>
+                            : <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)", padding: "1px 8px" }}>Revoca</button>}
                         </td>
                       </tr>
                     ))}</tbody>
