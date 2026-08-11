@@ -634,6 +634,18 @@ model Campaign {
   customerIds Int[]    @map("customer_ids")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  usages      CampaignUsage[]
 
   @@map("campaigns")
+}
+
+model CampaignUsage {
+  id         Int      @id @default(autoincrement())
+  campaignId Int      @map("campaign_id")
+  customerId Int      @map("customer_id")
+  usedAt     DateTime @default(now()) @map("used_at")
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, customerId])
+  @@map("campaign_usage")
 }
