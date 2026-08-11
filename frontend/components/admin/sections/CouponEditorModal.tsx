@@ -7,20 +7,21 @@ import { formatPrice } from "../../../lib/helpers";
 
 const stl: Record<string, any> = { width: "100%", padding: "9px 12px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", font: "inherit", fontSize: 14, color: "var(--fg)", boxSizing: "border-box" };
 
-export default function CouponEditorModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+export default function CouponEditorModal({ onClose, onSaved, initial }: { onClose: () => void; onSaved: () => void; initial?: any }) {
+  const isEdit = !!initial;
   const [step, setStep] = useState<"dati" | "destinatari">("dati");
 
   // Step 1: Dati coupon
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [type, setType] = useState("pct");
-  const [value, setValue] = useState(10);
-  const [scope, setScope] = useState("all");
-  const [scopeDetail, setScopeDetail] = useState("");
-  const [minOrder, setMinOrder] = useState("");
-  const [usage, setUsage] = useState("unlimited");
-  const [validFrom, setValidFrom] = useState(new Date().toISOString().slice(0, 10));
-  const [validTo, setValidTo] = useState("");
+  const [code, setCode] = useState(initial?.code ?? "");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [type, setType] = useState(initial?.type ?? "pct");
+  const [value, setValue] = useState(initial?.value ? Number(initial.value) : 10);
+  const [scope, setScope] = useState(initial?.scope ?? "all");
+  const [scopeDetail, setScopeDetail] = useState(initial?.scopeDetail ?? "");
+  const [minOrder, setMinOrder] = useState(initial?.minOrder ? String(initial.minOrder) : "");
+  const [usage, setUsage] = useState(initial?.usage ?? "unlimited");
+  const [validFrom, setValidFrom] = useState(initial?.validFrom?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [validTo, setValidTo] = useState(initial?.validTo?.slice(0, 10) ?? "");
   const [qrCode, setQrCode] = useState<string | null>(null);
 
   // Step 2: Destinatari
@@ -82,11 +83,18 @@ export default function CouponEditorModal({ onClose, onSaved }: { onClose: () =>
     if (!code || !name) { alert("Inserisci codice e nome campagna."); return; }
     setSaving(true);
     try {
-      await api.post("/api/admin/coupon", {
-        code, name, type, value, scope, scopeDetail: scopeDetail || undefined,
-        minOrder: minOrder || undefined, usage, validFrom, validTo: validTo || undefined,
-        targetCount: segCount + selectedIds.size, customerIds: [...selectedIds],
-      });
+      if (isEdit) {
+        await api.put(`/api/admin/coupon/${initial.id}`, {
+          name, type, value, scope, scopeDetail: scopeDetail || undefined,
+          minOrder: minOrder || undefined, usage, validFrom, validTo: validTo || undefined,
+        });
+      } else {
+        await api.post("/api/admin/coupon", {
+          code, name, type, value, scope, scopeDetail: scopeDetail || undefined,
+          minOrder: minOrder || undefined, usage, validFrom, validTo: validTo || undefined,
+          targetCount: segCount + selectedIds.size, customerIds: [...selectedIds],
+        });
+      }
       setSaving(false);
       onSaved();
     } catch { setSaving(false); }
@@ -96,7 +104,7 @@ export default function CouponEditorModal({ onClose, onSaved }: { onClose: () =>
 
   return (
     <Modal open size="sm" onClose={onClose} noHeader>
-      <div className="modal-root-header"><h2>Nuova campagna</h2><button className="modal-root-close" onClick={onClose} aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div className="modal-root-header"><h2>{isEdit ? "Modifica campagna" : "Nuova campagna"}</h2><button className="modal-root-close" onClick={onClose} aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 
       {step === "dati" && (
         <>
@@ -145,7 +153,7 @@ export default function CouponEditorModal({ onClose, onSaved }: { onClose: () =>
             {(segCount > 0 || selectedIds.size > 0) && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--fg-soft)", borderRadius: 8, fontSize: 13 }}><span>Clienti selezionati: <strong style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{segCount + selectedIds.size}</strong></span>{segCount > 0 && (<button className="btn btn-ghost btn-sm" onClick={() => setShowClientList(!showClientList)}>{showClientList ? "Nascondi ▲" : "Vedi elenco ▼"}</button>)}</div>)}
             {showClientList && segged.length > 0 && (<div style={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, marginTop: 8 }}>{segged.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13 }}><input type="checkbox" checked readOnly style={{ accentColor: "var(--accent)" }} /><span style={{ flex: 1 }}>{c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.cod}</span></div>))}</div>)}
           </div>
-          <div className="modal-root-footer"><button className="btn btn-secondary" onClick={() => setStep("dati")}>← Dati coupon</button><button className="btn btn-primary" onClick={handleCreate} disabled={saving}>{saving ? "Creazione…" : "Crea coupon"}</button></div>
+          <div className="modal-root-footer"><button className="btn btn-secondary" onClick={() => setStep("dati")}>← Dati coupon</button><button className="btn btn-primary" onClick={handleCreate} disabled={saving}>{saving ? "Creazione…" : isEdit ? "Salva modifiche" : "Crea coupon"}</button></div>
         </>
       )}
     </Modal>
