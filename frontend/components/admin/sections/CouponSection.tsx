@@ -25,6 +25,7 @@ interface Campaign {
   status: string;
   targetCount: number;
   usedCount: number;
+  customerIds: number[];
 }
 
 interface Dashboard {
@@ -119,6 +120,7 @@ export default function CouponSection() {
     { key: "validFrom", header: "Validità", width: "140px", sortable: true, sortValue: (c) => c.validFrom, cell: (c) => <span style={{ fontSize: 12 }}>{fmtDate(c.validFrom)} → {fmtDate(c.validTo)}</span> },
     { key: "targetCount", header: "Target", width: "110px", sortable: true, sortValue: (c) => c.targetCount, cell: (c) => <span style={{ fontSize: 12 }}>{c.targetCount} clienti</span> },
     { key: "status", header: "Stato", width: "110px", sortable: true, sortValue: (c) => STATUS_LABEL[c.status] ?? c.status, cell: (c) => <span className={`status-pill ${STATUS_CLS[c.status] ?? "st-muted"}`}><span className="sd">●</span>{STATUS_LABEL[c.status] ?? c.status}</span> },
+    { key: "customerIds", header: "Clienti", width: "80px", align: "right", sortable: true, sortValue: (c) => c.customerIds?.length ?? 0, cell: (c) => <span style={{ fontSize: 12 }}>{(c.customerIds?.length ?? 0) + (c.targetCount ?? 0)}</span> },
   ], []);
 
   const sortedCampaigns = useMemo(() => {
