@@ -590,6 +590,7 @@ model TariffaSpedizione {
   stato          String   @default("configura") @map("stato")
   sogliaImporto  Decimal? @map("soglia_importo") @db.Decimal(12, 2)
   minimoImporto  Decimal? @map("minimo_importo") @db.Decimal(12, 2)
+  minimoOrdine   Decimal? @map("minimo_ordine") @db.Decimal(12, 2)
   ranges         Json?    @map("ranges")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
