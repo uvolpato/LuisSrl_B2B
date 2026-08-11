@@ -384,24 +384,62 @@ export class CheckoutService {
       }
     }
 
-    // Applica coupon se presente
-    let couponCode: string | null = null;
+    // Applica coupon se presente - calcolo server-side
+    let couponRiga: any = null;
     if (dto.codiceCoupon) {
       const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
       if (campaign && campaign.status === 'active') {
-        if (campaign.type === 'pct') {
-          importoTotale = importoTotale * (1 - Number(campaign.value) / 100);
-        } else if (campaign.type === 'fixed') {
-          importoTotale = Math.max(0, importoTotale - Number(campaign.value));
-        } else if (campaign.type === 'free-ship') {
-          costoTrasporto = 0;
+        const now = new Date();
+        const validFrom = campaign.validFrom ? new Date(campaign.validFrom) <= now : true;
+        const validTo = campaign.validTo ? new Date(campaign.validTo) >= now : true;
+        const sopraMinimo = !campaign.minOrder || Number(campaign.minOrder) <= importoTotale;
+
+        // Controlla utilizzo per cliente
+        let canUse = true;
+        if (campaign.usage === 'once') {
+          const already = await this.prisma.campaignUsage.findUnique({
+            where: { campaignId_customerId: { campaignId: campaign.id, customerId: clienteId } },
+          });
+          if (already) canUse = false;
+        } else if (campaign.usage === 'single') {
+          if (campaign.usedCount > 0) canUse = false;
         }
-        couponCode = campaign.code;
-        await this.prisma.campaign.update({ where: { id: campaign.id }, data: { usedCount: { increment: 1 } } });
+
+        if (validFrom && validTo && sopraMinimo && canUse) {
+          let discountAmount = 0;
+          let descr = `Coupon ${campaign.code}`;
+          if (campaign.type === 'pct') {
+            discountAmount = importoTotale * Number(campaign.value) / 100;
+            descr += ` (−${Number(campaign.value)}%)`;
+          } else if (campaign.type === 'fixed') {
+            discountAmount = Math.min(Number(campaign.value), importoTotale);
+            descr += ` (−${Number(campaign.value).toFixed(2)} €)`;
+          } else if (campaign.type === 'free-ship') {
+            costoTrasporto = 0;
+            descr += ' (Spedizione gratuita)';
+          }
+          if (campaign.scopeDetail) descr += ` su ${campaign.scopeDetail}`;
+
+          if (discountAmount > 0) {
+            couponRiga = {
+              codiceProdotto: campaign.code,
+              descrizione: descr,
+              quantita: 1,
+              prezzo: -Math.round(discountAmount * 100) / 100,
+            };
+          }
+
+          // Traccia utilizzo
+          await this.prisma.campaignUsage.create({
+            data: { campaignId: campaign.id, customerId: clienteId },
+          });
+          await this.prisma.campaign.update({ where: { id: campaign.id }, data: { usedCount: { increment: 1 } } });
+        }
       }
     }
 
     const numeroOrdine = `B2B-${Date.now()}`;
+    const righeFinali = couponRiga ? [...righe, couponRiga] : righe;
     const ordine = await this.prisma.ordineCliente.create({
       data: {
         numeroOrdine,
@@ -417,7 +455,7 @@ export class CheckoutService {
         notaSpedizione: dto.notaSpedizione ?? null,
         notaOrdine: dto.notaOrdine ?? null,
         righe: {
-          create: righe,
+          create: righeFinali,
         },
       },
       include: { righe: true },
