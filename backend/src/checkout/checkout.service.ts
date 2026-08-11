@@ -531,9 +531,12 @@ export class CheckoutService {
       let matchingCodes: Set<string> = new Set();
 
       if (campaign.scope === "family") {
-        // Cerca famiglia per nome (scopeDetail contiene il nome visualizzato)
+        // Cerca famiglia per nome o codice (case-insensitive)
         const famiglia = await this.prisma.famiglia.findFirst({
-          where: { nome: campaign.scopeDetail! },
+          where: { OR: [{ nome: { equals: campaign.scopeDetail!, mode: "insensitive" } }, { codice: campaign.scopeDetail! }] },
+          select: { codice: true },
+        }) || await this.prisma.famiglia.findFirst({
+          where: { nome: { contains: campaign.scopeDetail!, mode: "insensitive" } },
           select: { codice: true },
         });
         if (famiglia) {
