@@ -599,10 +599,11 @@ export default function CheckoutPage() {
                     {couponMsg && <span className={`coupon-msg ${couponActive ? "ok" : "err"}`} style={{ fontSize: 11 }}>{couponMsg}</span>}
                   </div>
                 </td></tr>
-                {couponActive && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
+                {couponActive && couponType === "free-ship" && <tr className="discount" style={{ color: "var(--green)" }}><td>Coupon {couponCode}</td><td>Spedizione gratuita</td></tr>}
+                {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
-                <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
+                <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : couponType === "free-ship" ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
                 {spedizione?.descrizione === "Tariffa da confermare" && (
                   <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0" }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
                 )}
@@ -741,12 +742,15 @@ export default function CheckoutPage() {
               <table className="total-table">
                 <tbody>
                   <tr><td>Totale articoli a listino</td><td>{fmtEur(subtotalListino)}</td></tr>
-                  {couponActive && (
+                  {couponActive && couponType === "free-ship" && (
+                    <tr style={{ color: "var(--green)" }}><td>Coupon {couponCode}</td><td>Spedizione gratuita</td></tr>
+                  )}
+                  {couponActive && couponType !== "free-ship" && (
                     <tr className="discount"><td>Sconto codice {couponCode}</td><td>−{fmtEur(couponDiscount)}</td></tr>
                   )}
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                   <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
-                  <tr className="bold"><td>Spedizione</td><td>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
+                  <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita || couponType === "free-ship" ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : couponType === "free-ship" ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                   <tr className="final"><td>Totale (IVA esclusa)</td><td>{fmtEur(totale)}</td></tr>
                 </tbody>

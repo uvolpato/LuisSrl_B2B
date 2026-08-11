@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "../../common/Modal";
 import DataTable from "../DataTable";
 import type { Column, RowAction } from "../DataTable";
+import DataTip from "../../common/DataTip";
 import { api } from "../../../lib/api";
 import { formatPrice } from "../../../lib/helpers";
 
