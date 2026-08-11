@@ -128,7 +128,7 @@ export default function IndirizzoEditorModal({
           <ComboboxField value={nazione} onChange={setNazione} options={NAZIONI} allowAuto={false} placeholder="Cerca nazione..." />
         </div>
       </div>
-      <div style={{ marginTop: 2, display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }} onClick={() => setAbituale(!abituale)}>
+      <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }} onClick={() => setAbituale(!abituale)}>
         <input type="checkbox" checked={abituale} onChange={e => setAbituale(e.target.checked)} style={{ accentColor: "var(--accent)", margin: 0, width: 15, height: 15 }} />
         Predefinito
       </div>
