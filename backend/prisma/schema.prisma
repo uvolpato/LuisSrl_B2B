@@ -178,6 +178,7 @@ model IndirizzoCliente {
   cap               String?
   citta             String?
   provincia         String?
+  nazione           String?   @default("IT") @map("nazione")
   flagSpedizione    Boolean @default(false) @map("flag_spedizione")
   flagAbituale      Boolean @default(false) @map("flag_abituale")
   codicePorto       String? @map("codice_porto")

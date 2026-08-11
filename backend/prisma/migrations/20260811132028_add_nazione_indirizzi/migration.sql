@@ -1,0 +1,1 @@
+ALTER TABLE indirizzi_clienti ADD COLUMN IF NOT EXISTS nazione TEXT DEFAULT 'IT';
