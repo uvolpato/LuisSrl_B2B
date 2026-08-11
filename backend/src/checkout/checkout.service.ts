@@ -534,10 +534,11 @@ export class CheckoutService {
         const matching = varianti.filter(v => v.articolo.famigliaCodice === campaign.scopeDetail);
         matchingCodes = new Set(matching.map(v => v.codice));
         if (matchingCodes.size === 0) {
-          return { valid: false, message: `Questo coupon è valido solo per la famiglia "${campaign.scopeDetail}"` };
+          const fam = await this.prisma.famiglia.findUnique({ where: { codice: campaign.scopeDetail! }, select: { nome: true } });
+          return { valid: false, message: `Questo coupon è valido solo per la famiglia "${fam?.nome || campaign.scopeDetail}"` };
         }
       } else if (campaign.scope === "collection") {
-        const raccolta = await this.prisma.raccolta.findFirst({ where: { OR: [{ slug: campaign.scopeDetail! }, { nome: campaign.scopeDetail! }] }, select: { id: true } });
+        const raccolta = await this.prisma.raccolta.findFirst({ where: { slug: campaign.scopeDetail! }, select: { id: true, nome: true } });
         if (raccolta) {
           const inRaccolta = await this.prisma.articoloRaccolta.findMany({
             where: { raccoltaId: raccolta.id, articolo: { codiceLinea: { in: lineaCodes } } },
@@ -546,7 +547,7 @@ export class CheckoutService {
           const lineaSet = new Set(inRaccolta.map(r => r.articolo.codiceLinea));
           matchingCodes = new Set(varianti.filter(v => lineaSet.has(v.articolo.codiceLinea)).map(v => v.codice));
           if (matchingCodes.size === 0) {
-            return { valid: false, message: `Questo coupon è valido solo per la raccolta "${campaign.scopeDetail}"` };
+            return { valid: false, message: `Questo coupon è valido solo per la raccolta "${raccolta.nome || campaign.scopeDetail}"` };
           }
         }
       }
@@ -561,7 +562,15 @@ export class CheckoutService {
 
     // Soglia minima sull'ambito
     if (campaign.minOrder && Number(campaign.minOrder) > scopeSubtotale) {
-      return { valid: false, message: `Lo sconto si applica a un importo superiore a ${Number(campaign.minOrder).toFixed(2)} € per ${campaign.scopeDetail || "questo ambito"}` };
+      let scopeName = campaign.scopeDetail || "questo ambito";
+      if (campaign.scope === "family" && campaign.scopeDetail) {
+        const fam = await this.prisma.famiglia.findUnique({ where: { codice: campaign.scopeDetail }, select: { nome: true } });
+        if (fam?.nome) scopeName = fam.nome;
+      } else if (campaign.scope === 'collection' && campaign.scopeDetail) {
+        const col = await this.prisma.raccolta.findFirst({ where: { slug: campaign.scopeDetail }, select: { nome: true } });
+        if (col?.nome) scopeName = col.nome;
+      }
+      return { valid: false, message: `Lo sconto si applica a un importo superiore a ${Number(campaign.minOrder).toFixed(2)} € per ${scopeName}` };
     }
 
     let discount = 0;
