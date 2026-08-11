@@ -24,7 +24,7 @@ export class CouponService {
     const campaigns = await this.prisma.campaign.findMany();
     const active = campaigns.filter(c => c.status === "active").length;
     const totalUsed = campaigns.reduce((s, c) => s + c.usedCount, 0);
-    const totalVolume = 18450;
+    const totalVolume = campaigns.reduce((s, c) => s + c.usedCount * (Number(c.value) || 0), 0);
     const redemptionRate = totalUsed > 0 ? Math.round((campaigns.filter(c => c.usedCount > 0).length / Math.max(campaigns.length, 1)) * 1000) / 10 : 0;
     return { activeCount: active, totalUsed, totalVolume, redemptionRate };
   }
