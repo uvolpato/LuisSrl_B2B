@@ -147,6 +147,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
       <input type="text" id="search-input" placeholder="Cerca campagna...">
     </div>
+    <button class="btn btn-primary btn-sm" id="btn-new-campaign">+ Nuova campagna</button>
   </div>
 </div>
 
@@ -173,7 +174,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     </div>
     <div class="data-table-footer">
       <span id="footer-count">5 campagne</span>
-      <button class="btn btn-primary btn-sm" id="btn-new-campaign">+ Nuova campagna</button>
     </div>
   </div>
 
@@ -192,7 +192,12 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <div class="edit-section">
         <h3>Dati coupon</h3>
         <div class="form-grid">
-          <div class="field"><label>Codice</label><input type="text" id="coupon-code" placeholder="es. ESTATE25" style="font-family:var(--font-mono);text-transform:uppercase"></div>
+          <div class="field"><label>Codice</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="coupon-code" placeholder="es. ESTATE25" style="font-family:var(--font-mono);text-transform:uppercase;flex:1">
+              <button class="btn btn-secondary btn-sm" id="btn-generate-code" title="Genera codice univoco" style="flex-shrink:0">Genera</button>
+            </div>
+          </div>
           <div class="field"><label>Nome campagna</label><input type="text" id="campaign-name" placeholder="es. Promo Estate 2026"></div>
           <div class="field"><label>Tipo sconto</label>
             <select id="discount-type">
@@ -220,6 +225,15 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
           </div>
           <div class="field"><label>Valido dal</label><input type="date" id="valid-from"></div>
           <div class="field"><label>Valido al</label><input type="date" id="valid-to"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--fg-soft);border-radius:var(--radius)">
+          <div id="qrcode-container" style="width:100px;height:100px;background:#fff;border-radius:8px;display:grid;place-items:center;overflow:hidden;flex-shrink:0">
+            <img id="qrcode-img" src="" alt="QR Code" style="width:96px;height:96px;display:none">
+            <span id="qrcode-empty" style="font-size:11px;color:var(--muted);text-align:center">Inserisci un codice</span>
+          </div>
+          <div style="flex:1;font-size:12px;color:var(--muted);line-height:1.5">
+            Il QR code sarà incluso nell'email. Il cliente potrà scansionarlo per applicare lo sconto automaticamente in fase di checkout.
+          </div>
         </div>
       </div>
 
@@ -438,6 +452,31 @@ function updateSegCount() {
   document.getElementById('review-count').textContent = SEGMENTED.length + ' clienti';
   document.getElementById('review-email-count').textContent = SEGMENTED.length;
 }
+
+/* ── QR CODE ── */
+function updateQR() {
+  var code = document.getElementById('coupon-code').value.trim().toUpperCase();
+  var img = document.getElementById('qrcode-img');
+  var empty = document.getElementById('qrcode-empty');
+  if (code) {
+    img.src = 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=' + encodeURIComponent(code) + '&choe=UTF-8&chld=L|0';
+    img.style.display = 'block';
+    empty.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    empty.style.display = '';
+  }
+}
+
+document.getElementById('coupon-code').addEventListener('input', updateQR);
+
+document.getElementById('btn-generate-code').addEventListener('click', function() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var code = '';
+  for (var i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  document.getElementById('coupon-code').value = code;
+  updateQR();
+});
 
 var fi = document.querySelectorAll('#filtro-regione, #filtro-ultimo-ordine, #filtro-sconto, #filtro-volume');
 for (var k = 0; k < fi.length; k++) fi[k].addEventListener('change', applyFilters);
