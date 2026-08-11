@@ -531,8 +531,15 @@ export class CheckoutService {
       let matchingCodes: Set<string> = new Set();
 
       if (campaign.scope === "family") {
-        const matching = varianti.filter(v => v.articolo.famigliaCodice === campaign.scopeDetail);
-        matchingCodes = new Set(matching.map(v => v.codice));
+        // Cerca famiglia per nome (scopeDetail contiene il nome visualizzato)
+        const famiglia = await this.prisma.famiglia.findFirst({
+          where: { nome: campaign.scopeDetail! },
+          select: { codice: true },
+        });
+        if (famiglia) {
+          const matching = varianti.filter(v => v.articolo.famigliaCodice === famiglia.codice);
+          matchingCodes = new Set(matching.map(v => v.codice));
+        }
         if (matchingCodes.size === 0) {
           return { valid: false, message: `Questo coupon è valido solo per la famiglia "${campaign.scopeDetail}"` };
         }
