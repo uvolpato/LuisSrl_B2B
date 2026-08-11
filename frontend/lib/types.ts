@@ -44,6 +44,7 @@ export interface CustomerProfile {
   numOrdini?: number;
   numOrdiniAnno?: number;
   invitatoAt?: string | null;
+  ultimoAccesso?: string | null;
 }
 
 export interface CustomerIntelligenceProfile {
