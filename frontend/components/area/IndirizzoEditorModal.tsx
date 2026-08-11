@@ -128,9 +128,12 @@ export default function IndirizzoEditorModal({
           <ComboboxField value={nazione} onChange={setNazione} options={NAZIONI} allowAuto={false} placeholder="Cerca nazione..." />
         </div>
       </div>
-      <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }} onClick={() => setAbituale(!abituale)}>
-        <input type="checkbox" checked={abituale} onChange={e => setAbituale(e.target.checked)} style={{ accentColor: "var(--accent)", margin: 0, width: 15, height: 15 }} />
-        Predefinito
+      <div style={{ marginTop: 2 }}>
+        <label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 4 }}>Predefinito</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--surface)" }} onClick={() => setAbituale(!abituale)}>
+          <input type="checkbox" checked={abituale} onChange={e => setAbituale(e.target.checked)} style={{ accentColor: "var(--accent)", margin: 0, width: 15, height: 15 }} />
+          Imposta come indirizzo principale
+        </div>
       </div>
     </Modal>
   );
