@@ -508,17 +508,18 @@ export class CheckoutService {
     return max > 0 ? max : undefined;
   }
 
-  async validateCoupon(code: string, subtotale: number, codiciVariante: string[] = []) {
+  async validateCoupon(code: string, subtotale: number, codiciVariante: string[] = [], items?: { codice: string; qty: number; prezzo: number }[]) {
     const campaign = await this.prisma.campaign.findUnique({ where: { code: code.toUpperCase() } });
     if (!campaign) return { valid: false, message: "Codice non valido" };
     if (campaign.status !== "active") return { valid: false, message: "Campagna non attiva" };
     const now = new Date();
     if (campaign.validFrom && new Date(campaign.validFrom) > now) return { valid: false, message: "Campagna non ancora attiva" };
     if (campaign.validTo && new Date(campaign.validTo) < now) return { valid: false, message: "Campagna scaduta" };
-    if (campaign.minOrder && Number(campaign.minOrder) > subtotale) return { valid: false, message: `Ordine minimo: ${Number(campaign.minOrder).toFixed(2)} €` };
     if (campaign.usage === "single" && campaign.usedCount > 0) return { valid: false, message: "Codice già utilizzato" };
 
-    // Verifica ambito
+    // Calcola subtotale dell'ambito
+    let scopeSubtotale = subtotale;
+
     if (campaign.scope !== "all" && campaign.scopeDetail && codiciVariante.length > 0) {
       const varianti = await this.prisma.variante.findMany({
         where: { codice: { in: codiciVariante } },
@@ -527,8 +528,12 @@ export class CheckoutService {
       const lineaCodes = [...new Set(varianti.map(v => v.articolo.codiceLinea))];
       const famigliaCodes = [...new Set(varianti.map(v => v.articolo.famigliaCodice))];
 
+      let matchingCodes: Set<string> = new Set();
+
       if (campaign.scope === "family") {
-        if (!famigliaCodes.includes(campaign.scopeDetail)) {
+        const matching = varianti.filter(v => v.articolo.famigliaCodice === campaign.scopeDetail);
+        matchingCodes = new Set(matching.map(v => v.codice));
+        if (matchingCodes.size === 0) {
           return { valid: false, message: `Questo coupon è valido solo per la famiglia "${campaign.scopeDetail}"` };
         }
       } else if (campaign.scope === "collection") {
@@ -536,13 +541,27 @@ export class CheckoutService {
         if (raccolta) {
           const inRaccolta = await this.prisma.articoloRaccolta.findMany({
             where: { raccoltaId: raccolta.id, articolo: { codiceLinea: { in: lineaCodes } } },
-            select: { articoloId: true },
+            select: { articolo: { select: { codiceLinea: true } } },
           });
-          if (inRaccolta.length === 0) {
+          const lineaSet = new Set(inRaccolta.map(r => r.articolo.codiceLinea));
+          matchingCodes = new Set(varianti.filter(v => lineaSet.has(v.articolo.codiceLinea)).map(v => v.codice));
+          if (matchingCodes.size === 0) {
             return { valid: false, message: `Questo coupon è valido solo per la raccolta "${campaign.scopeDetail}"` };
           }
         }
       }
+
+      // Calcola subtotale solo degli articoli matching
+      if (items && items.length > 0) {
+        scopeSubtotale = items
+          .filter(i => matchingCodes.has(i.codice))
+          .reduce((s, i) => s + i.qty * i.prezzo, 0);
+      }
+    }
+
+    // Soglia minima sull'ambito
+    if (campaign.minOrder && Number(campaign.minOrder) > scopeSubtotale) {
+      return { valid: false, message: `Lo sconto si applica a un importo superiore a ${Number(campaign.minOrder).toFixed(2)} € per ${campaign.scopeDetail || "questo ambito"}` };
     }
 
     let discount = 0;
@@ -551,14 +570,19 @@ export class CheckoutService {
     else if (campaign.type === "fixed") { discount = Number(campaign.value); isPct = false; }
     else if (campaign.type === "free-ship") { discount = 0; isPct = false; }
 
+    const discountAmount = isPct ? scopeSubtotale * discount / 100 : Math.min(discount, scopeSubtotale);
+
     return {
       valid: true,
       type: campaign.type,
       value: Number(campaign.value),
-      discount,
+      discount: isPct ? discount : discountAmount,
       isPct,
+      scopeSubtotale,
+      discountAmount,
       label: campaign.type === "free-ship" ? "Spedizione gratuita" : campaign.type === "pct" ? `−${Number(campaign.value)}%` : `−${Number(campaign.value).toFixed(2)} €`,
       code: campaign.code,
+      scopeDetail: campaign.scopeDetail,
     };
   }
 }
