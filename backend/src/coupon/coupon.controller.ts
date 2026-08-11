@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, HttpCode, UseGuards } from "@nestjs/common";
 import { AuthenticatedGuard } from "../auth/guards/authenticated.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { RequirePermission } from "../auth/decorators/permission.decorator";
@@ -37,5 +37,18 @@ export class CouponController {
   @RequirePermission("vendite.coupon.edit")
   send(@Param("id") id: string, @Body() body: any) {
     return this.svc.sendCampaign(Number(id), body);
+  }
+
+  @Patch(":id/status")
+  @RequirePermission("vendite.coupon.edit")
+  toggleStatus(@Param("id") id: string, @Body() body: { status: string }) {
+    return this.svc.updateStatus(Number(id), body.status);
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @RequirePermission("vendite.coupon.edit")
+  async delete(@Param("id") id: string) {
+    await this.svc.delete(Number(id));
   }
 }

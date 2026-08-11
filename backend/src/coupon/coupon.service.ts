@@ -97,7 +97,14 @@ export class CouponService {
   async sendCampaign(id: number, _body: any) {
     const campaign = await this.prisma.campaign.findUnique({ where: { id } });
     if (!campaign) throw new Error("Campagna non trovata");
-    // In produzione: invia email a customerIds
     return { sent: campaign.targetCount, status: "sent" };
+  }
+
+  async updateStatus(id: number, status: string) {
+    return this.prisma.campaign.update({ where: { id }, data: { status } });
+  }
+
+  async delete(id: number) {
+    await this.prisma.campaign.delete({ where: { id } });
   }
 }
