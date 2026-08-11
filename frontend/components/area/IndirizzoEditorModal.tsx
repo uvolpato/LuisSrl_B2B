@@ -45,13 +45,25 @@ const PROVINCE = [
 ];
 
 const NAZIONI = [
-  { value: "IT", label: "Italia" }, { value: "FR", label: "Francia" }, { value: "DE", label: "Germania" },
-  { value: "ES", label: "Spagna" }, { value: "AT", label: "Austria" }, { value: "BE", label: "Belgio" },
-  { value: "CH", label: "Svizzera" }, { value: "NL", label: "Paesi Bassi" }, { value: "GB", label: "Regno Unito" },
-  { value: "PT", label: "Portogallo" }, { value: "GR", label: "Grecia" }, { value: "PL", label: "Polonia" },
-  { value: "US", label: "Stati Uniti" }, { value: "CA", label: "Canada" }, { value: "BR", label: "Brasile" },
-  { value: "JP", label: "Giappone" }, { value: "CN", label: "Cina" }, { value: "AU", label: "Australia" },
-  { value: "ROW", label: "Altro (Resto del mondo)" },
+  { value: "IT", label: "Italia", group: "Europa" },
+  { value: "FR", label: "Francia", group: "Europa" },
+  { value: "DE", label: "Germania", group: "Europa" },
+  { value: "ES", label: "Spagna", group: "Europa" },
+  { value: "AT", label: "Austria", group: "Europa" },
+  { value: "BE", label: "Belgio", group: "Europa" },
+  { value: "CH", label: "Svizzera", group: "Europa" },
+  { value: "NL", label: "Paesi Bassi", group: "Europa" },
+  { value: "GB", label: "Regno Unito", group: "Europa" },
+  { value: "PT", label: "Portogallo", group: "Europa" },
+  { value: "GR", label: "Grecia", group: "Europa" },
+  { value: "PL", label: "Polonia", group: "Europa" },
+  { value: "US", label: "Stati Uniti", group: "America" },
+  { value: "CA", label: "Canada", group: "America" },
+  { value: "BR", label: "Brasile", group: "America" },
+  { value: "JP", label: "Giappone", group: "Asia" },
+  { value: "CN", label: "Cina", group: "Asia" },
+  { value: "AU", label: "Australia", group: "Oceania" },
+  { value: "ROW", label: "Altro (Resto del mondo)", group: "Mondo" },
 ];
 
 export default function IndirizzoEditorModal({
