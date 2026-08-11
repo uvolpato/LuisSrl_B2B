@@ -152,11 +152,7 @@ export default function ProfileSection({
 
   async function setDefault(id: number) {
     if (id === -1) {
-      for (const a of indirizzi) {
-        if (a.abituale) {
-          try { await api.patch(`/api/checkout/indirizzo/${a.id}/predefinito`); } catch {}
-        }
-      }
+      try { await api.patch('/api/checkout/indirizzo/0/predefinito'); } catch {}
       await fetchIndirizzi();
       window.dispatchEvent(new CustomEvent("address-updated"));
       return;
