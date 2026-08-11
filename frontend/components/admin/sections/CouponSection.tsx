@@ -133,9 +133,6 @@ export default function CouponSection() {
           onPageChange={() => {}}
         />
 
-        <div className="data-table-footer" style={{ border: "1px solid var(--border)", borderTop: 0, borderBottomLeftRadius: "var(--radius-lg)", borderBottomRightRadius: "var(--radius-lg)", marginTop: -1, position: "relative", zIndex: 1 }}>
-          <span>{campaigns.length} campagne</span>
-        </div>
       </div>
 
       {editorOpen && (
