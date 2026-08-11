@@ -3,8 +3,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import ConfirmProvider from "../components/common/ConfirmProvider";
 import SessionTerminatedOverlay from "../components/common/SessionTerminatedOverlay";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
 import "./globals.css";
 import "./landing.css";
 // Caricato globalmente (tutto scopato sotto .catalogo-page) così resta sempre
