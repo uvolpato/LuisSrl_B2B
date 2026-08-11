@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import type { CustomerProfile } from "../../lib/types";
 import { api, ApiError } from "../../lib/api";
+import ComboboxField from "../admin/ComboboxField";
+import type { ComboboxOption } from "../admin/ComboboxField";
 
 function BuildingIcon() {
   return (
@@ -21,6 +23,48 @@ function ShieldIcon() {
   );
 }
 
+interface Indirizzo {
+  id: number;
+  ragioneSociale: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  tipoDestinazione: string | null;
+  abituale: boolean;
+  daIntegra: boolean;
+}
+
+const PROVINCE_OPTS: ComboboxOption[] = [
+  { value:"AG",label:"Agrigento"},{ value:"AL",label:"Alessandria"},{ value:"AN",label:"Ancona"},{ value:"AO",label:"Aosta"},
+  { value:"AR",label:"Arezzo"},{ value:"AP",label:"Ascoli Piceno"},{ value:"AT",label:"Asti"},{ value:"AV",label:"Avellino"},
+  { value:"BA",label:"Bari"},{ value:"BT",label:"Barletta-Andria-Trani"},{ value:"BL",label:"Belluno"},{ value:"BN",label:"Benevento"},
+  { value:"BG",label:"Bergamo"},{ value:"BI",label:"Biella"},{ value:"BO",label:"Bologna"},{ value:"BZ",label:"Bolzano"},
+  { value:"BS",label:"Brescia"},{ value:"BR",label:"Brindisi"},{ value:"CA",label:"Cagliari"},{ value:"CL",label:"Caltanissetta"},
+  { value:"CB",label:"Campobasso"},{ value:"CE",label:"Caserta"},{ value:"CT",label:"Catania"},{ value:"CZ",label:"Catanzaro"},
+  { value:"CH",label:"Chieti"},{ value:"CO",label:"Como"},{ value:"CS",label:"Cosenza"},{ value:"CR",label:"Cremona"},
+  { value:"KR",label:"Crotone"},{ value:"CN",label:"Cuneo"},{ value:"EN",label:"Enna"},{ value:"FM",label:"Fermo"},
+  { value:"FE",label:"Ferrara"},{ value:"FI",label:"Firenze"},{ value:"FG",label:"Foggia"},{ value:"FC",label:"Forlì-Cesena"},
+  { value:"FR",label:"Frosinone"},{ value:"GE",label:"Genova"},{ value:"GO",label:"Gorizia"},{ value:"GR",label:"Grosseto"},
+  { value:"IM",label:"Imperia"},{ value:"IS",label:"Isernia"},{ value:"SP",label:"La Spezia"},{ value:"AQ",label:"L'Aquila"},
+  { value:"LT",label:"Latina"},{ value:"LE",label:"Lecce"},{ value:"LC",label:"Lecco"},{ value:"LI",label:"Livorno"},
+  { value:"LO",label:"Lodi"},{ value:"LU",label:"Lucca"},{ value:"MC",label:"Macerata"},{ value:"MN",label:"Mantova"},
+  { value:"MS",label:"Massa-Carrara"},{ value:"MT",label:"Matera"},{ value:"ME",label:"Messina"},{ value:"MI",label:"Milano"},
+  { value:"MO",label:"Modena"},{ value:"MB",label:"Monza e Brianza"},{ value:"NA",label:"Napoli"},{ value:"NO",label:"Novara"},
+  { value:"NU",label:"Nuoro"},{ value:"OR",label:"Oristano"},{ value:"PD",label:"Padova"},{ value:"PA",label:"Palermo"},
+  { value:"PR",label:"Parma"},{ value:"PV",label:"Pavia"},{ value:"PG",label:"Perugia"},{ value:"PU",label:"Pesaro e Urbino"},
+  { value:"PE",label:"Pescara"},{ value:"PC",label:"Piacenza"},{ value:"PI",label:"Pisa"},{ value:"PT",label:"Pistoia"},
+  { value:"PN",label:"Pordenone"},{ value:"PZ",label:"Potenza"},{ value:"PO",label:"Prato"},{ value:"RG",label:"Ragusa"},
+  { value:"RA",label:"Ravenna"},{ value:"RC",label:"Reggio Calabria"},{ value:"RE",label:"Reggio Emilia"},{ value:"RI",label:"Rieti"},
+  { value:"RN",label:"Rimini"},{ value:"RM",label:"Roma"},{ value:"RO",label:"Rovigo"},{ value:"SA",label:"Salerno"},
+  { value:"SS",label:"Sassari"},{ value:"SV",label:"Savona"},{ value:"SI",label:"Siena"},{ value:"SR",label:"Siracusa"},
+  { value:"SO",label:"Sondrio"},{ value:"SU",label:"Sud Sardegna"},{ value:"TA",label:"Taranto"},{ value:"TE",label:"Teramo"},
+  { value:"TR",label:"Terni"},{ value:"TO",label:"Torino"},{ value:"TP",label:"Trapani"},{ value:"TN",label:"Trento"},
+  { value:"TV",label:"Treviso"},{ value:"TS",label:"Trieste"},{ value:"UD",label:"Udine"},{ value:"VA",label:"Varese"},
+  { value:"VE",label:"Venezia"},{ value:"VB",label:"Verbano-Cusio-Ossola"},{ value:"VC",label:"Vercelli"},{ value:"VR",label:"Verona"},
+  { value:"VV",label:"Vibo Valentia"},{ value:"VI",label:"Vicenza"},{ value:"VT",label:"Viterbo"},
+];
+
 export default function ProfileSection({
   customer,
   onPasswordChanged,
@@ -36,6 +80,63 @@ export default function ProfileSection({
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwError, setPwError] = useState("");
   const [pwOk, setPwOk] = useState(false);
+
+  const [indirizzi, setIndirizzi] = useState<Indirizzo[]>([]);
+  const [addrLoaded, setAddrLoaded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [fRagione, setFRagione] = useState("");
+  const [fIndirizzo, setFIndirizzo] = useState("");
+  const [fCap, setFCap] = useState("");
+  const [fCitta, setFCitta] = useState("");
+  const [fProvincia, setFProvincia] = useState("");
+  const [fDefault, setFDefault] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const fetchIndirizzi = async () => {
+    try {
+      const d = await api.get<{ indirizzi: Indirizzo[] }>("/api/checkout/dati");
+      setIndirizzi(d.indirizzi);
+    } catch {}
+    setAddrLoaded(true);
+  };
+
+  useEffect(() => { fetchIndirizzi(); }, []);
+
+  function openNew() {
+    setEditId(null); setFRagione(""); setFIndirizzo(""); setFCap(""); setFCitta(""); setFProvincia(""); setFDefault(false); setShowForm(true);
+  }
+
+  function openEdit(a: Indirizzo) {
+    setEditId(a.id); setFRagione(a.ragioneSociale ?? ""); setFIndirizzo(a.indirizzo ?? ""); setFCap(a.cap ?? ""); setFCitta(a.citta ?? ""); setFProvincia(a.provincia ?? ""); setFDefault(a.abituale); setShowForm(true);
+  }
+
+  function closeForm() { setShowForm(false); setEditId(null); }
+
+  async function saveAddr() {
+    if (!fIndirizzo.trim() || !fCap.trim() || !fCitta.trim()) return;
+    setSaving(true);
+    try {
+      if (editId) {
+        await api.put(`/api/checkout/indirizzo/${editId}`, { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, abituale: fDefault });
+      } else {
+        await api.post("/api/checkout/indirizzo", { ragioneSociale: fRagione || undefined, indirizzo: fIndirizzo.trim(), cap: fCap.trim(), citta: fCitta.trim(), provincia: fProvincia || undefined, abituale: fDefault });
+      }
+      closeForm();
+      await fetchIndirizzi();
+    } catch {}
+    setSaving(false);
+  }
+
+  async function deleteAddr(id: number) {
+    try { await api.del(`/api/checkout/indirizzo/${id}`); } catch {}
+    await fetchIndirizzi();
+  }
+
+  async function setDefault(id: number) {
+    try { await api.patch(`/api/checkout/indirizzo/${id}/predefinito`); } catch {}
+    await fetchIndirizzi();
+  }
 
   const handlePwSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,14 +227,68 @@ export default function ProfileSection({
 
         {/* Indirizzi */}
         <div className="profile-card">
-          <h2>{t("profileIndirizzi")} <span className="badge">1</span></h2>
-          <div className="addr-item">
-            <div>
-              <strong>{c.indirizzo || "—"}</strong><br />
-              <span className="meta">{[c.cap, c.citta, c.provincia].filter(Boolean).join(" ")}</span>
+          <h2>{t("profileIndirizzi")} <span className="badge">{indirizzi.length}</span></h2>
+          {addrLoaded && indirizzi.length === 0 && !showForm && (
+            <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>Nessun indirizzo salvato.</p>
+          )}
+          {indirizzi.map(a => (
+            <div key={a.id} className="addr-item">
+              <div>
+                <strong>{a.ragioneSociale || "—"}</strong><br />
+                <span className="meta">{a.indirizzo || "—"}</span><br />
+                <span className="meta">{[a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {a.abituale && <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Principale</span>}
+                {!a.daIntegra && (
+                  <>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ fontSize: 12 }}>Modifica</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => deleteAddr(a.id)} style={{ fontSize: 12, color: "var(--red)" }}>Elimina</button>
+                  </>
+                )}
+                {!a.abituale && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => setDefault(a.id)} style={{ fontSize: 12 }}>Imposta principale</button>
+                )}
+              </div>
             </div>
-            <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>{t("profileIndirizzoPrincipale")}</span>
-          </div>
+          ))}
+          {!showForm && (
+            <button className="btn btn-secondary btn-sm" onClick={openNew} style={{ marginTop: 8 }}>+ Nuovo indirizzo</button>
+          )}
+          {showForm && (
+            <div style={{ marginTop: 12, padding: 14, background: "var(--fg-soft)", borderRadius: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Intestazione</label>
+                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fRagione} onChange={e => setFRagione(e.target.value)} placeholder="Es. Nome destinatario" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Indirizzo *</label>
+                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fIndirizzo} onChange={e => setFIndirizzo(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>CAP *</label>
+                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fCap} onChange={e => setFCap(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Città *</label>
+                  <input style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fCitta} onChange={e => setFCitta(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Provincia</label>
+                  <ComboboxField value={fProvincia} onChange={setFProvincia} options={PROVINCE_OPTS} allowAuto={false} placeholder="Cerca..." />
+                </div>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10 }}>
+                <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)" }} />
+                Imposta come indirizzo principale
+              </label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-secondary btn-sm" onClick={closeForm}>Annulla</button>
+                <button className="btn btn-primary btn-sm" onClick={saveAddr} disabled={saving}>{editId ? "Aggiorna" : "Salva"}</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modalità di pagamento */}
