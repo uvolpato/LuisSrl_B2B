@@ -347,7 +347,7 @@ export class CheckoutService {
       importoTotale += netto * item.quantita;
       righe.push({
         codiceProdotto: item.varianteCodice,
-        descrizione: item.varianteCodice,
+        descrizione: (item as any).varianteDescrizione || item.varianteCodice,
         quantita: item.quantita,
         prezzo: netto,
       });

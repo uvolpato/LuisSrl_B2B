@@ -535,6 +535,14 @@ export class IntegrazioneService {
            AND v.descrizione IS DISTINCT FROM ia.pro_descr`,
       );
       descUpdated = res;
+
+      // Ripara righe_ordini esistenti: sostituisci il codice con la descrizione variante
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE righe_ordini ro SET descrizione = v.descrizione
+         FROM varianti v
+         WHERE v.codice = ro.codice_prodotto
+           AND (ro.descrizione IS NULL OR ro.descrizione = '' OR ro.descrizione = ro.codice_prodotto)`,
+      );
     } catch {}
 
     // Elimina TUTTI gli Articoli senza varianti (oldIds + quelli già orfani)
