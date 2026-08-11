@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "../../common/Modal";
 import DataTable from "../DataTable";
-import type { Column, RowAction } from "../DataTable";
+import type { Column } from "../DataTable";
 import { api } from "../../../lib/api";
 import { formatPrice } from "../../../lib/helpers";
 
@@ -155,38 +155,6 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
               <div style={{ width: 100, height: 100, border: "1px solid var(--border)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--fg-soft)", flexShrink: 0 }}>{qrCode ? <img src={qrCode} alt="QR" style={{ width: 96, height: 96 }} /> : <span style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", padding: 8 }}>Inserisci un codice</span>}</div>
               <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5, margin: 0, flex: 1 }}>Il QR code sarà incluso nell'email. Il cliente potrà scansionarlo per applicare lo sconto automaticamente in fase di checkout.</p>
             </div>
-
-            {isEdit && (
-              <div style={{ marginTop: 20 }}>
-                <h3 style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px", paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>Utilizzi</h3>
-                {usages.length === 0 ? (
-                  <p style={{ color: "var(--muted)", fontSize: 13 }}>Nessun utilizzo registrato.</p>
-                ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                    <thead><tr style={{ textAlign: "left", color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase" }}>
-                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Cliente ID</th>
-                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Ordine</th>
-                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Importo</th>
-                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>Data</th>
-                      <th style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}></th>
-                    </tr></thead>
-                    <tbody>{usages.map((u: any) => (
-                      <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "6px 8px" }}><strong>{u.customerId}</strong></td>
-                        <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>#{u.orderId || "—"}</td>
-                        <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{u.importo ? `€ ${Number(u.importo).toFixed(2)}` : "—"}</td>
-                        <td style={{ padding: "6px 8px", fontSize: 11, color: "var(--muted)" }}>{new Date(u.usedAt).toLocaleDateString("it-IT")}</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                          {u.revoked
-                            ? <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--green)", padding: "1px 8px" }}>Ripristina</button>
-                            : <button className="btn btn-ghost btn-sm" onClick={() => revokeUsage(u.id)} style={{ fontSize: 11, color: "var(--red)", padding: "1px 8px" }}>Revoca</button>}
-                        </td>
-                      </tr>
-                    ))}</tbody>
-                  </table>
-                )}
-              </div>
-            )}
           </div>
           <div className="modal-root-footer"><button className="btn btn-secondary" onClick={onClose}>Annulla</button><button className="btn btn-primary" onClick={() => setStep("destinatari")}>Destinatari →</button></div>
         </>
@@ -214,18 +182,6 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
                 ]}
                 rows={targetClients.filter(c => !targetSearch || c.nome.toLowerCase().includes(targetSearch.toLowerCase()) || (c.codiceCliente || "").toLowerCase().includes(targetSearch.toLowerCase()))}
                 rowKey={(c: any) => c.id}
-                actions={[
-                  {
-                    icon: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>,
-                    tooltip: (c: any) => c.usato ? "Già utilizzato" : "Rimuovi destinatario",
-                    onClick: (c: any) => {
-                      if (c.usato) return;
-                      if (!confirm(`Rimuovere ${c.nome} dai destinatari?`)) return;
-                      setTargetClients(prev => prev.filter(x => x.id !== c.id));
-                    },
-                    hidden: (c: any) => c.usato && !c.usage?.revoked,
-                  } as RowAction<any>,
-                ]}
                 emptyText="Nessun cliente target"
                 page={1}
                 pageSize={targetClients.length || 1}
