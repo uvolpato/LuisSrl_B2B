@@ -596,8 +596,9 @@ export default function CheckoutPage() {
                     <input type="text" className="coupon-input" placeholder="Codice sconto" value={couponCode} onChange={e => setCouponCode(e.target.value)} autoComplete="off" />
                     <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: 12, padding: "5px 10px" }} onClick={applyCoupon}>Applica</button>
                     {couponActive && <button type="button" className="coupon-remove" onClick={removeCoupon}>×</button>}
-                    {couponMsg && !couponActive && <span className="coupon-msg err" style={{ fontSize: 11 }}>{couponMsg}</span>}
                   </div>
+                  {couponMsg && !couponActive && <span className="coupon-msg err" style={{ fontSize: 11, display: "block", marginTop: 4 }}>{couponMsg}</span>}
+                  {couponActive && couponMsg && <span className="coupon-msg ok" style={{ fontSize: 11, display: "block", marginTop: 4 }}>{couponMsg}</span>}
                 </td></tr>
                 {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
