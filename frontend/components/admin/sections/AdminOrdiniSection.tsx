@@ -169,7 +169,7 @@ export default function AdminOrdiniSection() {
 
       {pickerOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "oklch(0% 0 0 / 0.4)" }} onClick={(e) => { if (e.target === e.currentTarget) setPickerOpen(false); }}>
-          <div style={{ background: "var(--surface)", borderRadius: 16, padding: 8, boxShadow: "0 20px 60px oklch(0% 0 0 / 0.3)" }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: "var(--surface)", borderRadius: 16, padding: 8, boxShadow: "0 20px 60px oklch(0% 0 0 / 0.3)", minHeight: 420 }} onClick={e => e.stopPropagation()}>
             <DateRangePicker
               ranges={[dateRange]}
               onChange={(r: any) => {
