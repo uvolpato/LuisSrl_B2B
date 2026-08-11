@@ -15,6 +15,7 @@ import FamiglieSection from "../../components/admin/sections/FamiglieSection";
 import ListiniSection from "../../components/admin/sections/ListiniSection";
 import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";
 import AdminOrdiniSection from "../../components/admin/sections/AdminOrdiniSection";
+import CouponSection from "../../components/admin/sections/CouponSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -24,6 +25,7 @@ const SECTION_TITLES: Record<string, string> = {
   "box-dashboard": "Box dashboard cliente",
   listini: "Listini",
   ordini: "Ordini",
+  coupon: "Coupon e campagne",
   "admin-panel": "Pannello di Amministrazione",
   "spese-spedizione": "Spese di spedizione",
 };
@@ -54,6 +56,7 @@ export default function AdminPage() {
 
       {section === "listini" && <ListiniSection />}
       {section === "ordini" && <AdminOrdiniSection />}
+      {section === "coupon" && <CouponSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
     </AdminLayout>
   );

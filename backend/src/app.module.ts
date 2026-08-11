@@ -20,6 +20,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { ImgModule } from './img/img.module';
 import { SpeseSpedizioneModule } from './spese-spedizione/spese-spedizione.module';
 import { AdminOrdiniModule } from './admin-ordini/admin-ordini.module';
+import { CouponModule } from './coupon/coupon.module';
 import { AnomaliaModule } from './anomalia/anomalia.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
@@ -47,6 +48,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
     ImgModule,
     SpeseSpedizioneModule,
     AdminOrdiniModule,
+    CouponModule,
     AnomaliaModule,
   ],
   controllers: [HealthController],
