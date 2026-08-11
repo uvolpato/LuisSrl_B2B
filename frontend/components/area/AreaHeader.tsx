@@ -31,9 +31,17 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
     api.get<{ count: number }>("/api/carrello/count").then((r) => setCartCount(r.count)).catch(() => setCartCount(0));
   }, []);
 
-  useEffect(() => {
-    api.get<{ soglia: number | null; attivo: boolean }>("/api/checkout/soglia").then(r => { setBannerSoglia(r.soglia); setBannerAttivo(r.attivo); }).catch(() => {});
+  const fetchSoglia = useCallback(() => {
+    api.get<{ soglia: number | null; attivo: boolean; minimoOrdine: number | null }>("/api/checkout/soglia").then(r => { setBannerSoglia(r.soglia); setBannerAttivo(r.attivo); }).catch(() => {});
   }, []);
+
+  useEffect(() => { fetchSoglia(); }, [fetchSoglia]);
+
+  useEffect(() => {
+    const handler = () => fetchSoglia();
+    window.addEventListener("address-updated", handler);
+    return () => window.removeEventListener("address-updated", handler);
+  }, [fetchSoglia]);
 
   useEffect(() => { fetchCartCount(); }, [fetchCartCount]);
 
