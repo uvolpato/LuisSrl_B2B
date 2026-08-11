@@ -51,6 +51,27 @@ export class OrdiniService {
       this.prisma.ordineCliente.count({ where }),
     ]);
 
+    // Arricchisci le righe con i nomi articolo reali (la descrizione Integra può contenere solo il codice)
+    const allCodici = [...new Set(items.flatMap(o => o.righe.map(r => r.codiceProdotto).filter(Boolean)))];
+    const nameMap = new Map<string, string>();
+    if (allCodici.length > 0) {
+      const varianti = await this.prisma.variante.findMany({
+        where: { codice: { in: allCodici as string[] } },
+        select: { codice: true, descrizione: true, articolo: { select: { nome: true } } },
+      });
+      for (const v of varianti) {
+        nameMap.set(v.codice, v.articolo.nome || v.descrizione || v.codice);
+      }
+    }
+    for (const ordine of items) {
+      for (const riga of ordine.righe) {
+        const resolved = riga.codiceProdotto ? nameMap.get(riga.codiceProdotto) : undefined;
+        if (resolved && (!riga.descrizione || riga.descrizione === riga.codiceProdotto)) {
+          (riga as any).descrizione = resolved;
+        }
+      }
+    }
+
     const years: number[] = await this.prisma.$queryRawUnsafe<{ anno: number }[]>(
       `SELECT DISTINCT EXTRACT(YEAR FROM data_ordine) AS anno
        FROM ordini_clienti WHERE customer_id = $1 AND data_ordine IS NOT NULL
