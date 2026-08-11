@@ -140,9 +140,12 @@ export class CouponService {
   }
 
   async revokeUsage(usageId: number, adminId: number) {
+    const usage = await this.prisma.campaignUsage.findUnique({ where: { id: usageId } });
+    if (!usage) throw new Error("Utilizzo non trovato");
+    const newRevoked = !usage.revoked;
     return this.prisma.campaignUsage.update({
       where: { id: usageId },
-      data: { revoked: true, revokedAt: new Date(), revokedBy: adminId },
+      data: { revoked: newRevoked, revokedAt: new Date(), revokedBy: adminId },
     });
   }
 
