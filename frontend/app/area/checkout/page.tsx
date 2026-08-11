@@ -231,7 +231,8 @@ export default function CheckoutPage() {
   const couponDiscount = couponActive ? (couponIsPct ? subtotalAmount * couponValue : couponValue) : 0;
   const subScontato = subtotalAmount - couponDiscount;
   const isRitiro = modalita === "RITIRO";
-  const spedizioneFee = isRitiro ? 0 : (spedizione?.importo ?? 0);
+  const [couponType, setCouponType] = useState("");
+  const spedizioneFee = isRitiro ? 0 : couponType === "free-ship" ? 0 : (spedizione?.importo ?? 0);
   const totale = subScontato + spedizioneFee;
 
   useEffect(() => {
@@ -244,13 +245,30 @@ export default function CheckoutPage() {
   async function applyCoupon() {
     setCouponMsg("");
     if (!couponCode.trim()) return;
-    if (couponCode === "B2B10") { setCouponActive(true); setCouponValue(0.10); setCouponIsPct(true); setCouponMsg("Codice applicato: −10%"); }
-    else if (couponCode === "B2B20") { setCouponActive(true); setCouponValue(0.20); setCouponIsPct(true); setCouponMsg("Codice applicato: −20%"); }
-    else if (couponCode === "SPRING50") { setCouponActive(true); setCouponValue(50); setCouponIsPct(false); setCouponMsg("Codice applicato: −50 €"); }
-    else { setCouponMsg("Codice non valido"); setCouponActive(false); }
+    try {
+      const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string }>("/api/checkout/validate-coupon", {
+        code: couponCode.trim(),
+        subtotale: subtotalAmount,
+      });
+      if (res.valid) {
+        setCouponActive(true);
+        setCouponType(res.type);
+        setCouponIsPct(res.isPct);
+        if (res.type === "free-ship") { setCouponValue(0); }
+        else if (res.type === "pct") { setCouponValue(res.value / 100); }
+        else { setCouponValue(res.value); }
+        setCouponMsg(res.label || "Codice applicato");
+      } else {
+        setCouponMsg(res.message || "Codice non valido");
+        setCouponActive(false);
+      }
+    } catch {
+      setCouponMsg("Errore di verifica");
+      setCouponActive(false);
+    }
   }
 
-  function removeCoupon() { setCouponActive(false); setCouponValue(0); setCouponMsg(""); setCouponCode(""); }
+  function removeCoupon() { setCouponActive(false); setCouponValue(0); setCouponType(""); setCouponMsg(""); setCouponCode(""); }
 
   function openNuovoForm() {
     setShowNuovo(true); setEditingAddrId(null);
@@ -310,6 +328,7 @@ export default function CheckoutPage() {
       const res = await api.post<OrdineConfermato>("/api/checkout/conferma", {
         modalitaConsegna: modalita, indirizzoSpedizioneId: isRitiro ? undefined : indirizzoId && indirizzoId !== -1 ? indirizzoId : undefined,
         nuovoIndirizzo, codicePagamento: paymentMethod || undefined,
+        codiceCoupon: couponActive ? couponCode : undefined,
         notaSpedizione: notaSpedizione || undefined, notaOrdine: notaOrdine || undefined,
       });
       setConfermato(res);
