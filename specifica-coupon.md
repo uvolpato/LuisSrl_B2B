@@ -2,113 +2,116 @@
 
 ## 1. Concetto
 
-La pagina **Coupon e campagne** permette all'admin di creare, segmentare e inviare codici sconto ai clienti B2B. Il flusso si articola in 3 viste: elenco campagne con dashboard KPI, editor coupon con segmentazione clienti tramite filtri, e riepilogo con anteprima email prima dell'invio.
+La pagina **Coupon e campagne** permette all'admin di creare, segmentare e inviare codici sconto ai clienti B2B. Il flusso si articola in una vista principale con dashboard KPI ed elenco campagne, e due modali: editor (coupon + segmentazione) e riepilogo con anteprima email prima dell'invio.
 
 ### 1.1 Flusso di lavoro
 
 ```
-Admin apre → Vista 1: Elenco campagne + dashboard KPI
+Admin apre → Vista principale: Dashboard KPI + elenco campagne
                 │
-                ├── Clicca "+ Nuova campagna" → Vista 2
+                ├── Clicca "+ Nuova campagna" (top bar) → Modale editor
                 │
-Vista 2: Editor coupon (sinistra) + Segmentazione (destra)
-  │  Compila: codice, tipo sconto, ambito, validità
-  │  Filtra clienti: regione, ultimo ordine, sconto medio, volume
-  │  Vedi conteggio in tempo reale: "47 clienti selezionati"
+Modale editor (2 sezioni: Dati coupon | Destinatari)
+  │  Sezione 1: codice, tipo sconto, ambito, validità, QR code
+  │  Sezione 2: filtri segmentazione + ricerca manuale + AI suggestions
+  │  Vedi conteggio in tempo reale
   │
-  └── Clicca "Continua → Riepilogo" → Vista 3
+  └── Clicca "Continua → Riepilogo" → Modale riepilogo
 
-Vista 3: Riepilogo + anteprima email + [Invia campagna]
+Modale riepilogo: recap + anteprima email personalizzata + [Invia campagna]
   │  Revisione di tutti i dati
-  │  Anteprima email personalizzata
-  └── [Invia campagna] → email ai clienti selezionati
+  │  Anteprima email con segnaposto cliente
+  └── [Invia campagna] → email + QR code ai clienti selezionati
 ```
 
 ### 1.2 Prototipo di riferimento
 
-- File: `admin-coupon.html` (root del repo, ~22 KB, HTML standalone)
+- File: `admin-coupon.html` (root del repo, ~38 KB, HTML standalone, ~612 righe)
 - Stack target: Next.js (`frontend/`) + NestJS (`backend/`)
 - Stile: token da `frontend/app/globals.css`, pattern DataTable da `spese-spedizione.html`
-- Pattern riusabili: `AdminTopBar`, `DataTable`, `Modal`
+- Pattern riusabili: `AdminTopBar`, `DataTable`, `Modal` (da admin-ordini.html / catalogo.css)
 
 ---
 
 ## 2. Struttura della pagina
 
-### 2.1 Vista 1 — Elenco campagne
+### 2.1 Vista principale (elenco)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  AdminTopBar: Coupon e campagne              │  🔍 Cerca...     │
-├─────────────────────────────────────────────────────────────────┤
-│  Tab: [Campagne]  Nuova campagna                                │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ COUPON   │  │ UTILIZZI │  │ VOLUME   │  │ TASSO    │      │
-│  │ ATTIVI   │  │ TOTALI   │  │ SCONTATO │  │ RISCATTO │      │
-│  │    5     │  │  1.247   │  │ 18.450 € │  │  23,8%   │      │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘      │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ CODICE   CAMPAGNA     AMBITO        UTILIZZI VALIDITÀ  ...  │ │
-│  │ ESTATE25 Promo Estate Tutto catalogo  892   01/06→31/08    │ │
-│  │ B2B10    Sconto B2B   Tutto catalogo  234   01/01→Sempre   │ │
-│  │ VASI20   Vasi promo   Vasi terracotta  89   01/07→30/09    │ │
-│  │ FREESHIP Sped.gratis  Tutto catalogo    0   01/09→31/10    │ │
-│  │ XMAS50   Natale 2025  Coll.Natale       32   15/11→31/12    │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-│  5 campagne                           [+ Nuova campagna]        │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  AdminTopBar: Coupon e campagne     │  🔍 Cerca...  │ + Nuova    │
+├──────────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │ COUPON   │  │ UTILIZZI │  │ VOLUME   │  │ TASSO    │       │
+│  │ ATTIVI 5 │  │ TOT.1247 │  │ 18.450€  │  │ 23,8%    │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │ CODICE   CAMPAGNA      AMBITO         UTILIZZI VALIDITÀ ... ││
+│  │ ESTATE25 Promo Estate  Tutto catalogo   892   01/06→31/08  ││
+│  │ ...                                                         ││
+│  │ 5 campagne                                                   ││
+│  └──────────────────────────────────────────────────────────────┘│
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Vista 2 — Editor + Segmentazione
+### 2.2 Modale editor (2 sezioni)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Tab: Campagne  [Nuova campagna]                                │
-├────────────────────────────┬────────────────────────────────────┤
-│  Dati coupon               │  Destinatari                       │
-│  ┌──────────────────────┐  │  ┌──────────────────────────────┐  │
-│  │ Codice    [ESTATE25] │  │  │ Regione  [Lombardia     ▾]  │  │
-│  │ Campagna  [Promo...] │  │  │ Ult.ordine [>90 giorni  ▾]  │  │
-│  │ Tipo      [% ▾]      │  │  │ Sconto    [Medio 10-25% ▾]  │  │
-│  │ Valore    [10]       │  │  │ Volume    [>20.000€    ▾]  │  │
-│  │ Ambito    [Tutto ▾]  │  │  │                              │  │
-│  │ Soglia    [—]        │  │  │ Clienti selezionati     47   │  │
-│  │ Utilizzo  [Illim. ▾] │  │  │ [Vedi elenco ▼]             │  │
-│  │ Dal       [01/06]    │  │  │ ☑ Verdepiù di Bianchi  LO   │  │
-│  │ Al        [31/08]    │  │  │ ☑ Terra e Colore Sas   LO   │  │
-│  └──────────────────────┘  │  │ ...                          │  │
-│                            │  └──────────────────────────────┘  │
-├────────────────────────────┴────────────────────────────────────┤
-│                         [Annulla]      [Continua → Riepilogo]    │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  Nuova campagna                                  [✕] │
+│──────────────────────────────────────────────────────│
+│  DATI COUPON                                         │
+│  ┌─────────────────┬─────────────────┐              │
+│  │ Codice  [Gen.]  │ Nome campagna   │              │
+│  │ Tipo sconto     │ Valore          │              │
+│  │ Ambito          │ Fam./Raccolta   │              │
+│  │ Soglia min.     │ Utilizzo        │              │
+│  │ Valido dal      │ Valido al       │              │
+│  └─────────────────┴─────────────────┘              │
+│  ┌──────┬──────────────────────────────────────┐    │
+│  │  QR  │ Il QR sarà incluso nell'email...     │    │
+│  └──────┴──────────────────────────────────────┘    │
+│──────────────────────────────────────────────────────│
+│  DESTINATARI                                         │
+│  ┌──────────────────────────────────────────────┐   │
+│  │ Ricerca: [________________] [Cerca]          │   │
+│  └──────────────────────────────────────────────┘   │
+│  ┌──────┬──────┬──────┬──────┐                     │
+│  │ Reg. │ Ult. │ Sc.% │ Vol. │  (filtri)          │
+│  └──────┴──────┴──────┴──────┘                     │
+│  ┌──────────────────────────────────────────────┐   │
+│  │ 🤖 AI — Suggerimenti campagna                │   │
+│  │  Clienti inattivi 90gg+           12 cl.     │   │
+│  │  Top spender senza sconto           4 cl.     │   │
+│  │  Nuovi clienti da fidelizzare       3 cl.     │   │
+│  │  Lombardia — campagna regionale     5 cl.     │   │
+│  └──────────────────────────────────────────────┘   │
+│  Clienti selezionati: 47  [Vedi elenco ▼]          │
+│──────────────────────────────────────────────────────│
+│                         [Annulla] [Continua → Rep.]  │
+└──────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Vista 3 — Riepilogo e invio
+### 2.3 Modale riepilogo
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Tab: Campagne  Nuova campagna  [Riepilogo]                     │
-├────────────────────────────┬────────────────────────────────────┤
-│  Riepilogo campagna        │  Invio campagna                    │
-│  Campagna   Promo Estate   │  Verranno inviate 47 email.        │
-│  Codice     ESTATE25       │                                    │
-│  Tipo       −10%           │  [← Modifica]                      │
-│  Ambito     Tutto catalogo │  [✉ Invia campagna]               │
-│  Utilizzo   Illimitato     │                                    │
-│  Validità   01/06→31/08    │                                    │
-│  Dest.      47 clienti     │                                    │
-│                            │                                    │
-│  Anteprima email           │                                    │
-│  Oggetto: Codice sconto    │                                    │
-│  Gentile [Nome],           │                                    │
-│  ... codice esclusivo ...  │                                    │
-│  ┌──────────┐              │                                    │
-│  │ ESTATE25 │              │                                    │
-│  └──────────┘              │                                    │
-│  −10% su tutto il catalogo │                                    │
-└────────────────────────────┴────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  Riepilogo campagna                             [✕] │
+│──────────────────────────────────────────────────────│
+│  DATI CAMPAGNA              ANTEPRIMA EMAIL          │
+│  Campagna   Promo Estate    Oggetto: Codice sconto   │
+│  Codice     ESTATE25        Gentile [Nome Cliente],  │
+│  Tipo       −10%            ti riserviamo...         │
+│  Ambito     Tutto catalogo  ┌──────────┐             │
+│  Utilizzo   Illimitato      │ ESTATE25 │             │
+│  Validità   01/06→31/08     └──────────┘             │
+│  Dest.      47 clienti      −10% su tutto il cat.   │
+│                                                      │
+│  Verranno inviate 47 email.                          │
+│──────────────────────────────────────────────────────│
+│                      [← Modifica]  [✉ Invia campagna]│
+└──────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -120,25 +123,41 @@ Vista 3: Riepilogo + anteprima email + [Invia campagna]
 ```ts
 interface Campaign {
   id: number;
-  code: string;                // es. "ESTATE25", uppercase
-  name: string;                // nome descrittivo
+  code: string;                 // es. "ESTATE25", uppercase, 4-12 caratteri
+  name: string;                 // nome descrittivo campagna
   type: "pct" | "fixed" | "free-ship";
-  value: number;               // 0 per free-ship, altrimenti % o €
+  value: number;                // 0 per free-ship, altrimenti % o €
   scope: "all" | "family" | "collection";
-  scopeDetail?: string;        // nome famiglia/raccolta se scope != all
-  minOrder?: number;           // soglia minima ordine (€)
+  scopeDetail?: string;         // nome famiglia/raccolta se scope != all
+  minOrder?: number;            // soglia minima ordine in €
   usage: "unlimited" | "once" | "single";
-  validFrom: string;           // "YYYY-MM-DD"
-  validTo?: string;            // null = sempre valido
+  validFrom: string;            // "YYYY-MM-DD"
+  validTo?: string;             // null = sempre valido
   status: "active" | "scheduled" | "expired" | "paused";
-  targetCount: number;         // numero clienti target
-  usedCount: number;           // numero utilizzi effettivi
-  filters?: SegmentFilter[];   // filtri di segmentazione usati
-  customerIds?: number[];      // clienti target (se salvati)
+  targetCount: number;          // numero clienti target
+  usedCount: number;            // utilizzi effettivi
+  qrCode?: string;              // URL o base64 del QR code generato
+  filters?: SegmentFilter[];    // filtri usati per la segmentazione
+  customerIds?: number[];       // lista id clienti target
 }
 ```
 
-### 3.2 Filtro segmentazione
+### 3.2 Cliente (per segmentazione)
+
+```ts
+interface Customer {
+  id: number;
+  nome: string;                 // ragione sociale
+  cod: string;                  // codice cliente (es. "C001")
+  piva: string;                 // partita IVA (es. "IT01234567890")
+  regione: string;              // regione sede
+  ultimoOrdine: number;         // giorni dall'ultimo ordine
+  scontoMedio: number;          // % sconto medio praticato
+  volume: number;               // volume ordini ultimi 12 mesi in €
+}
+```
+
+### 3.3 Filtro segmentazione
 
 ```ts
 interface SegmentFilter {
@@ -148,14 +167,25 @@ interface SegmentFilter {
 }
 ```
 
-### 3.3 KPI dashboard
+### 3.4 AI Suggestion
+
+```ts
+interface AISuggestion {
+  title: string;                // es. "Clienti inattivi da oltre 90 giorni"
+  description: string;          // spiegazione del suggerimento
+  count: number;                // numero clienti nel segmento
+  filters: Partial<Record<string, string>>;  // filtri pre-impostati
+}
+```
+
+### 3.5 Dashboard KPI
 
 ```ts
 interface CouponDashboard {
-  activeCount: number;
-  totalUsed: number;
-  totalVolume: number;      // € scontati
-  redemptionRate: number;   // %
+  activeCount: number;          // coupon attivi
+  totalUsed: number;            // utilizzi totali
+  totalVolume: number;          // € scontati
+  redemptionRate: number;       // % riscatto
 }
 ```
 
@@ -164,51 +194,84 @@ interface CouponDashboard {
 ## 4. Regole di business
 
 ### 4.1 Tipi di sconto
-- **Percentuale**: −X% sul subtotale scontato (es. −10%)
-- **Importo fisso**: −X € sul totale (es. −50 €)
-- **Spedizione gratuita**: azzera il costo di spedizione
+
+| Tipo | Comportamento | Campo `value` |
+|------|--------------|---------------|
+| `pct` | −X% sul subtotale scontato | 10 = 10% |
+| `fixed` | −X € sul totale | 50 = 50 € |
+| `free-ship` | Azzera costo spedizione | 0 (ignorato) |
 
 ### 4.2 Ambito
-- **Tutto il catalogo**: valido su qualsiasi articolo
-- **Famiglia specifica**: solo articoli di una famiglia (es. "Vasi in terracotta")
-- **Raccolta**: solo articoli di una raccolta/gruppo (es. "Collezione Natale")
+
+| Ambito | Comportamento | UI |
+|--------|--------------|-----|
+| `all` | Valido su qualsiasi articolo | Nessun campo extra |
+| `family` | Solo articoli di una famiglia | Select con famiglie |
+| `collection` | Solo articoli di una raccolta | Select con raccolte |
+
+Il campo famiglia/raccolta è sempre presente nel layout, disabilitato con opacità se non pertinente (non sposta il layout).
 
 ### 4.3 Utilizzo
-- **Illimitato**: ogni cliente può usarlo più volte
-- **Una volta per cliente**: ogni cliente può usarlo una sola volta
-- **Mono-uso**: il primo cliente che lo usa lo consuma per tutti
 
-### 4.4 Segmentazione
-- Filtri combinabili in AND: regione, ultimo ordine, sconto medio, volume
-- I filtri sono opzionali: se nessuno è selezionato, target = tutti i clienti
-- Il conteggio si aggiorna in tempo reale al cambio di ogni filtro
-- L'elenco clienti è espandibile con checkbox per deselezionare singoli
+| Modalità | Comportamento |
+|----------|--------------|
+| `unlimited` | Ogni cliente può usarlo infinite volte |
+| `once` | Ogni cliente può usarlo una sola volta |
+| `single` | Il primo che lo usa lo consuma per tutti |
 
-### 4.5 Invio
-- Al click "Invia campagna", il backend invia email personalizzate a tutti i clienti target
-- Ogni email contiene: nome cliente, codice coupon, descrizione sconto, data scadenza
-- Il pulsante diventa "Campagna inviata!" con check verde dopo l'invio
-- Le email sono personalizzate (`[Nome Cliente]` nell'anteprima)
+### 4.4 Segmentazione clienti
+
+Tre modalità di selezione, combinabili:
+
+1. **Filtri** (AND): regione, ultimo ordine, sconto medio, volume 12 mesi. Conteggio in tempo reale.
+2. **Ricerca manuale**: per codice cliente, ragione sociale o P. IVA. Checkbox per selezionare/deselezionare singoli clienti.
+3. **AI Suggestions**: 4 suggerimenti pre-calcolati che impostano automaticamente i filtri. Cliccando uno, i filtri si popolano e il conteggio si aggiorna.
+
+### 4.5 QR Code
+
+- Generato dinamicamente dal codice coupon (Google Charts API in demo; in produzione usare libreria lato server).
+- Aggiornato in tempo reale mentre si digita il codice.
+- Pulsante "Genera" produce un codice alfanumerico univoco di 8 caratteri.
+- Il QR sarà incluso nell'email per essere scansionato dal cliente.
+
+### 4.6 Invio campagna
+
+- Il backend invia email personalizzate a tutti i clienti target.
+- Ogni email contiene: nome cliente, codice coupon in chiaro e QR code, descrizione sconto, data scadenza.
+- Il pulsante mostra stato "Invio in corso..." → "Campagna inviata!" (verde, 3s) → reset.
 
 ---
 
-## 5. Comportamenti interattivi
+## 5. Comportamenti interattivi (checklist)
 
-1. [x] Tab navigation: Campagne / Nuova campagna / Riepilogo
-2. [x] Vista 1: 4 dashboard card con KPI + DataTable 5 campagne
-3. [x] Vista 1: ricerca testuale nella top bar
-4. [x] Vista 1: pulsante "+ Nuova campagna" nel footer
-5. [x] Vista 2: layout a due colonne (form sinistra, segmentazione destra)
-6. [x] Vista 2: select ambito mostra/nasconde il dettaglio famiglia/raccolta
-7. [x] Vista 2: filtri segmentazione in cascata (AND)
-8. [x] Vista 2: conteggio clienti in tempo reale
-9. [x] Vista 2: elenco clienti espandibile con checkbox
-10. [x] Vista 2: validazione "Seleziona almeno un cliente" prima di continuare
-11. [x] Vista 3: riepilogo con tutti i dati della campagna
-12. [x] Vista 3: anteprima email con segnaposto `[Nome Cliente]`
-13. [x] Vista 3: pulsante "Invia campagna" con stato submit e feedback
-14. [x] Vista 3: pulsante "← Modifica" per tornare all'editor
-15. [x] Status pill nella lista: attiva (verde), programmata (blu), scaduta (grigio)
+### Vista principale
+1. [x] AdminTopBar con titolo, ricerca + pulsante "+ Nuova campagna" in top bar
+2. [x] 4 dashboard card: coupon attivi, utilizzi, volume scontato, tasso riscatto
+3. [x] DataTable 8 colonne: codice, campagna, ambito, utilizzi, validità, target, stato (pill), azioni
+4. [x] Footer tabella con conteggio campagne
+5. [x] Status pill: attiva (verde), programmata (blu), scaduta (grigio)
+
+### Modale editor
+6. [x] Aperta con click su "+ Nuova campagna"
+7. [x] Sezione "Dati coupon": form-grid 2-col con 9 campi
+8. [x] Pulsante "Genera" affiancato al codice — produce 8 caratteri alfanumerici casuali
+9. [x] QR code box: immagine QR + descrizione, si aggiorna mentre si digita
+10. [x] Scope toggle: disabilita/abilita il campo famiglia/raccolta senza spostare il layout
+11. [x] Sezione "Destinatari": ricerca clienti, filtri, AI suggestions, conteggio, elenco espandibile
+12. [x] Ricerca per codice, ragione sociale, P. IVA con pulsante Cerca
+13. [x] AI suggestions: 4 suggerimenti cliccabili che impostano i filtri automaticamente
+14. [x] Filtri in AND con conteggio in tempo reale
+15. [x] Elenco clienti espandibile con checkbox per deselezione singola
+16. [x] Validazione: almeno 1 cliente prima di "Continua → Riepilogo"
+17. [x] Chiusura: ✕, Annulla, backdrop click
+
+### Modale riepilogo
+18. [x] Riepilogo completo: campagna, codice, tipo, ambito, utilizzo, validità, destinatari
+19. [x] Anteprima email con segnaposto `[Nome Cliente]` e badge coupon colorato
+20. [x] Conteggio email da inviare
+21. [x] Pulsante "← Modifica": chiude riepilogo e riapre editor
+22. [x] Pulsante "Invia campagna": stato loading → feedback verde 3s → reset
+23. [x] Chiusura: ✕, Modifica, backdrop click, Escape
 
 ---
 
@@ -229,7 +292,7 @@ Response: Campaign[]
 ### 6.3 Crea campagna
 ```
 POST /api/admin/coupon
-Body: { code, name, type, value, scope, scopeDetail?, minOrder?, usage, validFrom, validTo?, filters, customerIds? }
+Body: { code, name, type, value, scope, scopeDetail?, minOrder?, usage, validFrom, validTo?, filters?, customerIds? }
 Response: Campaign
 ```
 
@@ -237,10 +300,30 @@ Response: Campaign
 ```
 POST /api/admin/coupon/preview-segment
 Body: { filters: SegmentFilter[] }
-Response: { count: number, customers: { id, nome, regione }[] }
+Response: { count: number, customers: Customer[] }
 ```
 
-### 6.5 Invia campagna
+### 6.5 Ricerca clienti
+```
+GET /api/admin/clienti/search?q=
+Response: Customer[]
+```
+
+### 6.6 AI suggestions
+```
+GET /api/admin/coupon/ai-suggestions
+Response: AISuggestion[]
+```
+In produzione, l'AI analizza i dati reali (inattività, volumi, marginalità, stagionalità, regione) per generare suggerimenti. In demo sono 4 segmenti predefiniti.
+
+### 6.7 Genera QR code
+```
+POST /api/admin/coupon/qrcode
+Body: { code: string }
+Response: { qrCode: string }  // URL o base64 PNG
+```
+
+### 6.8 Invia campagna
 ```
 POST /api/admin/coupon/:id/send
 Response: { sent: number, status: "sent" }
@@ -248,19 +331,92 @@ Response: { sent: number, status: "sent" }
 
 ---
 
-## 7. Checklist di parità
+## 7. Dati di riferimento (seed demo)
 
-- [ ] 3 viste con tab navigabili
-- [ ] Vista 1: 4 card dashboard + DataTable 8 colonne
-- [ ] Vista 2: layout 2-colonne, form coupon + pannello segmentazione
-- [ ] Filtri segmentazione: regione, ultimo ordine, sconto medio, volume
-- [ ] Conteggio clienti in tempo reale al cambio filtri
-- [ ] Elenco clienti espandibile con singola deselezione
-- [ ] Scope toggle: famiglia/raccolta mostra dettaglio
+### 7.1 Campagne demo (5)
+| Codice | Campagna | Tipo | Ambito | Stato | Utilizzi |
+|--------|----------|------|--------|-------|----------|
+| ESTATE25 | Promo Estate 2026 | −10% | Tutto | Attiva | 892 |
+| B2B10 | Sconto B2B permanente | −10% | Tutto | Attiva | 234 |
+| VASI20 | Vasi in promozione | −20% | Vasi terracotta | Attiva | 89 |
+| FREESHIP | Spedizione gratis | Sped.gratis | Tutto | Programmata | 0 |
+| XMAS50 | Natale 2025 | −50€ | Coll. Natale | Scaduta | 32 |
+
+### 7.2 Clienti demo (12, con codici e P.IVA)
+| Cod | Nome | P.IVA | Regione | Ult.ord | Sc.% | Vol. |
+|-----|------|-------|---------|---------|------|------|
+| C001 | Verdepiù di Bianchi & C. | IT01234567890 | Lombardia | 12gg | 18% | 14.500€ |
+| C002 | Floricoltura Lombardi | IT02345678901 | Lombardia | 45gg | 22% | 8.900€ |
+| C003 | Green Garden Center | IT03456789012 | Toscana | 8gg | 12% | 3.200€ |
+| C004 | Piante e Dintorni | IT04567890123 | Veneto | 3gg | 25% | 21.500€ |
+| C005 | Vivai Riuniti Veneto | IT05678901234 | Veneto | 120gg | 8% | 9.800€ |
+| C006 | Terra e Colore Sas | IT06789012345 | Lombardia | 60gg | 15% | 34.000€ |
+| C007 | GardenShop Bergamo | IT07890123456 | Lombardia | 15gg | 20% | 7.200€ |
+| C008 | Il Giardino Segreto | IT08901234567 | Lazio | 90gg | 30% | 5.200€ |
+| C009 | Agriverde Cooperativa | IT09012345678 | Emilia-R. | 2gg | 10% | 18.500€ |
+| C010 | Fiori e Foglie | IT00123456789 | Campania | 200gg | 5% | 4.200€ |
+| C011 | Ortoflor Commerciale | IT11234567890 | Piemonte | 30gg | 18% | 26.000€ |
+| C012 | Verde Casa Martinelli | IT12234567890 | Sicilia | 180gg | 28% | 3.100€ |
+
+### 7.3 AI Suggestions demo (4)
+| Titolo | Clienti | Filtri |
+|--------|---------|--------|
+| Clienti inattivi da oltre 90 giorni | 12 | ultimoOrdine = over90 |
+| Top spender senza sconto recente | 4 | volume = xlarge AND sconto = low |
+| Nuovi clienti da fidelizzare | 3 | volume = small |
+| Lombardia — campagna regionale | 5 | regione = Lombardia |
+
+### 7.4 Dashboard KPI demo
+| KPI | Valore |
+|-----|--------|
+| Coupon attivi | 5 (3 in scadenza entro 30gg) |
+| Utilizzi totali | 1.247 |
+| Volume scontato | 18.450 € |
+| Tasso riscatto | 23,8% |
+
+---
+
+## 8. Mapping CSS
+
+| Prototipo (classi) | App (sorgente) |
+|---|---|
+| `:root` tokens | `frontend/app/globals.css` |
+| `.admin-top` | `AdminTopBar` / `admin.css` |
+| `.dash-grid`, `.dash-card` | admin.css (bordo accent 3px) |
+| `.data-table`, thead, tbody, `.data-table-footer` | `DataTable.tsx` / admin.css |
+| `.status-pill`, `.st-ok/blue/amber` | spese-spedizione.html |
+| `.modal-overlay`, `.modal`, `.modal-head/body/foot` | `Modal.tsx` / catalogo.css |
+| `.edit-section`, `.edit-section h3` | admin-coupon.html (sezioni con h3 mono uppercase + bordo) |
+| `.form-grid`, `.field` | admin-coupon.html |
+| `.scope-extra.disabled` | admin-coupon.html (opacità 0.4) |
+| `.seg-result`, `.seg-count`, `.client-list` | admin-coupon.html |
+| `.email-preview`, `.coupon-code` | admin-coupon.html |
+| `.btn`, `.btn-primary/secondary/ghost/sm` | globals.css |
+| `.admin-search` | spese-spedizione.html |
+
+---
+
+## 9. Checklist di parità pre-consegna
+
+- [ ] AdminTopBar con titolo, ricerca e "+ Nuova campagna" in top bar
+- [ ] 4 dashboard card responsive (4→2→1 colonne), bordo accent 3px
+- [ ] DataTable 8 colonne con status pill colorate
+- [ ] Modale editor: header con titolo + ✕, body scrollabile, footer con azioni
+- [ ] Sezione "Dati coupon" con form-grid 2-col e sezione "Destinatari" distinte (h3)
+- [ ] Pulsante "Genera" codice univoco (8 caratteri alfanumerici)
+- [ ] QR code dinamico che si aggiorna al cambio codice
+- [ ] Scope toggle: campo famiglia/raccolta disabilitato con opacità senza spostare layout
+- [ ] Ricerca clienti per codice, ragione sociale, P.IVA
+- [ ] 4 filtri segmentazione in AND con conteggio in tempo reale
+- [ ] AI suggestions box blu con 4 suggerimenti cliccabili
+- [ ] Click su AI suggestion → filtri impostati automaticamente → conteggio aggiornato
+- [ ] Elenco clienti espandibile con checkbox per deselezione singola
 - [ ] Validazione pre-riepilogo (almeno 1 cliente)
-- [ ] Vista 3: riepilogo completo + anteprima email con badge coupon
-- [ ] Bottone invia con stato di submit e feedback verde
-- [ ] Status pill colorate nella lista
-- [ ] Backend: 5 endpoint (dashboard, elenco, crea, preview, invia)
-- [ ] Invio email con personalizzazione nome cliente
+- [ ] Modale riepilogo: recap completo + anteprima email con badge coupon
+- [ ] Pulsante invia con stato loading → feedback verde → reset
+- [ ] Navigazione tra modali: editor → riepilogo → editor (Modifica)
+- [ ] Chiusura modali: ✕, pulsanti, backdrop click, Escape
+- [ ] Backend: 8 endpoint (dashboard, elenco, crea, preview, search, AI, QR, invia)
 - [ ] Guardie admin e permessi
+- [ ] i18n: chiavi in `frontend/messages/it.json` ed `en.json`
+- [ ] Typecheck, lint, build frontend + backend
