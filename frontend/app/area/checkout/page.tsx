@@ -583,9 +583,6 @@ export default function CheckoutPage() {
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
                 <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
-                {!isRitiro && Number(spedizione?.minimo) > 0 && (
-                  <tr><td style={{ fontSize: 12, color: "var(--muted)" }}>di cui minimo</td><td style={{ fontSize: 12, color: "var(--muted)" }}>{fmtEur(Number(spedizione?.minimo) || 0)}</td></tr>
-                )}
                 {spedizione?.descrizione === "Tariffa da confermare" && (
                   <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0" }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
                 )}
@@ -600,7 +597,7 @@ export default function CheckoutPage() {
                 L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
               </div>
             )}
-            <button className="btn btn-primary checkout-btn" disabled={submitting} onClick={() => setStep("recap")}>
+            <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
               Conferma ordine
             </button>
             <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>Torna al carrello</Link>
@@ -737,12 +734,17 @@ export default function CheckoutPage() {
             </div>
 
             {/* Azioni */}
+            {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine && (
+              <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginBottom: 12, lineHeight: 1.5 }}>
+                L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
+              </div>
+            )}
             <div className="recap-actions">
               <span className="note">Verifica i dati prima di inviare. Puoi tornare indietro per modificarli.</span>
               <button type="button" className="btn btn-secondary" onClick={() => setStep("checkout")}>
                 ← Modifica
               </button>
-              <button className="btn btn-primary btn-lg" disabled={submitting} onClick={conferma}>
+              <button className="btn btn-primary btn-lg" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && totale < spedizione.minimoOrdine)} onClick={conferma}>
                 {submitting ? "Invio in corso…" : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>Conferma e invia ordine</>}
               </button>
             </div>
