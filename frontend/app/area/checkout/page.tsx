@@ -249,6 +249,7 @@ export default function CheckoutPage() {
       const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string }>("/api/checkout/validate-coupon", {
         code: couponCode.trim(),
         subtotale: subtotalAmount,
+        codici: items.map(i => i.varianteCodice),
       });
       if (res.valid) {
         setCouponActive(true);

@@ -21,8 +21,8 @@ export class CheckoutController {
   }
 
   @Post('validate-coupon')
-  validateCoupon(@Req() req: AuthenticatedRequest, @Body() body: { code: string; subtotale: number }) {
-    return this.checkout.validateCoupon(body.code, body.subtotale);
+  validateCoupon(@Req() req: AuthenticatedRequest, @Body() body: { code: string; subtotale: number; codici: string[] }) {
+    return this.checkout.validateCoupon(body.code, body.subtotale, body.codici ?? []);
   }
 
   @Get('spedizione')
