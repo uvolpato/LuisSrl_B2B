@@ -603,7 +603,7 @@ export default function CheckoutPage() {
                 {couponActive && couponType !== "free-ship" && <tr className="discount"><td>Sconto codice</td><td>−{fmtEur(couponDiscount)}</td></tr>}
                 <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                 <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
-                <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : couponType === "free-ship" ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
+                <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita || couponType === "free-ship" || isRitiro ? { color: "var(--green)" } : undefined}>{isRitiro ? "Gratuita" : couponType === "free-ship" ? "Gratuita" : spedizione?.gratuita ? "Gratuita" : spedizione?.descrizione === "Tariffa da confermare" ? "Da confermare" : fmtEur(spedizione?.importo ?? 0)}</td></tr>
                 {spedizione?.descrizione === "Tariffa da confermare" && (
                   <tr><td colSpan={2} style={{ fontSize: 12, color: "var(--amber)", padding: "4px 0 0" }}>Il calcolo non è al momento possibile. Sarai contattato dal servizio clienti appena l&apos;ordine viene preso in carico.</td></tr>
                 )}
@@ -750,7 +750,7 @@ export default function CheckoutPage() {
                   )}
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                   <tr className="bold"><td>Subtotale scontato</td><td>{fmtEur(subScontato)}</td></tr>
-                  <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita || couponType === "free-ship" ? { color: "var(--green)" } : undefined}>{isRitiro ? "0,00 €" : couponType === "free-ship" ? "0,00 €" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
+                  <tr className="bold"><td>Spedizione</td><td style={spedizione?.gratuita || couponType === "free-ship" || isRitiro ? { color: "var(--green)" } : undefined}>{isRitiro ? "Gratuita" : couponType === "free-ship" ? "Gratuita" : spedizione?.gratuita ? "Gratuita" : fmtEur(spedizioneFee)}</td></tr>
                   <tr><td colSpan={2}><hr className="total-divider" /></td></tr>
                   <tr className="final"><td>Totale (IVA esclusa)</td><td>{fmtEur(totale)}</td></tr>
                 </tbody>
