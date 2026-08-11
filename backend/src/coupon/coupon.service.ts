@@ -115,6 +115,30 @@ export class CouponService {
     });
   }
 
+  async getTargetClients(campaignId: number) {
+    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || !campaign.customerIds?.length) return [];
+
+    const customers = await this.prisma.customer.findMany({
+      where: { id: { in: campaign.customerIds } },
+      select: { id: true, ragioneSociale: true, nome: true, codiceCliente: true },
+    });
+
+    const usages = await this.prisma.campaignUsage.findMany({
+      where: { campaignId, customerId: { in: campaign.customerIds } },
+      select: { customerId: true, usedAt: true, orderId: true, revoked: true },
+    });
+    const usageMap = new Map(usages.map(u => [u.customerId, u]));
+
+    return customers.map(c => ({
+      id: c.id,
+      nome: c.ragioneSociale || c.nome || `Cliente #${c.id}`,
+      codiceCliente: c.codiceCliente,
+      usato: usageMap.has(c.id),
+      usage: usageMap.get(c.id) || null,
+    }));
+  }
+
   async revokeUsage(usageId: number, adminId: number) {
     return this.prisma.campaignUsage.update({
       where: { id: usageId },

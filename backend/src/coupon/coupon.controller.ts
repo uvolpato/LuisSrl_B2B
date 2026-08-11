@@ -44,6 +44,11 @@ export class CouponController {
     return this.svc.getUsage(Number(id));
   }
 
+  @Get(":id/clients")
+  async getClients(@Param("id") id: string) {
+    return this.svc.getTargetClients(Number(id));
+  }
+
   @Patch(":id/revoke/:usageId")
   @RequirePermission("vendite.coupon.edit")
   revoke(@Param("id") id: string, @Param("usageId") usageId: string, @Req() req: any) {
