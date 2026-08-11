@@ -9,12 +9,21 @@ import OrdineDetailModal from "../../../components/users/OrdineDetailModal";
 import DataTable, { type Column, type RowAction } from "../../../components/admin/DataTable";
 import { IconEye } from "../../../components/admin/icons";
 import type { OrdineCliente, OrdiniResponse } from "../../../lib/types";
+import { DateRangePicker } from "react-date-range";
+import { it } from "date-fns/locale";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("it-IT", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
+}
+
+function fmtDateRange(d: string): string {
+  const dt = new Date(d);
+  return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
 }
 
 function fmtPrezzo(n: string | null | number): string {
@@ -44,8 +53,14 @@ export default function OrdiniPage() {
   }, []);
   const [year, setYear] = useState("");
   const today = new Date().toISOString().slice(0, 10);
-  const [dataDa, setDataDa] = useState(today);
-  const [dataA, setDataA] = useState(today);
+  const [range, setRange] = useState({
+    startDate: new Date(today + "T00:00:00"),
+    endDate: new Date(today + "T23:59:59"),
+    key: "selection",
+  });
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const dataDa = range.startDate.toISOString().slice(0, 10);
+  const dataA = range.endDate.toISOString().slice(0, 10);
   const [sortBy, setSortBy] = useState<SortField>("dataOrdine");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
@@ -83,8 +98,11 @@ export default function OrdiniPage() {
 
   const refetch = () => {
     setSearch("");
-    setDataDa(today);
-    setDataA(today);
+    setRange({
+      startDate: new Date(today + "T00:00:00"),
+      endDate: new Date(today + "T23:59:59"),
+      key: "selection",
+    });
     setPage(1);
     setSortBy("dataOrdine");
     setSortDir("desc");
@@ -157,12 +175,32 @@ export default function OrdiniPage() {
               </button>
             </div>
             <div className="ordini-filters">
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 10px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontFamily: "var(--font-mono)", fontSize: 13 }}>
-                <input type="date" value={dataDa} onChange={(e) => { setDataDa(e.target.value); setPage(1); }}
-                  style={{ border: "none", background: "transparent", padding: "6px 0", outline: "none", font: "inherit", fontSize: 13, color: "var(--fg)", fontFamily: "var(--font-mono)" }} />
-                <span style={{ color: "var(--muted)", userSelect: "none" }}>→</span>
-                <input type="date" value={dataA} onChange={(e) => { setDataA(e.target.value); setPage(1); }}
-                  style={{ border: "none", background: "transparent", padding: "6px 0", outline: "none", font: "inherit", fontSize: 13, color: "var(--fg)", fontFamily: "var(--font-mono)" }} />
+              <div style={{ position: "relative" }}>
+                <div
+                  onClick={() => setDatePickerOpen(!datePickerOpen)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "1px 10px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontFamily: "var(--font-mono)", fontSize: 13, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ color: "var(--muted)", flexShrink: 0 }}>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {fmtDateRange(dataDa)} — {fmtDateRange(dataA)}
+                </div>
+                {datePickerOpen && (
+                  <>
+                    <div style={{ position: "fixed", inset: 0, zIndex: 50 }} onClick={() => setDatePickerOpen(false)} />
+                    <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 51, marginTop: 4, background: "var(--surface)", borderRadius: 12, border: "1px solid var(--border)", boxShadow: "0 16px 48px oklch(0% 0 0 / 0.2)" }}>
+                      <DateRangePicker
+                        ranges={[range]}
+                        onChange={(r: any) => { setRange(r.selection); setPage(1); }}
+                        locale={it}
+                        dateDisplayFormat="dd/MM/yyyy"
+                        editableDateInputs
+                        moveRangeOnFirstSelection={false}
+                        rangeColors={["var(--accent)"]}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <button className="btn btn-secondary btn-sm" onClick={handleSync} disabled={syncing} title="Sincronizza ordini da Integra">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, verticalAlign: "middle" }}>
