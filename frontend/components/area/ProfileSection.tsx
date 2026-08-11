@@ -141,26 +141,29 @@ export default function ProfileSection({
       await fetchIndirizzi();
     } catch {}
     setSaving(false);
+    window.dispatchEvent(new CustomEvent("address-updated"));
   }
 
   async function deleteAddr(id: number) {
     try { await api.del(`/api/checkout/indirizzo/${id}`); } catch {}
     await fetchIndirizzi();
+    window.dispatchEvent(new CustomEvent("address-updated"));
   }
 
   async function setDefault(id: number) {
     if (id === -1) {
-      // Rimuovi "abituale" da tutti gli indirizzi esistenti -> l'anagrafica diventa default
       for (const a of indirizzi) {
         if (a.abituale) {
           try { await api.patch(`/api/checkout/indirizzo/${a.id}/predefinito`); } catch {}
         }
       }
       await fetchIndirizzi();
+      window.dispatchEvent(new CustomEvent("address-updated"));
       return;
     }
     try { await api.patch(`/api/checkout/indirizzo/${id}/predefinito`); } catch {}
     await fetchIndirizzi();
+    window.dispatchEvent(new CustomEvent("address-updated"));
   }
 
   const handlePwSubmit = async (e: React.FormEvent) => {
