@@ -355,13 +355,6 @@ export default function ProfileSection({
                   <label style={{ fontSize: 12, color: "var(--muted)" }}>Nazione</label>
                   <ComboboxField value={fNazione} onChange={setFNazione} options={NAZIONI_OPTS} allowAuto={false} placeholder="Cerca nazione..." />
                 </div>
-                <div>
-                  <label style={{ fontSize: 12, color: "var(--muted)" }}>Nazione</label>
-                  <select style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--border)", borderRadius: 6, font: "inherit", fontSize: 13, background: "var(--surface)" }} value={fNazione} onChange={e => setFNazione(e.target.value)}>
-                    <option value="IT">Italia</option>
-                    <option value="ROW">Altro (Resto del mondo)</option>
-                  </select>
-                </div>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", marginBottom: 10, whiteSpace: "nowrap" }}>
                 <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0 }} />
