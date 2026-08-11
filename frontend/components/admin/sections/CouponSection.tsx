@@ -54,6 +54,9 @@ export default function CouponSection() {
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortKey, setSortKey] = useState<string | undefined>(undefined);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -64,6 +67,7 @@ export default function CouponSection() {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
+      if (statusFilter) params.set("status", statusFilter);
       const [d, c] = await Promise.all([
         api.get<Dashboard>("/api/admin/coupon/dashboard"),
         api.get<Campaign[]>(`/api/admin/coupon?${params}`),
@@ -74,24 +78,42 @@ export default function CouponSection() {
       setError(e instanceof ApiError ? e.code : "errors.generic");
     }
     setLoading(false);
-  }, [search]);
+  }, [search, statusFilter]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const columns: Column<Campaign>[] = useMemo(() => [
-    { key: "code", header: "Codice", width: "140px", mono: true, cell: (c) => <span style={{ fontWeight: 600, color: "var(--accent)" }}>{c.code}</span> },
-    { key: "name", header: "Campagna", grow: true, cell: (c) => c.name },
-    { key: "scope", header: "Ambito", width: "140px", cell: (c) => c.scope === "all" ? "Tutto" : (c.scopeDetail || c.scope) },
-    { key: "used", header: "Utilizzi", width: "100px", align: "right", mono: true, cell: (c) => String(c.usedCount) },
-    { key: "validity", header: "Validità", width: "140px", cell: (c) => <span style={{ fontSize: 12 }}>{fmtDate(c.validFrom)} → {fmtDate(c.validTo)}</span> },
-    { key: "target", header: "Target", width: "110px", cell: (c) => <span style={{ fontSize: 12 }}>{c.targetCount} clienti</span> },
-    { key: "status", header: "Stato", width: "110px", cell: (c) => <span className={`status-pill ${STATUS_CLS[c.status] ?? "st-muted"}`}><span className="sd">●</span>{STATUS_LABEL[c.status] ?? c.status}</span> },
+    { key: "code", header: "Codice", width: "140px", mono: true, sortable: true, cell: (c) => <span style={{ fontWeight: 600, color: "var(--accent)" }}>{c.code}</span> },
+    { key: "name", header: "Campagna", grow: true, sortable: true, cell: (c) => c.name },
+    { key: "scope", header: "Ambito", width: "140px", sortable: true, sortValue: (c) => c.scope === "all" ? "Tutto" : (c.scopeDetail || c.scope), cell: (c) => c.scope === "all" ? "Tutto" : (c.scopeDetail || c.scope) },
+    { key: "usedCount", header: "Utilizzi", width: "100px", align: "right", mono: true, sortable: true, sortValue: (c) => c.usedCount, cell: (c) => String(c.usedCount) },
+    { key: "validFrom", header: "Validità", width: "140px", sortable: true, sortValue: (c) => c.validFrom, cell: (c) => <span style={{ fontSize: 12 }}>{fmtDate(c.validFrom)} → {fmtDate(c.validTo)}</span> },
+    { key: "targetCount", header: "Target", width: "110px", sortable: true, sortValue: (c) => c.targetCount, cell: (c) => <span style={{ fontSize: 12 }}>{c.targetCount} clienti</span> },
+    { key: "status", header: "Stato", width: "110px", sortable: true, sortValue: (c) => STATUS_LABEL[c.status] ?? c.status, cell: (c) => <span className={`status-pill ${STATUS_CLS[c.status] ?? "st-muted"}`}><span className="sd">●</span>{STATUS_LABEL[c.status] ?? c.status}</span> },
   ], []);
+
+  const sortedCampaigns = useMemo(() => {
+    if (!sortKey) return campaigns;
+    return [...campaigns].sort((a: any, b: any) => {
+      const col = columns.find(c => c.key === sortKey);
+      const va = col?.sortValue ? col.sortValue(a) : (a[sortKey] ?? "");
+      const vb = col?.sortValue ? col.sortValue(b) : (b[sortKey] ?? "");
+      const n = typeof va === "string" ? va.localeCompare(String(vb)) : Number(va) - Number(vb);
+      return sortDir === "desc" ? -n : n;
+    });
+  }, [campaigns, sortKey, sortDir, columns]);
 
   return (
     <>
-      <AdminTopBar title="Coupon e campagne" searchValue={search} onSearchChange={setSearch} searchPlaceholder="Cerca campagna...">
-        <button className="btn btn-primary btn-sm" onClick={() => setEditorOpen(true)}>+ Nuova campagna</button>
+      <AdminTopBar title="Coupon e campagne" searchValue={search} onSearchChange={setSearch} searchPlaceholder="Cerca campagna..."
+        filter={statusFilter} onFilterChange={setStatusFilter}
+        filterOptions={[
+          { value: "", label: "Tutti" },
+          { value: "active", label: "Attivi" },
+          { value: "scheduled", label: "Programmati" },
+          { value: "expired", label: "Scaduti" },
+        ]}>
+        <button className="btn btn-primary btn-sm" onClick={() => setEditorOpen(true)} style={{ paddingBlock: 9 }}>+ Nuova campagna</button>
       </AdminTopBar>
 
       <div className="admin-content">
@@ -123,14 +145,17 @@ export default function CouponSection() {
 
         <DataTable
           columns={columns}
-          rows={campaigns}
+          rows={sortedCampaigns}
           rowKey={(c) => c.id}
           emptyText="Nessuna campagna trovata"
           loading={loading}
           page={1}
-          pageSize={campaigns.length || 1}
-          total={campaigns.length}
+          pageSize={sortedCampaigns.length || 1}
+          total={sortedCampaigns.length}
           onPageChange={() => {}}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={(key, dir) => { setSortKey(key); setSortDir(dir); }}
         />
 
       </div>
