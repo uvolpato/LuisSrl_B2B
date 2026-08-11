@@ -129,29 +129,46 @@ export class CheckoutService {
   }
 
   async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number, sconto: number = 0) {
-    // Risolvi con fallback gerarchico: IT+regione → IT → EUROPA → ROW
-    const regione = provincia ? this.provinciaToRegione(provincia.toUpperCase()) : null;
-    let resolved;
+    // Determina la nazione: se provincia è una sigla italiana → IT, altrimenti cerca nell'indirizzo
+    let nazione = 'IT';
+    let regione: string | null = null;
 
-    if (regione) {
-      // Provincia italiana → cerca IT + regione, fallback IT, fallback EUROPA, fallback ROW
-      resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
-    }
-    if (!resolved) {
-      resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+    if (provincia) {
+      const reg = this.provinciaToRegione(provincia.toUpperCase());
+      if (reg) {
+        regione = reg;
+      } else {
+        // Provincia non italiana → cerca la tariffa per la nazione dell'indirizzo predefinito
+        const addr = await this.prisma.indirizzoCliente.findFirst({
+          where: { customerId: clienteId, flagAbituale: true },
+          select: { nazione: true },
+        });
+        nazione = addr?.nazione || 'ROW';
+      }
+    } else {
+      nazione = 'ROW';
     }
 
+    if (nazione === 'ROW') {
+      const resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+      if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
+      const calc = Calcola(resolved.t, imponibile, sconto);
+      return {
+        importo: Math.round(calc.fee * 100) / 100,
+        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+        gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
+      };
+    }
+
+    const resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, regione);
     if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
 
     const calc = Calcola(resolved.t, imponibile, sconto);
-    const desc = regione ? regione : 'Resto del mondo';
+    const desc = regione || nazione;
     return {
       importo: Math.round(calc.fee * 100) / 100,
       descrizione: desc + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
-      gratuita: calc.superaSoglia,
-      soglia: calc.soglia,
-      minimo: calc.minimo,
-      minimoOrdine: calc.minimoOrdine,
+      gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
     };
   }
 
