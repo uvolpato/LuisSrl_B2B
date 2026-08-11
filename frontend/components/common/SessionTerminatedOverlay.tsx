@@ -1,16 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SessionTerminatedOverlay() {
   const [visible, setVisible] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handler = () => setVisible(true);
     window.addEventListener("session-stolen", handler);
     return () => window.removeEventListener("session-stolen", handler);
   }, []);
+
+  function goHome() {
+    setVisible(false);
+    router.push("/");
+  }
 
   if (!visible) return null;
 
@@ -44,9 +50,9 @@ export default function SessionTerminatedOverlay() {
           Qualcun altro ha effettuato l&apos;accesso con questo account da un altro dispositivo.
           Per motivi di sicurezza, questa sessione è stata chiusa.
         </p>
-        <Link href="/" className="btn btn-primary" style={{ justifyContent: "center", width: "100%" }}>
+        <button className="btn btn-primary" onClick={goHome} style={{ justifyContent: "center", width: "100%" }}>
           Torna alla home
-        </Link>
+        </button>
       </div>
     </div>
   );
