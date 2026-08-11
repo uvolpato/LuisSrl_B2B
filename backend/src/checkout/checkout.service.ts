@@ -460,7 +460,7 @@ export class CheckoutService {
     return max > 0 ? max : undefined;
   }
 
-  async validateCoupon(code: string, subtotale: number) {
+  async validateCoupon(code: string, subtotale: number, codiciVariante: string[] = []) {
     const campaign = await this.prisma.campaign.findUnique({ where: { code: code.toUpperCase() } });
     if (!campaign) return { valid: false, message: "Codice non valido" };
     if (campaign.status !== "active") return { valid: false, message: "Campagna non attiva" };
@@ -469,6 +469,33 @@ export class CheckoutService {
     if (campaign.validTo && new Date(campaign.validTo) < now) return { valid: false, message: "Campagna scaduta" };
     if (campaign.minOrder && Number(campaign.minOrder) > subtotale) return { valid: false, message: `Ordine minimo: ${Number(campaign.minOrder).toFixed(2)} €` };
     if (campaign.usage === "single" && campaign.usedCount > 0) return { valid: false, message: "Codice già utilizzato" };
+
+    // Verifica ambito
+    if (campaign.scope !== "all" && campaign.scopeDetail && codiciVariante.length > 0) {
+      const varianti = await this.prisma.variante.findMany({
+        where: { codice: { in: codiciVariante } },
+        select: { codice: true, articolo: { select: { codiceLinea: true, famigliaCodice: true } } },
+      });
+      const lineaCodes = [...new Set(varianti.map(v => v.articolo.codiceLinea))];
+      const famigliaCodes = [...new Set(varianti.map(v => v.articolo.famigliaCodice))];
+
+      if (campaign.scope === "family") {
+        if (!famigliaCodes.includes(campaign.scopeDetail)) {
+          return { valid: false, message: `Questo coupon è valido solo per la famiglia "${campaign.scopeDetail}"` };
+        }
+      } else if (campaign.scope === "collection") {
+        const raccolta = await this.prisma.raccolta.findFirst({ where: { nome: campaign.scopeDetail! }, select: { id: true } });
+        if (raccolta) {
+          const inRaccolta = await this.prisma.articoloRaccolta.findMany({
+            where: { raccoltaId: raccolta.id, articolo: { codiceLinea: { in: lineaCodes } } },
+            select: { articoloId: true },
+          });
+          if (inRaccolta.length === 0) {
+            return { valid: false, message: `Questo coupon è valido solo per la raccolta "${campaign.scopeDetail}"` };
+          }
+        }
+      }
+    }
 
     let discount = 0;
     let isPct = false;
