@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CustomerProfile } from "../../lib/types";
 import { api, ApiError } from "../../lib/api";
 import ComboboxField from "../admin/ComboboxField";
+import Modal from "../common/Modal";
 
 function BuildingIcon() {
   return (
@@ -304,7 +305,7 @@ export default function ProfileSection({
             <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>Nessun indirizzo salvato.</p>
           )}
           {tuttiIndirizzi.map(a => (
-            <div key={a.id} className="addr-item">
+            <div key={a.id} className="addr-item" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <div>
                 <strong>{a.ragioneSociale || "—"}</strong><br />
                 <span className="meta">{a.indirizzo || "—"}</span><br />
@@ -313,25 +314,29 @@ export default function ProfileSection({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {a.abituale && <span className="tag" style={{ background: "color-mix(in oklch, var(--accent) 20%, transparent)" }}>Predefinito</span>}
-                  {a.id === -1 && <span className="tag" style={{ background: "var(--fg-soft)" }}>Anagrafica</span>}
                   {!a.abituale && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setDefault(a.id)} style={{ fontSize: 12 }}>Imposta predefinito</button>
                   )}
                 </div>
-                {a.id !== -1 && !a.daIntegra && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ fontSize: 12 }}>Modifica</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => deleteAddr(a.id)} style={{ fontSize: 12, color: "var(--red)" }}>Elimina</button>
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {a.id !== -1 && !a.daIntegra && (
+                    <>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)} style={{ fontSize: 12 }}>Modifica</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => deleteAddr(a.id)} style={{ fontSize: 12, color: "var(--red)" }}>Elimina</button>
+                    </>
+                  )}
+                  {a.id === -1 && <span className="tag" style={{ background: "color-mix(in oklch, var(--ok) 18%, transparent)", color: "var(--ok)" }}>Anagrafica</span>}
+                </div>
               </div>
             </div>
           ))}
-          {!showForm && (
-            <button className="btn btn-secondary btn-sm" onClick={openNew} style={{ marginTop: 8 }}>+ Nuovo indirizzo</button>
-          )}
-          {showForm && (
-            <div style={{ marginTop: 12, padding: 14, background: "var(--fg-soft)", borderRadius: 8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={openNew} style={{ marginTop: 8 }}>+ Nuovo indirizzo</button>
+          <Modal open={showForm} onClose={closeForm} title={editId ? "Modifica indirizzo" : "Nuovo indirizzo"} size="md"
+            footer={<>
+              <button className="btn btn-secondary btn-sm" onClick={closeForm}>Annulla</button>
+              <button className="btn btn-primary btn-sm" onClick={saveAddr} disabled={saving}>{editId ? "Aggiorna" : "Salva"}</button>
+            </>}>
+            <div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, color: "var(--muted)" }}>Intestazione</label>
@@ -362,12 +367,8 @@ export default function ProfileSection({
                 <input type="checkbox" checked={fDefault} onChange={e => setFDefault(e.target.checked)} style={{ accentColor: "var(--accent)", flexShrink: 0, width: 16, height: 16, padding: 0, margin: 0 }} />
                 Principale
               </label>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-secondary btn-sm" onClick={closeForm}>Annulla</button>
-                <button className="btn btn-primary btn-sm" onClick={saveAddr} disabled={saving}>{editId ? "Aggiorna" : "Salva"}</button>
-              </div>
             </div>
-          )}
+          </Modal>
         </div>
 
         {/* Modalità di pagamento */}
