@@ -240,49 +240,53 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <!-- Sezione 2: Segmentazione -->
       <div class="edit-section">
         <h3>Destinatari</h3>
-        <div class="form-grid">
-          <div class="field">
-            <label>Regione</label>
-            <select id="filtro-regione">
-              <option value="">Tutte</option>
-              <option value="Lombardia">Lombardia</option><option value="Veneto">Veneto</option><option value="Piemonte">Piemonte</option>
-              <option value="Lazio">Lazio</option><option value="Campania">Campania</option><option value="Sicilia">Sicilia</option>
-              <option value="Emilia-Romagna">Emilia-Romagna</option><option value="Toscana">Toscana</option>
-              <option value="Puglia">Puglia</option><option value="Calabria">Calabria</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Ultimo ordine</label>
-            <select id="filtro-ultimo-ordine">
-              <option value="">Qualsiasi</option>
-              <option value="30">Ultimi 30 giorni</option>
-              <option value="90">Ultimi 90 giorni</option>
-              <option value="180">Ultimi 6 mesi</option>
-              <option value="365">Ultimo anno</option>
-              <option value="none">Nessun ordine</option>
-              <option value="over90">Oltre 90 giorni fa</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Sconto medio praticato</label>
-            <select id="filtro-sconto">
-              <option value="">Qualsiasi</option>
-              <option value="low">Basso (&lt;10%)</option>
-              <option value="mid">Medio (10–25%)</option>
-              <option value="high">Alto (&gt;25%)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Volume ordini (12 mesi)</label>
-            <select id="filtro-volume">
-              <option value="">Qualsiasi</option>
-              <option value="small">&lt; 1.000 €</option>
-              <option value="medium">1.000 – 5.000 €</option>
-              <option value="large">5.000 – 20.000 €</option>
-              <option value="xlarge">&gt; 20.000 €</option>
-            </select>
+
+        <!-- Ricerca manuale -->
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="field full">
+            <label>Ricerca cliente (codice, ragione sociale, P. IVA)</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="client-search" placeholder="es. Verd, IT123, C001..." style="flex:1">
+              <button class="btn btn-secondary btn-sm" id="btn-search-client" style="flex-shrink:0">Cerca</button>
+            </div>
           </div>
         </div>
+        <div id="search-results" hidden style="margin-bottom:14px">
+          <div class="client-list" id="search-client-list"></div>
+        </div>
+
+        <!-- Filtri -->
+        <div class="form-grid">
+          <div class="field"><label>Regione</label>
+            <select id="filtro-regione">
+              <option value="">Tutte</option><option value="Lombardia">Lombardia</option><option value="Veneto">Veneto</option><option value="Piemonte">Piemonte</option><option value="Lazio">Lazio</option><option value="Campania">Campania</option><option value="Sicilia">Sicilia</option><option value="Emilia-Romagna">Emilia-Romagna</option><option value="Toscana">Toscana</option><option value="Puglia">Puglia</option><option value="Calabria">Calabria</option>
+            </select></div>
+          <div class="field"><label>Ultimo ordine</label>
+            <select id="filtro-ultimo-ordine">
+              <option value="">Qualsiasi</option><option value="30">Ultimi 30 giorni</option><option value="90">Ultimi 90 giorni</option><option value="180">Ultimi 6 mesi</option><option value="365">Ultimo anno</option><option value="none">Nessun ordine</option><option value="over90">Oltre 90 giorni fa</option>
+            </select></div>
+          <div class="field"><label>Sconto medio</label>
+            <select id="filtro-sconto">
+              <option value="">Qualsiasi</option><option value="low">Basso (&lt;10%)</option><option value="mid">Medio (10–25%)</option><option value="high">Alto (&gt;25%)</option>
+            </select></div>
+          <div class="field"><label>Volume 12 mesi</label>
+            <select id="filtro-volume">
+              <option value="">Qualsiasi</option><option value="small">&lt; 1.000 €</option><option value="medium">1.000–5.000 €</option><option value="large">5.000–20.000 €</option><option value="xlarge">&gt; 20.000 €</option>
+            </select></div>
+        </div>
+
+        <!-- AI Suggerimenti -->
+        <div style="margin-top:16px;padding:14px 16px;background:var(--blue-soft);border-radius:var(--radius);border:1px solid var(--blue)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" width="18" height="18"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+            <strong style="font-size:13px;color:var(--blue)">AI — Suggerimenti campagna</strong>
+          </div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px">
+            In base ai dati disponibili, questi segmenti potrebbero beneficiare di una campagna:
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px" id="ai-suggestions"></div>
+        </div>
+
         <div class="seg-result">
           <span>Clienti selezionati</span>
           <span class="seg-count" id="seg-count">—</span>
@@ -411,18 +415,18 @@ document.getElementById('scope').addEventListener('change', function() {
 
 /* ── SEGMENTATION ── */
 var DEMO_CLIENTS = [
-  { nome:"Verdepiù di Bianchi & C.", regione:"Lombardia", ultimoOrdine:12, scontoMedio:18, volume:14500 },
-  { nome:"Floricoltura Lombardi S.n.c.", regione:"Lombardia", ultimoOrdine:45, scontoMedio:22, volume:8900 },
-  { nome:"Green Garden Center Srl", regione:"Toscana", ultimoOrdine:8, scontoMedio:12, volume:3200 },
-  { nome:"Piante e Dintorni", regione:"Veneto", ultimoOrdine:3, scontoMedio:25, volume:21500 },
-  { nome:"Vivai Riuniti del Veneto", regione:"Veneto", ultimoOrdine:120, scontoMedio:8, volume:9800 },
-  { nome:"Terra e Colore Sas", regione:"Lombardia", ultimoOrdine:60, scontoMedio:15, volume:34000 },
-  { nome:"GardenShop Bergamo", regione:"Lombardia", ultimoOrdine:15, scontoMedio:20, volume:7200 },
-  { nome:"Il Giardino Segreto Srl", regione:"Lazio", ultimoOrdine:90, scontoMedio:30, volume:5200 },
-  { nome:"Agriverde Cooperativa", regione:"Emilia-Romagna", ultimoOrdine:2, scontoMedio:10, volume:18500 },
-  { nome:"Fiori e Foglie di Esposito", regione:"Campania", ultimoOrdine:200, scontoMedio:5, volume:4200 },
-  { nome:"Ortoflor Commerciale", regione:"Piemonte", ultimoOrdine:30, scontoMedio:18, volume:26000 },
-  { nome:"Verde Casa di Martinelli", regione:"Sicilia", ultimoOrdine:180, scontoMedio:28, volume:3100 }
+  { id:1, nome:"Verdepiù di Bianchi & C.", cod:"C001", piva:"IT01234567890", regione:"Lombardia", ultimoOrdine:12, scontoMedio:18, volume:14500 },
+  { id:2, nome:"Floricoltura Lombardi S.n.c.", cod:"C002", piva:"IT02345678901", regione:"Lombardia", ultimoOrdine:45, scontoMedio:22, volume:8900 },
+  { id:3, nome:"Green Garden Center Srl", cod:"C003", piva:"IT03456789012", regione:"Toscana", ultimoOrdine:8, scontoMedio:12, volume:3200 },
+  { id:4, nome:"Piante e Dintorni", cod:"C004", piva:"IT04567890123", regione:"Veneto", ultimoOrdine:3, scontoMedio:25, volume:21500 },
+  { id:5, nome:"Vivai Riuniti del Veneto", cod:"C005", piva:"IT05678901234", regione:"Veneto", ultimoOrdine:120, scontoMedio:8, volume:9800 },
+  { id:6, nome:"Terra e Colore Sas", cod:"C006", piva:"IT06789012345", regione:"Lombardia", ultimoOrdine:60, scontoMedio:15, volume:34000 },
+  { id:7, nome:"GardenShop Bergamo", cod:"C007", piva:"IT07890123456", regione:"Lombardia", ultimoOrdine:15, scontoMedio:20, volume:7200 },
+  { id:8, nome:"Il Giardino Segreto Srl", cod:"C008", piva:"IT08901234567", regione:"Lazio", ultimoOrdine:90, scontoMedio:30, volume:5200 },
+  { id:9, nome:"Agriverde Cooperativa", cod:"C009", piva:"IT09012345678", regione:"Emilia-Romagna", ultimoOrdine:2, scontoMedio:10, volume:18500 },
+  { id:10, nome:"Fiori e Foglie di Esposito", cod:"C010", piva:"IT00123456789", regione:"Campania", ultimoOrdine:200, scontoMedio:5, volume:4200 },
+  { id:11, nome:"Ortoflor Commerciale", cod:"C011", piva:"IT11234567890", regione:"Piemonte", ultimoOrdine:30, scontoMedio:18, volume:26000 },
+  { id:12, nome:"Verde Casa di Martinelli", cod:"C012", piva:"IT12234567890", regione:"Sicilia", ultimoOrdine:180, scontoMedio:28, volume:3100 }
 ];
 
 function applyFilters() {
@@ -493,7 +497,61 @@ document.getElementById('btn-show-clients').addEventListener('click', function()
   } else { list.hidden = true; this.textContent = 'Vedi elenco ▼'; }
 });
 
-/* ── REVIEW ── */
+/* ── AI SUGGESTIONS ── */
+var AI_SUGGESTIONS = [
+  { title:"Clienti inattivi da oltre 90 giorni", desc:"12 clienti non ordinano da 3+ mesi. Una campagna con sconto 10–15% potrebbe riattivarli.", count:12, filters:{ ultimo:'over90' } },
+  { title:"Top spender senza sconto recente", desc:"4 clienti con volume >20k€ e sconto medio <10%. Premiali con un codice esclusivo.", count:4, filters:{ volume:'xlarge', sconto:'low' } },
+  { title:"Nuovi clienti da fidelizzare", desc:"3 clienti con volume <1k€. Uno sconto di benvenuto li incentiverebbe a ordinare di più.", count:3, filters:{ volume:'small' } },
+  { title:"Lombardia — campagna regionale", desc:"5 clienti in Lombardia. Puoi targettizzarli con una promo dedicata alla zona.", count:5, filters:{ regione:'Lombardia' } }
+];
+
+function renderAISuggestions() {
+  var html = '';
+  for (var i = 0; i < AI_SUGGESTIONS.length; i++) {
+    var s = AI_SUGGESTIONS[i];
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface);border-radius:6px;cursor:pointer" onclick="applyAISuggestion(' + i + ')">'
+      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--fg)">' + s.title + '</div><div style="font-size:11px;color:var(--muted)">' + s.desc + '</div></div>'
+      + '<span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;margin-left:8px">' + s.count + ' cl.</span>'
+      + '</div>';
+  }
+  document.getElementById('ai-suggestions').innerHTML = html;
+}
+
+function applyAISuggestion(idx) {
+  var s = AI_SUGGESTIONS[idx];
+  // Reset all filters
+  document.getElementById('filtro-regione').value = '';
+  document.getElementById('filtro-ultimo-ordine').value = '';
+  document.getElementById('filtro-sconto').value = '';
+  document.getElementById('filtro-volume').value = '';
+  // Apply suggestion filters
+  if (s.filters.regione) document.getElementById('filtro-regione').value = s.filters.regione;
+  if (s.filters.ultimo) document.getElementById('filtro-ultimo-ordine').value = s.filters.ultimo;
+  if (s.filters.sconto) document.getElementById('filtro-sconto').value = s.filters.sconto;
+  if (s.filters.volume) document.getElementById('filtro-volume').value = s.filters.volume;
+  applyFilters();
+}
+
+/* ── CLIENT SEARCH ── */
+document.getElementById('btn-search-client').addEventListener('click', function() {
+  var q = document.getElementById('client-search').value.trim().toLowerCase();
+  var results = document.getElementById('search-results');
+  var list = document.getElementById('search-client-list');
+  if (!q) { results.hidden = true; return; }
+  var found = DEMO_CLIENTS.filter(function(c) {
+    return c.nome.toLowerCase().indexOf(q) !== -1 || c.cod.toLowerCase().indexOf(q) !== -1 || c.piva.toLowerCase().indexOf(q) !== -1;
+  });
+  var html = '';
+  for (var i = 0; i < found.length; i++) {
+    html += '<label class="client-list-item"><input type="checkbox" checked> <strong>' + found[i].nome + '</strong> <span style="color:var(--muted);font-size:11px">' + found[i].cod + ' — ' + found[i].piva + '</span><span style="color:var(--muted);font-size:11px;margin-left:auto">' + found[i].regione + '</span></label>';
+  }
+  list.innerHTML = html || '<div style="padding:12px;color:var(--muted)">Nessun cliente trovato.</div>';
+  results.hidden = false;
+});
+
+document.getElementById('client-search').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('btn-search-client').click();
+});
 function goToReview() {
   if (!SEGMENTED.length) { alert('Seleziona almeno un cliente destinatario.'); return; }
   var code = document.getElementById('coupon-code').value.trim().toUpperCase() || 'CODICE';
@@ -543,6 +601,7 @@ function sendCampaign() {
   renderCampaigns();
   applyFilters();
   updateSegCount();
+  renderAISuggestions();
   document.getElementById('btn-new-campaign').addEventListener('click', function() { openModal('edit-modal'); });
   // Pre-fill scope detail
   document.getElementById('scope').dispatchEvent(new Event('change'));
