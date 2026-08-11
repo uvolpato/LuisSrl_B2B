@@ -94,6 +94,11 @@ export default function CarrelloPage() {
   const savedGroups = useMemo(() => groupBy(savedItems, (i) => i.articoloCodiceLinea ?? i.varianteCodice), [savedItems]);
   const subtotalQty = activeItems.reduce((s, i) => s + i.quantita, 0);
   const subtotalAmount = activeItems.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
+  const [minimoOrdine, setMinimoOrdine] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.get<{ minimoOrdine: number | null }>("/api/checkout/soglia").then(r => setMinimoOrdine(r.minimoOrdine)).catch(() => {});
+  }, []);
 
   if (authLoading || !user || user.userType !== "customer") return <LoadingScreen />;
 
@@ -155,7 +160,14 @@ export default function CarrelloPage() {
                 <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }}>
                   IVA non inclusa · Spese di trasporto calcolate al checkout
                 </p>
-                <Link href="/area/checkout" className="btn btn-primary checkout-btn">
+                {minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine && (
+                  <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginTop: 10, lineHeight: 1.5 }}>
+                    Per effettuare l&apos;ordine è necessario raggiungere un importo minimo di <strong>{formatPrice(minimoOrdine)}</strong> (IVA esclusa).
+                  </div>
+                )}
+                <Link href="/area/checkout" className={`btn btn-primary checkout-btn${minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine ? " disabled-link" : ""}`}
+                  onClick={e => { if (minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine) e.preventDefault(); }}
+                  style={minimoOrdine != null && minimoOrdine > 0 && subtotalAmount < minimoOrdine ? { opacity: 0.5, pointerEvents: "none" } : undefined}>
                   Procedi al checkout
                 </Link>
                 <button className="btn btn-secondary btn-progetto" disabled={!activeItems.length}

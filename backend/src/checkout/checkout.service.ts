@@ -49,7 +49,7 @@ export class CheckoutService {
 
   async getSogliaDefault(clienteId: number) {
     const attivo = (await this.getConfigFlag('banner_spedizione_attivo')) === true;
-    if (!attivo) return { soglia: null, attivo: false };
+    if (!attivo) return { soglia: null, attivo: false, minimoOrdine: null };
 
     const addr = await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId, flagAbituale: true },
@@ -66,8 +66,8 @@ export class CheckoutService {
       const regione = this.provinciaToRegione(provincia.toUpperCase());
       resolved = regione ? await this.speseSpedizione.resolveTariffaAsync('IT', regione) : null;
     }
-    if (!resolved) return { soglia: null, attivo: true };
-    return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true };
+    if (!resolved) return { soglia: null, attivo: true, minimoOrdine: null };
+    return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true, minimoOrdine: resolved.t.minimoOrdine ? Number(resolved.t.minimoOrdine) : null };
   }
 
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
