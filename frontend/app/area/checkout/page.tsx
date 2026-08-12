@@ -256,7 +256,7 @@ export default function CheckoutPage() {
         items: items.map(i => ({ codice: i.varianteCodice, qty: i.quantita, prezzo: i.prezzo?.prezzoNetto ?? 0 })),
       });
       if (res.valid) {
-        if (res.type === "free-ship" && (spedizione?.gratuita || isRitiro)) {
+        if (res.type === "free-ship" && (spedizioneFee === 0 || isRitiro)) {
           setCouponMsg("Le spese sono già gratuite");
           setCouponActive(false);
           return;
