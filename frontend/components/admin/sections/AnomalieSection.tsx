@@ -20,10 +20,14 @@ const GRAV_COLORS: Record<string, string> = { info: "var(--muted)", warning: "va
 export default function AnomalieSection() {
   const [items, setItems] = useState<Anomalia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [filter, setFilter] = useState("tutti");
 
   useEffect(() => {
-    api.get<{ items: Anomalia[] }>("/api/admin/anomalie?limit=200&risolto=false")
-      .then(r => setItems(r.items)).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([
+      api.get<{ items: Anomalia[] }>("/api/admin/anomalie?limit=200&risolto=false"),
+      api.get<any>("/api/admin/anomalie/stats"),
+    ]).then(([r, s]) => { setItems(r.items); setStats(s); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   async function risolvi(id: number) {
@@ -31,13 +35,40 @@ export default function AnomalieSection() {
     setItems(prev => prev.map(i => i.id === id ? { ...i, risolto: true, risoltoIl: new Date().toISOString() } : i));
   }
 
+  const filtered = filter === "tutti" ? items : items.filter(i => i.tipo === filter);
+
   return (
     <div className="admin-content">
       <div className="content-header">
         <div>
-          <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 24 }}>Anomalie</h2>
-          <span className="meta">{items.length} anomalie aperte</span>
+          <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 24 }}>Log eventi</h2>
+          <span className="meta">{items.length} eventi · {filtered.length} mostrati</span>
         </div>
+      </div>
+
+      {stats && (
+        <div className="dash-grid" style={{ marginBottom: 16 }}>
+          <div className="dash-card">
+            <div className="label">Eventi 24h</div>
+            <div className="value">{stats.total24h}</div>
+          </div>
+          <div className="dash-card">
+            <div className="label">Errori 24h</div>
+            <div className="value" style={{ color: "var(--red)" }}>{stats.error24h}</div>
+          </div>
+          <div className="dash-card">
+            <div className="label">Richieste 24h</div>
+            <div className="value">{stats.access24h}</div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {["tutti", "access", "api", "logger"].map(t => (
+          <button key={t} className={`btn btn-sm ${filter === t ? "btn-primary" : "btn-secondary"}`} onClick={() => setFilter(t)}>
+            {t === "tutti" ? "Tutti" : t}
+          </button>
+        ))}
       </div>
       <div className="data-table">
         <div className="data-table-scroll">
