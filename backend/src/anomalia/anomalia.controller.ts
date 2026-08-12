@@ -27,6 +27,11 @@ export class AnomaliaController {
     );
   }
 
+  @Get('stats')
+  getStats() {
+    return this.anomalia.getStats();
+  }
+
   @Patch(':id/risolvi')
   @RequirePermission('admin.anomalie.edit')
   risolvi(@Param('id', ParseIntPipe) id: number) {
