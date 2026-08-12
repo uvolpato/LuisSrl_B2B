@@ -655,3 +655,27 @@ model CampaignUsage {
   @@unique([campaignId, customerId])
   @@map("campaign_usage")
 }
+
+model EventLog {
+  id         Int       @id @default(autoincrement())
+  eventType  String    @map("event_type")
+  action     String
+  actorId    Int?      @map("actor_id")
+  actorType  String?   @map("actor_type")
+  entity     String?
+  entityId   String?   @map("entity_id")
+  data       Json?
+  requestId  String?   @map("request_id")
+  sessionId  String?   @map("session_id")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  status     String    @default("ok")
+  durationMs Int?      @map("duration_ms")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([eventType, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+  @@index([requestId])
+  @@map("event_log")
+}
