@@ -312,7 +312,8 @@ export default function ProfileSection({
               <div>
                 <strong>{a.ragioneSociale || "—"}</strong><br />
                 <span className="meta">{a.indirizzo || "—"}</span><br />
-                <span className="meta">{[a.cap, a.citta, a.provincia, a.nazione && a.nazione !== 'IT' ? a.nazione : null].filter(Boolean).join(" ")}</span>
+                <span className="meta">{[a.cap, a.citta, a.provincia].filter(Boolean).join(" ")}</span>
+                {a.nazione && <span className="meta" style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{a.nazione}</span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
