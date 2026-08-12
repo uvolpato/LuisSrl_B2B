@@ -3392,6 +3392,13 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .option-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
 .combobox-empty { padding: 10px 12px; color: var(--muted); }
 
+/* Type badges per Event Log */
+.type-badge.type-access { background: var(--fg-soft); color: var(--muted); }
+.type-badge.type-error { background: var(--red-soft); color: var(--red); }
+.type-badge.type-mutation { background: var(--blue-soft); color: var(--blue); }
+.type-badge.type-business { background: var(--green-soft); color: var(--green); }
+.type-badge.type-sync { background: var(--amber-soft); color: var(--amber); }
+
 /* ── Admin Ordini ── */
 .st-red { background: var(--red-soft); color: var(--red); }
 .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; padding: 2px 10px; border-radius: 999px; }

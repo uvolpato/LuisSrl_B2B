@@ -93,16 +93,54 @@ export class EventLogService {
     });
   }
 
-  /** Query/lettura */
-  async findAll(page = 1, limit = 50, eventType?: string, actorId?: number, entity?: string) {
+  /** Query/lettura con filtri */
+  async findAll(page = 1, limit = 50, eventType?: string, dateFrom?: string, dateTo?: string, search?: string) {
     const where: any = {};
     if (eventType) where.eventType = eventType;
-    if (actorId) where.actorId = actorId;
-    if (entity) where.entity = entity;
+    if (dateFrom) where.createdAt = { ...(where.createdAt || {}), gte: new Date(dateFrom) };
+    if (dateTo) where.createdAt = { ...(where.createdAt || {}), lte: new Date(dateTo + 'T23:59:59.999Z') };
+    if (search) {
+      where.OR = [
+        { action: { contains: search, mode: 'insensitive' } },
+        { entity: { contains: search, mode: 'insensitive' } },
+        { entityId: { contains: search, mode: 'insensitive' } },
+      ];
+    }
     const [items, total] = await Promise.all([
       this.prisma.eventLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
       this.prisma.eventLog.count({ where }),
     ]);
     return { items, total, page, limit };
+  }
+
+  async findOne(id: number) {
+    return this.prisma.eventLog.findUnique({ where: { id } });
+  }
+
+  async findByEntity(entity: string, entityId: string) {
+    return this.prisma.eventLog.findMany({
+      where: { entity, entityId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  async getStats() {
+    const now = new Date();
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const [total24h, error24h, access24h, avgDuration] = await Promise.all([
+      this.prisma.eventLog.count({ where: { createdAt: { gte: last24h } } }),
+      this.prisma.eventLog.count({ where: { createdAt: { gte: last24h }, eventType: 'error' } }),
+      this.prisma.eventLog.count({ where: { createdAt: { gte: last24h }, eventType: 'access' } }),
+      this.prisma.$queryRawUnsafe<{ avg: number }[]>(
+        `SELECT COALESCE(AVG(duration_ms), 0)::int AS avg FROM event_log WHERE event_type = 'access' AND created_at >= $1`, last24h,
+      ),
+    ]);
+    return {
+      total24h: Number(total24h),
+      error24h: Number(error24h),
+      access24h: Number(access24h),
+      avgDurationMs: avgDuration?.[0]?.avg ?? 0,
+    };
   }
 }
