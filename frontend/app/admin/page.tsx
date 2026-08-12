@@ -16,6 +16,7 @@ import ListiniSection from "../../components/admin/sections/ListiniSection";
 import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";
 import AdminOrdiniSection from "../../components/admin/sections/AdminOrdiniSection";
 import CouponSection from "../../components/admin/sections/CouponSection";
+import EventLogSection from "../../components/admin/sections/EventLogSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -57,6 +58,7 @@ export default function AdminPage() {
       {section === "listini" && <ListiniSection />}
       {section === "ordini" && <AdminOrdiniSection />}
       {section === "coupon" && <CouponSection />}
+      {section === "log-eventi" && <EventLogSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
     </AdminLayout>
   );

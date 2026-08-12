@@ -32,6 +32,7 @@ const NAV_ITEMS = [
     items: [
       { id: "box-dashboard", label: "Box dashboard", icon: "layout" },
       { id: "spese-spedizione", label: "Spese di spedizione", icon: "truck" },
+      { id: "log-eventi", label: "Log eventi", icon: "alert" },
     ],
   },
 ];
