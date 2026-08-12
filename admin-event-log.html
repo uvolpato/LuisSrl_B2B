@@ -56,9 +56,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
 /* ── Filter bar ── */
-.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-shrink: 0; flex-wrap: wrap; }
-.filter-bar input[type="date"] { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 13px; color: var(--fg); outline: none; font-family: var(--font-mono); }
-.filter-bar input[type="date"]:focus { border-color: var(--accent); }
+.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-shrink: 0; }
 
 /* ── Search ── */
 .admin-search { position: relative; width: 240px; }
@@ -153,6 +151,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <option value="business">Business</option>
       <option value="sync">Sync</option>
     </select>
+    <input type="date" id="date-from" value="2026-08-12" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font:inherit;font-size:13px;color:var(--fg);outline:none;font-family:var(--font-mono)">
+    <span style="color:var(--muted);font-size:13px">→</span>
+    <input type="date" id="date-to" value="2026-08-13" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font:inherit;font-size:13px;color:var(--fg);outline:none;font-family:var(--font-mono)">
   </div>
 </div>
 
@@ -166,12 +167,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     <div class="dash-card"><div class="label">Risposta media</div><div class="value" id="dash-avg">48 ms</div><div class="sub">ultime 24 ore</div></div>
   </div>
 
-  <!-- Filter bar -->
+  <!-- Filter info -->
   <div class="filter-bar">
-    <input type="date" id="date-from" value="2026-08-12">
-    <span style="color:var(--muted)">→</span>
-    <input type="date" id="date-to" value="2026-08-13">
-    <span style="margin-left:auto" class="filter-info">
+    <span class="filter-info">
       <span>Eventi: <strong id="filter-count">1.247</strong></span>
       <span>Pagina: <strong id="filter-page">1 / 25</strong></span>
     </span>
