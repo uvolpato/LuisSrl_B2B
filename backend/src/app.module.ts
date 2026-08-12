@@ -24,6 +24,7 @@ import { CouponModule } from './coupon/coupon.module';
 import { AnomaliaModule } from './anomalia/anomalia.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
+import { AccessLogInterceptor } from './common/access-log.interceptor';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { RequestContextInterceptor } from './common/request-context.interceptor'
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: AccessLogInterceptor },
   ],
 })
 export class AppModule {}

@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import { AnomaliaService } from './anomalia.service';
+import { reqCtx } from '../common/request-context';
 
 @Catch()
 export class AnomaliaFilter implements ExceptionFilter {
@@ -11,6 +12,7 @@ export class AnomaliaFilter implements ExceptionFilter {
     const res = ctx.getResponse();
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
     const msg = exception instanceof Error ? exception.message : String(exception);
+    const store = reqCtx.getStore();
 
     if (status >= 400) {
       const contesto = req.user ? `user:${req.user.id}` : undefined;
@@ -19,6 +21,7 @@ export class AnomaliaFilter implements ExceptionFilter {
         url: req.url,
         method: req.method,
         status,
+        requestId: store?.requestId,
       });
     }
 
