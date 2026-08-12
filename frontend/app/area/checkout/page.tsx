@@ -241,7 +241,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     const avgDiscount = subtotalListino > 0 ? Math.round((1 - subtotalAmount / subtotalListino) * 100) : 0;
     const prov = indirizzoSelezionato?.provincia ?? '';
-    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&imponibile=${subScontato}&sconto=${avgDiscount}`)
+    const naz = indirizzoSelezionato?.nazione ?? '';
+    api.get<ShippingResult>(`/api/checkout/spedizione?provincia=${prov}&nazione=${naz}&imponibile=${subScontato}&sconto=${avgDiscount}`)
       .then(setSpedizione).catch(() => setSpedizione({ importo: 0, descrizione: "", gratuita: false, soglia: null, minimo: null, minimoOrdine: null }));
   }, [indirizzoId, subScontato, subtotalListino, subtotalAmount]);
 
