@@ -210,7 +210,7 @@ export default function CheckoutPage() {
     if (!dati?.cliente.citta && !dati?.cliente.indirizzo) return null;
     return {
       id: -1, ragioneSociale: null, indirizzo: dati.cliente.indirizzo, cap: dati.cliente.cap, citta: dati.cliente.citta,
-      provincia: dati.cliente.provincia, tipoDestinazione: "SEDE_LEGALE", flagSpedizione: false, flagAbituale: false,
+      provincia: dati.cliente.provincia, nazione: null, tipoDestinazione: "SEDE_LEGALE", flagSpedizione: false, flagAbituale: false,
       tipo: "SEDE_LEGALE", abituale: false, daIntegra: true,
     };
   }, [dati]);
@@ -479,6 +479,7 @@ export default function CheckoutPage() {
                         <div className="addr-l"><b>CAP</b><span className="mono">{a.cap || "—"}</span></div>
                         <div className="addr-l"><b>Città</b><span>{a.citta || "—"}</span></div>
                         <div className="addr-l"><b>Provincia</b><span className="mono">{a.provincia || "—"}</span></div>
+                        <div className="addr-l"><b>Nazione</b><span className="mono">{a.nazione || "IT"}</span></div>
                         {a.abituale && <span className="addr-badge">Predefinito</span>}
                         {a.id === -1 && !tuttiIndirizzi.some(x => x.id !== -1 && x.abituale) && <span className="addr-badge">Predefinito</span>}
                         {a.id !== -1 && !a.daIntegra && (
@@ -684,7 +685,7 @@ export default function CheckoutPage() {
                   <div className="recap-addr-box">
                     <div className="name">{indirizzoSelezionato.ragioneSociale ?? "Sede"}</div>
                     <div className="line">{indirizzoSelezionato.indirizzo}</div>
-                    <div className="line">{indirizzoSelezionato.cap} {indirizzoSelezionato.citta} ({indirizzoSelezionato.provincia})</div>
+                    <div className="line">{indirizzoSelezionato.cap} {indirizzoSelezionato.citta} ({indirizzoSelezionato.provincia}){indirizzoSelezionato.nazione && indirizzoSelezionato.nazione !== 'IT' ? ` — ${indirizzoSelezionato.nazione}` : ''}</div>
                   </div>
                 </>
               )}
