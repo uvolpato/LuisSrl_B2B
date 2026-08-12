@@ -34,6 +34,7 @@ interface Indirizzo {
   cap: string | null;
   citta: string | null;
   provincia: string | null;
+  nazione: string | null;
   tipoDestinazione: string | null;
   flagSpedizione: boolean;
   flagAbituale: boolean;
@@ -288,7 +289,7 @@ export default function CheckoutPage() {
     setNCap(a.cap ?? "");
     setNCitta(a.citta ?? "");
     setNProvincia(a.provincia ?? "");
-    setNNazione((a as any).nazione ?? "IT");
+    setNNazione(a.nazione ?? "IT");
     setNDefault(a.abituale);
   }
 
