@@ -575,6 +575,16 @@ export class CheckoutService {
 
     const discountAmount = isPct ? scopeSubtotale * discount / 100 : Math.min(discount, scopeSubtotale);
 
+    // Risolvi nome ambito per visualizzazione
+    let scopeName: string | undefined;
+    if (campaign.scope === 'family' && campaign.scopeDetail) {
+      const fam = await this.prisma.famiglia.findUnique({ where: { codice: campaign.scopeDetail }, select: { nome: true } });
+      scopeName = fam?.nome || campaign.scopeDetail;
+    } else if (campaign.scope === 'collection' && campaign.scopeDetail) {
+      const col = await this.prisma.raccolta.findFirst({ where: { slug: campaign.scopeDetail }, select: { nome: true } });
+      scopeName = col?.nome || campaign.scopeDetail;
+    }
+
     return {
       valid: true,
       type: campaign.type,
@@ -586,6 +596,7 @@ export class CheckoutService {
       label: campaign.type === "free-ship" ? "Spedizione gratuita" : campaign.type === "pct" ? `−${Number(campaign.value)}%` : `−${Number(campaign.value).toFixed(2)} €`,
       code: campaign.code,
       scopeDetail: campaign.scopeDetail,
+      scopeName,
     };
   }
 }
