@@ -62,7 +62,7 @@ export const NAZIONI: Record<string, { n: string; z: 'EU' | 'ROW' }> = {
   PS:{n:'Palestina',z:'ROW'},PA:{n:'Panama',z:'ROW'},PG:{n:'Papua Nuova Guinea',z:'ROW'},
   PY:{n:'Paraguay',z:'ROW'},PE:{n:'Per\u00f9',z:'ROW'},PF:{n:'Polinesia francese',z:'ROW'},
   PL:{n:'Polonia',z:'EU'},PT:{n:'Portogallo',z:'EU'},PR:{n:'Porto Rico',z:'ROW'},QA:{n:'Qatar',z:'ROW'},
-  GB:{n:'Regno Unito',z:'ROW'},CZ:{n:'Repubblica Ceca',z:'EU'},CF:{n:'Repubblica Centrafricana',z:'ROW'},
+  GB:{n:'Regno Unito',z:'EU'},CZ:{n:'Repubblica Ceca',z:'EU'},CF:{n:'Repubblica Centrafricana',z:'ROW'},
   DO:{n:'Repubblica Dominicana',z:'ROW'},RE:{n:'Riunione',z:'ROW'},RO:{n:'Romania',z:'EU'},
   RW:{n:'Ruanda',z:'ROW'},RU:{n:'Russia',z:'ROW'},WS:{n:'Samoa',z:'ROW'},SM:{n:'San Marino',z:'ROW'},
   SH:{n:"Sant'Elena",z:'ROW'},LC:{n:'Santa Lucia',z:'ROW'},ST:{n:'S\u00e3o Tom\u00e9 e Pr\u00edncipe',z:'ROW'},
