@@ -338,6 +338,7 @@ export class CheckoutService {
     // Calcola importo totale usando i prezzi reali
     let importoTotale = 0;
     const righe = [];
+    const prezziMap = new Map<string, number>();
     for (const item of items) {
       let prezzo = null;
       if (codiceListino) {
@@ -345,6 +346,7 @@ export class CheckoutService {
         prezzo = await this.integrazione.getPrezzo(codiceListino, item.varianteCodice, maxRaccSconto);
       }
       const netto = prezzo?.prezzoNetto ?? 0;
+      prezziMap.set(item.varianteCodice, netto);
       importoTotale += netto * item.quantita;
       righe.push({
         codiceProdotto: item.varianteCodice,
@@ -392,11 +394,43 @@ export class CheckoutService {
         if (validFrom && validTo && sopraMinimo && canUse) {
           let discountAmount = 0;
           let descr = `Coupon ${campaign.code}`;
+
+          // Calcola subtotale dell'ambito
+          let scopeTotal = importoTotale;
+          if (campaign.scope !== 'all' && campaign.scopeDetail && items.length > 0) {
+            const varianti = await this.prisma.variante.findMany({
+              where: { codice: { in: items.map(i => i.varianteCodice) } },
+              select: { codice: true, articolo: { select: { codiceLinea: true, famigliaCodice: true } } },
+            });
+
+            let matchingCodes = new Set<string>();
+            if (campaign.scope === 'family') {
+              varianti.filter(v => v.articolo.famigliaCodice === campaign.scopeDetail).forEach(v => matchingCodes.add(v.codice));
+            } else if (campaign.scope === 'collection') {
+              const raccolta = await this.prisma.raccolta.findFirst({ where: { slug: campaign.scopeDetail! }, select: { id: true } });
+              if (raccolta) {
+                const lineaCodes = [...new Set(varianti.map(v => v.articolo.codiceLinea))];
+                const inRaccolta = await this.prisma.articoloRaccolta.findMany({
+                  where: { raccoltaId: raccolta.id, articolo: { codiceLinea: { in: lineaCodes } } },
+                  select: { articolo: { select: { codiceLinea: true } } },
+                });
+                const lineaSet = new Set(inRaccolta.map(r => r.articolo.codiceLinea));
+                varianti.filter(v => lineaSet.has(v.articolo.codiceLinea)).forEach(v => matchingCodes.add(v.codice));
+              }
+            }
+
+            if (matchingCodes.size > 0) {
+              scopeTotal = items
+                .filter((i: any) => matchingCodes.has(i.varianteCodice))
+                .reduce((s: number, i: any) => s + i.quantita * (prezziMap.get(i.varianteCodice) ?? 0), 0);
+            }
+          }
+
           if (campaign.type === 'pct') {
-            discountAmount = importoTotale * Number(campaign.value) / 100;
+            discountAmount = scopeTotal * Number(campaign.value) / 100;
             descr += ` (−${Number(campaign.value)}%)`;
           } else if (campaign.type === 'fixed') {
-            discountAmount = Math.min(Number(campaign.value), importoTotale);
+            discountAmount = Math.min(Number(campaign.value), scopeTotal);
             descr += ` (−${Number(campaign.value).toFixed(2)} €)`;
           } else if (campaign.type === 'free-ship') {
             costoTrasporto = 0;
