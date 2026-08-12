@@ -54,19 +54,14 @@ export class CheckoutService {
     const addr = await this.prisma.indirizzoCliente.findFirst({
       where: { customerId: clienteId, flagAbituale: true },
     });
-    let provincia = addr?.provincia || null;
-    let nazione = addr?.nazione || null;
-    if (!provincia) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId }, select: { provincia: true } });
-      provincia = customer?.provincia || null;
-    }
     let resolved;
-    if (provincia) {
-      const regione = this.provinciaToRegione(provincia.toUpperCase());
+    if (addr?.provincia) {
+      const regione = this.provinciaToRegione(addr.provincia.toUpperCase());
       resolved = regione ? await this.speseSpedizione.resolveTariffaAsync('IT', regione) : null;
     }
     if (!resolved) {
-      resolved = await this.speseSpedizione.resolveTariffaAsync(nazione || 'ROW', null);
+      const nazione = addr?.nazione || 'ROW';
+      resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, null);
     }
     if (!resolved) return { soglia: null, attivo: true, minimoOrdine: null };
     return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true, minimoOrdine: resolved.t.minimoOrdine ? Number(resolved.t.minimoOrdine) : null };
@@ -137,9 +132,7 @@ export class CheckoutService {
 
     if (provincia) {
       const reg = this.provinciaToRegione(provincia.toUpperCase());
-      if (reg) {
-        regione = reg;
-      }
+      if (reg) regione = reg;
     }
     // Se la provincia non è italiana o è assente, cerca la nazione dall'indirizzo
     if (!regione) {
