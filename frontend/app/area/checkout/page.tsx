@@ -249,7 +249,7 @@ export default function CheckoutPage() {
     setCouponMsg("");
     if (!couponCode.trim()) return;
     try {
-      const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string; scopeSubtotale?: number; discountAmount?: number; scopeDetail?: string }>("/api/checkout/validate-coupon", {
+      const res = await api.post<{ valid: boolean; message?: string; type: string; value: number; isPct: boolean; label: string; scopeSubtotale?: number; discountAmount?: number; scopeDetail?: string; scopeName?: string }>("/api/checkout/validate-coupon", {
         code: couponCode.trim(),
         subtotale: subtotalAmount,
         codici: items.map(i => i.varianteCodice),
@@ -260,7 +260,7 @@ export default function CheckoutPage() {
         setCouponType(res.type);
         setCouponIsPct(res.isPct);
         if (res.scopeSubtotale != null) setCouponScope(res.scopeSubtotale);
-        if (res.scopeDetail) setCouponScopeLabel(res.scopeDetail);
+        if (res.scopeName) setCouponScopeLabel(res.scopeName);
         if (res.type === "free-ship") { setCouponValue(0); }
         else if (res.type === "pct") { setCouponValue(res.value / 100); }
         else { setCouponValue(res.discountAmount || res.value); }
