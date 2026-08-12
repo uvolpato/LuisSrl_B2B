@@ -162,7 +162,7 @@ export default function ProfileSection({
     cap: customer.cap ?? null,
     citta: customer.citta ?? null,
     provincia: customer.provincia ?? null,
-    nazione: null,
+    nazione: 'IT',
     tipoDestinazione: "SEDE_LEGALE",
     abituale: !indirizzi.some(a => a.abituale),
     daIntegra: true,

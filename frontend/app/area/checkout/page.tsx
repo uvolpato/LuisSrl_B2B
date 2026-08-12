@@ -210,7 +210,7 @@ export default function CheckoutPage() {
     if (!dati?.cliente.citta && !dati?.cliente.indirizzo) return null;
     return {
       id: -1, ragioneSociale: null, indirizzo: dati.cliente.indirizzo, cap: dati.cliente.cap, citta: dati.cliente.citta,
-      provincia: dati.cliente.provincia, nazione: null, tipoDestinazione: "SEDE_LEGALE", flagSpedizione: false, flagAbituale: false,
+      provincia: dati.cliente.provincia, nazione: 'IT', tipoDestinazione: "SEDE_LEGALE", flagSpedizione: false, flagAbituale: false,
       tipo: "SEDE_LEGALE", abituale: false, daIntegra: true,
     };
   }, [dati]);
