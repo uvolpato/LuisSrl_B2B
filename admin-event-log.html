@@ -127,10 +127,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .timeline-item .tl-date { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-bottom: 2px; }
 .timeline-item .tl-action { font-size: 13px; font-weight: 500; }
 .timeline-item .tl-diff { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-/* ── Totals bar ── */
-.filter-info { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
-.filter-info strong { color: var(--fg); }
 </style>
 </head>
 <body>
@@ -165,14 +161,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
     <div class="dash-card"><div class="label">Errori (24h)</div><div class="value" id="dash-errors" style="color:var(--red)">12</div><div class="sub">0,9% del totale</div></div>
     <div class="dash-card"><div class="label">Richieste (24h)</div><div class="value" id="dash-access">8.450</div><div class="sub">traffico HTTP</div></div>
     <div class="dash-card"><div class="label">Risposta media</div><div class="value" id="dash-avg">48 ms</div><div class="sub">ultime 24 ore</div></div>
-  </div>
-
-  <!-- Filter info -->
-  <div class="filter-bar">
-    <span class="filter-info">
-      <span>Eventi: <strong id="filter-count">1.247</strong></span>
-      <span>Pagina: <strong id="filter-page">1 / 25</strong></span>
-    </span>
   </div>
 
   <!-- DataTable -->
@@ -291,8 +279,6 @@ function renderTable() {
   document.getElementById('pager-info').textContent = currentPage + ' / ' + totalPages;
   document.getElementById('pager-prev').disabled = currentPage <= 1;
   document.getElementById('pager-next').disabled = currentPage >= totalPages;
-  document.getElementById('filter-count').textContent = filtered.length;
-  document.getElementById('filter-page').textContent = currentPage + ' / ' + totalPages;
 }
 
 /* ── RENDER DETAIL ── */
