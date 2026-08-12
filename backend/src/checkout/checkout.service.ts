@@ -60,7 +60,7 @@ export class CheckoutService {
       resolved = regione ? await this.speseSpedizione.resolveTariffaAsync('IT', regione) : null;
     }
     if (!resolved) {
-      const nazione = addr?.nazione || 'ROW';
+      const nazione = addr?.nazione || 'IT';
       resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, null);
     }
     if (!resolved) return { soglia: null, attivo: true, minimoOrdine: null };
