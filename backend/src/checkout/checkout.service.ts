@@ -55,16 +55,18 @@ export class CheckoutService {
       where: { customerId: clienteId, flagAbituale: true },
     });
     let provincia = addr?.provincia || null;
+    let nazione = addr?.nazione || null;
     if (!provincia) {
       const customer = await this.prisma.customer.findUnique({ where: { id: clienteId }, select: { provincia: true } });
       provincia = customer?.provincia || null;
     }
     let resolved;
-    if (!provincia) {
-      resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
-    } else {
+    if (provincia) {
       const regione = this.provinciaToRegione(provincia.toUpperCase());
       resolved = regione ? await this.speseSpedizione.resolveTariffaAsync('IT', regione) : null;
+    }
+    if (!resolved) {
+      resolved = await this.speseSpedizione.resolveTariffaAsync(nazione || 'ROW', null);
     }
     if (!resolved) return { soglia: null, attivo: true, minimoOrdine: null };
     return { soglia: resolved.t.sogliaImporto ? Number(resolved.t.sogliaImporto) : null, attivo: true, minimoOrdine: resolved.t.minimoOrdine ? Number(resolved.t.minimoOrdine) : null };
@@ -130,7 +132,6 @@ export class CheckoutService {
   }
 
   async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number, sconto: number = 0) {
-    // Determina la nazione: se provincia è una sigla italiana → IT, altrimenti cerca nell'indirizzo
     let nazione = 'IT';
     let regione: string | null = null;
 
@@ -138,37 +139,36 @@ export class CheckoutService {
       const reg = this.provinciaToRegione(provincia.toUpperCase());
       if (reg) {
         regione = reg;
-      } else {
-        // Provincia non italiana → cerca la tariffa per la nazione dell'indirizzo predefinito
-        const addr = await this.prisma.indirizzoCliente.findFirst({
-          where: { customerId: clienteId, flagAbituale: true },
-          select: { nazione: true },
-        });
-        nazione = addr?.nazione || 'ROW';
       }
-    } else {
-      nazione = 'ROW';
+    }
+    // Se la provincia non è italiana o è assente, cerca la nazione dall'indirizzo
+    if (!regione) {
+      const addr = await this.prisma.indirizzoCliente.findFirst({
+        where: { customerId: clienteId, flagAbituale: true },
+        select: { nazione: true },
+      });
+      nazione = addr?.nazione || 'ROW';
     }
 
-    if (nazione === 'ROW') {
-      const resolved = await this.speseSpedizione.resolveTariffaAsync('ROW', null);
+    if (nazione !== 'IT') {
+      const resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, null);
       if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
       const calc = Calcola(resolved.t, imponibile, sconto);
+      const label = nazione === 'ROW' ? 'Resto del mondo' : nazione;
       return {
         importo: Math.round(calc.fee * 100) / 100,
-        descrizione: 'Resto del mondo' + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+        descrizione: label + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
         gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
       };
     }
 
-    const resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, regione);
+    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
     if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
 
     const calc = Calcola(resolved.t, imponibile, sconto);
-    const desc = regione || nazione;
     return {
       importo: Math.round(calc.fee * 100) / 100,
-      descrizione: desc + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+      descrizione: (regione || 'Italia') + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
       gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
     };
   }
