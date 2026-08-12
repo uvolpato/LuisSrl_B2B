@@ -42,13 +42,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
 .btn-secondary:hover { border-color: var(--fg); }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-filter { padding: 4px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-family: var(--font-body); font-weight: 500; white-space: nowrap; transition: border-color 0.12s, color 0.12s, background 0.12s; }
-.btn-filter:hover { border-color: var(--accent); color: var(--accent); }
-.btn-filter.active { background: var(--accent); color: var(--surface); border-color: var(--accent); }
-.btn-filter.active.error { background: var(--red); border-color: var(--red); }
-.btn-filter.active.business { background: var(--green); border-color: var(--green); }
-.btn-filter.active.mutation { background: var(--blue); border-color: var(--blue); }
-.btn-filter.active.sync { background: var(--amber); border-color: var(--amber); }
 
 /* ── Content ── */
 .admin-content { flex: 1; min-height: 0; padding: 16px 32px 24px; display: flex; flex-direction: column; overflow: auto; }
@@ -152,6 +145,14 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
       <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
       <input type="text" id="search-input" placeholder="Cerca azione o entity...">
     </div>
+    <select id="filter-type" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font:inherit;font-size:13px;color:var(--fg);outline:none;cursor:pointer">
+      <option value="all">Tutti i tipi</option>
+      <option value="access">Access</option>
+      <option value="error">Error</option>
+      <option value="mutation">Mutation</option>
+      <option value="business">Business</option>
+      <option value="sync">Sync</option>
+    </select>
   </div>
 </div>
 
@@ -167,13 +168,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; }
 
   <!-- Filter bar -->
   <div class="filter-bar">
-    <button class="btn-filter active" data-filter="all">Tutti</button>
-    <button class="btn-filter" data-filter="access">Access</button>
-    <button class="btn-filter" data-filter="error">Error</button>
-    <button class="btn-filter" data-filter="mutation">Mutation</button>
-    <button class="btn-filter" data-filter="business">Business</button>
-    <button class="btn-filter" data-filter="sync">Sync</button>
-    <span style="color:var(--border);margin:0 4px">|</span>
     <input type="date" id="date-from" value="2026-08-12">
     <span style="color:var(--muted)">→</span>
     <input type="date" id="date-to" value="2026-08-13">
@@ -348,15 +342,9 @@ function renderTimeline(entity, entityId) {
 }
 
 /* ── FILTERS ── */
-var filterBtns = document.querySelectorAll('.btn-filter');
-for (var fi = 0; fi < filterBtns.length; fi++) {
-  filterBtns[fi].addEventListener('click', function() {
-    FILTERS.type = this.dataset.filter;
-    for (var j = 0; j < filterBtns.length; j++) filterBtns[j].classList.remove('active');
-    this.classList.add('active');
-    currentPage = 1; renderTable();
-  });
-}
+document.getElementById('filter-type').addEventListener('change', function() {
+  FILTERS.type = this.value; currentPage = 1; renderTable();
+});
 
 document.getElementById('search-input').addEventListener('input', function() {
   FILTERS.search = this.value.trim(); currentPage = 1; renderTable();
