@@ -126,7 +126,7 @@ export class CheckoutService {
     };
   }
 
-  async calcolaSpedizione(clienteId: number, provincia: string, imponibile: number, sconto: number = 0) {
+  async calcolaSpedizione(clienteId: number, provincia: string, nazioneParam: string, imponibile: number, sconto: number = 0) {
     let nazione = 'IT';
     let regione: string | null = null;
 
@@ -134,13 +134,17 @@ export class CheckoutService {
       const reg = this.provinciaToRegione(provincia.toUpperCase());
       if (reg) regione = reg;
     }
-    // Se la provincia non è italiana o è assente, cerca la nazione dall'indirizzo
+    // Usa la nazione passata dal frontend, o fallback su indirizzo predefinito
     if (!regione) {
-      const addr = await this.prisma.indirizzoCliente.findFirst({
-        where: { customerId: clienteId, flagAbituale: true },
-        select: { nazione: true },
-      });
-      nazione = addr?.nazione || 'ROW';
+      if (nazioneParam && nazioneParam !== 'IT') {
+        nazione = nazioneParam;
+      } else {
+        const addr = await this.prisma.indirizzoCliente.findFirst({
+          where: { customerId: clienteId, flagAbituale: true },
+          select: { nazione: true },
+        });
+        nazione = addr?.nazione || 'ROW';
+      }
     }
 
     if (nazione !== 'IT') {
