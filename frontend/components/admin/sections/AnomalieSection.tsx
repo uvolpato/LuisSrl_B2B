@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../../../lib/api";
+import Modal from "../../common/Modal";
 
 interface Anomalia {
   id: number;
@@ -22,6 +23,7 @@ export default function AnomalieSection() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [filter, setFilter] = useState("tutti");
+  const [detail, setDetail] = useState<Anomalia | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -76,7 +78,7 @@ export default function AnomalieSection() {
             <thead><tr><th>Tipo</th><th>Gravità</th><th>Contesto</th><th>Messaggio</th><th>Data</th><th>Azioni</th></tr></thead>
             <tbody>
               {items.map(a => (
-                <tr key={a.id} style={{ opacity: a.risolto ? 0.5 : 1 }}>
+                <tr key={a.id} style={{ opacity: a.risolto ? 0.5 : 1, cursor: "pointer" }} onClick={() => setDetail(a)}>
                   <td><span className="badge code">{a.tipo}</span></td>
                   <td><span style={{ color: GRAV_COLORS[a.gravita] ?? "var(--muted)", fontWeight: 600 }}>{a.gravita}</span></td>
                   <td className="mono" style={{ fontSize: 12 }}>{a.contesto ?? "—"}</td>
@@ -87,11 +89,31 @@ export default function AnomalieSection() {
                   </td>
                 </tr>
               ))}
-              {!loading && items.length === 0 && <tr><td colSpan={6} className="data-table-empty">Nessuna anomalia</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={6} className="data-table-empty">Nessun evento</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
+
+      {detail && (
+        <Modal size="md" title="Dettaglio evento" onClose={() => setDetail(null)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
+            <div><strong>Tipo:</strong> {detail.tipo}</div>
+            <div><strong>Gravità:</strong> <span style={{ color: GRAV_COLORS[detail.gravita] }}>{detail.gravita}</span></div>
+            <div><strong>Messaggio:</strong> {detail.messaggio}</div>
+            <div><strong>Contesto:</strong> {detail.contesto || "—"}</div>
+            <div><strong>Data:</strong> {new Date(detail.createdAt).toLocaleString("it-IT")}</div>
+            {detail.dettaglio && (
+              <div>
+                <strong>Dettagli:</strong>
+                <pre style={{ marginTop: 4, padding: 8, background: "var(--fg-soft)", borderRadius: 6, fontSize: 12, overflow: "auto", maxHeight: 300 }}>
+                  {JSON.stringify(detail.dettaglio, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
