@@ -115,6 +115,7 @@ export class CheckoutService {
         cap: i.cap,
         citta: i.citta,
         provincia: i.provincia,
+        nazione: i.nazione,
         tipoDestinazione: i.tipoDestinazione,
         flagSpedizione: i.flagSpedizione,
         abituale: i.flagAbituale,

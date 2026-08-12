@@ -31,6 +31,7 @@ interface Indirizzo {
   cap: string | null;
   citta: string | null;
   provincia: string | null;
+  nazione: string | null;
   tipoDestinazione: string | null;
   abituale: boolean;
   daIntegra: boolean;
@@ -173,7 +174,7 @@ export default function ProfileSection({
   }
 
   function openEdit(a: Indirizzo) {
-    setEditId(a.id); setFRagione(a.ragioneSociale ?? ""); setFIndirizzo(a.indirizzo ?? ""); setFCap(a.cap ?? ""); setFCitta(a.citta ?? ""); setFProvincia(a.provincia ?? ""); setFNazione((a as any).nazione ?? "IT"); setFDefault(a.abituale); setShowForm(true);
+    setEditId(a.id); setFRagione(a.ragioneSociale ?? ""); setFIndirizzo(a.indirizzo ?? ""); setFCap(a.cap ?? ""); setFCitta(a.citta ?? ""); setFProvincia(a.provincia ?? ""); setFNazione(a.nazione ?? "IT"); setFDefault(a.abituale); setShowForm(true);
   }
 
   function closeForm() { setShowForm(false); setEditId(null); }
