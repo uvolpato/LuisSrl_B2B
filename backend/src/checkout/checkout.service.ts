@@ -372,6 +372,7 @@ export class CheckoutService {
 
     // Applica coupon se presente - calcolo server-side
     let couponRiga: any = null;
+    try {
     if (dto.codiceCoupon) {
       const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
       if (campaign && campaign.status === 'active') {
@@ -439,6 +440,7 @@ export class CheckoutService {
           if (campaign.scopeDetail) descr += ` su ${campaign.scopeDetail}`;
 
           if (discountAmount > 0) {
+            importoTotale -= discountAmount;
             couponRiga = {
               codiceProdotto: campaign.code,
               descrizione: descr,
@@ -455,6 +457,7 @@ export class CheckoutService {
         }
       }
     }
+    } catch (e) { /* coupon error non deve bloccare l'ordine */ }
 
     const numeroOrdine = `B2B-${Date.now()}`;
     const righeFinali = couponRiga ? [...righe, couponRiga] : righe;
