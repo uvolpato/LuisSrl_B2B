@@ -127,45 +127,31 @@ export class CheckoutService {
   }
 
   async calcolaSpedizione(clienteId: number, provincia: string, nazioneParam: string, imponibile: number, sconto: number = 0) {
-    let nazione = 'IT';
+    let nazione = nazioneParam || 'ROW';
     let regione: string | null = null;
 
     if (provincia) {
       const reg = this.provinciaToRegione(provincia.toUpperCase());
-      if (reg) regione = reg;
-    }
-    // Usa la nazione passata dal frontend, o fallback su indirizzo predefinito
-    if (!regione) {
-      if (nazioneParam && nazioneParam !== 'IT') {
-        nazione = nazioneParam;
-      } else {
-        const addr = await this.prisma.indirizzoCliente.findFirst({
-          where: { customerId: clienteId, flagAbituale: true },
-          select: { nazione: true },
-        });
-        nazione = addr?.nazione || 'ROW';
-      }
+      if (reg) { regione = reg; nazione = 'IT'; }
     }
 
-    if (nazione !== 'IT') {
-      const resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, null);
+    if (nazione === 'IT') {
+      const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
       if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
       const calc = Calcola(resolved.t, imponibile, sconto);
-      const label = nazione === 'ROW' ? 'Resto del mondo' : nazione;
       return {
         importo: Math.round(calc.fee * 100) / 100,
-        descrizione: label + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+        descrizione: (regione || 'Italia') + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
         gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
       };
     }
 
-    const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione);
+    const resolved = await this.speseSpedizione.resolveTariffaAsync(nazione, null);
     if (!resolved) return { importo: 0, descrizione: 'Tariffa da confermare', gratuita: false, soglia: null, minimo: null, minimoOrdine: null };
-
     const calc = Calcola(resolved.t, imponibile, sconto);
     return {
       importo: Math.round(calc.fee * 100) / 100,
-      descrizione: (regione || 'Italia') + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
+      descrizione: nazione + (calc.superaSoglia ? ' (gratuita sopra soglia)' : ` (${calc.pct.toFixed(1)}%)`),
       gratuita: calc.superaSoglia, soglia: calc.soglia, minimo: calc.minimo, minimoOrdine: calc.minimoOrdine,
     };
   }
