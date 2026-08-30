@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { EventLogService } from '../event-log/event-log.service';
+import { AuditService } from '../audit/audit.service';
 
 const ACTION_MAP: Array<{ pattern: RegExp; method: string; label: string }> = [
   { pattern: /^\/auth\/login$/, method: 'POST', label: 'Login' },
@@ -25,13 +25,14 @@ const ACTION_MAP: Array<{ pattern: RegExp; method: string; label: string }> = [
 ];
 
 function getLabel(method: string, url: string): string {
-  for (const e of ACTION_MAP) if (method === e.method && e.pattern.test(url)) return e.label;
+  const path = url.replace(/^\/api/, '');
+  for (const e of ACTION_MAP) if (method === e.method && e.pattern.test(path)) return e.label;
   return `${method} ${url}`;
 }
 
 @Injectable()
 export class AccessLogInterceptor implements NestInterceptor {
-  constructor(private readonly log: EventLogService) {}
+  constructor(private readonly log: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
