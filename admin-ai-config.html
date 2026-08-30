@@ -184,6 +184,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
 .modal-sec{margin-bottom:20px}
 .modal-sec h4{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:14px}
 
+/* ── Tabs ────────────────────────────────── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:18px;padding:6px;overflow-x:auto}
+.tab{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;white-space:nowrap;cursor:pointer;transition:background .14s,color .14s}
+.tab:hover{background:var(--bg);color:var(--fg)}
+.tab.on{background:var(--accent);color:#fff}
+.tab svg{width:15px;height:15px}
+.tab .cnt{font-family:var(--mono);font-size:11px;background:color-mix(in oklab, currentColor 14%, transparent);border-radius:999px;padding:1px 7px;font-weight:700}
+.tab.on .cnt{background:oklch(100% 0 0 / .22);color:#fff}
+.panel{display:none}
+.panel.on{display:block}
+
 @media(max-width:920px){
   .form-grid{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr 1fr}
@@ -223,8 +234,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
     <div class="kpi green"><div class="label">Costo stimato 30 gg</div><div class="val">€ 4,82</div><div class="sub">costo medio € 0,42/giorno</div></div>
   </div>
 
-  <!-- ── 1 · Provider e modelli ────────────────── -->
-  <section class="section" id="sec-provider" data-od-id="sec-provider">
+  <!-- ── Tabs ──────────────────────────────────── -->
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="provider"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Provider e modelli</button>
+    <button class="tab" data-tab="sistema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-4h4v4"/></svg>Prompt sistema<span class="cnt">8</span></button>
+    <button class="tab" data-tab="template"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Template<span class="cnt">8</span></button>
+    <button class="tab" data-tab="suggest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11a5 5 0 016 4l2 6H7l2-6a5 5 0 010 0z"/><path d="M14 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></svg>Suggerimenti<span class="cnt">6</span></button>
+    <button class="tab" data-tab="uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>Uso e costi</button>
+  </div>
+
+  <!-- ── Panels ───────────────────────────────── -->
+  <section class="section panel on" id="sec-provider" data-od-id="sec-provider" data-panel="provider">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>1 · Provider e modelli</h2>
       <span class="desc">Configurati per ambito Immagini e Testi</span>
@@ -281,7 +301,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
   </section>
 
   <!-- ── 2 · Prompt di sistema ─────────────────── -->
-  <section class="section" id="sec-sistema" data-od-id="sec-sistema">
+  <section class="section panel" id="sec-sistema" data-od-id="sec-sistema" data-panel="sistema">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-4h4v4"/></svg></span>2 · Prompt di sistema</h2>
       <span class="desc">Comportamentali, salvati in SiteConfig</span>
@@ -338,7 +358,7 @@ REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastell
   </section>
 
   <!-- ── 3 · Template di prompt (PromptTemplate) ── -->
-  <section class="section" id="sec-template" data-od-id="sec-template">
+  <section class="section panel" id="sec-template" data-od-id="sec-template" data-panel="template">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>3 · Template di prompt</h2>
       <span class="desc">Riutilizzabili per ambienti e descrizioni (PromptTemplate)</span>
@@ -365,7 +385,7 @@ REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastell
   </section>
 
   <!-- ── 4 · Suggerimenti AI dashboard ──────────── -->
-  <section class="section" id="sec-suggest" data-od-id="sec-suggest">
+  <section class="section panel" id="sec-suggest" data-od-id="sec-suggest" data-panel="suggest">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11a5 5 0 016 4l2 6H7l2-6a5 5 0 010 0z"/><path d="M14 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></svg></span>4 · Suggerimenti AI dashboard</h2>
       <span class="desc">6 box di suggerimento in <code>area/page.tsx</code> (SuggestionBox)</span>
@@ -384,7 +404,7 @@ REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastell
   </section>
 
   <!-- ── 5 · Uso e costi AI ────────────────────── -->
-  <section class="section" id="sec-uso" data-od-id="sec-uso">
+  <section class="section panel" id="sec-uso" data-od-id="sec-uso" data-panel="uso">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>5 · Uso e costi AI</h2>
       <span class="desc">Monitoraggio token da <code>ai_usage</code></span>
@@ -685,13 +705,24 @@ document.getElementById('btn-save-all').onclick = () => {
   flashSaved();
 };
 
+/* ── Tabs ────────────────────────────────── */
+document.querySelectorAll('#tabs .tab').forEach(tb=>{
+  tb.addEventListener('click', ()=>{
+    document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    tb.classList.add('on');
+    const t = tb.dataset.tab;
+    document.querySelector(`.panel[data-panel="${t}"]`).classList.add('on');
+  });
+});
+
 /* ── Search ─────────────────────────────── */
 document.getElementById('search').addEventListener('input', e=>{
   const q = e.target.value.toLowerCase().trim();
-  document.querySelectorAll('.section').forEach(sec=>{
-    if(!q){ sec.style.display=''; return; }
-    sec.style.display = sec.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
+  /* ricerca dentro il pannello attivo: se non combacia, mostra "nessun risultato" */
+  const active = document.querySelector('.panel.on');
+  if(!q){ active.style.display=''; return; }
+  active.style.display = active.textContent.toLowerCase().includes(q) ? '' : 'none';
 });
 
 /* ── Province combobox helper (dummy, riusabile) ── */
