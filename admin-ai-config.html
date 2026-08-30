@@ -105,6 +105,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
 .field textarea.sm{min-height:90px}
 .field textarea.code{background:oklch(22% 0.02 60);color:oklch(92% 0.01 90);font-size:12px}
 .field input[type=text].ro,.field textarea.ro{background:var(--bg);color:var(--muted);cursor:not-allowed}
+.field .field-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.field .field-foot .hint{flex:1}
+.field .field-foot .btn{flex-shrink:0}
 .seg{display:flex;gap:8px}
 .seg button{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:12.5px;color:var(--muted);font-weight:600}
 .seg button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -330,50 +333,73 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
     <div class="form-grid">
       <div class="field span2">
         <label>Descrizione articolo</label>
-        <textarea id="s-desc" class="ro" readonly>Sei un tecnico-specialista di vasellame e articoli garden per il canale B2B (grossista → rivenditore/fiorista).</textarea>
-        <div class="hint">Chiave <code>Prompt_AI_Descrizione_Articolo</code>. Sistema per la generazione/rigenerazione delle descrizioni prodotto.</div>
+        <textarea id="s-desc">Sei un tecnico-specialista di vasellame e articoli garden per il canale B2B (grossista → rivenditore/fiorista).</textarea>
+        <div class="field-foot">
+          <span class="hint">Chiave <code>Prompt_AI_Descrizione_Articolo</code>. Sistema per la generazione/rigenerazione delle descrizioni prodotto.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-desc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Estrazione colore (JSON)</label>
-        <textarea id="s-colore" class="ro" readonly>Sei un esperto di colori per articoli di vasellame e garden. Analizza nome e descrizione e restituisci SOLO un JSON valido SENZA markdown:
+        <textarea id="s-colore">Sei un esperto di colori per articoli di vasellame e garden. Analizza nome e descrizione e restituisci SOLO un JSON valido SENZA markdown:
 { "colore": "nome colore in italiano (es. Nocciola, Terracotta, Salvia, Antracite, Crema, Tortora)" oppure null, "coloreRgb": "#RRGGBB" oppure null }
 REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastello smorzati; leggibile su sfondo bianco.</textarea>
-        <div class="hint">Hardcoded in <code>integrazione.service</code>. Estrae colore e RGB dal nome/descrizione prodotto.</div>
+        <div class="field-foot">
+          <span class="hint">Hardcoded in <code>integrazione.service</code>. Estrae colore e RGB dal nome/descrizione prodotto.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-colore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Ricerca semantica nel catalogo (rewrite)</label>
-        <textarea id="s-rewrite" class="ro" readonly>Sei un assistente di ricerca per un catalogo B2B di vasi, fioriere, cache-pot e complementi d'arredo (materiali tipici: cotto, terracotta, fiberstone, ceramica, metallo; uso interno/esterno). Trasforma la richiesta del cliente per una ricerca semantica nel catalogo.</textarea>
-        <div class="hint">Riscrive la query del cliente in una ricerca semantica sul catalogo.</div>
+        <textarea id="s-rewrite">Sei un assistente di ricerca per un catalogo B2B di vasi, fioriere, cache-pot e complementi d'arredo (materiali tipici: cotto, terracotta, fiberstone, ceramica, metallo; uso interno/esterno). Trasforma la richiesta del cliente per una ricerca semantica nel catalogo.</textarea>
+        <div class="field-foot">
+          <span class="hint">Riscrive la query del cliente in una ricerca semantica sul catalogo.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-rewrite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Analisi immagine (vision) — descrizione prodotto</label>
-        <textarea id="s-vision" class="ro" readonly>Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti sugli attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni percepite e uso (interno/esterno). Sii concreto e preciso; non inventare ciò che non è visibile.</textarea>
-        <div class="hint">Descrive l'articolo partendo da una foto caricata.</div>
+        <textarea id="s-vision">Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti sugli attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni percepite e uso (interno/esterno). Sii concreto e preciso; non inventare ciò che non è visibile.</textarea>
+        <div class="field-foot">
+          <span class="hint">Descrive l'articolo partendo da una foto caricata.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-vision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Analisi multi-immagine (osservatore garden)</label>
-        <textarea id="s-garden" class="ro" readonly>Sei un osservatore esperto di vasellame e articoli garden B2B. Analizza le immagini fornite e produci una descrizione tecnica del prodotto rivolta a un rivenditore professionale.</textarea>
-        <div class="hint">Descrive l'articolo da più foto in galleria.</div>
+        <textarea id="s-garden">Sei un osservatore esperto di vasellame e articoli garden B2B. Analizza le immagini fornite e produci una descrizione tecnica del prodotto rivolta a un rivenditore professionale.</textarea>
+        <div class="field-foot">
+          <span class="hint">Descrive l'articolo da più foto in galleria.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-garden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Insight cliente (analista commerciale)</label>
-        <textarea id="s-insight" class="ro" readonly>Sei un analista commerciale B2B per un'azienda di vasi e complementi. Partendo dai dati di vendita del cliente, produci una sintesi commerciale utile per l'agente di riferimento.</textarea>
-        <div class="hint">Usato da <code>insight.service</code> per la dashboard cliente.</div>
+        <textarea id="s-insight">Sei un analista commerciale B2B per un'azienda di vasi e complementi. Partendo dai dati di vendita del cliente, produci una sintesi commerciale utile per l'agente di riferimento.</textarea>
+        <div class="field-foot">
+          <span class="hint">Usato da <code>insight.service</code> per la dashboard cliente.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-insight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Profiling cliente (assistente B2B)</label>
-        <textarea id="s-profile" class="ro" readonly>Sei un assistente che profila i clienti B2B di un grossista di arredamento per fioristi e garden. Scrivi una breve descrizione professionale del cliente (2-3 paragrafi) combinando i dati anagrafici forniti e le note di corrispondenza. Non inventare fatti non presenti. Stile: neutro, utile per il commerciale.</textarea>
-        <div class="hint">Usato da <code>customer-profile.service</code>, con ricerca web (grounding).</div>
+        <textarea id="s-profile">Sei un assistente che profila i clienti B2B di un grossista di arredamento per fioristi e garden. Scrivi una breve descrizione professionale del cliente (2-3 paragrafi) combinando i dati anagrafici forniti e le note di corrispondenza. Non inventare fatti non presenti. Stile: neutro, utile per il commerciale.</textarea>
+        <div class="field-foot">
+          <span class="hint">Usato da <code>customer-profile.service</code>, con ricerca web (grounding).</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
       <div class="field span2">
         <label>Genera variante colore</label>
-        <textarea id="s-variant" class="ro" readonly>Arricchisce il prompt dell'utente col contesto prodotto per generare una variante di colore o accessorio coerente con l'articolo di partenza.</textarea>
-        <div class="hint">Aggiunge il contesto prodotto al prompt utente prima della generazione.</div>
+        <textarea id="s-variant">Arricchisce il prompt dell'utente col contesto prodotto per generare una variante di colore o accessorio coerente con l'articolo di partenza.</textarea>
+        <div class="field-foot">
+          <span class="hint">Aggiunge il contesto prodotto al prompt utente prima della generazione.</span>
+          <button class="btn btn-secondary btn-xs" data-reset-sys="s-variant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Ripristina default</button>
+        </div>
       </div>
     </div>
     <div class="table-foot">
-      <span class="range">I prompt di sistema sono identificati dalle chiavi <code>Prompt_AI_*</code> in SiteConfig o hardcoded nel service.</span>
-      <button class="btn btn-secondary btn-sm" id="btn-edita-sistema">Modifica</button>
+      <span class="range">I prompt di sistema sono identificati dalle chiavi <code>Prompt_AI_*</code> in SiteConfig o hardcoded nel service. Puoi modificare i campi e ripristinare il default di fabbrica con il relativo bottone.</span>
     </div>
   </section>
 
@@ -495,39 +521,6 @@ REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastell
       <div class="right">
         <button class="btn btn-secondary" data-close-tpl>Annulla</button>
         <button class="btn btn-primary" id="tpl-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Salva template</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODALE: modifica prompt sistema ─────────── -->
-<div class="modal-root" id="sys-modal">
-  <div class="modal lg">
-    <div class="modal-head">
-      <h3>Modifica prompt di sistema</h3>
-      <button class="x" data-close-sys><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-sec">
-        <h4>Prompt selezionato</h4>
-        <div class="form-grid">
-          <div class="field span2">
-            <label>Chiave</label>
-            <input type="text" id="sys-edit-key" readonly class="ro">
-          </div>
-          <div class="field span2">
-            <label>Prompt <span class="need">*</span></label>
-            <textarea id="sys-edit-prompt" class="code"></textarea>
-            <div class="hint">Verrà salvato in SiteConfig con la chiave mostrata. Le chiavi hardcoded nel service andranno esposte per essere modificabili qui.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <div class="left"></div>
-      <div class="right">
-        <button class="btn btn-secondary" data-close-sys>Annulla</button>
-        <button class="btn btn-primary" id="sys-save">Salva prompt</button>
       </div>
     </div>
   </div>
@@ -708,41 +701,28 @@ function saveTpl(){
   renderTemplates(); flashSaved(); closeTpl();
 }
 
-/* ── Modal sistema ──────────────────────── */
-let sysKey = null;
-function openSys(key,label){
-  sysKey = key;
-  const area = document.getElementById('s-'+ (key==='desc'?'desc':key));
-  document.getElementById('sys-edit-key').value = 'Prompt_AI_' + key.toUpperCase();
-  document.getElementById('sys-edit-prompt').value = area.value;
-  document.getElementById('sys-modal').classList.add('open');
-}
-document.getElementById('btn-edita-sistema').onclick = () => openSys('desc','Descrizione articolo');
-document.querySelectorAll('[data-close-sys]').forEach(b=>b.onclick=()=>document.getElementById('sys-modal').classList.remove('open'));
-document.getElementById('sys-save').onclick = () => {
-  const area = document.getElementById('s-'+sysKey);
-  area.value = document.getElementById('sys-edit-prompt').value;
-  document.getElementById('sys-modal').classList.remove('open');
-  flashSaved();
+/* ── Default di fabbrica prompt sistema ───── */
+const SYS_DEFAULTS = {
+  's-desc': 'Sei un tecnico-specialista di vasellame e articoli garden per il canale B2B (grossista → rivenditore/fiorista).',
+  's-colore': 'Sei un esperto di colori per articoli di vasellame e garden. Analizza nome e descrizione e restituisci SOLO un JSON valido SENZA markdown:\n{ "colore": "nome colore in italiano (es. Nocciola, Terracotta, Salvia, Antracite, Crema, Tortora)" oppure null, "coloreRgb": "#RRGGBB" oppure null }\nREGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastello smorzati; leggibile su sfondo bianco.',
+  's-rewrite': 'Sei un assistente di ricerca per un catalogo B2B di vasi, fioriere, cache-pot e complementi d\'arredo (materiali tipici: cotto, terracotta, fiberstone, ceramica, metallo; uso interno/esterno). Trasforma la richiesta del cliente per una ricerca semantica nel catalogo.',
+  's-vision': 'Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti sugli attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni percepite e uso (interno/esterno). Sii concreto e preciso; non inventare ciò che non è visibile.',
+  's-garden': 'Sei un osservatore esperto di vasellame e articoli garden B2B. Analizza le immagini fornite e produci una descrizione tecnica del prodotto rivolta a un rivenditore professionale.',
+  's-insight': 'Sei un analista commerciale B2B per un\'azienda di vasi e complementi. Partendo dai dati di vendita del cliente, produci una sintesi commerciale utile per l\'agente di riferimento.',
+  's-profile': 'Sei un assistente che profila i clienti B2B di un grossista di arredamento per fioristi e garden. Scrivi una breve descrizione professionale del cliente (2-3 paragrafi) combinando i dati anagrafici forniti e le note di corrispondenza. Non inventare fatti non presenti. Stile: neutro, utile per il commerciale.',
+  's-variant': 'Arricchisce il prompt dell\'utente col contesto prodotto per generare una variante di colore o accessorio coerente con l\'articolo di partenza.'
 };
 
-/* ── Switches sistema → editable ────────── */
-function bindSystemToggles(){
-  document.querySelectorAll('[data-edit-sys]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = btn.dataset.editSys;
-      const ta = document.getElementById(id);
-      const editable = ta.readOnly;
-      if(editable){
-        ta.classList.remove('ro'); ta.readOnly=false;
-        btn.textContent = 'Blocca'; btn.classList.add('on');
-      } else {
-        ta.classList.add('ro'); ta.readOnly=true;
-        btn.textContent = 'Modifica'; btn.classList.remove('on');
-      }
-    });
-  });
+function resetSys(id){
+  const d = SYS_DEFAULTS[id];
+  if(d !== undefined){
+    document.getElementById(id).value = d;
+    flashSaved();
+  }
 }
+document.querySelectorAll('[data-reset-sys]').forEach(b=>{
+  b.addEventListener('click', ()=>resetSys(b.dataset.resetSys));
+});
 
 /* ── Salva tutto ────────────────────────── */
 function flashSaved(){
@@ -781,13 +761,11 @@ function createCombobox(){ /* pattern spese-spedizione; qui non attivo per il pr
 
 /* ── Nav modali backdrop ────────────────── */
 document.getElementById('tpl-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeTpl(); });
-document.getElementById('sys-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeSys(); });
-function closeSys(){ document.getElementById('sys-modal').classList.remove('open'); }
 document.querySelectorAll('[data-close-tpl]').forEach(b=>b.onclick=closeTpl);
 document.getElementById('btn-add-tpl').onclick = ()=>openTpl(null);
 document.getElementById('tpl-save').onclick = saveTpl;
 document.getElementById('tpl-delete').onclick = ()=>{ if(tplEditId){ TEMPLATES.splice(TEMPLATES.findIndex(x=>x.id===tplEditId),1); renderTemplates(); closeTpl(); } };
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeTpl(); closeSys(); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeTpl(); } });
 
 /* ── Daypicker ──────────────────────────── */
 const dp = document.getElementById('dp-days');
@@ -798,7 +776,6 @@ dp.addEventListener('change', renderUsage);
 /* ── Init ───────────────────────────────── */
 renderTemplates();
 renderUsage();
-bindSystemToggles();
 </script>
 </body>
 </html>
