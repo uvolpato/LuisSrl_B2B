@@ -165,6 +165,24 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
 .daypicker button:hover{background:var(--accent-soft);color:var(--accent)}
 .daypicker input{border:1px solid var(--border);border-radius:7px;padding:4px 6px;width:56px;font-family:var(--mono);font-size:12px;text-align:center}
 
+/* ── Uso e costi (logica CostiAiSection) ──────── */
+.usage-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:8px 20px}
+.usage-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden}
+.usage-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.usage-card.blue::before{background:var(--blue)}
+.usage-card.green::before{background:var(--green)}
+.usage-card.red::before{background:var(--red)}
+.usage-card .v{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:-.02em}
+.usage-card .l{font-size:12px;color:var(--muted);margin-top:4px}
+.costi-serie{display:flex;align-items:flex-end;gap:3px;height:120px}
+.costi-serie .bar{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;opacity:.85;position:relative}
+.costi-serie .bar:hover{opacity:1}
+.costi-serie .bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--fg);color:#fff;font-size:11px;font-family:var(--mono);padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:50}
+.usage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 20px 20px}
+.usage-block h3{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:10px}
+.usage-block .table td.num,.usage-block .table th.num{text-align:right;font-family:var(--mono)}
+.usage-block .cell-pill{text-transform:capitalize}
+
 /* ── Modal ───────────────────────────────────── */
 .modal-root{position:fixed;inset:0;background:oklch(18% 0.02 60 / .5);display:none;align-items:flex-start;justify-content:center;padding:60px 20px;z-index:100;overflow:auto}
 .modal-root.open{display:flex}
@@ -199,11 +217,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);out
   .form-grid{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr 1fr}
   .usage{grid-template-columns:1fr}
+  .usage-cards{grid-template-columns:1fr 1fr}
+  .usage-grid{grid-template-columns:1fr}
   .topbar .search input{width:100%}
   .topbar-in{align-items:stretch}
 }
 @media(max-width:560px){
   .kpis{grid-template-columns:1fr}
+  .usage-cards{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -387,22 +408,42 @@ REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastell
   <section class="section panel" id="sec-uso" data-od-id="sec-uso" data-panel="uso">
     <div class="section-head">
       <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>5 · Uso e costi AI</h2>
-      <span class="desc">Monitoraggio token da <code>ai_usage</code></span>
+      <span class="desc">Stima da uso reale (token/immagini) × prezzo modello. Può differire dalla fattura.</span>
       <div class="actions">
         <div class="daypicker">
           <button id="dp-prev">◀</button><input type="number" id="dp-days" value="30" min="1" max="365"> gg<button id="dp-next">▶</button>
         </div>
       </div>
     </div>
-    <div class="usage">
-      <div class="chart-block">
-        <h3>Token per tipo (30 giorni)</h3>
-        <div class="bars" id="usage-bars"></div>
-        <div class="cost-total"><span class="l">Costo stimato totale</span><span class="v red" id="usage-cost">€ 4,82</span></div>
+
+    <div class="usage-cards" id="usage-cards"></div>
+
+    <div class="chart-block" style="margin:14px 20px 6px">
+      <h3 id="uso-giorno-title">Costo per giorno</h3>
+      <div class="costi-serie" id="usage-serie"></div>
+    </div>
+
+    <div class="usage-grid">
+      <div class="usage-block">
+        <h3>Per utente</h3>
+        <table class="table">
+          <thead><tr><th>Utente</th><th style="text-align:right">Chiamate</th><th style="text-align:right">Costo</th></tr></thead>
+          <tbody id="uso-attori"></tbody>
+        </table>
       </div>
-      <div class="chart-block">
-        <h3>Ripartizione per attore</h3>
-        <div class="bars" id="usage-attori"></div>
+      <div class="usage-block">
+        <h3>Per tipo di richiesta</h3>
+        <table class="table">
+          <thead><tr><th>Tipo</th><th style="text-align:right">Chiamate</th><th style="text-align:right">Costo</th></tr></thead>
+          <tbody id="uso-tipi"></tbody>
+        </table>
+      </div>
+      <div class="usage-block">
+        <h3>Per modello</h3>
+        <table class="table">
+          <thead><tr><th>Modello</th><th style="text-align:right">Chiamate</th><th style="text-align:right">Costo</th></tr></thead>
+          <tbody id="uso-modelli"></tbody>
+        </table>
       </div>
     </div>
   </section>
@@ -520,19 +561,54 @@ const TEMPLATES = [
   {id:8, tipo:"AMBIENTA", titolo:"Variante colore salvia", prompt:"Genera una variante dello stesso articolo in colore salvia pastello, stesso stile compositivo.", tags:"esterno, variante, salvia", ord:8}
 ];
 
-const USAGE_TIPI = [
-  {name:"descrizione", in:48210, out:38110, fill:"", n:"86.320"},
-  {name:"immagine", in:40220, out:15500, fill:"blue", n:"55.720"},
-  {name:"embedding", in:33190, out:0, fill:"amber", n:"33.190"},
-  {name:"rewrite", in:15800, out:22105, fill:"green", n:"37.905"},
-  {name:"vision", in:10882, out:16800, fill:"", n:"27.682"}
-];
-const USAGE_ATTORI = [
-  {name:"admin", pct:52, fill:""},
-  {name:"customer", pct:31, fill:"blue"},
-  {name:"agent", pct:12, fill:"green"},
-  {name:"system", pct:5, fill:"amber"}
-];
+/* ── Uso e costi (logica CostiAiSection) ──── */
+const USAGE = {
+  periodoGiorni: 30,
+  totale: { chiamate: 1246, costo: 4.82, tokenIn: 148302, tokenOut: 92515, immagini: 18 },
+  perTipo: [
+    { tipo: "descrizione", chiamate: 512, costo: 2.08 },
+    { tipo: "immagine", chiamate: 18, costo: 1.34 },
+    { tipo: "embedding", chiamate: 343, costo: 0.14 },
+    { tipo: "rewrite", chiamate: 206, costo: 0.62 },
+    { tipo: "vision", chiamate: 96, costo: 0.48 },
+    { tipo: "ricerca", chiamate: 58, costo: 0.11 }
+  ],
+  perModello: [
+    { modello: "gemini-2.5-flash", chiamate: 1210, costo: 3.36 },
+    { modello: "gemini-2.5-flash-image", chiamate: 18, costo: 1.34 },
+    { modello: "text-embedding-004", chiamate: 18, costo: 0.12 }
+  ],
+  perAttore: [
+    { attoreTipo: "admin", nome: "Mario Rossi", chiamate: 648, costo: 2.51 },
+    { attoreTipo: "customer", nome: "Vivaio dei Fiori srl", chiamate: 387, costo: 1.15 },
+    { attoreTipo: "agent", nome: "Luca Verdi", chiamate: 149, costo: 0.94 },
+    { attoreTipo: "system", nome: "sistema", chiamate: 62, costo: 0.22 }
+  ],
+  serie: [
+    { giorno: "01/08", costo: 0.18, chiamate: 41 }, { giorno: "02/08", costo: 0.22, chiamate: 39 },
+    { giorno: "03/08", costo: 0.10, chiamate: 18 }, { giorno: "04/08", costo: 0.14, chiamate: 22 },
+    { giorno: "05/08", costo: 0.19, chiamate: 34 }, { giorno: "06/08", costo: 0.21, chiamate: 46 },
+    { giorno: "07/08", costo: 0.09, chiamate: 15 }, { giorno: "08/08", costo: 0.17, chiamate: 38 },
+    { giorno: "09/08", costo: 0.23, chiamate: 51 }, { giorno: "10/08", costo: 0.12, chiamate: 20 },
+    { giorno: "11/08", costo: 0.15, chiamate: 27 }, { giorno: "12/08", costo: 0.20, chiamate: 43 },
+    { giorno: "13/08", costo: 0.24, chiamate: 55 }, { giorno: "14/08", costo: 0.11, chiamate: 17 },
+    { giorno: "15/08", costo: 0.16, chiamate: 29 }, { giorno: "16/08", costo: 0.21, chiamate: 44 },
+    { giorno: "17/08", costo: 0.13, chiamate: 23 }, { giorno: "18/08", costo: 0.18, chiamate: 36 },
+    { giorno: "19/08", costo: 0.22, chiamate: 48 }, { giorno: "20/08", costo: 0.10, chiamate: 16 },
+    { giorno: "21/08", costo: 0.17, chiamate: 33 }, { giorno: "22/08", costo: 0.20, chiamate: 41 },
+    { giorno: "23/08", costo: 0.14, chiamate: 25 }, { giorno: "24/08", costo: 0.19, chiamate: 37 },
+    { giorno: "25/08", costo: 0.23, chiamate: 52 }, { giorno: "26/08", costo: 0.11, chiamate: 19 },
+    { giorno: "27/08", costo: 0.16, chiamate: 30 }, { giorno: "28/08", costo: 0.21, chiamate: 45 },
+    { giorno: "29/08", costo: 0.15, chiamate: 28 }, { giorno: "30/08", costo: 0.20, chiamate: 42 }
+  ]
+};
+
+function fmtEur(n){
+  return '€ ' + n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtN(n){
+  return n.toLocaleString('it-IT');
+}
 
 /* ── Render template table ──────────────── */
 const TPL_PER_PAGE = 5;
@@ -567,21 +643,43 @@ function renderPager(pages){
   document.getElementById('tp-next').onclick=()=>{if(tplPage<pages){tplPage++;renderTemplates();}};
 }
 
-/* ── Usage bars ─────────────────────────── */
+/* ── Usage & costi (logica CostiAiSection) ── */
 function renderUsage(){
-  const max = Math.max(...USAGE_TIPI.map(u=>u.in+u.out));
-  document.getElementById('usage-bars').innerHTML = USAGE_TIPI.map(u=>`
-    <div class="bar-row">
-      <span class="name">${u.name}</span>
-      <span class="track"><span class="fill ${u.fill}" style="width:${Math.max(4,100*(u.in+u.out)/max)}%"></span></span>
-      <span class="num">${u.n}</span>
-    </div>`).join('');
-  document.getElementById('usage-attori').innerHTML = USAGE_ATTORI.map(a=>`
-    <div class="bar-row">
-      <span class="name">${a.name}</span>
-      <span class="track"><span class="fill ${a.fill}" style="width:${a.pct}%"></span></span>
-      <span class="num">${a.pct}%</span>
-    </div>`).join('');
+  const u = USAGE;
+  const tot = u.totale;
+  document.getElementById('usage-cards').innerHTML = `
+    <div class="usage-card blue"><div class="v">${fmtEur(tot.costo)}</div><div class="l">Costo stimato</div></div>
+    <div class="usage-card"><div class="v">${fmtN(tot.chiamate)}</div><div class="l">Chiamate AI</div></div>
+    <div class="usage-card"><div class="v">${fmtN(tot.tokenIn + tot.tokenOut)}</div><div class="l">Token totali</div></div>
+    <div class="usage-card green"><div class="v">${fmtN(tot.immagini)}</div><div class="l">Immagini generate</div></div>`;
+
+  const maxSerie = Math.max(1, ...u.serie.map((s) => s.costo));
+  document.getElementById('uso-giorno-title').textContent = `Costo per giorno (${u.periodoGiorni} giorni)`;
+  document.getElementById('usage-serie').innerHTML = u.serie.map((s) => `
+    <div class="bar" style="height:${(s.costo / maxSerie) * 100}%" data-tip="${s.giorno}: ${fmtEur(s.costo)} · ${fmtN(s.chiamate)} chiamate"></div>`).join('');
+
+  document.getElementById('uso-attori').innerHTML = u.perAttore.length
+    ? u.perAttore.map((a) => `
+        <tr>
+          <td><div class="cell-title">${a.nome}</div><span class="badge badge-blue">${a.attoreTipo}</span></td>
+          <td class="num">${fmtN(a.chiamate)}</td>
+          <td class="num">${fmtEur(a.costo)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:18px">—</td></tr>`;
+
+  document.getElementById('uso-tipi').innerHTML = u.perTipo.map((t) => `
+    <tr>
+      <td><div class="cell-pill">${t.tipo}</div></td>
+      <td class="num">${fmtN(t.chiamate)}</td>
+      <td class="num">${fmtEur(t.costo)}</td>
+    </tr>`).join('');
+
+  document.getElementById('uso-modelli').innerHTML = u.perModello.map((m) => `
+    <tr>
+      <td><div class="cell-title">${m.modello}</div></td>
+      <td class="num">${fmtN(m.chiamate)}</td>
+      <td class="num">${fmtEur(m.costo)}</td>
+    </tr>`).join('');
 }
 
 /* ── Modal template ─────────────────────── */
