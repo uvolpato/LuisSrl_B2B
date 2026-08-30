@@ -9,6 +9,7 @@ import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEd
 import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
 import SyncPanel from "./SyncPanel";
 import CostiAiSection from "./sections/CostiAiSection";
+import EventLogSection from "./sections/EventLogSection";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 import { useConfirm } from "../common/ConfirmProvider";
@@ -35,9 +36,7 @@ function formatDate(d: string): string {
   return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-import AnomalieSection from "./sections/AnomalieSection";
-
-type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "anomalie" | "accessi";
+type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "log-eventi";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -52,8 +51,7 @@ const ALL_PERMISSIONS = [
   { key: "admin.settings.edit", label: "Modificare impostazioni" },
   { key: "admin.sync.view", label: "Visualizzare sincronizzazioni" },
   { key: "admin.sync.manage", label: "Gestire sincronizzazioni" },
-  { key: "admin.anomalie.view", label: "Visualizzare anomalie" },
-  { key: "admin.anomalie.edit", label: "Gestire anomalie" },
+  { key: "admin.anomalie.view", label: "Visualizzare log eventi" },
   { key: "catalog.articles.view", label: "Visualizzare articoli" },
   { key: "catalog.articles.create", label: "Creare articoli" },
   { key: "catalog.articles.edit", label: "Modificare articoli" },
@@ -332,11 +330,8 @@ export default function AdminPanel() {
         <button className={`admin-panel-tab ${activeTab === "costi-ai" ? "active" : ""}`} onClick={() => { setActiveTab("costi-ai"); }}>
           Costi AI
         </button>
-        <button className={`admin-panel-tab ${activeTab === "anomalie" ? "active" : ""}`} onClick={() => { setActiveTab("anomalie"); }}>
-          Anomalie
-        </button>
-        <button className={`admin-panel-tab ${activeTab === "accessi" ? "active" : ""}`} onClick={() => { setActiveTab("accessi"); }}>
-          Accessi
+        <button className={`admin-panel-tab ${activeTab === "log-eventi" ? "active" : ""}`} onClick={() => { setActiveTab("log-eventi"); }}>
+          Log eventi
         </button>
       </div>
 
@@ -467,13 +462,8 @@ export default function AdminPanel() {
           {activeTab === "costi-ai" && (
             <CostiAiSection />
           )}
-          {activeTab === "anomalie" && (
-            <AnomalieSection />
-          )}
-          {activeTab === "accessi" && (
-            <div className="admin-panel-content">
-              <p style={{ color: "var(--muted)" }}>Sezione in sviluppo</p>
-            </div>
+          {activeTab === "log-eventi" && (
+            <EventLogSection />
           )}
         </div>
       </div>
