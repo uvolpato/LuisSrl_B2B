@@ -295,7 +295,45 @@ read-only `integrams` NON vede `prosoggetti`/`prodotti`: per importarlo servireb
 la vista `b2b_prodotti` (dblink, utente privilegiato) e mapparlo in sync (ora `multiplo_qta`=null).
 Dettagli in `richiesta-dati-integra.md` §4.1.
 
+## 🗂️ Unificazione log (agosto 2026)
+
+Da tre sistemi a uno solo, `audit_log` (`backend/src/audit/audit.service.ts`):
+
+- `event_log` **eliminata** (aveva solo accessi HTTP + errori; i metodi
+  mutation/business/sync non erano mai chiamati). Dati migrati in audit_log
+  come `azione='http.access'` / `'http.error'` (migration
+  `20260830180946_merge_event_log_into_audit_log`).
+- `anomalia_log` **eliminata** (duplicava gli errori HTTP del filtro globale;
+  workflow "Risolvi" rimosso su decisione del committente). Il filtro errori è
+  ora `common/http-error.filter.ts` (APP_FILTER in app.module) e scrive
+  `http.error` con `gravita`/`contesto` nel JSON `dettagli`.
+- **Endpoint**: `GET /api/admin/audit` (filtri `categoria`=access|error|audit,
+  dateFrom/dateTo, search), `/stats`, `/entity/:entita/:entitaId` (timeline),
+  `/:id`. Controller in `audit/audit.controller.ts`, permesso
+  `admin.anomalie.view` (nome storico, NON rinominare: è nei dati).
+- **UI**: sezione "Log eventi" = **tab del Pannello di Amministrazione**
+  (`AdminPanel.tsx`), non più voce di sidebar. Le vecchie rotte
+  `/api/admin/event-log` e `/api/admin/anomalie` non esistono più.
+- Schema `AuditLog`: aggiunte colonne `request_id`, `duration_ms`.
+- `auditLog.id` è **BigInt**: nei controller va serializzato come stringa
+  (`String(row.id)`) o Nest fallisce il JSON.
+
+## 💬 Tooltip nei DataTable (generalizzato)
+
+I bottoni azione di `DataTable.tsx` (Clienti, Articoli, Listini, Log eventi,
+ecc.) usano **`<DataTip tip={...}>`** → componente comune `Tooltip`
+(`components/common/Tooltip.tsx`), stesso pattern di SpeseSpedizioneSection.
+
+- Il tooltip è **portaled su `document.body`** (position fixed, z-index 9999,
+  testo `textAlign: center`): **mai** usare `::after`/`data-tip` CSS dentro le
+  tabelle — il tooltip finisce dentro `.data-table-scroll` (overflow) e genera
+  scrollbar al passaggio del mouse.
+- Tooltip nascosto su scroll/resize; `role="tooltip"`.
+- Se aggiungi una tabella nuova con azioni icona: wrapper `DataTip` attorno al
+  bottone, `aria-label` sul bottone. Il vecchio CSS `.row-action::after` è
+  stato rimosso da `admin.css` di proposito.
+
 ---
 
-**Ultima modifica:** 3 luglio 2026  
+**Ultima modifica:** 30 agosto 2026  
 **Autore:** Claude (sviluppo iterativo)
