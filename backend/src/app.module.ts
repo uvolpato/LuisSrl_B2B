@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
@@ -21,11 +21,10 @@ import { ImgModule } from './img/img.module';
 import { SpeseSpedizioneModule } from './spese-spedizione/spese-spedizione.module';
 import { AdminOrdiniModule } from './admin-ordini/admin-ordini.module';
 import { CouponModule } from './coupon/coupon.module';
-import { EventLogModule } from './event-log/event-log.module';
-import { AnomaliaModule } from './anomalia/anomalia.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 import { AccessLogInterceptor } from './common/access-log.interceptor';
+import { HttpErrorFilter } from './common/http-error.filter';
 
 @Module({
   imports: [
@@ -51,11 +50,10 @@ import { AccessLogInterceptor } from './common/access-log.interceptor';
     SpeseSpedizioneModule,
     AdminOrdiniModule,
     CouponModule,
-    EventLogModule,
-    AnomaliaModule,
   ],
   controllers: [HealthController],
   providers: [
+    { provide: APP_FILTER, useClass: HttpErrorFilter },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
     { provide: APP_INTERCEPTOR, useClass: AccessLogInterceptor },

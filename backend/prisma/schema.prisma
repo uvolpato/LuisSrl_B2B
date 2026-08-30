@@ -298,16 +298,18 @@ model AdminPermission {
 /// (cliente) a seconda di actorType. Niente FK rigida: le due tabelle hanno
 /// sequenze di id indipendenti, quindi actorType disambigua.
 model AuditLog {
-  id        BigInt   @id @default(autoincrement())
-  actorId   Int?     @map("actor_id")
-  actorType String?  @map("actor_type")
-  azione    String
-  entita    String?
-  entitaId  String?  @map("entita_id")
-  dettagli  Json?
-  esito     String   @default("OK")
-  ip        String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id         BigInt   @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  actorType  String?  @map("actor_type")
+  azione     String
+  entita     String?
+  entitaId   String?  @map("entita_id")
+  dettagli   Json?
+  esito      String   @default("OK")
+  ip         String?
+  requestId  String?  @map("request_id")
+  durationMs Int?     @map("duration_ms")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([azione, createdAt])
   @@index([actorId, createdAt])
@@ -601,20 +603,6 @@ model TariffaSpedizione {
   @@map("tariffe_spedizione")
 }
 
-model AnomaliaLog {
-  id         Int       @id @default(autoincrement())
-  tipo       String
-  gravita    String    @default("info")
-  contesto   String?
-  messaggio  String
-  dettaglio  Json?
-  risolto    Boolean   @default(false)
-  createdAt  DateTime  @default(now()) @map("created_at")
-  risoltoIl  DateTime? @map("risolto_il")
-
-  @@map("anomalia_log")
-}
-
 model Campaign {
   id          Int      @id @default(autoincrement())
   code        String   @unique
@@ -654,28 +642,4 @@ model CampaignUsage {
 
   @@unique([campaignId, customerId])
   @@map("campaign_usage")
-}
-
-model EventLog {
-  id         Int       @id @default(autoincrement())
-  eventType  String    @map("event_type")
-  action     String
-  actorId    Int?      @map("actor_id")
-  actorType  String?   @map("actor_type")
-  entity     String?
-  entityId   String?   @map("entity_id")
-  data       Json?
-  requestId  String?   @map("request_id")
-  sessionId  String?   @map("session_id")
-  ip         String?
-  userAgent  String?   @map("user_agent")
-  status     String    @default("ok")
-  durationMs Int?      @map("duration_ms")
-  createdAt  DateTime  @default(now()) @map("created_at")
-
-  @@index([eventType, createdAt])
-  @@index([actorId, createdAt])
-  @@index([entity, entityId])
-  @@index([requestId])
-  @@map("event_log")
 }

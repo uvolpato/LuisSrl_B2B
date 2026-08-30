@@ -2,13 +2,13 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermission } from '../auth/decorators/permission.decorator';
-import { EventLogService } from './event-log.service';
+import { AuditService } from './audit.service';
 
-@Controller('admin/event-log')
+@Controller('admin/audit')
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
 @RequirePermission('admin.anomalie.view')
-export class EventLogController {
-  constructor(private readonly svc: EventLogService) {}
+export class AuditController {
+  constructor(private readonly svc: AuditService) {}
 
   @Get('stats')
   getStats() { return this.svc.getStats(); }
@@ -23,7 +23,7 @@ export class EventLogController {
 
   @Get()
   findAll(
-    @Query('eventType') eventType?: string,
+    @Query('categoria') categoria?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('dateFrom') dateFrom?: string,
@@ -33,7 +33,7 @@ export class EventLogController {
     return this.svc.findAll(
       Number(page) || 1,
       Math.min(Number(limit) || 50, 200),
-      eventType,
+      categoria,
       dateFrom,
       dateTo,
       search,

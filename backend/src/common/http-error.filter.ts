@@ -1,14 +1,11 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-import { AnomaliaService } from './anomalia.service';
-import { EventLogService } from '../event-log/event-log.service';
+import { AuditService } from '../audit/audit.service';
 import { reqCtx } from '../common/request-context';
 
+/** Filtro globale: logga ogni errore HTTP su audit_log e restituisce la risposta. */
 @Catch()
-export class AnomaliaFilter implements ExceptionFilter {
-  constructor(
-    private readonly anomalia: AnomaliaService,
-    private readonly eventLog: EventLogService,
-  ) {}
+export class HttpErrorFilter implements ExceptionFilter {
+  constructor(private readonly audit: AuditService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -21,11 +18,8 @@ export class AnomaliaFilter implements ExceptionFilter {
     if (status >= 400) {
       const contesto = req.user ? `user:${req.user.id}` : undefined;
       const gravita = status >= 500 ? 'error' : status === 429 ? 'warning' : 'info';
-      this.anomalia.log('api', msg, gravita, contesto, {
-        url: req.url, method: req.method, status, requestId: store?.requestId,
-      });
-      this.eventLog.logError(`${req.method} ${req.url}`, msg, status, {
-        url: req.url, method: req.method, requestId: store?.requestId,
+      this.audit.logError(`${req.method} ${req.url}`, msg, status, {
+        url: req.url, method: req.method, gravita, contesto, requestId: store?.requestId,
       });
     }
 
