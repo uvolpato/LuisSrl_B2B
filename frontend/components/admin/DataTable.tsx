@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import DataTip from "../common/DataTip";
 
 /** Definizione di una colonna: header e cella usano la stessa colonna,
  *  quindi l'incolonnamento header↔valori e' garantito. */
@@ -249,16 +250,16 @@ export default function DataTable<T>({
                         {actions
                           .filter((a) => !a.hidden?.(row))
                           .map((a, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              className={`row-action${a.variant === "danger" ? " danger" : ""}`}
-                              data-tip={a.tooltip(row)}
-                              aria-label={a.tooltip(row)}
-                              onClick={() => a.onClick(row)}
-                            >
-                              {a.icon(row)}
-                            </button>
+                            <DataTip key={i} tip={a.tooltip(row)}>
+                              <button
+                                type="button"
+                                className={`row-action${a.variant === "danger" ? " danger" : ""}`}
+                                aria-label={a.tooltip(row)}
+                                onClick={() => a.onClick(row)}
+                              >
+                                {a.icon(row)}
+                              </button>
+                            </DataTip>
                           ))}
                       </td>
                     )}
