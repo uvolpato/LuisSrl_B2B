@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurazione AI — Panel Admin</title>
+<style>
+:root{
+  --bg: oklch(98% 0.004 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(48% 0.012 60);
+  --border: oklch(90% 0.006 80);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, white);
+  --green: oklch(50% 0.12 150);
+  --green-soft: color-mix(in oklab, var(--green) 12%, white);
+  --red: oklch(52% 0.17 25);
+  --red-soft: color-mix(in oklab, var(--red) 12%, white);
+  --blue: oklch(50% 0.16 250);
+  --blue-soft: color-mix(in oklab, var(--blue) 12%, white);
+  --amber: oklch(60% 0.13 75);
+  --amber-soft: color-mix(in oklab, var(--amber) 12%, white);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --head-bg: oklch(96% 0.006 90);
+  --shadow: 0 1px 2px oklch(0% 0 0 / 6%), 0 8px 24px -12px oklch(0% 0 0 / 12%);
+  --mono: ui-monospace, 'Cascadia Code', 'Roboto Mono', Menlo, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0 0 40px}
+.mono,code,pre,th,.kbd{font-family:var(--mono)}
+a{color:var(--accent);text-decoration:none;cursor:pointer}
+a:hover{text-decoration:underline}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--fg)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);outline-offset:-1px}
+
+/* ── AdminTopBar ─────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:40;background:color-mix(in oklab,var(--surface) 82%, transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px}
+.topbar-in{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:19px;font-weight:700;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px}
+.topbar h1 .dot{width:9px;height:9px;border-radius:50%;background:var(--blue)}
+.topbar .spacer{flex:1}
+.topbar .search{position:relative;display:flex;align-items:center}
+.topbar .search svg{position:absolute;left:10px;width:15px;height:15px;stroke:var(--muted)}
+.topbar .search input{width:230px;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.topbar .search input:focus{outline:2px solid var(--accent-soft);border-color:var(--border)}
+.topbar .saved{margin-left:6px;font-family:var(--mono);font-size:11px;color:var(--green);display:none;align-items:center;gap:5px}
+.topbar .saved.show{display:inline-flex}
+
+/* bottoni standard app */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:9px;padding:8px 14px;font-weight:600;font-size:13.5px;transition:background .14s,border-color .14s,color .14s}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-secondary{background:var(--surface);border-color:var(--border);color:var(--fg)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--fg);background:var(--bg)}
+.btn-danger{background:var(--red-soft);border-color:transparent;color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+.btn-xs{padding:3px 8px;font-size:11.5px;border-radius:6px}
+
+/* ── Layout ──────────────────────────────────── */
+.wrap{max-width:1280px;margin:0 auto;padding:22px 24px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:18px;overflow:hidden}
+.section-head{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid var(--border);background:var(--head-bg)}
+.section-head h2{font-size:14px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--fg);display:flex;align-items:center;gap:9px}
+.section-head h2 .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.section-head h2 .ic svg{width:15px;height:15px}
+.section-head .desc{font-size:12.5px;color:var(--muted)}
+.section-head .actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600}
+.badge-blue{background:var(--blue-soft);color:var(--blue)}
+.badge-green{background:var(--green-soft);color:var(--green)}
+.badge-amber{background:var(--amber-soft);color:var(--amber)}
+.badge-muted{background:var(--head-bg);color:var(--muted)}
+.badge-red{background:var(--red-soft);color:var(--red)}
+
+/* ── Dashboard KPI ───────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.kpi.blue::before{background:var(--blue)}
+.kpi.green::before{background:var(--green)}
+.kpi.red::before{background:var(--red)}
+.kpi .label{font-size:12px;color:var(--muted)}
+.kpi .val{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:4px;letter-spacing:-0.02em}
+.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.kpi .val.red{color:var(--red)}
+.kpi .val.green{color:var(--green)}
+
+/* ── Form grid ───────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;padding:20px}
+.form-grid .span2{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:600;color:var(--fg);display:flex;align-items:center;gap:6px}
+.field label .need{color:var(--red)}
+.field .hint{font-size:11.5px;color:var(--muted);line-height:1.4}
+.field input[type=text],.field input[type=number],.field input[type=password],.field select,.field textarea{
+  padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);width:100%}
+.field textarea{min-height:150px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.6}
+.field textarea.sm{min-height:90px}
+.field textarea.code{background:oklch(22% 0.02 60);color:oklch(92% 0.01 90);font-size:12px}
+.field input[type=text].ro,.field textarea.ro{background:var(--bg);color:var(--muted);cursor:not-allowed}
+.seg{display:flex;gap:8px}
+.seg button{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:12.5px;color:var(--muted);font-weight:600}
+.seg button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.switch{position:relative;width:38px;height:22px;display:inline-flex;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:.2s}
+.switch .sl::before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px oklch(0% 0 0 / .2)}
+.switch input:checked + .sl{background:var(--green)}
+.switch input:checked + .sl::before{transform:translateX(16px)}
+
+/* ── PromptTemplate table ────────────────────── */
+.table{width:100%;border-collapse:collapse;font-size:13.5px}
+.table thead th{position:sticky;top:0;background:var(--head-bg);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);z-index:1}
+.table tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.table tbody tr:hover{background:var(--bg)}
+.table tbody tr:last-child td{border-bottom:none}
+.cell{touch-action:manipulation}
+.cell-n{color:var(--muted);font-family:var(--mono);font-size:12px}
+.cell-title{font-weight:600}
+.cell-desc{color:var(--muted);font-size:12.5px;margin-top:2px;max-width:520px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell-pill{font-family:var(--mono);font-weight:600;color:var(--accent)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);position:relative}
+.icon-btn:hover{background:var(--bg);color:var(--fg);border-color:var(--border)}
+.icon-btn svg{width:16px;height:16px}
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);right:0;background:var(--fg);color:#fff;font-size:11px;font-family:var(--mono);padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:50}
+[data-tip]:hover::before{content:"";position:absolute;top:calc(100% + 1px);right:12px;border:5px solid transparent;border-bottom-color:var(--fg);z-index:50}
+
+/* footer tabella */
+.table-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted)}
+.table-foot .range{font-family:var(--mono)}
+.pager{display:flex;gap:6px;align-items:center}
+.pager button{width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--fg);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12.5px}
+.pager button:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pager .pp{width:auto;padding:0 10px}
+
+/* ── Uso AI / bar charts ─────────────────────── */
+.usage{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:20px}
+.chart-block h3{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:12px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:grid;grid-template-columns:110px 1fr 70px;gap:10px;align-items:center;font-size:12.5px}
+.bar-row .name{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .track{height:12px;background:var(--head-bg);border-radius:6px;overflow:hidden}
+.bar-row .fill{height:100%;border-radius:6px;background:var(--accent)}
+.bar-row .fill.blue{background:var(--blue)}
+.bar-row .fill.green{background:var(--green)}
+.bar-row .fill.amber{background:var(--amber)}
+.bar-row .num{font-family:var(--mono);text-align:right}
+.cost-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0 0;border-top:1px solid var(--border);margin-top:6px}
+.cost-total .l{font-size:13px;font-weight:600}
+.cost-total .v{font-family:var(--mono);font-size:18px;font-weight:700}
+.cost-total .v.red{color:var(--red)}
+.daypicker{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12.5px}
+.daypicker button{border:1px solid var(--border);background:var(--surface);border-radius:7px;width:26px;height:26px;display:grid;place-items:center;color:var(--fg)}
+.daypicker button:hover{background:var(--accent-soft);color:var(--accent)}
+.daypicker input{border:1px solid var(--border);border-radius:7px;padding:4px 6px;width:56px;font-family:var(--mono);font-size:12px;text-align:center}
+
+/* ── Modal ───────────────────────────────────── */
+.modal-root{position:fixed;inset:0;background:oklch(18% 0.02 60 / .5);display:none;align-items:flex-start;justify-content:center;padding:60px 20px;z-index:100;overflow:auto}
+.modal-root.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:720px;box-shadow:var(--shadow);animation:pop .18s ease}
+.modal.lg{max-width:860px}
+.modal.md{max-width:560px}
+@keyframes pop{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.modal-head .x{width:32px;height:32px;border-radius:8px;border:none;background:transparent;color:var(--muted);display:grid;place-items:center}
+.modal-head .x:hover{background:var(--bg);color:var(--fg)}
+.modal-head .x svg{width:16px;height:16px}
+.modal-body{padding:22px}
+.modal-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid var(--border);background:var(--bg)}
+.modal-foot .left{display:flex;gap:8px}
+.modal-foot .right{display:flex;gap:8px}
+.modal-sec{margin-bottom:20px}
+.modal-sec h4{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--accent);padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:14px}
+
+@media(max-width:920px){
+  .form-grid{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .usage{grid-template-columns:1fr}
+  .topbar .search input{width:100%}
+  .topbar-in{align-items:stretch}
+}
+@media(max-width:560px){
+  .kpis{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AdminTopBar ─────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-in">
+    <h1><span class="dot"></span>Configurazione AI</h1>
+    <span class="badge badge-blue">Panel Admin</span>
+    <div class="spacer"></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
+      <input type="text" id="search" placeholder="Cerca prompt, modello, sezione…">
+    </div>
+    <span class="saved" id="saved"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Salvato</span>
+    <button class="btn btn-primary" id="btn-save-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Salva modifiche</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── KPI ───────────────────────────────────── -->
+  <div class="kpis">
+    <div class="kpi blue"><div class="label">Provider attivi</div><div class="val">1</div><div class="sub">gemini — generativelanguage</div></div>
+    <div class="kpi"><div class="label">Prompt configurati</div><div class="val">24</div><div class="sub">8 sistema · 16 template</div></div>
+    <div class="kpi red"><div class="label">Token 30 giorni</div><div class="val">1,24 M</div><div class="sub">in 148.302 · out 92.515</div></div>
+    <div class="kpi green"><div class="label">Costo stimato 30 gg</div><div class="val">€ 4,82</div><div class="sub">costo medio € 0,42/giorno</div></div>
+  </div>
+
+  <!-- ── 1 · Provider e modelli ────────────────── -->
+  <section class="section" id="sec-provider" data-od-id="sec-provider">
+    <div class="section-head">
+      <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>1 · Provider e modelli</h2>
+      <span class="desc">Configurati per ambito Immagini e Testi</span>
+      <div class="actions"><span class="badge badge-green">gemini</span></div>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Ambito Immagini</label>
+        <select id="c-im-provider"><option>gemini</option><option>openai</option><option>anthropic</option><option>lm-studio</option></select>
+        <div class="hint">Provider usato per la generazione di immagini prodotto (ambienti, varianti). Chiavi in SiteConfig <code>AI_Immagini_*</code>.</div>
+      </div>
+      <div class="field">
+        <label>Modello Immagini</label>
+        <input type="text" id="c-im-model" value="gemini-2.5-flash-image">
+        <div class="hint">Modello di generazione immagini attivo.</div>
+      </div>
+      <div class="field">
+        <label>Temperature Immagini</label>
+        <input type="number" id="c-im-temp" step="0.1" value="0.4">
+      </div>
+      <div class="field">
+        <label>Max Tokens Immagini</label>
+        <input type="number" id="c-im-max" value="4096">
+      </div>
+      <div class="field span2">
+        <label>Endpoint Immagini</label>
+        <input type="text" id="c-im-endpoint" value="https://generativelanguage.googleapis.com/v1beta/models/">
+        <div class="hint">Endpoint dell'API; in test locale punta tradizionalmente a <code>https://generativelanguage.googleapis.com/v1beta/models/</code>. Per LM Studio usare l'URL del server locale.</div>
+      </div>
+      <div class="field">
+        <label>Ambito Testi</label>
+        <select id="c-tx-provider"><option>gemini</option><option>openai</option><option>anthropic</option><option>lm-studio</option></select>
+        <div class="hint">Provider usato per descrizioni, ricerca semantica, insight e profiling.</div>
+      </div>
+      <div class="field">
+        <label>Modello Testi</label>
+        <input type="text" id="c-tx-model" value="gemini-2.5-flash">
+        <div class="hint">Modello di testo attivo per descrizioni, insight, profiling.</div>
+      </div>
+      <div class="field">
+        <label>Temperature Testi</label>
+        <input type="number" id="c-tx-temp" step="0.1" value="0.7">
+      </div>
+      <div class="field">
+        <label>Max Tokens Testi</label>
+        <input type="number" id="c-tx-max" value="8192">
+      </div>
+      <div class="field span2">
+        <label>Endpoint Testi</label>
+        <input type="text" id="c-tx-endpoint" value="https://generativelanguage.googleapis.com/v1beta/models/">
+        <div class="hint">Endpoint delle chiamate testuali. Configurazione letta con cache TTL 60s (modifica → attiva dopo max 1 min).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 · Prompt di sistema ─────────────────── -->
+  <section class="section" id="sec-sistema" data-od-id="sec-sistema">
+    <div class="section-head">
+      <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-4h4v4"/></svg></span>2 · Prompt di sistema</h2>
+      <span class="desc">Comportamentali, salvati in SiteConfig</span>
+      <div class="actions"><span class="badge badge-amber">8 configurati</span></div>
+    </div>
+    <div class="form-grid">
+      <div class="field span2">
+        <label>Descrizione articolo</label>
+        <textarea id="s-desc" class="ro" readonly>Sei un tecnico-specialista di vasellame e articoli garden per il canale B2B (grossista → rivenditore/fiorista).</textarea>
+        <div class="hint">Chiave <code>Prompt_AI_Descrizione_Articolo</code>. Sistema per la generazione/rigenerazione delle descrizioni prodotto.</div>
+      </div>
+      <div class="field span2">
+        <label>Estrazione colore (JSON)</label>
+        <textarea id="s-colore" class="ro" readonly>Sei un esperto di colori per articoli di vasellame e garden. Analizza nome e descrizione e restituisci SOLO un JSON valido SENZA markdown:
+{ "colore": "nome colore in italiano (es. Nocciola, Terracotta, Salvia, Antracite, Crema, Tortora)" oppure null, "coloreRgb": "#RRGGBB" oppure null }
+REGOLE: NO colori primari saturi, NO fluo; SÌ colori naturali, terrosi, pastello smorzati; leggibile su sfondo bianco.</textarea>
+        <div class="hint">Hardcoded in <code>integrazione.service</code>. Estrae colore e RGB dal nome/descrizione prodotto.</div>
+      </div>
+      <div class="field span2">
+        <label>Ricerca semantica nel catalogo (rewrite)</label>
+        <textarea id="s-rewrite" class="ro" readonly>Sei un assistente di ricerca per un catalogo B2B di vasi, fioriere, cache-pot e complementi d'arredo (materiali tipici: cotto, terracotta, fiberstone, ceramica, metallo; uso interno/esterno). Trasforma la richiesta del cliente per una ricerca semantica nel catalogo.</textarea>
+        <div class="hint">Riscrive la query del cliente in una ricerca semantica sul catalogo.</div>
+      </div>
+      <div class="field span2">
+        <label>Analisi immagine (vision) — descrizione prodotto</label>
+        <textarea id="s-vision" class="ro" readonly>Descrivi in 2-3 frasi questo prodotto per fioristi e garden, concentrandoti sugli attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni percepite e uso (interno/esterno). Sii concreto e preciso; non inventare ciò che non è visibile.</textarea>
+        <div class="hint">Descrive l'articolo partendo da una foto caricata.</div>
+      </div>
+      <div class="field span2">
+        <label>Analisi multi-immagine (osservatore garden)</label>
+        <textarea id="s-garden" class="ro" readonly>Sei un osservatore esperto di vasellame e articoli garden B2B. Analizza le immagini fornite e produci una descrizione tecnica del prodotto rivolta a un rivenditore professionale.</textarea>
+        <div class="hint">Descrive l'articolo da più foto in galleria.</div>
+      </div>
+      <div class="field span2">
+        <label>Insight cliente (analista commerciale)</label>
+        <textarea id="s-insight" class="ro" readonly>Sei un analista commerciale B2B per un'azienda di vasi e complementi. Partendo dai dati di vendita del cliente, produci una sintesi commerciale utile per l'agente di riferimento.</textarea>
+        <div class="hint">Usato da <code>insight.service</code> per la dashboard cliente.</div>
+      </div>
+      <div class="field span2">
+        <label>Profiling cliente (assistente B2B)</label>
+        <textarea id="s-profile" class="ro" readonly>Sei un assistente che profila i clienti B2B di un grossista di arredamento per fioristi e garden. Scrivi una breve descrizione professionale del cliente (2-3 paragrafi) combinando i dati anagrafici forniti e le note di corrispondenza. Non inventare fatti non presenti. Stile: neutro, utile per il commerciale.</textarea>
+        <div class="hint">Usato da <code>customer-profile.service</code>, con ricerca web (grounding).</div>
+      </div>
+      <div class="field span2">
+        <label>Genera variante colore</label>
+        <textarea id="s-variant" class="ro" readonly>Arricchisce il prompt dell'utente col contesto prodotto per generare una variante di colore o accessorio coerente con l'articolo di partenza.</textarea>
+        <div class="hint">Aggiunge il contesto prodotto al prompt utente prima della generazione.</div>
+      </div>
+    </div>
+    <div class="table-foot">
+      <span class="range">I prompt di sistema sono identificati dalle chiavi <code>Prompt_AI_*</code> in SiteConfig o hardcoded nel service.</span>
+      <button class="btn btn-secondary btn-sm" id="btn-edita-sistema">Modifica</button>
+    </div>
+  </section>
+
+  <!-- ── 3 · Template di prompt (PromptTemplate) ── -->
+  <section class="section" id="sec-template" data-od-id="sec-template">
+    <div class="section-head">
+      <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>3 · Template di prompt</h2>
+      <span class="desc">Riutilizzabili per ambienti e descrizioni (PromptTemplate)</span>
+      <div class="actions">
+        <span class="badge badge-blue" id="tpl-count">8 template</span>
+        <button class="btn btn-primary btn-sm" id="btn-add-tpl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Nuovo template</button>
+      </div>
+    </div>
+    <table class="table">
+      <thead><tr>
+        <th style="width:60px">#</th>
+        <th>Tipo</th>
+        <th>Titolo</th>
+        <th>Prompt</th>
+        <th>Tags</th>
+        <th style="width:90px;text-align:right">Azioni</th>
+      </tr></thead>
+      <tbody id="tpl-body"></tbody>
+    </table>
+    <div class="table-foot">
+      <span class="range" id="tpl-range">1–8 di 8</span>
+      <div class="pager" id="tpl-pager"></div>
+    </div>
+  </section>
+
+  <!-- ── 4 · Suggerimenti AI dashboard ──────────── -->
+  <section class="section" id="sec-suggest" data-od-id="sec-suggest">
+    <div class="section-head">
+      <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11a5 5 0 016 4l2 6H7l2-6a5 5 0 010 0z"/><path d="M14 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></svg></span>4 · Suggerimenti AI dashboard</h2>
+      <span class="desc">6 box di suggerimento in <code>area/page.tsx</code> (SuggestionBox)</span>
+      <div class="actions"><span class="badge badge-blue">6 box</span></div>
+    </div>
+    <table class="table">
+      <thead><tr>
+        <th style="width:60px">#</th>
+        <th>Titolo</th>
+        <th>Prompt</th>
+        <th>Campo</th>
+        <th style="width:90px;text-align:right">Azioni</th>
+      </tr></thead>
+      <tbody id="suggest-body"></tbody>
+    </table>
+  </section>
+
+  <!-- ── 5 · Uso e costi AI ────────────────────── -->
+  <section class="section" id="sec-uso" data-od-id="sec-uso">
+    <div class="section-head">
+      <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>5 · Uso e costi AI</h2>
+      <span class="desc">Monitoraggio token da <code>ai_usage</code></span>
+      <div class="actions">
+        <div class="daypicker">
+          <button id="dp-prev">◀</button><input type="number" id="dp-days" value="30" min="1" max="365"> gg<button id="dp-next">▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="usage">
+      <div class="chart-block">
+        <h3>Token per tipo (30 giorni)</h3>
+        <div class="bars" id="usage-bars"></div>
+        <div class="cost-total"><span class="l">Costo stimato totale</span><span class="v red" id="usage-cost">€ 4,82</span></div>
+      </div>
+      <div class="chart-block">
+        <h3>Ripartizione per attore</h3>
+        <div class="bars" id="usage-attori"></div>
+      </div>
+    </div>
+  </section>
+
+  <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:6px">
+    Vuoto = configurazione hardcoded nel service o non ancora esposta. Toggle "Modifica" sblocca i campi di sistema.
+  </p>
+</div>
+
+<!-- ── MODALE: template prompt ─────────────────── -->
+<div class="modal-root" id="tpl-modal">
+  <div class="modal lg">
+    <div class="modal-head">
+      <h3 id="tpl-modal-title">Nuovo template</h3>
+      <button class="x" data-close-tpl><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sec">
+        <h4>Template</h4>
+        <div class="form-grid">
+          <div class="field">
+            <label>Tipo <span class="need">*</span></label>
+            <select id="tpl-tipo"><option value="AMBIENTA">AMBIENTA</option><option value="DESCRIZIONE">DESCRIZIONE</option></select>
+            <div class="hint">AMBIENTA = prompt per generare immagini sfondo/variante; DESCRIZIONE = prompt per testo descrittivo.</div>
+          </div>
+          <div class="field">
+            <label>Ordinamento</label>
+            <input type="number" id="tpl-ordinamento" value="0">
+          </div>
+          <div class="field span2">
+            <label>Titolo <span class="need">*</span></label>
+            <input type="text" id="tpl-titolo" placeholder="Es. Ambienta su sfondo naturale">
+          </div>
+          <div class="field span2">
+            <label>Prompt <span class="need">*</span></label>
+            <textarea id="tpl-prompt" class="code" placeholder="Scrivi il prompt…"></textarea>
+            <div class="hint">Usa <code>{nome}</code>, <code>{descrizione}</code>, <code>{contesto}</code> come variabili, se supportate dal chiamante.</div>
+          </div>
+          <div class="field span2">
+            <label>Tags</label>
+            <input type="text" id="tpl-tags" placeholder="esterno, naturale, elenco separato da virgola">
+            <div class="hint">Separati da virgola, per ricerca e raggruppamento.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="left"><button class="btn btn-ghost" id="tpl-delete" hidden>Elimina</button></div>
+      <div class="right">
+        <button class="btn btn-secondary" data-close-tpl>Annulla</button>
+        <button class="btn btn-primary" id="tpl-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Salva template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALE: modifica prompt sistema ─────────── -->
+<div class="modal-root" id="sys-modal">
+  <div class="modal lg">
+    <div class="modal-head">
+      <h3>Modifica prompt di sistema</h3>
+      <button class="x" data-close-sys><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sec">
+        <h4>Prompt selezionato</h4>
+        <div class="form-grid">
+          <div class="field span2">
+            <label>Chiave</label>
+            <input type="text" id="sys-edit-key" readonly class="ro">
+          </div>
+          <div class="field span2">
+            <label>Prompt <span class="need">*</span></label>
+            <textarea id="sys-edit-prompt" class="code"></textarea>
+            <div class="hint">Verrà salvato in SiteConfig con la chiave mostrata. Le chiavi hardcoded nel service andranno esposte per essere modificabili qui.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="left"></div>
+      <div class="right">
+        <button class="btn btn-secondary" data-close-sys>Annulla</button>
+        <button class="btn btn-primary" id="sys-save">Salva prompt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   SPECIFICA API — Configurazione AI (prototipo)
+   ────────────────────────────────────────────────────────
+   GET    /api/admin/ai-config                → { provider:{immagini,testi}, kpi }
+   GET    /api/admin/ai-config/prompts        → { system:[{key,label,prompt}], templates:[] }
+   PUT    /api/admin/ai-config/provider/:scope → body {provider,model,endpoint,temperature,maxTokens}
+   PUT    /api/admin/ai-config/prompt/:key    → body { prompt }
+   POST   /api/admin/ai-config/prompts        → crea PromptTemplate {tipo,titolo,prompt,tags,ordinamento}
+   PATCH  /api/admin/ai-config/prompts/:id    → aggiorna PromptTemplate
+   DELETE /api/admin/ai-config/prompts/:id    → elimina
+   GET    /api/admin/ai-usage?days=30         → usage summary (esistente)
+   GET    /api/admin/suggestion-box            → 6 box (SuggestionBox)
+   Guardie: AuthenticatedGuard + PermissionsGuard + @RequirePermission('ai-config')
+   Cache config: TTL 60s nel service; modifica → attiva entro ≤1 min.
+   ════════════════════════════════════════════════════════ */
+
+/* ── Dati demo ───────────────────────────── */
+const TEMPLATES = [
+  {id:1, tipo:"AMBIENTA", titolo:"Ambienta su sfondo naturale terracotta", prompt:"Ambienta l'articolo su uno sfondo naturale di terracotta e cotto, luce morbida, stile catalogo garden professionale.", tags:"esterno, natura, terracotta", ord:1},
+  {id:2, tipo:"AMBIENTA", titolo:"Variale su sfondo verde salvia", prompt:"Riproduci l'articolo su sfondo salvia, illuminazione morbida, enfasi sul colore naturale.", tags:"esterno, salvia, colore", ord:2},
+  {id:3, tipo:"AMBIENTA", titolo:"Ambienta in veranda luminosa", prompt:"Mostra il vaso in una veranda mediterranea con luce naturale, piante di contorno.", tags:"interno, veranda, luminoso", ord:3},
+  {id:4, tipo:"DESCRIZIONE", titolo:"Descrizione breve prodotto", prompt:"Scrivi una descrizione breve (2 frasi) per fioristi e garden: tipo, materiale, forma, uso.", tags:"testo, breve", ord:4},
+  {id:5, tipo:"DESCRIZIONE", titolo:"Descrizione dettagliata", prompt:"Descrivi dettagliatamente il prodotto B2B: materiale, finitura, dimensioni percepite, uso interno/esterno.", tags:"testo, dettagliata", ord:5},
+  {id:6, tipo:"AMBIENTA", titolo:"Ambienta in esterno giardino", prompt:"Colloca l'articolo in un giardino curato, luce del mattino, profondità di campo.", tags:"esterno, giardino, luce", ord:6},
+  {id:7, tipo:"DESCRIZIONE", titolo:"Focus materiale", prompt:"Concentrati sul materiale dell'articolo (cotto, fibra, ceramica…), caratteristiche e resistenza.", tags:"testo, materiale, tecnico", ord:7},
+  {id:8, tipo:"AMBIENTA", titolo:"Variante colore salvia", prompt:"Genera una variante dello stesso articolo in colore salvia pastello, stesso stile compositivo.", tags:"esterno, variante, salvia", ord:8}
+];
+
+const SUGGESTIONS = [
+  {t:"Box 1 · Novità in catalogo", p:"Proponi al cliente gli articoli più recenti del catalogo, basati sui suoi acquisti e famiglie preferite.", campo:"cliente"},
+  {t:"Box 2 · Promozioni attive", p:"Mostra le promozioni attive più rilevanti per il cliente, con scadenza evidenziata.", campo:"cliente"},
+  {t:"Box 3 · Reintegro giacenze", p:"Suggerisci articoli con giacenza in calo o in riassortimento, coerenti col suo storico.", campo:"cliente"},
+  {t:"Box 4 · Più venduti della stagione", p:"Elenca i best-seller stagionali della categoria preferita dal cliente.", campo:"generale"},
+  {t:"Box 5 · Accessori e completi", p:"Proponi accessori/complementi compatibili con gli articoli già ordinati.", campo:"cliente"},
+  {t:"Box 6 · Offerta personalizzata", p:"Costruisci un'offerta cucita sui dati del singolo cliente, con messaggio personalizzato.", campo:"cliente"}
+];
+
+const USAGE_TIPI = [
+  {name:"descrizione", in:48210, out:38110, fill:"", n:"86.320"},
+  {name:"immagine", in:40220, out:15500, fill:"blue", n:"55.720"},
+  {name:"embedding", in:33190, out:0, fill:"amber", n:"33.190"},
+  {name:"rewrite", in:15800, out:22105, fill:"green", n:"37.905"},
+  {name:"vision", in:10882, out:16800, fill:"", n:"27.682"}
+];
+const USAGE_ATTORI = [
+  {name:"admin", pct:52, fill:""},
+  {name:"customer", pct:31, fill:"blue"},
+  {name:"agent", pct:12, fill:"green"},
+  {name:"system", pct:5, fill:"amber"}
+];
+
+/* ── Render template table ──────────────── */
+const TPL_PER_PAGE = 5;
+let tplPage = 1;
+function renderTemplates(){
+  const tb = document.getElementById('tpl-body');
+  const start = (tplPage-1)*TPL_PER_PAGE;
+  const page = TEMPLATES.slice(start, start+TPL_PER_PAGE);
+  tb.innerHTML = page.length ? page.map(t=>`
+    <tr>
+      <td class="cell-n">${String(t.id).padStart(2,'0')}</td>
+      <td><span class="badge ${t.tipo==='AMBIENTA'?'badge-blue':'badge-green'}">${t.tipo}</span></td>
+      <td><div class="cell-title">${t.titolo}</div><div class="cell-desc">ord. ${t.ord}</div></td>
+      <td><span class="cell-desc" style="white-space:normal;max-width:340px">${t.prompt}</span></td>
+      <td><span class="cell-n">${t.tags||'—'}</span></td>
+      <td><div class="row-actions">
+        <button class="icon-btn" data-tip="Modifica" onclick="editTpl(${t.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 014 4L7 21l-4 1 1-4z"/></svg></button>
+        <button class="icon-btn" data-tip="Elimina" onclick="delTpl(${t.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">Nessun template trovato</td></tr>`;
+  document.getElementById('tpl-count').textContent = `${TEMPLATES.length} template`;
+  const pages = Math.max(1, Math.ceil(TEMPLATES.length/TPL_PER_PAGE));
+  document.getElementById('tpl-range').textContent = TEMPLATES.length ? `${start+1}–${Math.min(start+TPL_PER_PAGE,TEMPLATES.length)} di ${TEMPLATES.length}` : '0 di 0';
+  renderPager(pages);
+}
+function renderPager(pages){
+  document.getElementById('tpl-pager').innerHTML =
+    `<button ${tplPage===1?'disabled':''} id="tp-prev">◀</button>` +
+    `<span style="font-family:var(--mono);font-size:12.5px;color:var(--muted)"> ${tplPage} / ${pages} </span>` +
+    `<button ${tplPage===pages?'disabled':''} id="tp-next">▶</button>`;
+  document.getElementById('tp-prev').onclick=()=>{if(tplPage>1){tplPage--;renderTemplates();}};
+  document.getElementById('tp-next').onclick=()=>{if(tplPage<pages){tplPage++;renderTemplates();}};
+}
+
+/* ── Render suggestions ─────────────────── */
+function renderSuggestions(){
+  document.getElementById('suggest-body').innerHTML = SUGGESTIONS.map((s,i)=>`
+    <tr>
+      <td class="cell-n">0${i+1}</td>
+      <td><div class="cell-title">${s.t}</div></td>
+      <td><span class="cell-desc" style="white-space:normal;max-width:420px">${s.p}</span></td>
+      <td><span class="badge ${s.campo==='cliente'?'badge-blue':'badge-muted'}">${s.campo}</span></td>
+      <td><div class="row-actions">
+        <button class="icon-btn" data-tip="Modifica" onclick="editSuggest(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 014 4L7 21l-4 1 1-4z"/></svg></button>
+      </div></td>
+    </tr>`).join('');
+}
+
+/* ── Usage bars ─────────────────────────── */
+function renderUsage(){
+  const max = Math.max(...USAGE_TIPI.map(u=>u.in+u.out));
+  document.getElementById('usage-bars').innerHTML = USAGE_TIPI.map(u=>`
+    <div class="bar-row">
+      <span class="name">${u.name}</span>
+      <span class="track"><span class="fill ${u.fill}" style="width:${Math.max(4,100*(u.in+u.out)/max)}%"></span></span>
+      <span class="num">${u.n}</span>
+    </div>`).join('');
+  document.getElementById('usage-attori').innerHTML = USAGE_ATTORI.map(a=>`
+    <div class="bar-row">
+      <span class="name">${a.name}</span>
+      <span class="track"><span class="fill ${a.fill}" style="width:${a.pct}%"></span></span>
+      <span class="num">${a.pct}%</span>
+    </div>`).join('');
+}
+
+/* ── Modal template ─────────────────────── */
+let tplEditId = null;
+function openTpl(id){
+  tplEditId = id;
+  const t = id ? TEMPLATES.find(x=>x.id===id) : null;
+  document.getElementById('tpl-modal-title').textContent = t ? 'Modifica template' : 'Nuovo template';
+  document.getElementById('tpl-tipo').value = t ? t.tipo : 'AMBIENTA';
+  document.getElementById('tpl-ordinamento').value = t ? t.ord : 0;
+  document.getElementById('tpl-titolo').value = t ? t.titolo : '';
+  document.getElementById('tpl-prompt').value = t ? t.prompt : '';
+  document.getElementById('tpl-tags').value = t ? t.tags : '';
+  document.getElementById('tpl-delete').hidden = !t;
+  document.getElementById('tpl-modal').classList.add('open');
+}
+function closeTpl(){ document.getElementById('tpl-modal').classList.remove('open'); }
+function editTpl(id){ openTpl(id); }
+function delTpl(id){ TEMPLATES.splice(TEMPLATES.findIndex(x=>x.id===id),1); renderTemplates(); }
+function saveTpl(){
+  const titolo = document.getElementById('tpl-titolo').value.trim();
+  const prompt = document.getElementById('tpl-prompt').value.trim();
+  if(!titolo||!prompt){ alert('Compila titolo e prompt.'); return; }
+  if(tplEditId){ const t=TEMPLATES.find(x=>x.id===tplEditId); t.tipo=document.getElementById('tpl-tipo').value; t.titolo=titolo; t.prompt=prompt; t.tags=document.getElementById('tpl-tags').value; t.ord=+document.getElementById('tpl-ordinamento').value; }
+  else { TEMPLATES.push({id:Math.max(...TEMPLATES.map(x=>x.id))+1, tipo:document.getElementById('tpl-tipo').value, titolo, prompt, tags:document.getElementById('tpl-tags').value, ord:+document.getElementById('tpl-ordinamento').value}); }
+  renderTemplates(); flashSaved(); closeTpl();
+}
+
+/* ── Modal suggerimento (simple) ────────── */
+function editSuggest(i){ alert('Modifica box suggerimento: ' + SUGGESTIONS[i].t + '\n(prototipo: modifica del prompt box)'); }
+
+/* ── Modal sistema ──────────────────────── */
+let sysKey = null;
+function openSys(key,label){
+  sysKey = key;
+  const area = document.getElementById('s-'+ (key==='desc'?'desc':key));
+  document.getElementById('sys-edit-key').value = 'Prompt_AI_' + key.toUpperCase();
+  document.getElementById('sys-edit-prompt').value = area.value;
+  document.getElementById('sys-modal').classList.add('open');
+}
+document.getElementById('btn-edita-sistema').onclick = () => openSys('desc','Descrizione articolo');
+document.querySelectorAll('[data-close-sys]').forEach(b=>b.onclick=()=>document.getElementById('sys-modal').classList.remove('open'));
+document.getElementById('sys-save').onclick = () => {
+  const area = document.getElementById('s-'+sysKey);
+  area.value = document.getElementById('sys-edit-prompt').value;
+  document.getElementById('sys-modal').classList.remove('open');
+  flashSaved();
+};
+
+/* ── Switches sistema → editable ────────── */
+function bindSystemToggles(){
+  document.querySelectorAll('[data-edit-sys]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.editSys;
+      const ta = document.getElementById(id);
+      const editable = ta.readOnly;
+      if(editable){
+        ta.classList.remove('ro'); ta.readOnly=false;
+        btn.textContent = 'Blocca'; btn.classList.add('on');
+      } else {
+        ta.classList.add('ro'); ta.readOnly=true;
+        btn.textContent = 'Modifica'; btn.classList.remove('on');
+      }
+    });
+  });
+}
+
+/* ── Salva tutto ────────────────────────── */
+function flashSaved(){
+  const s = document.getElementById('saved');
+  s.classList.add('show');
+  clearTimeout(s._t);
+  s._t = setTimeout(()=>s.classList.remove('show'), 2200);
+}
+document.getElementById('btn-save-all').onclick = () => {
+  /* In produzione: PUT /api/admin/ai-config/* per ogni ambito */
+  flashSaved();
+};
+
+/* ── Search ─────────────────────────────── */
+document.getElementById('search').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.section').forEach(sec=>{
+    if(!q){ sec.style.display=''; return; }
+    sec.style.display = sec.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+/* ── Province combobox helper (dummy, riusabile) ── */
+function createCombobox(){ /* pattern spese-spedizione; qui non attivo per il prototipo */ }
+
+/* ── Nav modali backdrop ────────────────── */
+document.getElementById('tpl-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeTpl(); });
+document.getElementById('sys-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeSys(); });
+function closeSys(){ document.getElementById('sys-modal').classList.remove('open'); }
+document.querySelectorAll('[data-close-tpl]').forEach(b=>b.onclick=closeTpl);
+document.getElementById('btn-add-tpl').onclick = ()=>openTpl(null);
+document.getElementById('tpl-save').onclick = saveTpl;
+document.getElementById('tpl-delete').onclick = ()=>{ if(tplEditId){ TEMPLATES.splice(TEMPLATES.findIndex(x=>x.id===tplEditId),1); renderTemplates(); closeTpl(); } };
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeTpl(); closeSys(); } });
+
+/* ── Daypicker ──────────────────────────── */
+const dp = document.getElementById('dp-days');
+document.getElementById('dp-prev').onclick=()=>{ dp.value=Math.max(1,+dp.value-1); renderUsage(); };
+document.getElementById('dp-next').onclick=()=>{ dp.value=Math.min(365,+dp.value+1); renderUsage(); };
+dp.addEventListener('change', renderUsage);
+
+/* ── Init ───────────────────────────────── */
+renderTemplates();
+renderSuggestions();
+renderUsage();
+bindSystemToggles();
+</script>
+</body>
+</html>
