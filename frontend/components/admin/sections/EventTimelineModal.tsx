@@ -5,11 +5,17 @@ import Modal from "../../common/Modal";
 import { api } from "../../../lib/api";
 
 interface EventLogItem {
-  id: number;
-  eventType: string;
-  action: string;
-  data: any;
+  id: string;
+  azione: string;
+  dettagli: any;
+  esito: string;
   createdAt: string;
+}
+
+function categoriaDi(e: EventLogItem): "access" | "error" | "audit" {
+  if (e.azione === "http.access") return "access";
+  if (e.azione === "http.error") return "error";
+  return "audit";
 }
 
 function fmtDt(d: string): string {
@@ -21,7 +27,7 @@ export default function EventTimelineModal({ entity, entityId, onClose }: { enti
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<EventLogItem[]>(`/api/admin/event-log/entity/${encodeURIComponent(entity)}/${encodeURIComponent(entityId)}`)
+    api.get<EventLogItem[]>(`/api/admin/audit/entity/${encodeURIComponent(entity)}/${encodeURIComponent(entityId)}`)
       .then(setItems).catch(() => {}).finally(() => setLoading(false));
   }, [entity, entityId]);
 
@@ -36,14 +42,14 @@ export default function EventTimelineModal({ entity, entityId, onClose }: { enti
           <div style={{ position: "absolute", left: 7, top: 0, bottom: 0, width: 2, background: "var(--border)" }} />
           {items.map((e) => (
             <div key={e.id} style={{ position: "relative", paddingBottom: 16 }}>
-              <div style={{ position: "absolute", left: -21, top: 4, width: 10, height: 10, borderRadius: "50%", background: e.eventType === "error" ? "var(--red)" : e.eventType === "mutation" ? "var(--blue)" : "var(--accent)", border: "2px solid var(--surface)" }} />
+              <div style={{ position: "absolute", left: -21, top: 4, width: 10, height: 10, borderRadius: "50%", background: categoriaDi(e) === "error" ? "var(--red)" : categoriaDi(e) === "audit" ? "var(--blue)" : "var(--accent)", border: "2px solid var(--surface)" }} />
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>{fmtDt(e.createdAt)}</div>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>{e.action}</div>
-              {e.data?.old && e.data?.new && (
+              <div style={{ fontSize: 13, fontWeight: 500 }}>{e.dettagli?.label ?? e.azione}</div>
+              {e.dettagli?.old && e.dettagli?.new && (
                 <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                  <span style={{ textDecoration: "line-through", color: "var(--red)" }}>{JSON.stringify(e.data.old)}</span>
+                  <span style={{ textDecoration: "line-through", color: "var(--red)" }}>{JSON.stringify(e.dettagli.old)}</span>
                   {" → "}
-                  <span style={{ color: "var(--green)" }}>{JSON.stringify(e.data.new)}</span>
+                  <span style={{ color: "var(--green)" }}>{JSON.stringify(e.dettagli.new)}</span>
                 </div>
               )}
             </div>
