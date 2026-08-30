@@ -1046,8 +1046,8 @@
 .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .admin-meta { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
-label, .label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
-.input, .textarea {
+.admin-page label, .admin-page .label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
+.admin-page .input, .admin-page .textarea {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border);
@@ -1057,11 +1057,11 @@ label, .label { display: block; font-size: 13px; font-weight: 500; color: var(--
   font: inherit;
   font-size: 14px;
 }
-.input:focus, .textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-select.input:not(:disabled) { cursor: pointer; }
-select.input:disabled { opacity: 0.5; cursor: not-allowed; }
-.textarea { min-height: 80px; resize: vertical; line-height: 1.55; }
-input.input:read-only, textarea.input:read-only { background: var(--fg-soft); color: var(--muted); cursor: not-allowed; }
+.admin-page .input:focus, .admin-page .textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.admin-page select.input:not(:disabled) { cursor: pointer; }
+.admin-page select.input:disabled { opacity: 0.5; cursor: not-allowed; }
+.admin-page .textarea { min-height: 80px; resize: vertical; line-height: 1.55; }
+.admin-page input.input:read-only, .admin-page textarea.input:read-only { background: var(--fg-soft); color: var(--muted); cursor: not-allowed; }
 .color-field-container { position: relative; display: flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-sizing: border-box; }
 .color-field-container:focus-within { outline: 2px solid var(--accent-soft); outline-offset: -1px; }
 .color-field-container .input { outline: none; }
@@ -1544,7 +1544,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
 .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mono { font-family: var(--font-mono); }
+.admin-page .mono { font-family: var(--font-mono); }
 /* Modal tabs bar (inside modal with noHeader) */
 .modal-tabs-bar {
   display: flex;
@@ -1761,7 +1761,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 }
 
 /* ── Error ── */
-.error-box {
+.admin-page .error-box {
   background: var(--red-soft);
   color: var(--red);
   padding: 12px 16px;
@@ -2675,7 +2675,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .article-grid { grid-template-columns: 1fr; }
   .raccolte-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
-  .modal { width: 95vw; max-height: 95vh; }
+  .admin-page .modal { width: 95vw; max-height: 95vh; }
   .modal-body { padding: 20px; }
   .wizard { gap: 14px; height: auto; }
   .wizard-body { height: auto; }
@@ -3148,7 +3148,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 }
 .tag.danger { background: var(--danger-soft); color: var(--danger); }
 
-.meta { font-size: 13px; color: var(--muted); }
+.admin-page .meta { font-size: 13px; color: var(--muted); }
 
 .legend {
   display: flex;
@@ -3285,7 +3285,7 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
 
 /* -- Spese di spedizione -- */
 .modal-back { position: fixed; inset: 0; background: color-mix(in oklch, var(--fg) 40%, transparent); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 580px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 64px color-mix(in oklch, var(--fg) 20%, transparent); }
+.admin-page .modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 580px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 64px color-mix(in oklch, var(--fg) 20%, transparent); }
 .modal-wide { max-width: 800px; }
 .modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 28px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .modal-h h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0; }
@@ -3355,18 +3355,18 @@ input.input:read-only, textarea.input:read-only { background: var(--fg-soft); co
   .edit-cols { grid-template-columns: 1fr; gap: 0; }
 }
 
-.combobox { position: relative; }
-.combobox-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: inherit; color: var(--fg); outline: none; width: 100%; }
-.combobox-input:focus { border-color: var(--accent); outline: 2px solid var(--accent-soft); }
-.combobox-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 240px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 16%, transparent); display: none; }
-.combobox-dropdown.open { display: block; }
-.combobox-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; cursor: pointer; }
-.combobox-option:hover { background: var(--fg-soft); }
-.combobox-option.highlighted { background: var(--accent-soft); }
-.combobox-option.auto-option { color: var(--muted); font-style: italic; border-bottom: 1px solid var(--border); }
-.option-label { font-weight: 500; }
-.option-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
-.combobox-empty { padding: 10px 12px; color: var(--muted); }
+.admin-page .combobox { position: relative; }
+.admin-page .combobox-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: inherit; color: var(--fg); outline: none; width: 100%; }
+.admin-page .combobox-input:focus { border-color: var(--accent); outline: 2px solid var(--accent-soft); }
+.admin-page .combobox-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 240px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 16%, transparent); display: none; }
+.admin-page .combobox-dropdown.open { display: block; }
+.admin-page .combobox-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; cursor: pointer; }
+.admin-page .combobox-option:hover { background: var(--fg-soft); }
+.admin-page .combobox-option.highlighted { background: var(--accent-soft); }
+.admin-page .combobox-option.auto-option { color: var(--muted); font-style: italic; border-bottom: 1px solid var(--border); }
+.admin-page .option-label { font-weight: 500; }
+.admin-page .option-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
+.admin-page .combobox-empty { padding: 10px 12px; color: var(--muted); }
 
 /* Type badges per Event Log */
 .type-badge.type-access { background: var(--fg-soft); color: var(--muted); }
