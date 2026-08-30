@@ -1,10 +1,10 @@
-# Prompt di riproduzione fedele — Configurazione AI (Panel Admin)
+# Prompt di riproduzione fedele — Gestione AI (Panel Admin)
 
 ## Scopo
 
 Questo documento è un **prompt standalone** che, passato integralmente a un assistente di
 sviluppo, deve produrre una **ricostruzione fedele** del prototipo `admin-ai-config.html`
-(pagina admin "Configurazione AI" del portale Luis Srl B2B), riproducendo contenuti, stile,
+(pagina admin "Gestione AI" del portale Luis Srl B2B), riproducendo contenuti, stile,
 layout e comportamento identici. Include anche il requisito di **configurabilità di tutti i
 prompt di sistema** con **default di fabbrica come backup**.
 
@@ -15,7 +15,7 @@ prompt di sistema** con **default di fabbrica come backup**.
 
 <<<< RIPRODUCI >>>>
 
-Riproduci fedelmente una pagina HTML autonoma (prototipo) di "Configurazione AI" per il pannello
+Riproduci fedelmente una pagina HTML autonoma (prototipo) di "Gestione AI" per il pannello
 di amministrazione di un portale B2B di vasi, fioriere e articoli garden. Metti tutto in un singolo
 file `admin-ai-config.html` (HTML5, `lang="it"`, CSS inline in `<style>`, JS inline in `<script>`),
 senza dipendenze esterne (nessun CDN, nessuna libreria). Lingua UI: italiano.
@@ -39,7 +39,7 @@ senza dipendenze esterne (nessun CDN, nessuna libreria). Lingua UI: italiano.
 
 ## Struttura pagina
 
-1. **AdminTopBar** sticky: titolo "Configurazione AI" con punto blu, badge "Panel Admin",
+1. **AdminTopBar** sticky: titolo "Gestione AI" con punto blu, badge "Panel Admin",
    campo di ricerca `#search` (icone SVG inline), feedback "Salvato" `#saved` (hidden, si mostra
    con `.show`), bottone primario "Salva modifiche" `#btn-save-all`.
 2. **4 KPI card** (`.kpis`): "Provider attivi 1" · "Prompt configurati 24" · "Token 30 giorni

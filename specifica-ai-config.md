@@ -1,6 +1,6 @@
-# Specifica — Configurazione AI (Panel Admin)
+# Specifica — Gestione AI (Panel Admin)
 
-Progetto: Luis Srl B2B · Modulo amministrativo · Sezione "Configurazione AI"
+Progetto: Luis Srl B2B · Modulo amministrativo · Sezione "Gestione AI"
 Riferimento prototipo: `admin-ai-config.html`
 
 Questa specifica descrive la pagina admin di configurazione dell'intelligenza artificiale del
@@ -35,7 +35,7 @@ divisi per sezione, spiegazioni contestuali e **reset al default di fabbrica** p
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│  AdminTopBar  ● Configurazione AI   [Panel Admin]        [🔍 cerca] [💾 Salva modifiche]
+│  AdminTopBar  ● Gestione AI   [Panel Admin]        [🔍 cerca] [💾 Salva modifiche]
 ├────────────────────────────────────────────────────────────────────┤
 │  KPI:  Provider attivi 1 · Prompt configurati 24 · Token 30g 1,24M · Costo 30g €4,82
 │                                                                     │
