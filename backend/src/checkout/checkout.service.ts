@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { EventsService } from '../events/events.service';
 import { SpeseSpedizioneService, Calcola } from '../spese-spedizione/spese-spedizione.service';
+import { MailService } from '../mail/mail.service';
 
 export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE';
 
@@ -45,6 +46,7 @@ export class CheckoutService {
     private integrazione: IntegrazioneService,
     private events: EventsService,
     private speseSpedizione: SpeseSpedizioneService,
+    private mail: MailService,
   ) {}
 
   async getSogliaDefault(clienteId: number) {
@@ -498,10 +500,67 @@ export class CheckoutService {
     }
     void this.events.track('ordine.create', { entita: 'ordine', entitaId: numeroOrdine, dettagli: { importo: importoTotale, righe: righe.length } });
 
+    // Conferma d'ordine: best-effort, non deve mai far fallire un ordine gia' registrato.
+    void this.inviaConfermaOrdine(ordine.id).catch(() => undefined);
+
     // Svuota il carrello
     await this.prisma.cartItem.deleteMany({ where: { carrelloId: carrello.id } });
 
     return ordine;
+  }
+
+  /**
+   * Mail "ordine registrato" al cliente. Best-effort: se SMTP e' giu' o il template
+   * manca, l'ordine resta valido — non si perde un ordine per una mail.
+   */
+  private async inviaConfermaOrdine(ordineId: number): Promise<void> {
+    const ordine = await this.prisma.ordineCliente.findUnique({
+      where: { id: ordineId },
+      include: { righe: { orderBy: { id: 'asc' } }, customer: true },
+    });
+    if (!ordine?.customer?.email) return;
+
+    // Immagine per riga: stessa fonte del carrello (prima immagine dell'articolo).
+    // I client di posta rendono male il webp: preferisco un formato universale se c'e'.
+    const codici = ordine.righe.map((r) => r.codiceProdotto).filter((c): c is string => !!c);
+    const varianti = codici.length
+      ? await this.prisma.variante.findMany({
+          where: { codice: { in: codici } },
+          select: { codice: true, articolo: { select: { immagini: { select: { url: true }, orderBy: { id: 'asc' } } } } },
+        })
+      : [];
+    const immagini = new Map(varianti.map((v) => {
+      const urls = v.articolo?.immagini.map((i) => i.url) ?? [];
+      return [v.codice, urls.find((u) => !/\.webp$/i.test(u)) ?? urls[0] ?? null];
+    }));
+
+    const dest = ordine.indirizzoSpedizioneId
+      ? await this.prisma.indirizzoCliente.findUnique({ where: { id: ordine.indirizzoSpedizioneId } })
+      : null;
+    const c = ordine.customer;
+    const indirizzo = dest
+      ? [dest.ragioneSociale, dest.indirizzo, [dest.cap, dest.citta, dest.provincia].filter(Boolean).join(' ')].filter(Boolean).join('\n')
+      : [c.ragioneSociale ?? c.nome, c.indirizzo, [c.cap, c.citta, c.provincia].filter(Boolean).join(' ')].filter(Boolean).join('\n');
+
+    const d = ordine.dataOrdine ?? new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+
+    await this.mail.sendConfermaOrdine(c.email, {
+      ragioneSociale: c.ragioneSociale || c.nome || '',
+      numeroOrdine: ordine.numeroOrdine,
+      dataOrdine: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`,
+      totale: Number(ordine.importoTotale ?? 0),
+      indirizzo,
+      note: ordine.notaOrdine,
+      // La riga coupon (prezzo negativo) resta: al cliente lo sconto va mostrato.
+      righe: ordine.righe.map((r) => ({
+        codice: r.codiceProdotto ?? '',
+        descrizione: r.descrizione ?? r.codiceProdotto ?? '',
+        quantita: Number(r.quantita ?? 0),
+        prezzo: Number(r.prezzo ?? 0),
+        immagineUrl: immagini.get(r.codiceProdotto ?? '') ?? null,
+      })),
+    });
   }
 
   private mappaModalita(

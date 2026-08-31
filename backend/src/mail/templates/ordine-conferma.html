@@ -1,0 +1,132 @@
+<!--
+  Conferma d'ordine — Portale B2B Luis S.r.l.
+  Template modificabile: viene riletto a ogni invio, non serve riavviare il backend.
+  In produzione si puo' tenere fuori dal build con MAIL_TEMPLATES_DIR.
+
+  Segnaposto disponibili:
+    {{DOMAIN}}            URL pubblico del portale (per logo, immagini e link)
+    {{RAGIONE_SOCIALE}}   intestatario dell'ordine
+    {{NUMERO_ORDINE}}     numero ordine B2B
+    {{DATA_ORDINE}}       data in gg/mm/aaaa
+    {{TOTALE}}            totale IVA esclusa, gia' formattato
+    {{N_ARTICOLI}}        numero di righe
+    {{INDIRIZZO}}         destinazione della merce (blocco di testo)
+    {{NOTE}}              note d'ordine (vuoto se assenti)
+
+  Il blocco tra RIGA_START e RIGA_END viene ripetuto per ogni riga dell'ordine.
+  Segnaposto di riga: {{R_IMMAGINE}} {{R_DESCRIZIONE}} {{R_CODICE}} {{R_QTA}} {{R_PREZZO}} {{R_TOTALE}}
+-->
+<div style="margin:0;padding:0;background:#f7f5f1;font-family:Arial,Helvetica,sans-serif;color:#221811">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f1;padding:24px 12px">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #dcd6d1;border-radius:12px;overflow:hidden">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:28px 24px 8px">
+              <img src="{{DOMAIN}}/images/b2b/logo-email.png" alt="Luis S.r.l." width="180"
+                   style="display:block;border:0;width:180px;max-width:60%;height:auto">
+            </td>
+          </tr>
+
+          <!-- Titolo -->
+          <tr>
+            <td style="padding:8px 32px 0">
+              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:normal;color:#221811">
+                Ordine registrato
+              </h1>
+              <p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#221811">
+                Gentile <strong>{{RAGIONE_SOCIALE}}</strong>, abbiamo ricevuto il suo ordine.
+                Lo prendiamo in carico e le confermeremo disponibilit&agrave; e tempi di consegna.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Riepilogo ordine -->
+          <tr>
+            <td style="padding:20px 32px 0">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="background:#f7f5f1;border:1px solid #e4ded8;border-radius:8px">
+                <tr>
+                  <td style="padding:12px 16px;font-size:14px">
+                    <strong>Ordine n. {{NUMERO_ORDINE}}</strong><br>
+                    <span style="color:#706760">del {{DATA_ORDINE}} &middot; {{N_ARTICOLI}} articoli</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Righe -->
+          <tr>
+            <td style="padding:20px 32px 0">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">
+                <!--RIGA_START-->
+                <tr>
+                  <td width="64" valign="top" style="padding:10px 12px 10px 0">
+                    <img src="{{R_IMMAGINE}}" alt="" width="64"
+                         style="display:block;border:1px solid #e4ded8;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
+                  </td>
+                  <td valign="top" style="padding:10px 0;border-bottom:1px solid #efeae5">
+                    <strong style="color:#221811">{{R_DESCRIZIONE}}</strong><br>
+                    <span style="color:#706760;font-size:12px">{{R_CODICE}}</span><br>
+                    <span style="color:#706760;font-size:13px">{{R_QTA}} &times; {{R_PREZZO}}</span>
+                  </td>
+                  <td valign="top" align="right" style="padding:10px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
+                    <strong>{{R_TOTALE}}</strong>
+                  </td>
+                </tr>
+                <!--RIGA_END-->
+              </table>
+            </td>
+          </tr>
+
+          <!-- Totale -->
+          <tr>
+            <td style="padding:16px 32px 0">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:15px;padding-top:8px"><strong>Totale (IVA esclusa)</strong></td>
+                  <td align="right" style="font-size:18px;padding-top:8px;color:#b2511e"><strong>{{TOTALE}}</strong></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Consegna -->
+          <tr>
+            <td style="padding:20px 32px 0;font-size:13px;line-height:1.6;color:#221811">
+              <strong style="font-size:14px">Consegna</strong><br>
+              <span style="color:#706760">{{INDIRIZZO}}</span>
+              {{NOTE}}
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:24px 32px 8px">
+              <a href="{{DOMAIN}}/area/ordini"
+                 style="background:#b2511e;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-size:14px">
+                Vedi i tuoi ordini
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px 28px">
+              <hr style="border:none;border-top:1px solid #efeae5;margin:0 0 12px">
+              <p style="margin:0;font-size:11px;line-height:1.6;color:#706760">
+                Luis S.r.l. &middot; Via F. Bellafino 28/30, Bergamo<br>
+                Messaggio automatico: non rispondere a questo indirizzo.
+                Per assistenza usi i riferimenti del portale.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>

@@ -42,6 +42,25 @@ export class MailService {
     }
   }
 
+  /**
+   * Legge un template a ogni invio, cosi' e' modificabile senza riavviare il backend.
+   * MAIL_TEMPLATES_DIR permette di tenerlo fuori dal build (in produzione dist/ viene
+   * sovrascritto a ogni deploy). Ritorna '' se manca: chi chiama usa il fallback inline.
+   */
+  private leggiTemplate(nome: string): string {
+    const dirs = [
+      this.config.get<string>('MAIL_TEMPLATES_DIR'),
+      join(__dirname, 'templates'),
+    ].filter(Boolean) as string[];
+    for (const dir of dirs) {
+      try {
+        return readFileSync(join(dir, nome), 'utf-8');
+      } catch { /* provo il prossimo */ }
+    }
+    this.logger.warn(`Template ${nome} non trovato, uso il fallback inline`);
+    return '';
+  }
+
   private resolveRecipient(original: string): string {
     if (this.testEmail) {
       this.logger.log(`Email reindirizzata: ${original} -> ${this.testEmail}`);
@@ -130,4 +149,108 @@ export class MailService {
       html,
     });
   }
+
+  /** Conferma d'ordine: logo, righe con immagine prodotto, totale, consegna. */
+  async sendConfermaOrdine(to: string, dati: DatiConfermaOrdine): Promise<void> {
+    const html = this.renderConfermaOrdine(dati);
+    await this.transporter.sendMail({
+      from: this.from,
+      to: this.resolveRecipient(to),
+      subject: `Ordine ${dati.numeroOrdine} registrato — Luis S.r.l.`,
+      html,
+    });
+  }
+
+  /**
+   * Costruisce l'HTML della conferma d'ordine. Separato dall'invio perche' e'
+   * la parte che vale la pena guardare e verificare senza mandare email vere
+   * (scripts/anteprima-mail-ordine.ts).
+   */
+  renderConfermaOrdine(dati: DatiConfermaOrdine): string {
+    const tpl = this.leggiTemplate('ordine-conferma.html');
+    if (!tpl) return this.confermaOrdineFallback(dati);
+
+    // Il markup della riga vive nel template, non nel codice: si puo' cambiare
+    // senza toccare TypeScript.
+    const inizio = tpl.indexOf('<!--RIGA_START-->');
+    const fine = tpl.indexOf('<!--RIGA_END-->');
+    if (inizio === -1 || fine === -1) {
+      this.logger.warn('ordine-conferma.html senza marcatori RIGA_START/RIGA_END');
+      return this.confermaOrdineFallback(dati);
+    }
+    const modelloRiga = tpl.slice(inizio + '<!--RIGA_START-->'.length, fine);
+
+    const righe = dati.righe.map((r) => modelloRiga
+      .replace(/\{\{R_IMMAGINE\}\}/g, this.urlAssoluto(r.immagineUrl))
+      .replace(/\{\{R_DESCRIZIONE\}\}/g, esc(r.descrizione))
+      .replace(/\{\{R_CODICE\}\}/g, esc(r.codice))
+      .replace(/\{\{R_QTA\}\}/g, String(r.quantita))
+      .replace(/\{\{R_PREZZO\}\}/g, euro(r.prezzo))
+      .replace(/\{\{R_TOTALE\}\}/g, euro(r.prezzo * r.quantita)),
+    ).join('');
+
+    const note = dati.note?.trim()
+      ? `<br><br><strong style="font-size:14px">Note</strong><br><span style="color:#706760">${esc(dati.note)}</span>`
+      : '';
+
+    return (tpl.slice(0, inizio) + righe + tpl.slice(fine + '<!--RIGA_END-->'.length))
+      // Via i commenti del template (documentazione dei segnaposto): non devono
+      // finire nel sorgente della mail. Le condizionali Outlook <!--[if mso]> restano.
+      .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
+      .replace(/\{\{DOMAIN\}\}/g, this.domain)
+      .replace(/\{\{RAGIONE_SOCIALE\}\}/g, esc(dati.ragioneSociale))
+      .replace(/\{\{NUMERO_ORDINE\}\}/g, esc(dati.numeroOrdine))
+      .replace(/\{\{DATA_ORDINE\}\}/g, dati.dataOrdine)
+      .replace(/\{\{N_ARTICOLI\}\}/g, String(dati.righe.length))
+      .replace(/\{\{TOTALE\}\}/g, euro(dati.totale))
+      .replace(/\{\{INDIRIZZO\}\}/g, esc(dati.indirizzo).replace(/\n/g, '<br>'))
+      .replace(/\{\{NOTE\}\}/g, note);
+  }
+
+  /** Le immagini nelle email devono avere URL assoluti: nel DB sono relative (/images/...). */
+  private urlAssoluto(url: string | null): string {
+    // Riga senza immagine (es. la riga sconto del coupon): riquadro neutro, non il logo.
+    if (!url) return `${this.domain}/images/b2b/placeholder-email.png`;
+    return /^https?:\/\//i.test(url) ? url : `${this.domain}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
+  private confermaOrdineFallback(d: DatiConfermaOrdine): string {
+    const righe = d.righe
+      .map((r) => `<tr><td style="padding:6px 0">${esc(r.descrizione)} <span style="color:#706760">(${esc(r.codice)})</span><br>${r.quantita} × ${euro(r.prezzo)}</td><td align="right">${euro(r.prezzo * r.quantita)}</td></tr>`)
+      .join('');
+    return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#221811">
+  <h1 style="font-size:20px">Ordine ${esc(d.numeroOrdine)} registrato</h1>
+  <p>Gentile <strong>${esc(d.ragioneSociale)}</strong>, abbiamo ricevuto il suo ordine del ${d.dataOrdine}.</p>
+  <table width="100%" style="font-size:14px;border-collapse:collapse">${righe}</table>
+  <p style="text-align:right;font-size:16px"><strong>Totale (IVA esclusa): ${euro(d.totale)}</strong></p>
+  <p style="font-size:12px;color:#706760">Luis S.r.l. — messaggio automatico, non rispondere.</p>
+</div>`;
+  }
+}
+
+export interface RigaConfermaOrdine {
+  codice: string;
+  descrizione: string;
+  quantita: number;
+  prezzo: number;
+  immagineUrl: string | null;
+}
+
+export interface DatiConfermaOrdine {
+  ragioneSociale: string;
+  numeroOrdine: string;
+  dataOrdine: string;
+  totale: number;
+  indirizzo: string;
+  note?: string | null;
+  righe: RigaConfermaOrdine[];
+}
+
+/** I dati arrivano dal DB e finiscono in HTML: vanno neutralizzati. */
+function esc(s: string | null | undefined): string {
+  return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function euro(n: number): string {
+  return `${n.toFixed(2).replace('.', ',')} €`;
 }
