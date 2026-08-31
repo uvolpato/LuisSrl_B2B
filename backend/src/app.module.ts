@@ -21,6 +21,7 @@ import { ImgModule } from './img/img.module';
 import { SpeseSpedizioneModule } from './spese-spedizione/spese-spedizione.module';
 import { AdminOrdiniModule } from './admin-ordini/admin-ordini.module';
 import { CouponModule } from './coupon/coupon.module';
+import { ExportOrdiniModule } from './export-ordini/export-ordini.module';
 import { HealthController } from './health/health.controller';
 import { RequestContextInterceptor } from './common/request-context.interceptor';
 import { AccessLogInterceptor } from './common/access-log.interceptor';
@@ -50,6 +51,7 @@ import { HttpErrorFilter } from './common/http-error.filter';
     SpeseSpedizioneModule,
     AdminOrdiniModule,
     CouponModule,
+    ExportOrdiniModule,
   ],
   controllers: [HealthController],
   providers: [
