@@ -353,6 +353,11 @@ export class CheckoutService {
         descrizione: (item as any).varianteDescrizione || item.varianteCodice,
         quantita: item.quantita,
         prezzo: netto,
+        // Composizione congelata: listini e promozioni cambiano, ricalcolarla domani
+        // darebbe un numero diverso da quello che il cliente ha confermato oggi.
+        prezzoListino: prezzo?.prezzoListino ?? null,
+        scontoPct: prezzo?.sconto ?? null,
+        prezzoNetto: netto,
       });
     }
 
