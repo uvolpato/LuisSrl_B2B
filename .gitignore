@@ -78,3 +78,7 @@ Thumbs.db
 
 # Flag transitorio pagina di manutenzione (creato/rimosso dal deploy)
 maintenance/maintenance.flag
+
+# --- Export ordini verso Integra: file generati (dati commerciali), non versionarli ---
+ordini/*
+!ordini/.gitkeep

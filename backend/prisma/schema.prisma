@@ -217,6 +217,11 @@ model OrdineCliente {
   notaSpedizione    String?  @map("nota_spedizione")
   notaOrdine        String?  @map("nota_ordine")
   codiceCoupon      String?  @map("codice_coupon")
+  /// Export verso Integra: valorizzato => gia' esportato, mai riesportare (idempotenza).
+  esportatoIl       DateTime? @map("esportato_il")
+  esportatoFile     String?  @map("esportato_file")
+  /// Numero documento assegnato da Integra, valorizzato al ritorno via mvt_vsrif.
+  numeroIntegra     String?  @map("numero_integra")
   customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   righe             RigaOrdine[]
 
