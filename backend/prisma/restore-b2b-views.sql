@@ -197,6 +197,11 @@ SELECT t.mvt_id AS id_ordine,
     t.mvt_valcod AS codice_valuta,
     t.mvt_numordpa AS riferimento_ordine_cliente,
     t.mvt_dtordpa AS data_riferimento_ordine,
+    -- "Vostro riferimento": e' la colonna che l'import Excel valorizza (mvt_vsrif del
+    -- tracciato) e con cui riagganciamo il documento all'ordine B2B che l'ha generato.
+    -- NB: mvt_vsrif e mvt_numordpa sono due colonne distinte di movtest.
+    t.mvt_vsrif AS riferimento_b2b,
+    t.mvt_dtvsrif AS data_riferimento_b2b,
     t.mvt_dstid1 AS id_destinazione_merce,
     t.mvt_dstid2 AS id_destinazione_fattura,
     t.mvt_dstid3 AS id_destinazione_committente,

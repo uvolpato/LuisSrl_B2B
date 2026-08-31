@@ -2888,16 +2888,28 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
         `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
         codiceCliente,
       );
-      const esistenti = new Set(
-        (await this.prisma.ordineCliente.findMany({
-          where: { customerId: customer.id },
-          select: { numeroOrdine: true },
-        })).map((o) => o.numeroOrdine),
-      );
+      const locali = await this.prisma.ordineCliente.findMany({
+        where: { customerId: customer.id },
+        select: { id: true, numeroOrdine: true, numeroIntegra: true },
+      });
+      const esistenti = new Set(locali.map((o) => o.numeroOrdine));
+      // Ordini nati sul B2B ed esportati: il documento Integra li riporta in
+      // riferimento_b2b (mvt_vsrif). Senza questo match verrebbero reimportati
+      // come ordini nuovi e il cliente ne vedrebbe due.
+      const perRiferimento = new Map(locali.map((o) => [o.numeroOrdine, o]));
 
       for (const o of ordini) {
         const numOrd = o.numero_ordine ? String(o.numero_ordine) : null;
-        if (!numOrd || esistenti.has(numOrd)) continue;
+        if (!numOrd) continue;
+
+        const rifB2b = o.riferimento_b2b ? String(o.riferimento_b2b).trim() : '';
+        const localeB2b = rifB2b ? perRiferimento.get(rifB2b) : undefined;
+        if (localeB2b) {
+          await this.allineaOrdineB2b(localeB2b.id, numOrd, o);
+          continue;
+        }
+
+        if (esistenti.has(numOrd)) continue;
 
         const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
         if (!ordineId) continue;
@@ -2940,6 +2952,57 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
     }
 
     return { importati };
+  }
+
+  /**
+   * Riallinea un ordine nato sul B2B con il documento che Integra ha creato importandolo.
+   * Dopo l'import Integra e' il sistema autoritativo: testata e righe vengono riportate
+   * da li'. La composizione confermata dal cliente resta comunque dimostrabile dal file
+   * .xlsx esportato (immutabile) e da audit_log.
+   */
+  private async allineaOrdineB2b(ordineId: number, numeroIntegra: string, o: Record<string, unknown>) {
+    const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1 ORDER BY id_riga`,
+      o.id_ordine ? Number(o.id_ordine) : 0,
+    );
+
+    const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+    const totale = righe.reduce((s, r) => s + (num(r.quantita) ?? 0) * (num(r.prezzo_netto) ?? 0), 0);
+
+    await this.prisma.ordineCliente.update({
+      where: { id: ordineId },
+      data: {
+        numeroIntegra,
+        stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
+        importoTotale: totale > 0 ? totale : undefined,
+        dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : undefined,
+      },
+    });
+
+    // Le righe si riallineano solo se Integra ne ha davvero: mai svuotare l'ordine
+    // per una lettura vuota o parziale.
+    if (!righe.length) return;
+
+    await this.prisma.rigaOrdine.deleteMany({ where: { ordineId } });
+    for (const r of righe) {
+      const listino = num(r.prezzo_listino);
+      const netto = num(r.prezzo_netto);
+      await this.prisma.rigaOrdine.create({
+        data: {
+          ordineId,
+          numeroRiga: r.id_riga ? Number(r.id_riga) : null,
+          codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
+          descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
+          quantita: num(r.quantita),
+          prezzo: netto,
+          prezzoListino: listino,
+          prezzoNetto: netto,
+          scontoPct: listino && netto != null && listino > 0
+            ? Math.round((1 - netto / listino) * 1000) / 10
+            : null,
+        },
+      });
+    }
   }
 
   /** Genera descrizione AI del cliente (mix anagrafica + corrispondenza + web). */
