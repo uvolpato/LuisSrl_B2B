@@ -82,3 +82,6 @@ maintenance/maintenance.flag
 # --- Export ordini verso Integra: file generati (dati commerciali), non versionarli ---
 ordini/*
 !ordini/.gitkeep
+
+# --- Anteprima mail generata da scripts/anteprima-mail-ordine.ts ---
+backend/anteprima-ordine.html
