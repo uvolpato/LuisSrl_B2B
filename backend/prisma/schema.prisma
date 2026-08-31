@@ -236,6 +236,11 @@ model RigaOrdine {
   descrizione    String?
   quantita       Decimal?
   prezzo         Decimal?
+  /// Composizione economica congelata al momento dell'ordine: listini e promozioni
+  /// cambiano, ricalcolarla a posteriori darebbe un numero diverso da quello confermato.
+  prezzoListino  Decimal? @map("prezzo_listino")
+  scontoPct      Decimal? @map("sconto_pct")
+  prezzoNetto    Decimal? @map("prezzo_netto")
   ordine         OrdineCliente @relation(fields: [ordineId], references: [id], onDelete: Cascade)
 
   @@map("righe_ordini")
