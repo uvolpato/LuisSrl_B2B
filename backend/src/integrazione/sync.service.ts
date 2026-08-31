@@ -622,10 +622,12 @@ export class SyncService {
       let done = 0;
 
       await this.prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS integra_ordini_new CASCADE`);
-      await this.prisma.$executeRawUnsafe(`CREATE TABLE integra_ordini_new (id_ordine INTEGER, numero_ordine TEXT, anno_ordine SMALLINT, data_ordine DATE, id_cliente INTEGER, codice_cliente TEXT, importo_imponibile DECIMAL, flag_obsoleto SMALLINT, data_modifica TIMESTAMPTZ)`);
+      // riferimento_b2b = mvt_vsrif: e' cio' che scriviamo nell'export ordini e ci permette
+      // di riagganciare il documento Integra all'ordine B2B che l'ha generato.
+      await this.prisma.$executeRawUnsafe(`CREATE TABLE integra_ordini_new (id_ordine INTEGER, numero_ordine TEXT, anno_ordine SMALLINT, data_ordine DATE, id_cliente INTEGER, codice_cliente TEXT, importo_imponibile DECIMAL, flag_obsoleto SMALLINT, data_modifica TIMESTAMPTZ, riferimento_b2b TEXT)`);
 
       await this.prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS integra_righe_ordini_new CASCADE`);
-      await this.prisma.$executeRawUnsafe(`CREATE TABLE integra_righe_ordini_new (id_ordine INTEGER, id_riga INTEGER, codice_prodotto TEXT, descrizione_riga TEXT, quantita DECIMAL, prezzo_netto DECIMAL)`);
+      await this.prisma.$executeRawUnsafe(`CREATE TABLE integra_righe_ordini_new (id_ordine INTEGER, id_riga INTEGER, codice_prodotto TEXT, descrizione_riga TEXT, quantita DECIMAL, prezzo_netto DECIMAL, prezzo_listino DECIMAL, sconto_1 DECIMAL, sconto_2 DECIMAL, sconto_3 DECIMAL, sconto_4 DECIMAL)`);
       await this.setProgress(logId, 12, 'Tabelle preparate, inserimento dati…');
 
       const BATCH = 200;
@@ -636,8 +638,8 @@ export class SyncService {
         const vals: unknown[] = [];
         for (const r of batch) {
           const idx = vals.length;
-          phs.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6},$${idx + 7},$${idx + 8},$${idx + 9})`);
-          vals.push(r.id_ordine, r.numero_ordine, r.anno_ordine, r.data_ordine, r.id_cliente, r.codice_cliente, r.importo_imponibile, r.flag_obsoleto, r.data_modifica);
+          phs.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6},$${idx + 7},$${idx + 8},$${idx + 9},$${idx + 10})`);
+          vals.push(r.id_ordine, r.numero_ordine, r.anno_ordine, r.data_ordine, r.id_cliente, r.codice_cliente, r.importo_imponibile, r.flag_obsoleto, r.data_modifica, r.riferimento_b2b ?? null);
         }
         if (phs.length) {
           await this.prisma.$executeRawUnsafe(
@@ -654,8 +656,9 @@ export class SyncService {
         const vals: unknown[] = [];
         for (const r of batch) {
           const idx = vals.length;
-          phs.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6})`);
-          vals.push(r.id_ordine, r.id_riga, r.codice_prodotto, r.descrizione_riga, r.quantita, r.prezzo_netto);
+          phs.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6},$${idx + 7},$${idx + 8},$${idx + 9},$${idx + 10},$${idx + 11})`);
+          vals.push(r.id_ordine, r.id_riga, r.codice_prodotto, r.descrizione_riga, r.quantita, r.prezzo_netto,
+                    r.prezzo_listino ?? null, r.sconto_1 ?? null, r.sconto_2 ?? null, r.sconto_3 ?? null, r.sconto_4 ?? null);
         }
         if (phs.length) {
           await this.prisma.$executeRawUnsafe(
