@@ -109,7 +109,7 @@ Sono i tre punti aperti col fornitore, in ordine di impatto.
 1. **Il prezzo potrebbe non viaggiare.** Il tracciato ha solo `mvr_przval`, che secondo la nota "viene recuperato dall'anagrafica prodotto": Integra riprezzerebbe l'ordine col proprio listino. Ma il cliente ha confermato un totale con i suoi sconti. **Da chiedere ad AGOMIR:** valorizzando la colonna V, vince il file o l'anagrafica? Nel dubbio **la valorizziamo** col netto: se viene ignorata non peggioriamo nulla, e il confronto col ritorno (§4.1) lo dimostra.
 2. **Nessuna colonna sconto.** Il tracciato non porta né sconto% né prezzo di listino: la composizione della riga come mostrata sul B2B non è rappresentabile. **Da chiedere:** possono esporre le colonne sconto riga (`mvr_sconto1/2` o equivalenti), che nel gestionale esistono già (si vedono in `b2b_righe_ordini`).
 3. **La riga coupon non è esportabile così com'è.** In [`checkout.service.ts:444`](../src/checkout/checkout.service.ts:444) lo sconto diventa una riga con `codiceProdotto = campaign.code` (es. `Q8A3WG1C`) e prezzo negativo. Quel codice in Integra non esiste → `mvr_procod` obbligatorio farebbe fallire l'import.
-   **Comportamento attuale:** la riga coupon viene **esclusa** dall'export e l'ordine registra un'anomalia (`AnomaliaLog`), così lo scostamento è visibile e non silenzioso. **Da concordare:** un codice articolo "sconto" dedicato, oppure lo sconto in testata.
+   **Comportamento attuale:** la riga coupon viene **esclusa** dall'export; l'esito dell'ordine riporta `righeEscluse` e la cosa finisce in `audit_log` (`ordine.export`), così lo scostamento è visibile e non silenzioso. **Da concordare:** un codice articolo "sconto" dedicato, oppure lo sconto in testata.
 
 ### 5.1 Storicizzazione della riga (prerequisito indipendente)
 
@@ -158,7 +158,9 @@ Tre modalità, stessa identica logica:
 
 Configurazione via ambiente: cartella di destinazione e frequenza. **Se la cartella non è configurata il processo è disattivo** (stesso criterio già usato da `DatiImpresaService`): nessun job che scrive file in percorsi non voluti.
 
-Concorrenza: un solo run per volta (`pg_try_advisory_lock`), così il job schedulato e il pulsante manuale non si pestano i piedi.
+Concorrenza: un solo run per volta, con **guardia in-process** (stesso pattern del batch notturno dei box in `dashboard.service`), così job schedulato e pulsante manuale non si pestano i piedi.
+
+> **Attenzione, verificato sul campo:** l'advisory lock *di sessione* (`pg_try_advisory_lock`) **non** è utilizzabile con Prisma. Il client usa un pool: `lock` e `unlock` possono finire su connessioni diverse, il lock resta appeso e ogni run successivo viene saltato. Se un giorno il backend girerà replicato e servirà un lock reale, usare `pg_advisory_xact_lock` **dentro una transazione** (rilascio automatico al commit).
 
 ## 9. Gestione eccezioni
 
@@ -166,7 +168,7 @@ Concorrenza: un solo run per volta (`pg_try_advisory_lock`), così il job schedu
 |---|---|
 | Cliente senza `codice_cliente` | scarto ordine + `ERRORE_NO_CLIENTE` (nessun file) |
 | Riga senza codice prodotto | riga scartata + log; se non resta alcuna riga → `ERRORE_PRODOTTO` |
-| Riga coupon (prezzo negativo) | esclusa dall'export + anomalia registrata (§5.3) |
+| Riga coupon (prezzo negativo) | esclusa dall'export + `righeEscluse` nell'esito e in `audit_log` (§5.3) |
 | Campi opzionali mancanti | lasciati vuoti: Integra applica i default dell'anagrafica |
 | Cartella non scrivibile | `ERRORE_SCRITTURA`, ordine ritentato al run successivo |
 
@@ -180,17 +182,18 @@ Concorrenza: un solo run per volta (`pg_try_advisory_lock`), così il job schedu
 
 | Passo | Stato |
 |---|---|
-| 1. Ordine su B2B | ✅ esiste (`checkout.service.ts:464`) |
-| 2. Mail "ordine registrato" | ❌ **non esiste**: `checkout.service` non usa `MailModule` (che invece c'è) |
-| 3. Export .xlsx schedulato | ❌ da implementare (questo documento) |
+| 1. Ordine su B2B | ✅ esiste (`checkout.service.ts`) |
+| 2. Mail "ordine registrato" | ✅ implementata: template `src/mail/templates/ordine-conferma.html` (logo + immagini prodotto), invio best-effort dal checkout |
+| 3. Export .xlsx schedulato | ✅ implementato: `src/export-ordini/` (default `<progetto>/ordini`) |
 | 4. Import Integra | a carico di AGOMIR |
-| 5. Ordine nelle viste condivise | ✅ esiste (`b2b_ordini_clienti`) |
-| 6. Aggiornamento dell'ordine sul B2B | ⚠️ **parziale**: il sync fa solo `create`, mai `update` (§4.1) |
+| 5. Ordine nelle viste condivise | ✅ esiste (`b2b_ordini_clienti`, ora con `riferimento_b2b`) |
+| 6. Aggiornamento dell'ordine sul B2B | ✅ implementato: match su `riferimento_b2b` → `update` testata + righe (`allineaOrdineB2b`) |
 
 ## 12. Monitoraggio
 
-- Ogni esecuzione produce un report: processati, esportati, scartati, errori — sullo stesso meccanismo di log già usato dai sync (`sync_log`).
-- Anomalie su `AnomaliaLog` (già esistente), in particolare per le righe coupon escluse.
+- Ogni esecuzione restituisce un report: processati, esportati, errori, e per ogni ordine l'esito con file e righe escluse.
+- Ogni ordine esportato o scartato finisce in `audit_log` (azione `ordine.export`, `esito` OK/KO).
+- *ponytail:* il report non è persistito su `sync_log` come fanno i sync — l'`audit_log` per ordine copre il caso d'uso. Se servirà lo storico per esecuzione, si aggiunge lì.
 
 ## 13. Collaudo
 
@@ -209,7 +212,37 @@ Concorrenza: un solo run per volta (`pg_try_advisory_lock`), così il job schedu
 | 2 | Possono esporre le colonne sconto di riga nel tracciato? | AGOMIR | no |
 | 3 | Codice articolo dedicato per lo sconto coupon, o sconto in testata? | AGOMIR | no (oggi escluso + anomalia) |
 | 4 | Cartella di destinazione, pattern del nome file, cadenza, gestione degli scarti | AGOMIR | **sì** per andare in produzione |
-| 5 | `mvt_vsrif` e `mvt_numordpa` sono la stessa colonna di `movtest`? | verifica interna | sì per il ritorno (§4.1) |
+| 5 | ~~`mvt_vsrif` e `mvt_numordpa` sono la stessa colonna?~~ | **RISOLTA** | — |
+
+> **#5 risolta** (verificata su `information_schema` via FDW): `integra.movtest` ha **entrambe** le colonne, `mvt_vsrif` e `mvt_numordpa`, e sono **distinte** (come pure `mvt_dtvsrif` e `mvt_dtordpa`). La vista esponeva solo la seconda: ora espone anche `mvt_vsrif AS riferimento_b2b`, che è quella valorizzata dall'import Excel.
+
+---
+
+## 15. Stato dell'implementazione
+
+**Fatto e verificato sul DB di sviluppo:**
+
+| Cosa | Dove |
+|---|---|
+| Colonne `esportato_il`, `esportato_file`, `numero_integra` | migration `20260831000000_export_ordini` |
+| Composizione di riga storicizzata (`prezzo_listino`, `sconto_pct`, `prezzo_netto`) | migration `20260831010000_riga_ordine_composizione` + `checkout.service` |
+| Generazione .xlsx + coda + marcatura + cron + endpoint admin | `src/export-ordini/` |
+| `riferimento_b2b` nella vista | `restore-b2b-views.sql` |
+| Colonna propagata nella copia locale + composizione di riga | `sync.service.ts` (`integra_ordini`, `integra_righe_ordini`) |
+| Riaggancio e allineamento dell'ordine | `integrazione.service.ts` → `allineaOrdineB2b` |
+| Mail di conferma con logo e immagini prodotto | `src/mail/templates/ordine-conferma.html` + `MailService.sendConfermaOrdine` |
+
+Script di verifica (non inviano nulla e non lasciano dati):
+`scripts/verifica-export-ordini.ts` (dry-run dell'export), `scripts/verifica-match-vsrif.ts`
+(simula il ritorno da Integra e controlla che non nascano doppioni),
+`scripts/anteprima-mail-ordine.ts` (rende la mail su file).
+
+**Da fare prima della produzione:**
+
+1. Rieseguire la definizione della vista `b2b_ordini_clienti` sul DB di produzione (aggiunge `riferimento_b2b`), poi un `sync ordini` completo perché la colonna arrivi nella copia locale.
+2. Impostare `EXPORT_ORDINI_DIR` sulla cartella concordata con AGOMIR (decisione aperta #4). Finché non è impostata i file finiscono in `<progetto>/ordini`.
+3. Primo import di prova su ambiente di test e verifica che `mvt_vsrif` torni valorizzato nella vista: è l'unico punto che non si può provare senza Integra.
+4. Verificare la resa della mail sui client reali: il logo è PNG (`logo-email.png`, generato da `logo.webp`) perché webp e svg non sono affidabili in posta; **le immagini prodotto restano quelle del catalogo**, e se sono `.webp` alcuni client non le mostreranno — il codice preferisce un formato non-webp quando l'articolo ne ha uno.
 
 ---
 
