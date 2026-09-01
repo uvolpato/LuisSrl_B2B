@@ -99,6 +99,30 @@ export class DashboardService {
       await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: orfane.map((o) => o.boxId) } } });
     }
 
+    // Dedupe tra box: i codici già assegnati ad altri box non vanno riproposti.
+    // I box generale sono condivisi (customerId=0); i box cliente cedono rispetto
+    // ai generale (escludono anche ciò che il generale mostra già).
+    const usatiCliente = new Set<string>();
+    const usatiGenerale = new Set<string>();
+    for (const c of clienteCached) for (const k of this.codiciDaProdotti(c.prodotti)) usatiCliente.add(k);
+    for (const c of generaleCached) for (const k of this.codiciDaProdotti(c.prodotti)) usatiGenerale.add(k);
+
+    // Fase 1: genera i box generale mancanti (dedupe tra loro), così i box cliente
+    // (fase 2) sanno cosa il generale mostra già.
+    for (const box of boxes.filter((b) => b.ambito === 'generale')) {
+      if (generaleCached.some((c) => c.boxId === box.id)) continue;
+      try {
+        const { articoli, rationale } = await this.generaBoxGenerale(box, codiceListino, usatiGenerale);
+        if (articoli.length) {
+          for (const k of this.codiciDaProdotti(articoli)) usatiGenerale.add(k);
+          await this.upsertCache(GENERALE_ID, box, articoli, rationale);
+          generaleCached.push({ id: 0, customerId: GENERALE_ID, boxId: box.id, titolo: box.titolo, rationale, prodotti: articoli as never, generatoIl: new Date() });
+        }
+      } catch (e) {
+        this.log.warn(`box generale #${box.id} "${box.titolo}" fallito: ${(e as Error).message}`);
+      }
+    }
+
     const result: { boxId: number; titolo: string; rationale: string | null; articoli: any[] }[] = [];
     for (const box of boxes) {
       const generale = box.ambito === 'generale';
@@ -108,10 +132,12 @@ export class DashboardService {
         continue;
       }
       try {
+        const esclusi = generale ? usatiGenerale : new Set([...usatiCliente, ...usatiGenerale]);
         const { articoli, rationale } = generale
-          ? await this.generaBoxGenerale(box, codiceListino)
-          : await this.generaBox(box, customerId, codiceListino);
+          ? await this.generaBoxGenerale(box, codiceListino, esclusi)
+          : await this.generaBox(box, customerId, codiceListino, esclusi);
         if (articoli.length) {
+          for (const k of this.codiciDaProdotti(articoli)) (generale ? usatiGenerale : usatiCliente).add(k);
           await this.upsertCache(generale ? GENERALE_ID : customerId, box, articoli, rationale);
           result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
@@ -129,11 +155,18 @@ export class DashboardService {
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
     await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: boxes.map((b) => b.id) } } });
+
+    // Escludi anche ciò che i box generale (condivisi) mostrano già.
+    const generaleCached = await this.prisma.dashboardBox.findMany({ where: { customerId: GENERALE_ID } });
+    const usati = new Set<string>();
+    for (const c of generaleCached) for (const k of this.codiciDaProdotti(c.prodotti)) usati.add(k);
+
     const result: { boxId: number; titolo: string; rationale: string | null; articoli: any[] }[] = [];
     for (const box of boxes) {
       try {
-        const { articoli, rationale } = await this.generaBox(box, customerId, codiceListino);
+        const { articoli, rationale } = await this.generaBox(box, customerId, codiceListino, usati);
         if (articoli.length) {
+          for (const k of this.codiciDaProdotti(articoli)) usati.add(k);
           await this.upsertCache(customerId, box, articoli, rationale);
           result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
@@ -151,10 +184,12 @@ export class DashboardService {
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
     await this.prisma.dashboardBox.deleteMany({ where: { customerId: GENERALE_ID } });
+    const usati = new Set<string>();
     for (const box of boxes) {
       try {
-        const { articoli, rationale } = await this.generaBoxGenerale(box, codiceListino);
+        const { articoli, rationale } = await this.generaBoxGenerale(box, codiceListino, usati);
         if (articoli.length) {
+          for (const k of this.codiciDaProdotti(articoli)) usati.add(k);
           await this.upsertCache(GENERALE_ID, box, articoli, rationale);
         }
       } catch (e) {
@@ -293,18 +328,21 @@ export class DashboardService {
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     customerId: number,
     codiceListino?: string | null,
+    esclusi?: Set<string>,
   ): Promise<{ articoli: any[]; rationale: string | null }> {
     const pesi = this.pesiNormalizzati(box.pesi);
     const [pool, segnali] = await Promise.all([
-      this.poolVincoli(box, customerId),
+      this.poolVincoli(box, customerId, esclusi),
       this.segnaliCliente(customerId),
     ]);
     if (!pool.length) {
-      const articoli = await this.randomFallback(box, codiceListino);
+      const articoli = await this.randomFallback(box, codiceListino, esclusi);
       return { articoli, rationale: articoli.length ? await this.generaRationale(box, articoli) : null };
     }
+    const profilo = await this.profiloTesto(customerId);
+    const digest = [this.digestCliente(segnali), profilo].filter(Boolean).join('\n');
     return this.selezionaEArricchisci(
-      box, pool, (c) => this.scoreCandidato(c, pesi, segnali), codiceListino, this.digestCliente(segnali),
+      box, pool, (c) => this.scoreCandidato(c, pesi, segnali), codiceListino, digest, profilo,
     );
   }
 
@@ -312,10 +350,11 @@ export class DashboardService {
   async generaBoxGenerale(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     codiceListino?: string | null,
+    esclusi?: Set<string>,
   ): Promise<{ articoli: any[]; rationale: string | null }> {
-    const pool = await this.poolVincoli(box, GENERALE_ID);
+    const pool = await this.poolVincoli(box, GENERALE_ID, esclusi);
     if (!pool.length) {
-      const articoli = await this.randomFallback(box, codiceListino);
+      const articoli = await this.randomFallback(box, codiceListino, esclusi);
       return { articoli, rationale: articoli.length ? await this.generaRationale(box, articoli) : null };
     }
     const best = await this.famiglieBestSeller();
@@ -343,6 +382,32 @@ export class DashboardService {
   }
 
   /**
+   * Profilo commerciale del cliente (sintesi AI + profilo anagrafico): arricchisce
+   * sia la ricerca semantica (embedding del prompt) sia il contesto dell'LLM.
+   */
+  private async profiloTesto(customerId: number): Promise<string> {
+    const parti: string[] = [];
+    const ins = await this.insight.latest(customerId);
+    if (ins?.testo?.trim()) parti.push(ins.testo.trim());
+    const prof = await this.prisma.customerProfile.findUnique({
+      where: { customerId },
+      select: { settore: true, interessiPrincipali: true, nonCompreraMai: true },
+    });
+    if (prof?.settore?.trim()) parti.push(`Settore: ${prof.settore.trim()}`);
+    const interessi = Array.isArray(prof?.interessiPrincipali) ? (prof.interessiPrincipali as string[]) : [];
+    if (interessi.length) parti.push(`Interessi: ${interessi.join('; ')}`);
+    const nonVuole = Array.isArray(prof?.nonCompreraMai) ? (prof.nonCompreraMai as string[]) : [];
+    if (nonVuole.length) parti.push(`Da NON proporre: ${nonVuole.join('; ')}`);
+    return parti.join('\n');
+  }
+
+  /** Estrae i codici (campo `id`) dagli articoli arricchiti di un box. */
+  private codiciDaProdotti(prodotti: unknown): string[] {
+    if (!Array.isArray(prodotti)) return [];
+    return (prodotti as any[]).map((p) => p?.id).filter((c): c is string => typeof c === 'string');
+  }
+
+  /**
    * Filtro semantico soft + ranking (scoreOf) + scelta finale + arricchimento.
    * Con DASHBOARD_LLM_SELECTION=on, l'LLM sceglie/ordina N tra i primi M candidati
    * (pesati coi segnali) e scrive il rationale; altrimenti (o su fallimento LLM)
@@ -354,9 +419,10 @@ export class DashboardService {
     scoreOf: (c: Candidato) => number,
     codiceListino?: string | null,
     digest?: string,
+    profilo?: string,
   ): Promise<{ articoli: any[]; rationale: string | null }> {
     let candidati = pool;
-    const sem = await this.intentoSemantico(box.prompt, pool);
+    const sem = await this.intentoSemantico([box.prompt, profilo].filter(Boolean).join('\n'), pool);
     if (sem) {
       const semSet = new Set(sem.keys());
       const inSem = pool.filter((c) => semSet.has(c.codiceLinea));
@@ -469,11 +535,17 @@ export class DashboardService {
   private async poolVincoli(
     box: Pick<Prisma.SuggestionBoxGetPayload<Record<string, never>>, 'soloInOfferta' | 'escludiAcquistati' | 'scopeFamiglia' | 'scopeRaccolta'>,
     customerId: number,
+    esclusi?: Set<string>,
   ): Promise<Candidato[]> {
     const conds: string[] = [`a.configurato = true`, `a.stato = 'ATTIVO'`, `f.stato = 'ATTIVO'`];
     const params: unknown[] = [customerId];
     let idx = 2;
 
+    if (esclusi?.size) {
+      conds.push(`NOT (a.codice_linea = ANY($${idx}::text[]))`);
+      params.push([...esclusi]);
+      idx++;
+    }
     if (box.scopeFamiglia?.trim()) {
       conds.push(`a.famiglia_codice = $${idx}`);
       params.push(box.scopeFamiglia.trim());
@@ -725,9 +797,14 @@ export class DashboardService {
   private async randomFallback(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     codiceListino?: string | null,
+    esclusi?: Set<string>,
   ) {
     const n = box.nArticoli;
     const conds: string[] = [`a.configurato = true`, `a.stato = 'ATTIVO'`, `f.stato = 'ATTIVO'`];
+    if (esclusi?.size) {
+      const list = [...esclusi].map((c) => `'${c.replace(/'/g, "''")}'`).join(',');
+      conds.push(`a.codice_linea NOT IN (${list})`);
+    }
     if (box.soloInOfferta) {
       conds.push(`EXISTS (
         SELECT 1 FROM promozioni p
