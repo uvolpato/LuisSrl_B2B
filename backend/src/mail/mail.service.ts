@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import { join, resolve } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
@@ -13,6 +13,7 @@ export class MailService {
   private testEmail: string | null;
   private template: string;
   private invitoTemplate: string;
+  private assetsBase: string;
 
   constructor(private config: ConfigService) {
     this.transporter = nodemailer.createTransport({
@@ -27,6 +28,9 @@ export class MailService {
     this.from = this.config.get<string>('SMTP_FROM') ?? 'noreply@luissrl.it';
     this.domain = this.config.get<string>('APP_DOMAIN') ?? 'http://localhost:3000';
     this.testEmail = this.config.get<string>('TEST_EMAIL') ?? null;
+    this.assetsBase = resolve(
+      process.env.ASSETS_BASE_DIR || join(process.cwd(), '..', 'frontend', 'public', 'images'),
+    );
 
     try {
       this.template = readFileSync(join(__dirname, 'templates', 'password-reset.html'), 'utf-8');
@@ -152,12 +156,13 @@ export class MailService {
 
   /** Conferma d'ordine: logo, righe con immagine prodotto, totale, consegna. */
   async sendConfermaOrdine(to: string, dati: DatiConfermaOrdine): Promise<void> {
-    const html = this.renderConfermaOrdine(dati);
+    const { html, attachments } = this.buildConfermaOrdine(dati);
     await this.transporter.sendMail({
       from: this.from,
       to: this.resolveRecipient(to),
       subject: `Ordine ${dati.numeroOrdine} registrato — Luis S.r.l.`,
       html,
+      attachments,
     });
   }
 
@@ -167,8 +172,28 @@ export class MailService {
    * (scripts/anteprima-mail-ordine.ts).
    */
   renderConfermaOrdine(dati: DatiConfermaOrdine): string {
+    return this.buildConfermaOrdine(dati).html;
+  }
+
+  /**
+   * HTML + allegati inline della conferma d'ordine. Solo il logo viene
+   * incorporato come `cid:` (cosi' l'intestazione si vede sempre). Le immagini
+   * prodotto restano URL esterni assoluti ({{DOMAIN}}/images/...): in produzione
+   * il path e' corretto se APP_DOMAIN punta all'URL pubblico del portale.
+   */
+  private buildConfermaOrdine(dati: DatiConfermaOrdine): {
+    html: string;
+    attachments: { filename: string; path: string; cid: string }[];
+  } {
+    const attachments: { filename: string; path: string; cid: string }[] = [];
+
+    const logoPath = join(this.assetsBase, 'b2b', 'logo-email.png');
+    if (existsSync(logoPath)) attachments.push({ filename: 'logo.png', path: logoPath, cid: 'logo' });
+
     const tpl = this.leggiTemplate('ordine-conferma.html');
-    if (!tpl) return this.confermaOrdineFallback(dati);
+    if (!tpl) {
+      return { html: this.confermaOrdineFallback(dati), attachments };
+    }
 
     // Il markup della riga vive nel template, non nel codice: si puo' cambiare
     // senza toccare TypeScript.
@@ -176,7 +201,7 @@ export class MailService {
     const fine = tpl.indexOf('<!--RIGA_END-->');
     if (inizio === -1 || fine === -1) {
       this.logger.warn('ordine-conferma.html senza marcatori RIGA_START/RIGA_END');
-      return this.confermaOrdineFallback(dati);
+      return { html: this.confermaOrdineFallback(dati), attachments };
     }
     const modelloRiga = tpl.slice(inizio + '<!--RIGA_START-->'.length, fine);
 
@@ -193,9 +218,7 @@ export class MailService {
       ? `<br><br><strong style="font-size:14px">Note</strong><br><span style="color:#706760">${esc(dati.note)}</span>`
       : '';
 
-    return (tpl.slice(0, inizio) + righe + tpl.slice(fine + '<!--RIGA_END-->'.length))
-      // Via i commenti del template (documentazione dei segnaposto): non devono
-      // finire nel sorgente della mail. Le condizionali Outlook <!--[if mso]> restano.
+    const html = (tpl.slice(0, inizio) + righe + tpl.slice(fine + '<!--RIGA_END-->'.length))
       .replace(/<!--(?!\[if)[\s\S]*?-->/g, '')
       .replace(/\{\{DOMAIN\}\}/g, this.domain)
       .replace(/\{\{RAGIONE_SOCIALE\}\}/g, esc(dati.ragioneSociale))
@@ -205,6 +228,8 @@ export class MailService {
       .replace(/\{\{TOTALE\}\}/g, euro(dati.totale))
       .replace(/\{\{INDIRIZZO\}\}/g, esc(dati.indirizzo).replace(/\n/g, '<br>'))
       .replace(/\{\{NOTE\}\}/g, note);
+
+    return { html, attachments };
   }
 
   /** Le immagini nelle email devono avere URL assoluti: nel DB sono relative (/images/...). */
