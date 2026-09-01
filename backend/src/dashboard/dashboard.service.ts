@@ -407,6 +407,96 @@ export class DashboardService {
     return (prodotti as any[]).map((p) => p?.id).filter((c): c is string => typeof c === 'string');
   }
 
+  // ── Fase 3: planner a edit-time + anteprima test ───────────────────────────
+
+  /**
+   * Interpreta il prompt del box e restituisce un piano di configurazione
+   * (vocabolario chiuso, niente SQL): ricercaTesto, escludiAcquistati,
+   * soloInOfferta, nArticoli, pesi, note. L'admin lo revisiona e salva.
+   */
+  async pianifica(prompt: string) {
+    if (!prompt?.trim()) return null;
+    const p =
+      `Sei l'editor di box di un e-commerce B2B di vasi e complementi per fioristi.\n` +
+      `Dato il prompt del box qui sotto, estrai un PIANO di configurazione deterministico.\n` +
+      `Prompt: "${prompt.trim()}"\n\n` +
+      `Rispondi SOLO con JSON valido, senza markdown, con questi campi:\n` +
+      `{"ricercaTesto":"stringa di ricerca distillata dal prompt","escludiAcquistati":bool,"soloInOfferta":bool,"nArticoli":int,"pesi":{"acquisti":num,"tracking":num,"progetti":num,"affinita":num},"note":"una riga che spiega il piano"}\n` +
+      `Regole: nArticoli tra 4 e 24; i pesi sono proporzioni relative (non devono sommare 1); soloInOfferta=true solo se il prompt parla di offerte/promo; escludiAcquistati=true solo se il prompt implica novità/mai comprati.`;
+    const parsed = await this.chiamaJson(p, 'piano box');
+    if (!parsed) return null;
+    const n = Math.min(24, Math.max(4, Number(parsed.nArticoli) || 8));
+    const pesi = { ...DEFAULT_PESI };
+    if (parsed.pesi && typeof parsed.pesi === 'object') {
+      for (const k of Object.keys(pesi) as (keyof PesiSegnali)[]) {
+        const v = Number((parsed.pesi as Record<string, unknown>)[k]);
+        if (Number.isFinite(v) && v >= 0) pesi[k] = v;
+      }
+    }
+    return {
+      ricercaTesto: typeof parsed.ricercaTesto === 'string' ? parsed.ricercaTesto.trim() : '',
+      escludiAcquistati: !!parsed.escludiAcquistati,
+      soloInOfferta: !!parsed.soloInOfferta,
+      nArticoli: n,
+      pesi,
+      note: typeof parsed.note === 'string' ? parsed.note.trim() : '',
+    };
+  }
+
+  /**
+   * Anteprima dry-run: esegue il motore su un cliente campione (o quello passato)
+   * SENZA scrivere la cache, e restituisce gli articoli che uscirebbero.
+   */
+  async testBox(
+    input: {
+      titolo?: string; prompt?: string; ricercaTesto?: string | null; ambito?: string;
+      nArticoli?: number; pesi?: Record<string, number>; soloInOfferta?: boolean;
+      escludiAcquistati?: boolean; scopeFamiglia?: string; scopeRaccolta?: string;
+    },
+    clienteId?: number,
+  ) {
+    const target = clienteId ?? (await this.prisma.customer.findFirst({ where: { stato: 'ATTIVO' }, select: { id: true } }))?.id;
+    if (!target) return { articoli: [], rationale: null };
+
+    const box = {
+      id: 0, titolo: input.titolo ?? 'Test', prompt: input.prompt ?? '',
+      ricercaTesto: input.ricercaTesto || null,
+      ambito: input.ambito === 'generale' ? 'generale' : 'cliente',
+      nArticoli: input.nArticoli ?? 8,
+      pesi: (input.pesi ?? { ...DEFAULT_PESI }) as never,
+      soloInOfferta: !!input.soloInOfferta, escludiAcquistati: input.escludiAcquistati !== false,
+      scopeFamiglia: input.scopeFamiglia ?? '', scopeRaccolta: input.scopeRaccolta ?? '',
+      attiva: true, ordinamento: 0,
+      createdAt: new Date(), updatedAt: new Date(),
+    } as unknown as Prisma.SuggestionBoxGetPayload<Record<string, never>>;
+
+    const listino = await this.listinoDi(target);
+    return box.ambito === 'generale'
+      ? this.generaBoxGenerale(box, listino)
+      : this.generaBox(box, target, listino);
+  }
+
+  private async listinoDi(customerId: number): Promise<string | null> {
+    const customer = await this.prisma.customer.findUnique({ where: { id: customerId }, select: { codiceListino: true } });
+    if (customer?.codiceListino) return customer.codiceListino;
+    return (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+  }
+
+  /** Chiama Gemini chiedendo JSON e lo parsa in modo tollerante. Null su errore. */
+  private async chiamaJson(prompt: string, label: string): Promise<Record<string, unknown> | null> {
+    try {
+      const raw = await this.integrazione.generaSelezioneBox(prompt);
+      const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/\s*```/g, '').trim();
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      if (start === -1 || end <= start) return null;
+      return JSON.parse(cleaned.slice(start, end + 1));
+    } catch (e) {
+      this.log.warn(`${label} fallita: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
   /**
    * Filtro semantico soft + ranking (scoreOf) + scelta finale + arricchimento.
    * Con DASHBOARD_LLM_SELECTION=on, l'LLM sceglie/ordina N tra i primi M candidati
@@ -422,7 +512,8 @@ export class DashboardService {
     profilo?: string,
   ): Promise<{ articoli: any[]; rationale: string | null }> {
     let candidati = pool;
-    const sem = await this.intentoSemantico([box.prompt, profilo].filter(Boolean).join('\n'), pool);
+    const testoRicerca = box.ricercaTesto?.trim() || box.prompt;
+    const sem = await this.intentoSemantico([testoRicerca, profilo].filter(Boolean).join('\n'), pool);
     if (sem) {
       const semSet = new Set(sem.keys());
       const inSem = pool.filter((c) => semSet.has(c.codiceLinea));

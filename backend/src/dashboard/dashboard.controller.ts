@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, NotFoundException, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
@@ -46,6 +46,24 @@ export class DashboardController {
     }
     await this.dashboard.rigeneraTutti();
     return { esito: 'ok', rigenerati: 'tutti' };
+  }
+
+  /** Fase 3: interpreta il prompt del box e propone un piano di configurazione. */
+  @Post('suggerimenti/pianifica')
+  @Roles('admin')
+  async pianifica(@Body() body: { prompt?: string }) {
+    const piano = await this.dashboard.pianifica(body.prompt ?? '');
+    if (!piano) throw new BadRequestException('dashboard.piano_non_generato');
+    return { piano };
+  }
+
+  /** Fase 3: anteprima dry-run del motore su un cliente campione (senza scrivere cache). */
+  @Post('suggerimenti/test')
+  @Roles('admin')
+  async test(@Body() body: any) {
+    const clienteId = body.clienteId ? parseInt(String(body.clienteId), 10) : undefined;
+    if (clienteId !== undefined && Number.isNaN(clienteId)) throw new BadRequestException('dashboard.cliente_non_valido');
+    return this.dashboard.testBox(body, clienteId);
   }
 
   private async listinoDi(customerId: number): Promise<string | null> {
