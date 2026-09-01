@@ -2645,12 +2645,20 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
     const results: { id: number; codiceCliente: string }[] = [];
     let creati = 0;
     let aggiornati = 0;
+    let saltati = 0;
     for (const r of rows) {
       const codice = r.codice_cliente ? String(r.codice_cliente).trim() : null;
       if (!codice) continue;
 
       const ragioneSociale = r.ragione_sociale ? String(r.ragione_sociale).trim() : '';
       const email = r.email ? String(r.email).trim() : '';
+
+      // Senza email il cliente non può accedere al portale (invito/credenziali):
+      // non importabile, va saltato e segnalato.
+      if (!email) {
+        saltati++;
+        continue;
+      }
       const nome = ragioneSociale || (email ? email.split('@')[0] : codice);
 
       const pag = pagMap.get(codice);
@@ -2661,7 +2669,7 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
 
       const datiComuni = {
         codiceListino: listinoEffettivo,
-        email: email || `${codice.toLowerCase()}@noemail.local`,
+        email,
         nome,
         ragioneSociale,
         partitaIva: r.partita_iva ? String(r.partita_iva) : null,
@@ -2805,7 +2813,7 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
       // silenzioso — il sync periodico riallineerà
     }
 
-    return { creati, aggiornati, clienti: results };
+    return { creati, aggiornati, saltati, clienti: results };
   }
 
   async importaIndirizziClienti(codici?: string[]): Promise<{ importati: number }> {
