@@ -336,6 +336,27 @@ fallback top-N deterministico su errore/JSON invalido.
 - `BOX_SEMANTIC_FLOOR`/`BOX_SEMANTIC_MARGIN` non più usati (il filtro semantico non
   taglia più duramente).
 
+### Dedupe e profilo (dopo Fase 2)
+
+- **Dedupe tra box**: greedy sequenziale. `poolVincoli` accetta `esclusi` (Set di
+  `codice_linea`) → esclusione SQL. I box `generale` escludono gli altri generale;
+  i box `cliente` escludono gli altri cliente **e** i generale (cache condivisa
+  `customerId=0`). In `getSuggerimenti` i generale vengono generati prima dei cliente.
+- **Profilo nel contesto** (solo box `cliente`): `profiloTesto()` = `InsightService.latest`
+  (sintesi AI) + `CustomerProfile` (`settore`, `interessiPrincipali`, `nonCompreraMai`).
+  Arricchisce sia l'embedding della ricerca semantica sia il digest LLM ("Da NON proporre: …").
+
+### Fase 3 — planner a edit-time + anteprima test
+
+- Campo **`ricercaTesto`** su `SuggestionBox` (migration `…_suggestion_box_ricerca_testo`):
+  testo semantico distillato dal prompt; se vuoto l'engine usa `box.prompt`.
+- `POST /api/dashboard/suggerimenti/pianifica` (admin) → l'LLM interpreta il prompt e
+  restituisce `{ ricercaTesto, escludiAcquistati, soloInOfferta, nArticoli, pesi, note }`.
+- `POST /api/dashboard/suggerimenti/test` (admin) → **dry-run** del motore (niente cache)
+  su cliente campione o `?clienteId=`, restituisce `{ articoli, rationale }`.
+- UI `BoxSuggerimentiSection`: campo "Ricerca semantica", bottone "Interpreta il prompt (AI)"
+  e "Test anteprima".
+
 ## 💬 Tooltip nei DataTable (generalizzato)
 I bottoni azione di `DataTable.tsx` (Clienti, Articoli, Listini, Log eventi,
 ecc.) usano **`<DataTip tip={...}>`** → componente comune `Tooltip`
