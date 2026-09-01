@@ -8,6 +8,11 @@ export class CreateSuggestionBoxDto {
   @IsString()
   prompt?: string;
 
+  /** Testo semantico separato dal prompt (generato dal planner). Se vuoto usa prompt. */
+  @IsOptional()
+  @IsString()
+  ricercaTesto?: string;
+
   /** cliente = sui dati del cliente; generale = sui dati di vendita globali. */
   @IsOptional()
   @IsIn(['cliente', 'generale'])

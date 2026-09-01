@@ -16,6 +16,7 @@ interface Box {
   id: number;
   titolo: string;
   prompt: string;
+  ricercaTesto: string | null;
   ambito: string;
   nArticoli: number;
   pesi: Pesi | null;
@@ -235,6 +236,7 @@ function BoxEditModal({
   const isEditing = !!box;
   const [titolo, setTitolo] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [ricercaTesto, setRicercaTesto] = useState("");
   const [ambito, setAmbito] = useState("cliente");
   const [nArticoli, setNArticoli] = useState("8");
   const [ordinamento, setOrdinamento] = useState("0");
@@ -246,24 +248,64 @@ function BoxEditModal({
   const [pesi, setPesi] = useState<Pesi>(DEFAULT_PESI);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const [planNote, setPlanNote] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ articoli: any[]; rationale: string | null } | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     if (box) {
-      setTitolo(box.titolo); setPrompt(box.prompt); setAmbito(box.ambito || "cliente");
+      setTitolo(box.titolo); setPrompt(box.prompt); setRicercaTesto(box.ricercaTesto ?? "");
+      setAmbito(box.ambito || "cliente");
       setNArticoli(String(box.nArticoli)); setOrdinamento(String(box.ordinamento));
       setAttiva(box.attiva); setSoloInOfferta(box.soloInOfferta); setEscludiAcquistati(box.escludiAcquistati);
       setScopeFamiglia(box.scopeFamiglia ?? ""); setScopeRaccolta(box.scopeRaccolta ?? "");
       setPesi({ ...DEFAULT_PESI, ...(box.pesi ?? {}) });
     } else {
-      setTitolo(""); setPrompt(""); setAmbito("cliente"); setNArticoli("8"); setOrdinamento("0");
+      setTitolo(""); setPrompt(""); setRicercaTesto(""); setAmbito("cliente"); setNArticoli("8"); setOrdinamento("0");
       setAttiva(true); setSoloInOfferta(false); setEscludiAcquistati(true);
       setScopeFamiglia(""); setScopeRaccolta(""); setPesi(DEFAULT_PESI);
     }
-    setSaveError(null);
+    setSaveError(null); setPlanNote(null); setTestResult(null); setTestError(null);
   }, [open, box]);
 
   const pesiTot = pesi.acquisti + pesi.tracking + pesi.progetti + pesi.affinita;
+
+  async function interpretaPrompt() {
+    if (!prompt.trim()) { setSaveError("Scrivi prima un prompt da interpretare"); return; }
+    setPlanning(true); setSaveError(null); setPlanNote(null);
+    try {
+      const res = await api.post<{ piano: { ricercaTesto: string; escludiAcquistati: boolean; soloInOfferta: boolean; nArticoli: number; pesi: Pesi; note: string } }>(
+        "/api/dashboard/suggerimenti/pianifica", { prompt },
+      );
+      const p = res.piano;
+      setRicercaTesto(p.ricercaTesto ?? "");
+      setEscludiAcquistati(p.escludiAcquistati);
+      setSoloInOfferta(p.soloInOfferta);
+      setNArticoli(String(p.nArticoli));
+      setPesi({ ...DEFAULT_PESI, ...(p.pesi ?? {}) });
+      setPlanNote(p.note ?? "");
+    } catch (err) {
+      setSaveError(err instanceof ApiError ? err.code : "Errore nell'interpretazione del prompt");
+    } finally { setPlanning(false); }
+  }
+
+  async function testAnteprima() {
+    setTesting(true); setTestResult(null); setTestError(null);
+    try {
+      const body = {
+        titolo: titolo.trim() || "Anteprima", prompt: prompt.trim(), ricercaTesto: ricercaTesto.trim() || null,
+        ambito, nArticoli: Math.min(24, Math.max(1, parseInt(nArticoli, 10) || 8)), pesi,
+        soloInOfferta, escludiAcquistati, scopeFamiglia, scopeRaccolta,
+      };
+      const res = await api.post<{ articoli: any[]; rationale: string | null }>("/api/dashboard/suggerimenti/test", body);
+      setTestResult(res);
+    } catch (err) {
+      setTestError(err instanceof ApiError ? err.code : "Errore nel test di anteprima");
+    } finally { setTesting(false); }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -273,6 +315,7 @@ function BoxEditModal({
     const body = {
       titolo: titolo.trim(),
       prompt: prompt.trim(),
+      ricercaTesto: ricercaTesto.trim() || null,
       ambito,
       nArticoli: Math.min(24, Math.max(1, parseInt(nArticoli, 10) || 8)),
       ordinamento: parseInt(ordinamento, 10) || 0,
@@ -320,9 +363,24 @@ function BoxEditModal({
               <label className="label">Prompt (intento semantico)</label>
               <textarea className="input" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
                 placeholder="Es. vasi resistenti al gelo per terrazzi e giardini esterni" />
-              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={interpretaPrompt} disabled={planning}>
+                  {planning ? "Interpretazione…" : "Interpreta il prompt (AI)"}
+                </button>
+              </div>
+              {planNote && (
+                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, background: "var(--fg-soft)", padding: "8px 10px", borderRadius: 6 }}>
+                  <strong>Piano proposto:</strong> {planNote}
+                </div>
+              )}
+              <span style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, display: "block" }}>
                 Descrive a parole cosa mostrare: l&apos;AI lo usa per filtrare i candidati per affinità. Lascia vuoto per un box generico.
               </span>
+            </div>
+            <div className="field" style={{ marginBottom: 10 }}>
+              <label className="label">Ricerca semantica (distillata, facoltativa)</label>
+              <input className="input" value={ricercaTesto} onChange={(e) => setRicercaTesto(e.target.value)}
+                placeholder="Se vuoto, si usa il prompt. Es. vasi terracotta esterno gelo" />
             </div>
             <div className="field-row">
               <div className="field">
@@ -390,12 +448,32 @@ function BoxEditModal({
       </div>
 
       <div className="modal-root-footer">
+        <button type="button" className="btn btn-secondary btn-sm" onClick={testAnteprima} disabled={testing}>
+          {testing ? "Test in corso…" : "Test anteprima"}
+        </button>
         <div style={{ flex: 1 }} />
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Annulla</button>
         <button type="submit" className="btn btn-primary btn-sm" form="box-form" disabled={saving}>
           {saving ? "Salvataggio…" : isEditing ? "Salva Modifiche" : "Crea Box"}
         </button>
       </div>
+
+      {testError && (
+        <div style={{ padding: "0 20px 12px" }}><Notice variant="error" onClose={() => setTestError(null)}>{testError}</Notice></div>
+      )}
+      {testResult && (
+        <div style={{ padding: "0 20px 16px", borderTop: "1px solid var(--border)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, margin: "12px 0 6px" }}>
+            Anteprima: {testResult.articoli.length} articoli
+          </div>
+          {testResult.rationale && <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>{testResult.rationale}</p>}
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, maxHeight: 160, overflow: "auto" }}>
+            {testResult.articoli.map((a, i) => (
+              <li key={i}>{a.nome} <span style={{ color: "var(--muted)" }}>({a.id})</span></li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Modal>
   );
 }

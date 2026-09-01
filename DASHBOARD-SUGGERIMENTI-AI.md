@@ -313,7 +313,7 @@ model DashboardBox {
 | **0** | Tabella `Promozione` + CRUD admin | box "offerta" con dati veri |
 | **1** | Motore deterministico: vincoli SQL + intento semantico + **score pesato (acquisti/tracking/progetti/affinità)** | box funzionanti con titoli admin, senza LLM |
 | **2** | Gemini structured output: selezione/ordine/rationale per cliente | ✅ implementato dietro flag `DASHBOARD_LLM_SELECTION` |
-| **3** | **Admin UI box**: CRUD titolo+prompt+pesi+vincoli + **LLM-planner a edit-time** (genera il piano di query revisionabile) + **anteprima test** | l'admin gestisce i box senza codice, il piano è salvato e deterministico a runtime |
+| **3** | **Admin UI box**: CRUD titolo+prompt+pesi+vincoli + **LLM-planner a edit-time** (genera il piano di query revisionabile) + **anteprima test** | ✅ implementato (vedi §15) |
 | **4** | Batch notturno + trigger + monitoraggio `AiUsage` | costi sotto controllo |
 | **5** | Frontend dashboard: box da dati reali, nascosti se vuoti + tracciamento click-per-box | misurazione e taratura pesi |
 | **6** | **Assistente commerciale: catalogo ad hoc** (vedi §14) — agente conversazionale che usa i tool del motore per costruire cataloghi personalizzati, con conferma umana | catalogo ad hoc interattivo |
@@ -456,3 +456,18 @@ Comportamento attuale del motore (`src/dashboard/dashboard.service.ts`):
 
 **Rollback**: `DASHBOARD_LLM_SELECTION=off` (default) ripristina il ranking deterministico
 precedente senza toccare codice. Flag documentato in `backend/.env.example`.
+
+### 15.1 Fase 3 — planner a edit-time + anteprima test (implementata)
+
+- **Campo `ricercaTesto`** su `SuggestionBox` (migration additiva): testo semantico distillato
+  dal prompt; se vuoto l'engine usa `box.prompt`. `intentoSemantico` incorpora
+  `ricercaTesto || prompt` + profilo cliente.
+- **`POST /api/dashboard/suggerimenti/pianifica`** (admin): l'LLM interpreta il prompt e
+  restituisce un piano `{ ricercaTesto, escludiAcquistati, soloInOfferta, nArticoli, pesi, note }`
+  (vocabolario chiuso, niente SQL raw). L'admin lo revisiona e salva.
+- **`POST /api/dashboard/suggerimenti/test`** (admin): anteprima **dry-run** del motore su un
+  cliente campione (o `?clienteId=`) **senza scrivere la cache** — esegue `generaBox`/
+  `generaBoxGenerale` e restituisce `{ articoli, rationale }`.
+- **UI editor box** (`BoxSuggerimentiSection`): campo "Ricerca semantica", bottone
+  "Interpreta il prompt (AI)" (prefill campi dal piano + nota) e "Test anteprima"
+  (mostra gli articoli che uscirebbero).

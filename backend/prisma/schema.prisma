@@ -536,6 +536,8 @@ model SuggestionBox {
   id                Int      @id @default(autoincrement())
   titolo            String
   prompt            String
+  /// Testo semantico per la ricerca (distillato dal prompt dal planner). Se vuoto usa prompt.
+  ricercaTesto      String?  @map("ricerca_testo")
   /// cliente = calcolato sui dati del singolo cliente; generale = sui dati di vendita globali (condiviso)
   ambito            String   @default("cliente")
   nArticoli         Int      @default(10) @map("n_articoli")
