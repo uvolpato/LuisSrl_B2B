@@ -318,8 +318,25 @@ Da tre sistemi a uno solo, `audit_log` (`backend/src/audit/audit.service.ts`):
 - `auditLog.id` è **BigInt**: nei controller va serializzato come stringa
   (`String(row.id)`) o Nest fallisce il JSON.
 
-## 💬 Tooltip nei DataTable (generalizzato)
+## 🧠 Box dashboard — selezione LLM (Fase 2) e rollback
 
+`dashboard.service.ts` ora supporta la **Fase 2** dei box: l'LLM sceglie/ordina N
+articoli tra i candidati (ricerca semantica + ranking pesato sui segnali) e scrive
+il rationale. Flusso: `poolVincoli` (SQL) → `intentoSemantico` (tutti i coseni > 0,
+niente taglio duro) → ranking per pesi (cliente = ordini del cliente, generale =
+best-seller globali) → `selezioneLlm` (JSON `{articoli, rationale}`, validato) →
+fallback top-N deterministico su errore/JSON invalido.
+
+- **Flag di rollback**: `DASHBOARD_LLM_SELECTION` (`.env`). `off` (default) =
+  comportamento precedente deterministico; `on` = selezione LLM. Si attiva senza
+  toccare codice.
+- `generaBox`/`generaBoxGenerale` ora restituiscono `{ articoli, rationale }` (il
+  rationale non è più una seconda chiamata separata quando la selezione LLM è attiva).
+- Costo tracciato in `ai_usage` con `tipo='box'` (`IntegrazioneService.generaSelezioneBox`).
+- `BOX_SEMANTIC_FLOOR`/`BOX_SEMANTIC_MARGIN` non più usati (il filtro semantico non
+  taglia più duramente).
+
+## 💬 Tooltip nei DataTable (generalizzato)
 I bottoni azione di `DataTable.tsx` (Clienti, Articoli, Listini, Log eventi,
 ecc.) usano **`<DataTip tip={...}>`** → componente comune `Tooltip`
 (`components/common/Tooltip.tsx`), stesso pattern di SpeseSpedizioneSection.

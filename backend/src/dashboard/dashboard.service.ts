@@ -99,7 +99,7 @@ export class DashboardService {
       await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: orfane.map((o) => o.boxId) } } });
     }
 
-    const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
+    const result: { boxId: number; titolo: string; rationale: string | null; articoli: any[] }[] = [];
     for (const box of boxes) {
       const generale = box.ambito === 'generale';
       const row = (generale ? generaleCached : clienteCached).find((c) => c.boxId === box.id);
@@ -108,11 +108,10 @@ export class DashboardService {
         continue;
       }
       try {
-        const articoli = generale
+        const { articoli, rationale } = generale
           ? await this.generaBoxGenerale(box, codiceListino)
           : await this.generaBox(box, customerId, codiceListino);
         if (articoli.length) {
-          const rationale = await this.generaRationale(box, articoli);
           await this.upsertCache(generale ? GENERALE_ID : customerId, box, articoli, rationale);
           result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
@@ -130,12 +129,11 @@ export class DashboardService {
       orderBy: [{ ordinamento: 'asc' }, { id: 'asc' }],
     });
     await this.prisma.dashboardBox.deleteMany({ where: { customerId, boxId: { in: boxes.map((b) => b.id) } } });
-    const result: { boxId: number; titolo: string; rationale: string | null; articoli: unknown[] }[] = [];
+    const result: { boxId: number; titolo: string; rationale: string | null; articoli: any[] }[] = [];
     for (const box of boxes) {
       try {
-        const articoli = await this.generaBox(box, customerId, codiceListino);
+        const { articoli, rationale } = await this.generaBox(box, customerId, codiceListino);
         if (articoli.length) {
-          const rationale = await this.generaRationale(box, articoli);
           await this.upsertCache(customerId, box, articoli, rationale);
           result.push({ boxId: box.id, titolo: box.titolo, rationale, articoli });
         }
@@ -155,9 +153,8 @@ export class DashboardService {
     await this.prisma.dashboardBox.deleteMany({ where: { customerId: GENERALE_ID } });
     for (const box of boxes) {
       try {
-        const articoli = await this.generaBoxGenerale(box, codiceListino);
+        const { articoli, rationale } = await this.generaBoxGenerale(box, codiceListino);
         if (articoli.length) {
-          const rationale = await this.generaRationale(box, articoli);
           await this.upsertCache(GENERALE_ID, box, articoli, rationale);
         }
       } catch (e) {
@@ -243,7 +240,7 @@ export class DashboardService {
    */
   private async generaRationale(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
-    articoli: unknown[],
+    articoli: any[],
   ): Promise<string | null> {
     if (process.env.DASHBOARD_RATIONALE === 'off') return null;
     const nomi = (articoli as { nome?: string }[])
@@ -291,50 +288,81 @@ export class DashboardService {
     );
   }
 
-  /** Genera i candidati di un box per un cliente (engine deterministico). */
+  /** Genera i candidati di un box per un cliente (engine deterministico + LLM opzionale). */
   async generaBox(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     customerId: number,
     codiceListino?: string | null,
-  ) {
+  ): Promise<{ articoli: any[]; rationale: string | null }> {
     const pesi = this.pesiNormalizzati(box.pesi);
     const [pool, segnali] = await Promise.all([
       this.poolVincoli(box, customerId),
       this.segnaliCliente(customerId),
     ]);
-    if (!pool.length) return this.randomFallback(box, codiceListino);
-    return this.selezionaEArricchisci(box, pool, (c) => this.scoreCandidato(c, pesi, segnali), codiceListino);
+    if (!pool.length) {
+      const articoli = await this.randomFallback(box, codiceListino);
+      return { articoli, rationale: articoli.length ? await this.generaRationale(box, articoli) : null };
+    }
+    return this.selezionaEArricchisci(
+      box, pool, (c) => this.scoreCandidato(c, pesi, segnali), codiceListino, this.digestCliente(segnali),
+    );
   }
 
   /** Box "generale": stessa pipeline ma ranking sui dati di vendita globali (best-seller). */
   async generaBoxGenerale(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     codiceListino?: string | null,
-  ) {
+  ): Promise<{ articoli: any[]; rationale: string | null }> {
     const pool = await this.poolVincoli(box, GENERALE_ID);
-    if (!pool.length) return this.randomFallback(box, codiceListino);
+    if (!pool.length) {
+      const articoli = await this.randomFallback(box, codiceListino);
+      return { articoli, rationale: articoli.length ? await this.generaRationale(box, articoli) : null };
+    }
     const best = await this.famiglieBestSeller();
-    return this.selezionaEArricchisci(box, pool, (c) => best.get(c.famigliaCodice) ?? 0, codiceListino);
+    const digest = [...best.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([f]) => f).join(', ');
+    return this.selezionaEArricchisci(
+      box, pool, (c) => best.get(c.famigliaCodice) ?? 0, codiceListino,
+      digest ? `Famiglie più vendute in generale: ${digest}` : '',
+    );
+  }
+
+  /** Fase 2 attiva? Default OFF: si torna sempre al ranking deterministico. */
+  private llmSelectionEnabled(): boolean {
+    return (process.env.DASHBOARD_LLM_SELECTION || 'off') === 'on';
+  }
+
+  /** Digest umano delle famiglie d'interesse del cliente (per il contesto LLM). */
+  private digestCliente(s: Segnali): string {
+    const famiglie = new Set<string>([...s.acquisti.keys(), ...s.tracking.famiglie.keys(), ...s.progetti.keys()]);
+    if (!famiglie.size) return '';
+    const ordinate = [...famiglie]
+      .sort((a, b) =>
+        ((s.acquisti.get(b) ?? 0) + (s.tracking.famiglie.get(b) ?? 0) + (s.progetti.get(b) ?? 0))
+        - ((s.acquisti.get(a) ?? 0) + (s.tracking.famiglie.get(a) ?? 0) + (s.progetti.get(a) ?? 0)));
+    return `Famiglie di interesse del cliente: ${ordinate.slice(0, 5).join(', ')}`;
   }
 
   /**
-   * Filtro semantico soft + ranking (scoreOf) + slice + arricchimento.
-   * Se il ranking è piatto (nessun segnale / nessuna vendita) → selezione casuale
-   * vera, indipendente per box e nuova a ogni rigenerazione.
+   * Filtro semantico soft + ranking (scoreOf) + scelta finale + arricchimento.
+   * Con DASHBOARD_LLM_SELECTION=on, l'LLM sceglie/ordina N tra i primi M candidati
+   * (pesati coi segnali) e scrive il rationale; altrimenti (o su fallimento LLM)
+   * resta il top-N deterministico. La selezione casuale scatta solo a ranking piatto.
    */
   private async selezionaEArricchisci(
     box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
     pool: Candidato[],
     scoreOf: (c: Candidato) => number,
     codiceListino?: string | null,
-  ) {
+    digest?: string,
+  ): Promise<{ articoli: any[]; rationale: string | null }> {
     let candidati = pool;
     const sem = await this.intentoSemantico(box.prompt, pool);
     if (sem) {
       const semSet = new Set(sem.keys());
       const inSem = pool.filter((c) => semSet.has(c.codiceLinea));
-      if (inSem.length >= box.nArticoli) candidati = inSem;
-      else if (inSem.length) candidati = [...inSem, ...pool.filter((c) => !semSet.has(c.codiceLinea))];
+      // Tutti gli articoli semanticamente rilevanti, nessun taglio duro: la
+      // pertinenza di dettaglio la decide il ranking (e l'LLM se attivo).
+      if (inSem.length) candidati = inSem;
     }
 
     let ordinati = candidati.map((c) => ({ c, score: scoreOf(c) })).sort((a, b) => b.score - a.score);
@@ -348,8 +376,72 @@ export class DashboardService {
       ordinati = shuffled.map((c) => ({ c, score: 0 }));
     }
 
+    if (this.llmSelectionEnabled()) {
+      const m = Math.min(Math.max(box.nArticoli * 3, box.nArticoli + 10), 30);
+      const topPool = ordinati.slice(0, m).map((x) => x.c);
+      const arricchiti = await this.arricchisci(box, topPool, codiceListino);
+      const scelta = await this.selezioneLlm(box, arricchiti as any[], digest);
+      if (scelta) {
+        const byCod = new Map((arricchiti as any[]).map((a) => [a.id, a]));
+        const finali = scelta.codici.map((cod) => byCod.get(cod)).filter(Boolean);
+        if (finali.length) return { articoli: finali, rationale: scelta.rationale || null };
+      }
+    }
+
     const top = ordinati.slice(0, box.nArticoli).map((x) => x.c);
-    return this.arricchisci(box, top, codiceListino);
+    const articoli = await this.arricchisci(box, top, codiceListino);
+    const rationale = articoli.length ? await this.generaRationale(box, articoli) : null;
+    return { articoli, rationale };
+  }
+
+  /**
+   * Chiede all'LLM di scegliere/ordinare N articoli tra i candidati arricchiti.
+   * Output JSON validato: solo codici esistenti tra i candidati, max N. Fallisce
+   * in modo silenzioso (null) così il chiamante ripiega sul top-N deterministico.
+   */
+  private async selezioneLlm(
+    box: Prisma.SuggestionBoxGetPayload<Record<string, never>>,
+    candidati: any[],
+    digest?: string,
+  ): Promise<{ codici: string[]; rationale: string | null } | null> {
+    if (!candidati.length) return null;
+    const elenco = candidati.map((a, i) => {
+      const fam = a.famiglia?.nome ?? '';
+      const prezzo = a.prezzo != null ? `, prezzo €${a.prezzo}` : '';
+      const disp = a.disponibilita ? `, ${a.disponibilita}` : '';
+      const promo = a.promo?.titolo ? `, promo: ${a.promo.titolo}` : '';
+      return `${i + 1}. ${a.id} — ${a.nome} (famiglia ${fam}${prezzo}${disp}${promo})`;
+    }).join('\n');
+
+    const prompt =
+      `Sei il motore di raccomandazione di un e-commerce B2B di vasi e complementi per fioristi.\n` +
+      `Box da comporre: "${box.titolo}". Intento: ${box.prompt || box.titolo}.\n` +
+      (digest ? `Contesto:\n${digest}\n` : '') +
+      `Scegli ESATTAMENTE ${box.nArticoli} prodotti dall'elenco qui sotto, indicando i codici nell'ordine che ritieni più adatto.\n` +
+      `Elenco candidati:\n${elenco}\n\n` +
+      `Rispondi SOLO con un JSON valido, senza markdown:\n` +
+      `{"articoli": ["codice", "codice", ...], "rationale": "una frase (max 20 parole) che spiega al cliente perché questi prodotti gli interessano"}`;
+
+    try {
+      const raw = await this.integrazione.generaSelezioneBox(prompt);
+      const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/\s*```/g, '').trim();
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      if (start === -1 || end <= start) return null;
+      const parsed = JSON.parse(cleaned.slice(start, end + 1));
+      const valid = new Set(candidati.map((a) => a.id));
+      const codici = Array.isArray(parsed.articoli)
+        ? (parsed.articoli as unknown[]).map((c) => String(c)).filter((c) => valid.has(c))
+        : [];
+      if (!codici.length) return null;
+      const rationale = typeof parsed.rationale === 'string' && parsed.rationale.trim()
+        ? parsed.rationale.trim().slice(0, 200)
+        : null;
+      return { codici: codici.slice(0, box.nArticoli), rationale };
+    } catch (e) {
+      this.log.warn(`selezione LLM box #${box.id} fallita: ${(e as Error).message}`);
+      return null;
+    }
   }
 
   /** Famiglie più vendute in assoluto (ranking dei box generale). */
@@ -541,8 +633,9 @@ export class DashboardService {
 
   // ── Intento semantico del prompt ───────────────────────────────────────────
 
-  /** Coseno prompt→articolo dentro il pool. Filtro soft: se i coseni sono piatti
-   *  (prompt generico) non taglia nulla. Ritorna null se nessun intento rilevato. */
+  /** Coseno prompt→articolo dentro il pool. Filtro soft: tiene TUTTI gli articoli
+   *  con coseno positivo (nessun taglio duro: la scelta finale spetta al ranking
+   *  pesato, ed eventualmente all'LLM). Ritorna null se nessun intento rilevato. */
   private async intentoSemantico(prompt: string, pool: Candidato[]): Promise<Map<string, number> | null> {
     if (!prompt?.trim() || !pool.length) return null;
     const vec = await this.embedding.embedText(prompt);
@@ -553,18 +646,12 @@ export class DashboardService {
     );
     const byId = new Map<number, number[]>();
     for (const r of rows) byId.set(r.id, r.text_vec);
-    const scores = pool.map((c) => ({
-      c,
-      s: byId.has(c.id) ? EmbeddingService.cosine(vec, byId.get(c.id) as number[]) : 0,
-    }));
-    const best = scores.reduce((m, x) => Math.max(m, x.s), 0);
-    const floor = parseFloat(process.env.BOX_SEMANTIC_FLOOR || '0.45');
-    const margin = parseFloat(process.env.BOX_SEMANTIC_MARGIN || '0.05');
-    const kept = scores.filter((x) => x.s >= Math.max(floor, best - margin));
-    if (!kept.length) return null;
     const out = new Map<string, number>();
-    for (const x of kept) out.set(x.c.codiceLinea, x.s);
-    return out;
+    for (const c of pool) {
+      const s = byId.has(c.id) ? EmbeddingService.cosine(vec, byId.get(c.id) as number[]) : 0;
+      if (s > 0) out.set(c.codiceLinea, s);
+    }
+    return out.size ? out : null;
   }
 
   // ── Score e arricchimento ──────────────────────────────────────────────────
@@ -670,3 +757,4 @@ export class DashboardService {
     return this.arricchisci(box, rows, codiceListino);
   }
 }
+

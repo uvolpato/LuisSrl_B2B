@@ -2018,6 +2018,12 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     return this.callGeminiText(prompt, undefined, 'insight');
   }
 
+  /** Selezione/ordine dei candidati di un box dashboard (Fase 2). Il chiamante
+   *  interpreta l'output JSON; qui si traccia il costo con tipo 'box'. */
+  async generaSelezioneBox(prompt: string): Promise<string> {
+    return this.callGeminiText(prompt, undefined, 'box');
+  }
+
   /** Come generaSintesiAI ma con ricerca web (Google Search grounding): una sola chiamata,
    *  nessun loop agentico. Il modello arricchisce la risposta con dati dal web. */
   async generaSintesiAIConRicerca(prompt: string, usageTipo = 'profilo'): Promise<string> {
