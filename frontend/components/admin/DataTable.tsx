@@ -58,6 +58,8 @@ export interface DataTableProps<T> {
   selectable?: boolean;
   selectedKeys?: Set<string | number>;
   onSelectionChange?: (keys: Set<string | number>) => void;
+  /** Rende non selezionabile una singola riga (es. cliente senza email). */
+  rowSelectable?: (row: T) => boolean;
   /** Blocca la selezione (es. durante un'importazione): checkbox disabilitate,
    *  righe non toggle-abili. Le righe restano comunque visibili. */
   disabled?: boolean;
@@ -80,6 +82,7 @@ export default function DataTable<T>({
   selectable = false,
   selectedKeys,
   onSelectionChange,
+  rowSelectable,
   disabled = false,
 }: DataTableProps<T>) {
   // Selezione bloccata durante caricamento o operazione (import)
@@ -218,12 +221,13 @@ export default function DataTable<T>({
             {/* Le righe restano renderizzate anche in loading: l'overlay le offusca */}
             {sortedRows.map((row) => {
                 const key = rowKey(row);
+                const rowLocked = locked || (rowSelectable ? !rowSelectable(row) : false);
                 return (
                   <tr
                     key={key}
                     className={selectable && selectedKeys?.has(key) ? "selected" : undefined}
-                    onClick={selectable && !locked ? () => toggleRow(key) : undefined}
-                    style={selectable && !locked ? { cursor: "pointer" } : undefined}
+                    onClick={selectable && !rowLocked ? () => toggleRow(key) : undefined}
+                    style={selectable && !rowLocked ? { cursor: "pointer" } : undefined}
                   >
                     {selectable && (
                       <td onClick={(e) => e.stopPropagation()}>
@@ -231,7 +235,7 @@ export default function DataTable<T>({
                           type="checkbox"
                           checked={selectedKeys?.has(key) ?? false}
                           onChange={() => toggleRow(key)}
-                          disabled={locked}
+                          disabled={rowLocked}
                           style={{ accentColor: "var(--accent)" }}
                         />
                       </td>

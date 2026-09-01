@@ -105,7 +105,7 @@ export default function ImportaClientiModal({
     timeoutRef.current = startTimeout();
 
     try {
-      const res = await api.post<{ creati: number; aggiornati: number; clienti: { id: number; codiceCliente: string }[] }>(
+      const res = await api.post<{ creati: number; aggiornati: number; saltati: number; clienti: { id: number; codiceCliente: string }[] }>(
         "/api/integrazione/clienti/importa",
         { codici: [...selected] },
       );
@@ -114,6 +114,7 @@ export default function ImportaClientiModal({
         const parti: string[] = [];
         if (res.creati > 0) parti.push(`${res.creati} creati`);
         if (res.aggiornati > 0) parti.push(`${res.aggiornati} aggiornati`);
+        if (res.saltati > 0) parti.push(`${res.saltati} saltati (senza email)`);
         setImportResult(parti.length ? `Importazione completata: ${parti.join(', ')}` : 'Nessuna modifica');
         setSelected(new Set());
         fetchData(pageRef.current);
@@ -134,6 +135,9 @@ export default function ImportaClientiModal({
   const columns: Column<ClienteView>[] = [
     { key: "codice", header: "Codice", width: "120px", mono: true, sortable: true, cell: (p) => p.codiceCliente ?? "—" },
     { key: "ragioneSociale", header: "Ragione sociale", grow: true, sortable: true, cell: (p) => p.ragioneSociale },
+    { key: "email", header: "Email", grow: true, cell: (p) => p.email
+      ? <span style={{ fontSize: 13 }}>{p.email}</span>
+      : <span style={{ fontSize: 12, color: "var(--danger)" }}>— non importabile (email mancante)</span> },
     { key: "citta", header: "Città", width: "120px", sortable: true, cell: (p) => p.citta ?? "—" },
     { key: "listino", header: "Listino", width: "90px", align: "center", sortable: true, cell: (p) => p.codiceListino ?? "—" },
     { key: "ordini", header: "Ordini", width: "90px", align: "center", sortable: true, cell: (p) => (
@@ -170,7 +174,7 @@ export default function ImportaClientiModal({
       <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="new-art-hint">
           {IconInfo}
-          Cerca i clienti da importare da Integra. L'import crea l'anagrafica, gli indirizzi di spedizione e le condizioni di pagamento. La password viene generata automaticamente e il cliente resta bloccato finché non viene attivato.
+          Cerca i clienti da importare da Integra. L'import crea l'anagrafica, gli indirizzi di spedizione e le condizioni di pagamento. La password viene generata automaticamente e il cliente resta bloccato finché non viene attivato. I clienti senza email non sono importabili.
         </div>
         <div className="new-art-search">
           <span className="search-icon">{IconSearch}</span>
@@ -194,6 +198,7 @@ export default function ImportaClientiModal({
           loading={loading}
           disabled={importing}
           selectable
+          rowSelectable={(p) => !!p.email}
           selectedKeys={selected as Set<string | number>}
           onSelectionChange={(k) => setSelected(k as Set<string>)}
           page={result?.page ?? 1}
