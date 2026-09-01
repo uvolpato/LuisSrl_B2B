@@ -50,9 +50,9 @@ giustifica. **Il modello non inventa mai prodotti: sceglie solo tra candidati re
 > Fase 3 (**CRUD admin dei `SuggestionBox`** — sezione "Box dashboard": titolo, prompt,
 > n° articoli, pesi, scope famiglia/raccolta, `soloInOfferta`, ordine, attivo), Fase 5
 > (wiring frontend: la dashboard consuma `GET /dashboard/suggerimenti`, box vuoti nascosti).
-> **Manca ancora**: selezione/riordino LLM (l'AI spiega ma non sceglie — deterministico);
-> CRUD promozioni (il modello `Promozione` esiste ma senza UI — i box `soloInOfferta`
-> restano vuoti finché non ci sono promozioni a DB).
+> **Manca ancora**: CRUD promozioni (il modello `Promozione` esiste ma senza UI — i box `soloInOfferta`
+> restano vuoti finché non ci sono promozioni a DB). La **selezione/riordino LLM (Fase 2)** è ora
+> implementata ma **dietro flag** (`DASHBOARD_LLM_SELECTION=on`); default `off` = ranking deterministico.
 
 | Area | Stato |
 |------|-------|
@@ -312,7 +312,7 @@ model DashboardBox {
 |------|-----------|--------|
 | **0** | Tabella `Promozione` + CRUD admin | box "offerta" con dati veri |
 | **1** | Motore deterministico: vincoli SQL + intento semantico + **score pesato (acquisti/tracking/progetti/affinità)** | box funzionanti con titoli admin, senza LLM |
-| **2** | Gemini structured output: selezione/ordine/rationale per cliente | box "AI" veri |
+| **2** | Gemini structured output: selezione/ordine/rationale per cliente | ✅ implementato dietro flag `DASHBOARD_LLM_SELECTION` |
 | **3** | **Admin UI box**: CRUD titolo+prompt+pesi+vincoli + **LLM-planner a edit-time** (genera il piano di query revisionabile) + **anteprima test** | l'admin gestisce i box senza codice, il piano è salvato e deterministico a runtime |
 | **4** | Batch notturno + trigger + monitoraggio `AiUsage` | costi sotto controllo |
 | **5** | Frontend dashboard: box da dati reali, nascosti se vuoti + tracciamento click-per-box | misurazione e taratura pesi |
@@ -425,3 +425,34 @@ model BozzaCatalogo {
   — monitorare con `AiUsage`.
 - GDPR: la bozza contiene dati cliente → permessi per operatore, audit di salvataggio,
   retention coerente con il resto.
+
+---
+
+## 15. Fase 2 implementata — selezione LLM, profilo e dedupe (agg. 2026-09)
+
+Comportamento attuale del motore (`src/dashboard/dashboard.service.ts`):
+
+1. **Vincoli SQL** (`poolVincoli`): attivi/configurati/visibili, scope famiglia/raccolta,
+   `escludiAcquistati`, giacenza > 0, `soloInOfferta`, **esclusione articoli già usati
+   da altri box** (`esclusi`).
+2. **Ricerca semantica** (`intentoSemantico`): incorpora **prompt del box + profilo del
+   cliente** (solo box `cliente`) e tiene *tutti* gli articoli con coseno positivo —
+   nessun taglio duro (rimossi `BOX_SEMANTIC_FLOOR`/`BOX_SEMANTIC_MARGIN`).
+3. **Ranking pesato**: `scoreCandidato` sui segnali (acquisti/tracking/progetti/affinità);
+   fonte = ordini del cliente (`cliente`) o best-seller globali (`generale`).
+4. **Fase 2 (LLM)** — dietro `DASHBOARD_LLM_SELECTION=on` (`off` = top-N deterministico):
+   l'LLM (`gemini-flash`, JSON `{articoli, rationale}`) sceglie/ordina N tra i primi M
+   candidati pesati e scrive il perché. Output **validato** (solo codici tra i candidati,
+   max N); su errore/JSON invalido → fallback deterministico. Costo tracciato in `ai_usage`
+   con `tipo='box'`.
+5. **Profilo cliente nel contesto** (box `cliente`): `InsightService.latest` (sintesi AI) +
+   `CustomerProfile` (`settore`, `interessiPrincipali`, `nonCompreraMai`). Il profilo
+   arricchisce sia l'embedding della ricerca semantica sia il digest dato all'LLM
+   (con "Da NON proporre: …" esplicito).
+6. **Dedupe tra box**: greedy sequenziale — i box `generale` escludono gli articoli degli
+   altri box generale; i box `cliente` escludono gli articoli degli altri box cliente **e**
+   quelli dei box generale (che restano condivisi `customerId=0`). `generaBox`/
+   `generaBoxGenerale` ritornano `{ articoli, rationale }`.
+
+**Rollback**: `DASHBOARD_LLM_SELECTION=off` (default) ripristina il ranking deterministico
+precedente senza toccare codice. Flag documentato in `backend/.env.example`.
