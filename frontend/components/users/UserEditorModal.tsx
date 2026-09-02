@@ -208,6 +208,19 @@ export default function UserEditorModal({
       await api.del(`/api/customers/${editing.id}`);
       onSaved(null);
     } catch (err) {
+      if (err instanceof ApiError && err.code === "users.ha_ordini_non_importati") {
+        setDeleting(false);
+        if (!(await confirm({ message: t("confirmBlockNonImportati"), tone: "danger" }))) return;
+        setDeleting(true);
+        try {
+          await api.post(`/api/customers/${editing.id}/block`);
+          onSaved(null);
+        } catch (e2) {
+          setError(e2 instanceof ApiError ? e2.code : "errors.generic");
+          setDeleting(false);
+        }
+        return;
+      }
       setError(err instanceof ApiError ? err.code : "errors.generic");
       setDeleting(false);
     }
