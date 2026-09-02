@@ -379,6 +379,7 @@ export class CheckoutService {
 
     // Applica coupon se presente - calcolo server-side
     let couponRiga: any = null;
+    let couponCampaignId: number | null = null;
     try {
     if (dto.codiceCoupon) {
       const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
@@ -456,11 +457,9 @@ export class CheckoutService {
             };
           }
 
-          // Traccia utilizzo
-          await this.prisma.campaignUsage.create({
-            data: { campaignId: campaign.id, customerId: clienteId },
-          });
-          await this.prisma.campaign.update({ where: { id: campaign.id }, data: { usedCount: { increment: 1 } } });
+          // L'utilizzo del coupon va registrato atomicamente con l'ordine
+          // (nel $transaction sotto), non qui.
+          couponCampaignId = campaign.id;
         }
       }
     }
@@ -468,43 +467,47 @@ export class CheckoutService {
 
     const numeroOrdine = `B2B-${Date.now()}`;
     const righeFinali = couponRiga ? [...righe, couponRiga] : righe;
-    const ordine = await this.prisma.ordineCliente.create({
-      data: {
-        numeroOrdine,
-        dataOrdine: new Date(),
-        customerId: clienteId,
-        importoTotale,
-        stato: 'BOZZA',
-        indirizzoSpedizioneId,
-        codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,
-        codiceSpedizione,
-        codiceVettore,
-        codicePagamento: dto.codicePagamento ?? customer?.codicePagamento ?? null,
-        codiceCoupon: dto.codiceCoupon ?? null,
-        notaSpedizione: dto.notaSpedizione ?? null,
-        notaOrdine: dto.notaOrdine ?? null,
-        righe: { create: righeFinali },
-      },
-      include: { righe: true },
+
+    // Scritture atomiche: ordine + righe + uso coupon + svuotamento carrello.
+    // Se una fallisce, nessuna viene applicata (niente coupon "once" bruciato
+    // senza ordine, niente carrello svuotato senza ordine).
+    const ordine = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.ordineCliente.create({
+        data: {
+          numeroOrdine,
+          dataOrdine: new Date(),
+          customerId: clienteId,
+          importoTotale,
+          stato: 'BOZZA',
+          indirizzoSpedizioneId,
+          codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,
+          codiceSpedizione,
+          codiceVettore,
+          codicePagamento: dto.codicePagamento ?? customer?.codicePagamento ?? null,
+          codiceCoupon: dto.codiceCoupon ?? null,
+          notaSpedizione: dto.notaSpedizione ?? null,
+          notaOrdine: dto.notaOrdine ?? null,
+          righe: { create: righeFinali },
+        },
+        include: { righe: true },
+      });
+
+      if (couponCampaignId) {
+        await tx.campaignUsage.create({
+          data: { campaignId: couponCampaignId, customerId: clienteId, orderId: created.id, importo: importoTotale },
+        });
+        await tx.campaign.update({ where: { id: couponCampaignId }, data: { usedCount: { increment: 1 } } });
+      }
+
+      await tx.cartItem.deleteMany({ where: { carrelloId: carrello.id } });
+
+      return created;
     });
 
-    // Aggiorna CampaignUsage con l'orderId
-    if (dto.codiceCoupon && ordine) {
-      const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
-      if (campaign) {
-        await this.prisma.campaignUsage.updateMany({
-          where: { campaignId: campaign.id, customerId: clienteId, orderId: null },
-          data: { orderId: ordine.id, importo: importoTotale },
-        });
-      }
-    }
     void this.events.track('ordine.create', { entita: 'ordine', entitaId: numeroOrdine, dettagli: { importo: importoTotale, righe: righe.length } });
 
     // Conferma d'ordine: best-effort, non deve mai far fallire un ordine gia' registrato.
     void this.inviaConfermaOrdine(ordine.id).catch(() => undefined);
-
-    // Svuota il carrello
-    await this.prisma.cartItem.deleteMany({ where: { carrelloId: carrello.id } });
 
     return ordine;
   }
