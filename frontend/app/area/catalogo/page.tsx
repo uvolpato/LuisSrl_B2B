@@ -100,6 +100,7 @@ export default function CatalogoPage() {
   const [prezzoRange, setPrezzoRange] = useState<[number, number]>([0, 9999]);
   const [activeTab, setActiveTab] = useState<string>("tutti");
   const [sort, setSort] = useState("novita");
+  const [soloDisponibili, setSoloDisponibili] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Ricerca semantica: risultati dal backend (null = catalogo normale)
@@ -190,6 +191,7 @@ export default function CatalogoPage() {
     if (activeTab !== "tutti") p.set("tab", activeTab);
     if (search.trim()) p.set("q", search.trim());
     if (sort) p.set("sort", sort);
+    if (soloDisponibili) p.set("soloDisponibili", "true");
     if (facets.dimensioni.diametro && diametroRange[0] > facets.dimensioni.diametro.min) p.set("diametroMin", String(diametroRange[0]));
     if (facets.dimensioni.diametro && diametroRange[1] < facets.dimensioni.diametro.max) p.set("diametroMax", String(diametroRange[1]));
     if (facets.dimensioni.altezza && altezzaRange[0] > facets.dimensioni.altezza.min) p.set("altezzaMin", String(altezzaRange[0]));
@@ -216,7 +218,7 @@ try {
     } finally {
       setListLoading(false);
     }
-  }, [codiceLineaSel, famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, diametroRange, altezzaRange, prezzoRange, facets]);
+  }, [codiceLineaSel, famiglieSel, raccolteSel, coloreRgb, coloreTolleranza, activeTab, search, sort, soloDisponibili, diametroRange, altezzaRange, prezzoRange, facets]);
 
   // Facet (sidebar) — una volta.
   useEffect(() => {
@@ -486,6 +488,14 @@ try {
           </label>
         ))}
         {facets.raccolte.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>Nessuna raccolta</p>}
+      </div>
+      <hr className="filter-divider" />
+      <div className="filter-group">
+        <h3>Disponibilità</h3>
+        <label>
+          <input type="checkbox" checked={soloDisponibili} onChange={(e) => setSoloDisponibili(e.target.checked)} />
+          Solo articoli disponibili
+        </label>
       </div>
       <hr className="filter-divider" />
       <div className="filter-group">

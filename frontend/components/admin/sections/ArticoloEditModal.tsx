@@ -47,6 +47,7 @@ interface ArticoloDetail {
   famiglia: { codice: string; nome: string };
   variantiCount: number;
   updatedAt: string;
+  ultimaSyncGiacenza?: string | null;
   raccolte: RaccoltaSlim[];
   varianti: VarianteDetail[];
   immagini: { id: number; url: string; ordinamento: number; copertina: boolean; tipo: string; inGalleria: boolean; css: string; prompt?: string | null; aiModel?: string | null; aiAspect?: string | null; aiTemperature?: number | null; aiSeed?: number | null; immaginePadreId?: number | null; aggiungiColore?: boolean; aggiungiVariante?: boolean; promptTemplateId?: number | null }[];
@@ -464,6 +465,9 @@ export default function ArticoloEditModal({
             {activeTab === "varianti" && (
               <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <p style={{ margin: "0 0 16px", flexShrink: 0, color: "var(--muted)", fontSize: 14 }}>Dati da Integra — sola lettura. Le modifiche vengono salvate solo al click su &quot;Salva Modifiche&quot;.</p>
+                <p style={{ margin: "0 0 16px", flexShrink: 0, fontSize: 13, color: "var(--muted)" }}>
+                  Giacenza aggiornata il {article.ultimaSyncGiacenza ? new Date(article.ultimaSyncGiacenza).toLocaleString("it-IT") : "—"}.
+                </p>
                 {(() => {
                   const vCols: Column<VarianteDetail>[] = [
                     { key: "codice", header: "Codice Integra", grow: true, cell: (v) => (
