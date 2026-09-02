@@ -75,7 +75,7 @@ export default function LoginForm({
 
   return (
     <>
-      <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ maxWidth: "100%", maxHeight: 48, width: "auto", height: "auto", marginBottom: 6, alignSelf: "center" }} />
+      <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ maxWidth: "100%", maxHeight: 48, width: "auto", height: "auto", marginBottom: 6, alignSelf: "flex-start" }} />
       <h2 style={{ margin: 0 }}>{t("title")}</h2>
       <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 16 }}>{t("subtitle")}</p>
 
