@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import { Pool } from 'pg';
 import { AppModule } from './app.module';
 import { setupWebSocket } from './ws/ws.setup';
+import { FRONTEND_ORIGINS } from './common/env';
 
 async function bootstrap() {
   if (!process.env.SESSION_SECRET) {
@@ -23,7 +24,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.use(helmet());
-  const allowedOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000').split(',');
+  const allowedOrigins = FRONTEND_ORIGINS;
   app.enableCors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);

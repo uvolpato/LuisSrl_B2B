@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { parse as parseCookie } from 'cookie';
 import { Pool } from 'pg';
+import { FRONTEND_ORIGINS } from '../common/env';
 // cookie-signature (dipendenza di express-session) non ha tipi propri.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const signature = require('cookie-signature') as {
@@ -11,7 +12,7 @@ const signature = require('cookie-signature') as {
 const online = new Map<number, Set<string>>();
 
 export function setupWebSocket(httpServer: HttpServer) {
-  const allowedWsOrigins = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000').split(',');
+  const allowedWsOrigins = FRONTEND_ORIGINS;
   const io = new Server(httpServer, {
     path: '/ws',
     cors: {

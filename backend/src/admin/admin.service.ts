@@ -14,11 +14,9 @@ import { toUserProfile } from '../common/auth-types';
 import type { UserProfile } from '../common/auth-types';
 import { buildStatoFilter } from '../common/filters';
 import type { UserFilter } from '../common/filters';
+import { ASSETS_BASE_DIR, ASSETS_PUBLIC_URL } from '../common/env';
 import * as path from 'path';
 import * as fsp from 'fs/promises';
-
-const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
-const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
 
 @Injectable()
 export class AdminService {

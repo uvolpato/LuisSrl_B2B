@@ -5,10 +5,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import sharp from 'sharp';
+import { ASSETS_BASE_DIR } from '../common/env';
 
-const ASSETS_BASE_DIR = path.resolve(
-  process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'),
-);
 const CACHE_DIR = path.join(ASSETS_BASE_DIR, '.cache');
 
 // Larghezze consentite (snap alla piu' vicina): evita cache infinita.
