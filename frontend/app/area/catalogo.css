@@ -1943,70 +1943,6 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Modal root — componente generico edge-to-edge (sm/md/lg)
-   ════════════════════════════════════════════════════════════════════════ */
-.modal-root-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: oklch(0% 0 0 / 0.3);
-}
-.modal-root {
-  position: fixed;
-  background: var(--surface);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px oklch(0% 0 0 / 0.25);
-}
-.modal-root-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 28px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.modal-root-header h2 {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-.modal-root-close {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: background 0.12s ease;
-  padding: 0;
-  line-height: 0;
-}
-.modal-root-close:hover { background: var(--fg-soft); color: var(--fg); }
-.modal-root-close svg { width: 18px; height: 18px; display: block; }
-.modal-root-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 28px;
-}
-.modal-root-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 28px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
 /* Ordine detail modal */
 .ordine-detail-body { display: flex; flex-direction: column; overflow: hidden; }
 .ordine-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 0; }
@@ -2023,16 +1959,6 @@
 
 /* Mobile: modale a tutto schermo (niente margini, niente doppio scroll) */
 @media (max-width: 768px) {
-  .modal-root { inset: 0 !important; border-radius: 0; }
-  .modal-root-header { padding: 14px 16px; }
-  .modal-root-header h2 { font-size: 17px; }
-  .modal-root-body { padding: 16px; }
-  .modal-root-footer {
-    padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .modal-root-footer .btn { flex: 1 1 auto; justify-content: center; }
   .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
