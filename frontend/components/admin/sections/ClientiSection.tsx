@@ -342,6 +342,7 @@ export default function ClientiSection() {
           selectable
           selectedKeys={selectedIds}
           onSelectionChange={setSelectedIds}
+          disabled={syncing}
         />
       </div>
 

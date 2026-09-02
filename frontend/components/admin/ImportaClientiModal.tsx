@@ -138,8 +138,8 @@ export default function ImportaClientiModal({
     { key: "email", header: "Email", grow: true, cell: (p) => p.email
       ? <span style={{ fontSize: 13 }}>{p.email}</span>
       : <span style={{ fontSize: 12, color: "var(--danger)" }}>— non importabile (email mancante)</span> },
-    { key: "citta", header: "Città", width: "120px", sortable: true, cell: (p) => p.citta ?? "—" },
-    { key: "listino", header: "Listino", width: "90px", align: "center", sortable: true, cell: (p) => p.codiceListino ?? "—" },
+    { key: "citta", header: "Città", width: "240px", sortable: true, cell: (p) => p.citta ?? "—" },
+    { key: "listino", header: "Listino", width: "120px", align: "center", sortable: true, cell: (p) => p.codiceListino ?? "—" },
     { key: "ordini", header: "Ordini", width: "90px", align: "center", sortable: true, cell: (p) => (
         <>{p.numOrdini ?? 0}{p.numOrdiniAnno ? <span style={{ color: "var(--muted)", fontSize: 12 }}> ({p.numOrdiniAnno})</span> : null}</>
     )},
