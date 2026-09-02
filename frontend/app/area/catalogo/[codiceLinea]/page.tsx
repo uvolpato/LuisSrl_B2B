@@ -97,16 +97,6 @@ function getStock(giacenza: number): "ok" | "low" | "out" {
   return "ok";
 }
 
-// Listini non ancora integrati: prezzi di esempio fissi e deterministici per variante.
-function variantExamplePrice(codice: string) {
-  let h = 0;
-  for (let i = 0; i < codice.length; i++) h = (h * 31 + codice.charCodeAt(i)) >>> 0;
-  const net = Math.round((8 + ((h % 50) / 2)) * 100) / 100; // 8,00 – 32,50
-  const disc = 15 + (h % 30); // 15% – 44%
-  const list = Math.round((net / (1 - disc / 100)) * 100) / 100;
-  return { net, list, disc };
-}
-
 function ProductBreadcrumb({ articolo }: { articolo: Articolo | null }) {
   const sp = useSearchParams();
   const back = sp.get("back") ?? "";
