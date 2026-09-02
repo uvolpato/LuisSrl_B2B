@@ -580,12 +580,8 @@ export class DashboardService {
       `{"articoli": ["codice", "codice", ...], "rationale": "una frase (max 20 parole) che spiega al cliente perché questi prodotti gli interessano"}`;
 
     try {
-      const raw = await this.integrazione.generaSelezioneBox(prompt);
-      const cleaned = raw.replace(/```(?:json)?\s*/gi, '').replace(/\s*```/g, '').trim();
-      const start = cleaned.indexOf('{');
-      const end = cleaned.lastIndexOf('}');
-      if (start === -1 || end <= start) return null;
-      const parsed = JSON.parse(cleaned.slice(start, end + 1));
+      const parsed = await this.chiamaJson(prompt, 'selezione box');
+      if (!parsed) return null;
       const valid = new Set(candidati.map((a) => a.id));
       const codici = Array.isArray(parsed.articoli)
         ? (parsed.articoli as unknown[]).map((c) => String(c)).filter((c) => valid.has(c))
