@@ -21,6 +21,7 @@ export default function Modal({
   footer,
   noHeader,
   bodyClassName,
+  maxWidth,
   onClose,
 }: {
   open?: boolean;
@@ -30,6 +31,8 @@ export default function Modal({
   footer?: ReactNode;
   noHeader?: boolean;
   bodyClassName?: string;
+  /** Larghezza massima: rende la modale piccola e centrata (auth/form) invece di edge-to-edge. */
+  maxWidth?: number;
   onClose: () => void;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,13 @@ export default function Modal({
       ref={overlayRef}
       onPointerDown={(e) => { if (e.target === overlayRef.current && e.button === 0) onClose(); }}
     >
-      <div className="modal-root" onPointerDown={(e) => e.stopPropagation()} style={{ inset: INSET[size] }}>
+      <div
+        className={`modal-root${maxWidth ? " modal-root--small" : ""}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        style={maxWidth
+          ? { left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: `min(100% - 32px, ${maxWidth}px)`, maxHeight: "90vh" }
+          : { inset: INSET[size] }}
+      >
         {!noHeader && (
           <div className="modal-root-header">
             {title && <h2>{title}</h2>}

@@ -671,41 +671,43 @@ function GroupEditorModal({
   }
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 10000 }} onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 600 }}>
-          {group ? "Modifica gruppo" : "Nuovo gruppo"}
-        </h2>
-        <form onSubmit={onSubmit}>
-          {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
-          <label htmlFor="ge-name">Nome</label>
-          <input id="ge-name" required value={name} onChange={(e) => setName(e.target.value)} />
-          <label htmlFor="ge-slug">Slug</label>
-          <input id="ge-slug" required value={slug} onChange={(e) => setSlug(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 13 }} />
-          <label style={{ marginTop: 16, display: "block", fontWeight: 500 }}>Permessi</label>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4, maxHeight: 280, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, padding: 8 }}>
-            {ALL_PERMISSIONS.map((p) => (
-              <label key={p.key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={permissions.includes(p.key)}
-                  onChange={() => togglePermission(p.key)}
-                  style={{ width: "auto" }}
-                />
-                <code style={{ fontSize: 12, color: "var(--muted)", minWidth: 180 }}>{p.key}</code>
-                {p.label}
-              </label>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-            <button type="button" onClick={onClose}>Annulla</button>
-            <button className="primary" disabled={busy}>
-              {busy ? "Salvataggio..." : group ? "Salva modifiche" : "Crea gruppo"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal
+      size="sm"
+      maxWidth={520}
+      title={group ? "Modifica gruppo" : "Nuovo gruppo"}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose}>Annulla</button>
+          <button className="primary" form="ge-form" disabled={busy}>
+            {busy ? "Salvataggio..." : group ? "Salva modifiche" : "Crea gruppo"}
+          </button>
+        </>
+      }
+    >
+      <form id="ge-form" onSubmit={onSubmit}>
+        {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 12 }}>{error}</Notice>}
+        <label htmlFor="ge-name">Nome</label>
+        <input id="ge-name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <label htmlFor="ge-slug">Slug</label>
+        <input id="ge-slug" required value={slug} onChange={(e) => setSlug(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 13 }} />
+        <label style={{ marginTop: 16, display: "block", fontWeight: 500 }}>Permessi</label>
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4, maxHeight: 280, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, padding: 8 }}>
+          {ALL_PERMISSIONS.map((p) => (
+            <label key={p.key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={permissions.includes(p.key)}
+                onChange={() => togglePermission(p.key)}
+                style={{ width: "auto" }}
+              />
+              <code style={{ fontSize: 12, color: "var(--muted)", minWidth: 180 }}>{p.key}</code>
+              {p.label}
+            </label>
+          ))}
+        </div>
+      </form>
+    </Modal>
   );
 }
 

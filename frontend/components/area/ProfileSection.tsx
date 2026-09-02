@@ -398,50 +398,48 @@ export default function ProfileSection({
 
       {/* Change Password Modal */}
       {pwOpen && (
-        <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) { setPwOpen(false); setPwError(""); } }}>
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Cambio password">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Cambio password</h2>
-              <button onClick={() => { setPwOpen(false); setPwError(""); }}
-                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--muted)", padding: 0, lineHeight: 1 }}
-                aria-label="Chiudi">&times;</button>
+        <Modal
+          size="sm"
+          maxWidth={480}
+          title="Cambio password"
+          onClose={() => { setPwOpen(false); setPwError(""); }}
+          footer={
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => { setPwOpen(false); setPwError(""); }}>Annulla</button>
+              <button type="submit" className="btn btn-primary" form="cp-form">Cambia password</button>
+            </>
+          }
+        >
+          <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 16px" }}>Inserisci la password attuale e la nuova password.</p>
+
+          {pwError && (
+            <div style={{ background: "oklch(96% 0.03 25)", border: "1px solid var(--danger)", color: "var(--danger)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+              {pwError}
             </div>
-            <p style={{ color: "var(--muted)", fontSize: 13, margin: "8px 0 16px" }}>Inserisci la password attuale e la nuova password.</p>
+          )}
+          {pwOk && (
+            <div style={{ background: "oklch(95% 0.06 150)", border: "1px solid var(--ok)", color: "var(--ok)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
+              Password aggiornata correttamente.
+            </div>
+          )}
 
-            {pwError && (
-              <div style={{ background: "oklch(96% 0.03 25)", border: "1px solid var(--danger)", color: "var(--danger)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
-                {pwError}
-              </div>
-            )}
-            {pwOk && (
-              <div style={{ background: "oklch(95% 0.06 150)", border: "1px solid var(--ok)", color: "var(--ok)", borderRadius: 8, padding: "8px 12px", fontSize: 13, marginBottom: 14 }}>
-                Password aggiornata correttamente.
-              </div>
-            )}
+          <form id="cp-form" onSubmit={handlePwSubmit}>
+            <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-old">Password attuale</label>
+            <input id="cp-old" type="password" required autoComplete="current-password"
+              style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+              value={pwOld} onChange={(e) => setPwOld(e.target.value)} />
 
-            <form onSubmit={handlePwSubmit}>
-              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-old">Password attuale</label>
-              <input id="cp-old" type="password" required autoComplete="current-password"
-                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
-                value={pwOld} onChange={(e) => setPwOld(e.target.value)} />
+            <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-new">Nuova password</label>
+            <input id="cp-new" type="password" required autoComplete="new-password" minLength={8}
+              style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+              value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
 
-              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-new">Nuova password</label>
-              <input id="cp-new" type="password" required autoComplete="new-password" minLength={8}
-                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
-                value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
-
-              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-confirm">Conferma nuova password</label>
-              <input id="cp-confirm" type="password" required autoComplete="new-password" minLength={8}
-                style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
-                value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
-
-              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => { setPwOpen(false); setPwError(""); }}>Annulla</button>
-                <button type="submit" className="btn btn-primary">Cambia password</button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <label style={{ display: "block", fontSize: 12, color: "var(--muted)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }} htmlFor="cp-confirm">Conferma nuova password</label>
+            <input id="cp-confirm" type="password" required autoComplete="new-password" minLength={8}
+              style={{ width: "100%", padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, font: "inherit", fontSize: 14, background: "var(--bg)", color: "var(--fg)", marginBottom: 14, boxSizing: "border-box" }}
+              value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
+          </form>
+        </Modal>
       )}
 
     </>
