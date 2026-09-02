@@ -366,9 +366,26 @@ export class CustomersService {
   async deleteCustomer(actorId: number, customerId: number, ip: string | undefined) {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
-    // Regola di progetto: i clienti non si cancellano MAI (preservano lo storico
-    // ordini/progetti). "Elimina" = blocco permanente, non hard-delete.
-    await this.prisma.customer.update({ where: { id: customerId }, data: { stato: 'BLOCCATO' } });
-    await this.audit.log({ actorId, azione: 'customer.block_permanente', entita: 'customers', entitaId: String(customerId), ip });
+
+    // Con storico ordini il cliente NON si cancella: "Elimina" = blocco permanente.
+    const ordini = await this.prisma.ordineCliente.count({ where: { customerId } });
+    if (ordini > 0) {
+      await this.prisma.customer.update({ where: { id: customerId }, data: { stato: 'BLOCCATO' } });
+      await this.audit.log({ actorId, azione: 'customer.block_permanente', entita: 'customers', entitaId: String(customerId), ip });
+      return;
+    }
+
+    // Nessun ordine (né acquisiti da Integra né in attesa di export): eliminazione reale
+    // a cascata. Le tabelle con FK (progetti, indirizzi, contatti, carrello) cascano via
+    // onDelete: Cascade; le altre vanno ripulite a mano.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.customerProfile.deleteMany({ where: { customerId } });
+      await tx.customerInsight.deleteMany({ where: { customerId } });
+      await tx.customerEvent.deleteMany({ where: { customerId } });
+      await tx.dashboardBox.deleteMany({ where: { customerId } });
+      await tx.campaignUsage.deleteMany({ where: { customerId } });
+      await tx.customer.delete({ where: { id: customerId } });
+    });
+    await this.audit.log({ actorId, azione: 'customer.delete', entita: 'customers', entitaId: String(customerId), ip });
   }
 }
