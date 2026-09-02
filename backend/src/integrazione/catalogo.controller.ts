@@ -44,6 +44,7 @@ export class CatalogoController {
     @Query('coloreRgb') coloreRgb?: string,
     @Query('coloreTolleranza') coloreTolleranza?: string,
     @Query('codiceLinea') codiceLinea?: string,
+    @Query('soloDisponibili') soloDisponibili?: string,
     @Req() req?: AuthenticatedRequest,
   ) {
     const codiceListino = await this.listinoDi(req);
@@ -65,6 +66,7 @@ export class CatalogoController {
       coloreRgb: coloreRgb || undefined,
       coloreTolleranza: coloreTolleranza ? parseFloat(coloreTolleranza) : undefined,
       codiceLinea: codiceLinea ? codiceLinea.split(',').filter(Boolean) : undefined,
+      soloDisponibili: soloDisponibili === 'true',
       codiceListino,
     });
   }
@@ -100,8 +102,8 @@ export class CatalogoController {
     if (art.famiglia?.stato && art.famiglia.stato !== 'ATTIVO') {
       throw new NotFoundException('catalogo.articolo_non_trovato');
     }
-    const { promptAi, wizardStepTesti, ...pubblico } = art;
-    void promptAi; void wizardStepTesti;
+    const { promptAi, wizardStepTesti, ultimaSyncGiacenza, ...pubblico } = art;
+    void promptAi; void wizardStepTesti; void ultimaSyncGiacenza;
     const variantiAttive = pubblico.varianti.filter((v: any) => v.stato === 'attivo');
     const codiceListino = await this.integrazione.codiceListinoCliente(req.user.id);
     const maxRaccSconto = Math.max(0, ...pubblico.raccolte.map((r: any) => r.sconto ?? 0));

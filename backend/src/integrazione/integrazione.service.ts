@@ -647,6 +647,7 @@ export class IntegrazioneService {
     coloreRgb?: string; coloreTolleranza?: number;
     codiceListino?: string;
     codiceLinea?: string[];
+    soloDisponibili?: boolean;
   }) {
     const page = Math.max(1, params.page ?? 1);
     // I box passano fino a 24 codici: se filtriamo per codiceLinea serviamo tutto in una pagina.
@@ -661,6 +662,7 @@ export class IntegrazioneService {
     if (params.famiglia?.length) and.push({ famigliaCodice: { in: params.famiglia } });
     if (params.tab) and.push({ raccolte: { some: { raccolta: { slug: params.tab, stato: 'ATTIVO' } } } });
     if (params.raccolte?.length) and.push({ raccolte: { some: { raccolta: { slug: { in: params.raccolte }, stato: 'ATTIVO' } } } });
+    if (params.soloDisponibili) and.push({ varianti: { some: { stato: { not: 'NASCOSTO' }, giacenza: { gt: 0 } } } });
     if (params.colore?.length) and.push({ colore: { in: params.colore } });
     if (params.q?.trim()) {
       const q = params.q.trim();
@@ -749,6 +751,11 @@ export class IntegrazioneService {
         qCond = Prisma.sql`AND (a."nome" ILIKE ${'%' + q + '%'} OR a."codice_linea" ILIKE ${'%' + q + '%'} OR EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id AND v.codice ILIKE ${'%' + q + '%'}) OR f."nome" ILIKE ${'%' + q + '%'} OR COALESCE(f."nome_portale", '') ILIKE ${'%' + q + '%'})`;
       }
 
+      let dispCond = Prisma.sql``;
+      if (params.soloDisponibili) {
+        dispCond = Prisma.sql`AND EXISTS (SELECT 1 FROM varianti v WHERE v.articolo_id = a.id AND v.stato <> 'NASCOSTO' AND v.giacenza > 0)`;
+      }
+
       // Un singolo EXISTS che verifica dimensioni + prezzo sulla STESSA variante
       const variantSubConds: Prisma.Sql[] = [];
       variantSubConds.push(Prisma.sql`v.articolo_id = a.id`);
@@ -772,7 +779,7 @@ export class IntegrazioneService {
         variantExistsSql = Prisma.sql`AND EXISTS (SELECT 1 FROM varianti v WHERE ${allVariantConds})`;
       }
 
-      const allConds = Prisma.join([baseWhere, clCond, famCond, racCond, coloreCond, coloreRgbCond, qCond, variantExistsSql], ' ');
+      const allConds = Prisma.join([baseWhere, clCond, famCond, racCond, coloreCond, coloreRgbCond, qCond, dispCond, variantExistsSql], ' ');
 
       const countSql = Prisma.sql`SELECT count(*)::int AS n FROM articoli a JOIN "famiglie" f ON f.codice = a."famiglia_codice" ${allConds}`;
       const orderSql = params.sort === 'prezzo-asc' || params.sort === 'prezzo-desc'
@@ -1480,6 +1487,9 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       },
     });
     if (!art) throw new NotFoundException('Articolo non trovato');
+    const [gs] = await this.prisma.$queryRawUnsafe<{ ultima_esecuzione: Date | null }[]>(
+      `SELECT ultima_esecuzione FROM sync_config WHERE tipo = 'giacenze'`,
+    );
     return {
       id: art.codiceLinea,
       codiceLinea: art.codiceLinea,
@@ -1491,6 +1501,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       famiglia: { codice: art.famiglia.codice, nome: art.famiglia.nomePortale || art.famiglia.nome, stato: art.famiglia.stato },
       variantiCount: art._count.varianti,
       updatedAt: art.updatedAt,
+      ultimaSyncGiacenza: gs?.ultima_esecuzione ? gs.ultima_esecuzione.toISOString() : null,
       descrizione: art.descrizione ?? null,
       descrizioneDettagliata: art.descrizioneDettagliata ?? null,
       descrizioneAI: art.descrizioneAI ?? null,
