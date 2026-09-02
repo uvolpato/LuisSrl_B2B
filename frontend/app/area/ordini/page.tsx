@@ -58,7 +58,9 @@ export default function OrdiniPage() {
   }, []);
   const [year, setYear] = useState("");
   const today = new Date().toISOString().slice(0, 10);
-  const [dataDa, setDataDa] = useState(today);
+  const now = new Date();
+  const meseInizio = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const [dataDa, setDataDa] = useState(meseInizio);
   const [dataA, setDataA] = useState(today);
   const [sortBy, setSortBy] = useState<SortField>("dataOrdine");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
