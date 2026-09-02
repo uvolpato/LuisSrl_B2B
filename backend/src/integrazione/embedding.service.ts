@@ -27,18 +27,48 @@ export class EmbeddingService {
 
   constructor(private readonly aiUsage: AiUsageService) {}
 
+  // Cache in-memory (LRU) query → embedding: evita richiami API per ricerche
+  // ripetute. Cap + TTL via env; zero infrastruttura (monoprocesso locale).
+  // ponytail: se un giorno servirà multi-istanza/persistenza, sostituire con Redis.
+  private readonly cache = new Map<string, { vec: number[]; ts: number }>();
+  private readonly cacheMax = parseInt(process.env.EMBEDDINGS_CACHE_MAX || '2000', 10);
+  private readonly cacheTtlMs = parseInt(process.env.EMBEDDINGS_CACHE_TTL_H || '24', 10) * 3600_000;
+
   /** Ritorna il vettore, o null se il provider non e' configurato/raggiungibile (non deve rompere il flusso). */
   async embedText(text: string): Promise<number[] | null> {
     const clean = text.trim();
     if (!clean) return null;
+
+    // Chiave normalizzata (case/whitespace): "Vasi terracotta" == "vasi terracotta".
+    const key = clean.toLowerCase().replace(/\s+/g, ' ');
+    const hit = this.cache.get(key);
+    if (hit) {
+      if (Date.now() - hit.ts < this.cacheTtlMs) {
+        this.cache.delete(key);
+        this.cache.set(key, hit); // LRU: riporta in fondo come usato di recente
+        return hit.vec;
+      }
+      this.cache.delete(key);
+    }
+
     try {
       const vec = this.provider === 'local' ? await this.embedLocal(clean) : await this.embedGemini(clean);
       // embedContent non ritorna i token: stima ~4 char/token (solo per il costo).
       void this.aiUsage.record({ tipo: 'embedding', modello: this.model, tokenIn: Math.ceil(clean.length / 4) });
+      this.cacheSet(key, vec);
       return vec;
     } catch (e) {
       this.log.warn(`embedText fallito (provider=${this.provider}): ${(e as Error).message}`);
       return null;
+    }
+  }
+
+  private cacheSet(key: string, vec: number[]) {
+    this.cache.delete(key);
+    this.cache.set(key, { vec, ts: Date.now() });
+    if (this.cache.size > this.cacheMax) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) this.cache.delete(oldest);
     }
   }
 
