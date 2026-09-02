@@ -1,6 +1,6 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: 5.4 — 2 settembre 2026 (allineato stato reale: export ordini e box dashboard completati)
+Versione: 5.5 — 2 settembre 2026 (cache embedding, consolidamento modali, unificazione log, refactor sicurezza/prestazioni)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
@@ -13,26 +13,33 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | **1** — Infrastruttura e accessi | ✅ COMPLETATO | — |
 | **1A** — Profilazione ruoli e permessi | ✅ COMPLETATO | 🔴 modale crea/modifica utente con gruppo + override; 🔴 separazione anagrafica clienti read‑only |
 | **2** — Integrazione Integra (lettura) | ✅ COMPLETATO | — |
-| **3** — Listini e prezzi | ✅ Backend OK, frontend da ripulire | ⚠️ codice morto `variantExamplePrice()` + commento fuorviante in scheda prodotto |
+| **3** — Listini e prezzi | ✅ Backend OK, frontend da ripulire | ⚠️ fallback listino unificato (`codiceListinoCliente`); resta pulizia UI scheda prodotto |
 | **4** — Gestione articoli + AI | ✅ COMPLETATO | — |
 | **5** — Catalogo lato cliente | ✅ COMPLETATO | 🔴 3 fix UI in ToDo (filtri sticky, responsive carrello, riepilogo checkout) |
 | **6** — Clienti e inviti | ✅ COMPLETATO | — |
-| **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento |
-| **8** — Ordini | ⚠️ Parziale | ⚠️ admin cambio stato/note manuale; ✅ mail conferma ordine fatta |
-| **9** — Export ordini verso Integra | ✅ COMPLETATO | .xlsx + riconciliazione `mvt_vsrif` + vista `riferimento_b2b` |
-| **10** — AI lato cliente | ⚠️ Parziale | ❌ cronologia visite (in Blocco 13); ❌ cache embedding; ✅ ricerca semantica/immagine |
+| **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento (in admin) |
+| **8** — Ordini | ⚠️ Parziale | ⚠️ admin cambio stato/note manuale; ✅ mail conferma + transazione + sync ordini schedulata |
+| **9** — Export ordini verso Integra | ✅ COMPLETATO | .xlsx + riconciliazione `mvt_vsrif` + vista `riferimento_b2b` + dedupe import |
+| **10** — AI lato cliente | ⚠️ Parziale | ✅ ricerca semantica/immagine + cache embedding (LRU); ❌ cronologia visite |
 | **11** — Collaudo, formazione, go‑live | ❌ NON INIZIATO | — |
 | **12** — Tracciamento clienti | ⚠️ Parziale | ✅ `CustomerEvent` (beacon) attivo; ❌ funnel/analisi avanzate |
-| **13** — Dashboard AI: box suggerimenti personalizzati | ⚠️ Parziale | ✅ engine + cache + cron + Fase 2 (LLM) + Fase 3 (planner/anteprima); ❌ CRUD promozioni |
+| **13** — Dashboard AI: box suggerimenti personalizzati | ⚠️ Parziale | ✅ engine + cache + cron + Fase 2 (LLM) + Fase 3 (planner/anteprima) + dedupe/profilo; ❌ CRUD promozioni |
 | **14** — Assistente commerciale: catalogo ad hoc | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` §14 |
+
+### Fatto in questa sessione (2 settembre 2026)
+- **Box dashboard** completato: engine deterministico, cache+batch notturno, Fase 2 (selezione LLM con flag `DASHBOARD_LLM_SELECTION`), dedupe tra box, profilo cliente nel contesto, Fase 3 (planner a edit-time + anteprima test).
+- **Sicurezza e robustezza**: SQL injection fix in `randomFallback`/`poolVincoli`, `confermaOrdine` in `$transaction`, `deleteCustomer` = blocco permanente (mai hard-delete), import ordini deduplicato (`riferimento_b2b`), fallback listino unificato.
+- **Prestazioni**: N+1 eliminati (carrello/progetti/catalogo prezzi in batch), cache embedding LRU in-memory.
+- **Infrastruttura frontend**: un solo sistema di modali (`common/Modal` + `maxWidth`), `.modal-root-*` spostate in globals, `.combobox` unico, tooltip DataTable via portal, CSS admin scopato sotto `.admin-page`.
+- **Log**: `event_log` + `anomalia_log` unificati in `audit_log`; sezione "Log eventi" come tab del Pannello Amministrazione.
+- **Mail**: conferma ordine con logo inline (CID) + intro di ringraziamento; import clienti con colonna email e skip dei senza-email.
+- **Sync**: ordini schedulati automaticamente ogni 15 min; rimosso il tasto "Sincronizza" da "I miei ordini"; range date di default = mese corrente.
 
 ### Gap critici
 1. **Admin gestione ordini (Blocco 8)** — manca UI/API per cambiare stato e note ordini (oggi lo stato arriva solo dalla sync Integra).
 2. **CRUD promozioni (Blocco 13)** — modello `Promozione` esiste ma senza UI; i box `soloInOfferta` restano vuoti finché non ci sono promozioni a DB.
-3. **Cache embedding (Blocco 10)** — Redis per le query semantiche frequenti non implementato.
-4. **Assistente commerciale catalogo ad hoc (Blocco 14)** — non iniziato.
-5. **Giacenza (Blocco 7)** — filtro "solo disponibili" e data ultimo aggiornamento.
-6. **Codice morto** — `variantExamplePrice()` in scheda prodotto + commento fuorviante.
+3. **Assistente commerciale catalogo ad hoc (Blocco 14)** — non iniziato.
+4. **Giacenza (Blocco 7)** — filtro "solo disponibili" e timestamp ultimo aggiornamento in admin.
 
 ---
 
@@ -389,7 +396,7 @@ Riconciliazione ordine B2B ↔ documento Integra via `mvt_vsrif` (`f876225`) e v
 | Ricerca per immagini | Upload foto → Gemini Vision → pgvector → articoli simili | ✅ `POST /api/catalogo/ricerca-immagine` |
 | Banner homepage | "Articoli interessanti" basati su cronologia cliente | ➡️ spostato al **Blocco 13** (`DASHBOARD-SUGGERIMENTI-AI.md`) |
 | Cronologia visite | "Ripresi da dove hai lasciato" | ❌ sezione statica (in Blocco 13) |
-| Cache embedding | Redis per query frequenti | ❌ mancante |
+| Cache embedding | Memoizzazione query→vettore | ✅ cache LRU in-memory (`EmbeddingService`) |
 
 **Cosa si vede:** cliente cerca "vasi rettangolari grandi per esterno" e trova risultati; carica foto e trova articoli simili.
 
