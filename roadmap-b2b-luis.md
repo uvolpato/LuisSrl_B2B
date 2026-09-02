@@ -1,6 +1,6 @@
 # Roadmap di costruzione — Piattaforma B2B Luis S.r.l.
 
-Versione: 5.3 — 3 agosto 2026 (aggiunto Blocco 14 "Assistente commerciale: catalogo ad hoc" → `DASHBOARD-SUGGERIMENTI-AI.md` §14)
+Versione: 5.4 — 2 settembre 2026 (allineato stato reale: export ordini e box dashboard completati)
 Architettura: server locale (app + DB) + Mini PC 128GB GPU condivisa (LM Studio)
 Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 
@@ -18,22 +18,21 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | **5** — Catalogo lato cliente | ✅ COMPLETATO | 🔴 3 fix UI in ToDo (filtri sticky, responsive carrello, riepilogo checkout) |
 | **6** — Clienti e inviti | ✅ COMPLETATO | — |
 | **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento |
-| **8** — Ordini | ⚠️ Parziale | ❌ admin gestione ordini (cambio stato, note); ❌ notifiche email |
-| **9** — Export ordini verso Integra | ❌ NON IMPLEMENTATO | Assente — blocco fondamentale |
-| **10** — AI lato cliente | ⚠️ Parziale | ❌ cronologia visite; ❌ cache Redis; ❌ banner AI → vedi **Blocco 13** |
+| **8** — Ordini | ⚠️ Parziale | ⚠️ admin cambio stato/note manuale; ✅ mail conferma ordine fatta |
+| **9** — Export ordini verso Integra | ✅ COMPLETATO | .xlsx + riconciliazione `mvt_vsrif` + vista `riferimento_b2b` |
+| **10** — AI lato cliente | ⚠️ Parziale | ❌ cronologia visite (in Blocco 13); ❌ cache embedding; ✅ ricerca semantica/immagine |
 | **11** — Collaudo, formazione, go‑live | ❌ NON INIZIATO | — |
-| **12** — Tracciamento clienti | ❌ NON INIZIATO | Progettato in `CUSTOMER-TRACKING.md` |
-| **13** — Dashboard AI: box suggerimenti personalizzati | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` |
+| **12** — Tracciamento clienti | ⚠️ Parziale | ✅ `CustomerEvent` (beacon) attivo; ❌ funnel/analisi avanzate |
+| **13** — Dashboard AI: box suggerimenti personalizzati | ⚠️ Parziale | ✅ engine + cache + cron + Fase 2 (LLM) + Fase 3 (planner/anteprima); ❌ CRUD promozioni |
 | **14** — Assistente commerciale: catalogo ad hoc | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` §14 |
 
 ### Gap critici
-1. **Export Excel AGOMIR (Blocco 9)** — assente, non si possono esportare ordini verso Integra
-2. **Admin gestione ordini (Blocco 8)** — nessuna UI/API per cambiare stato ordini
-3. **Notifiche email ordini** — MailModule esiste ma non collegato a ordini
-4. **Box dashboard con suggerimenti AI (Blocco 13)** — i 6 box sono hardcoded in
-   `area/page.tsx` (`PRODUCT_BOXES`), nessun dato reale; manca anche il modello `Promozione`
-5. **Codice morto** — `variantExamplePrice()` in scheda prodotto mai chiamata, commento fuorviante
-6. **Assistente commerciale catalogo ad hoc (Blocco 14)** — non iniziato; agente che costruisce cataloghi personalizzati interagendo con l'AI
+1. **Admin gestione ordini (Blocco 8)** — manca UI/API per cambiare stato e note ordini (oggi lo stato arriva solo dalla sync Integra).
+2. **CRUD promozioni (Blocco 13)** — modello `Promozione` esiste ma senza UI; i box `soloInOfferta` restano vuoti finché non ci sono promozioni a DB.
+3. **Cache embedding (Blocco 10)** — Redis per le query semantiche frequenti non implementato.
+4. **Assistente commerciale catalogo ad hoc (Blocco 14)** — non iniziato.
+5. **Giacenza (Blocco 7)** — filtro "solo disponibili" e data ultimo aggiornamento.
+6. **Codice morto** — `variantExamplePrice()` in scheda prodotto + commento fuorviante.
 
 ---
 
@@ -361,18 +360,18 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 9 — Export ordini verso Integra (1-2 giorni) ❌ NON IMPLEMENTATO
+## Blocco 9 — Export ordini verso Integra (1-2 giorni) ✅ COMPLETATO
 
 | Attività | Dettaglio |
 |----------|-----------|
-| Tracciato export ordini | Tracciato Excel concordato con AGOMIR S.p.A. |
-| Generazione Excel ordini | File ordini per l'automazione di import AGOMIR verso Integra |
+| Tracciato export ordini | Tracciato Excel (testata + righe) per l'import AGOMIR |
+| Generazione Excel ordini | File ordini generati dal portale (`export-ordini`, `eb756d0`) |
 | Storico export | Log operazioni con esito |
 | Marcatura "esportato" | Evita doppie esportazioni |
 
 **Cosa si vede:** il portale genera l'Excel ordini che l'automazione AGOMIR importa in Integra.
-
-**Nota:** nessun modulo di export esiste al momento.
+Riconciliazione ordine B2B ↔ documento Integra via `mvt_vsrif` (`f876225`) e vista `riferimento_b2b`
+(`0017db8`); storicizzati listino/sconto sulla riga (`b1449d6`).
 
 **Valore: €700 (2 giorni × €350)**
 
@@ -398,7 +397,7 @@ Tutto in italiano o inglese.
 
 ---
 
-## Blocco 13 — Dashboard AI: box di suggerimenti personalizzati (5 giorni) ❌ NON INIZIATO
+## Blocco 13 — Dashboard AI: box di suggerimenti personalizzati (5 giorni) ⚠️ Parziale (manca CRUD promozioni)
 
 > Progettazione completa in **`DASHBOARD-SUGGERIMENTI-AI.md`**.
 
