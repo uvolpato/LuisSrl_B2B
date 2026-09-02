@@ -366,7 +366,9 @@ export class CustomersService {
   async deleteCustomer(actorId: number, customerId: number, ip: string | undefined) {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
-    await this.prisma.customer.delete({ where: { id: customerId } });
-    await this.audit.log({ actorId, azione: 'customer.delete', entita: 'customers', entitaId: String(customerId), ip });
+    // Regola di progetto: i clienti non si cancellano MAI (preservano lo storico
+    // ordini/progetti). "Elimina" = blocco permanente, non hard-delete.
+    await this.prisma.customer.update({ where: { id: customerId }, data: { stato: 'BLOCCATO' } });
+    await this.audit.log({ actorId, azione: 'customer.block_permanente', entita: 'customers', entitaId: String(customerId), ip });
   }
 }
