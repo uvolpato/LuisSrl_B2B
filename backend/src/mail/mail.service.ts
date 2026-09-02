@@ -1,8 +1,9 @@
 import { readFileSync, existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { ASSETS_BASE_DIR } from '../common/env';
 
 @Injectable()
 export class MailService {
@@ -28,9 +29,7 @@ export class MailService {
     this.from = this.config.get<string>('SMTP_FROM') ?? 'noreply@luissrl.it';
     this.domain = this.config.get<string>('APP_DOMAIN') ?? 'http://localhost:3000';
     this.testEmail = this.config.get<string>('TEST_EMAIL') ?? null;
-    this.assetsBase = resolve(
-      process.env.ASSETS_BASE_DIR || join(process.cwd(), '..', 'frontend', 'public', 'images'),
-    );
+    this.assetsBase = ASSETS_BASE_DIR;
 
     try {
       this.template = readFileSync(join(__dirname, 'templates', 'password-reset.html'), 'utf-8');

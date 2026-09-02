@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as fsp from 'fs/promises';
 import { randomUUID, createHash } from 'crypto';
 import { hashPassword } from '../common/password';
+import { ASSETS_BASE_DIR, ASSETS_PUBLIC_URL } from '../common/env';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
 import { EventsService } from '../events/events.service';
@@ -65,8 +66,6 @@ const CONFIG = {
   },
 };
 
-const ASSETS_BASE_DIR = path.resolve(process.env.ASSETS_BASE_DIR || path.join(process.cwd(), '..', 'frontend', 'public', 'images'));
-const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
 const ASSETS_CACHE_DIR = path.join(ASSETS_BASE_DIR, '.cache');
 
 /** Rimuove i derivati in cache (miniature WebP) di un file immagine. */
@@ -2889,16 +2888,16 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
       const numOrd = o.numero_ordine ? String(o.numero_ordine) : null;
       if (!numOrd) continue;
 
+      const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
+      if (!ordineId) continue;
+
       const rifB2b = o.riferimento_b2b ? String(o.riferimento_b2b).trim() : '';
       const localeB2b = rifB2b ? perRiferimento.get(rifB2b) : undefined;
       if (localeB2b) {
-        await this.allineaOrdineB2b(localeB2b.id, numOrd, o);
+        await this.allineaOrdineB2b(localeB2b.id, numOrd, o, righeByOrdine.get(ordineId) ?? []);
         continue;
       }
       if (esistenti.has(numOrd)) continue;
-
-      const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
-      if (!ordineId) continue;
 
       const righe = righeByOrdine.get(ordineId) ?? [];
       const totale = righe.reduce(
@@ -2937,12 +2936,7 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
    * da li'. La composizione confermata dal cliente resta comunque dimostrabile dal file
    * .xlsx esportato (immutabile) e da audit_log.
    */
-  private async allineaOrdineB2b(ordineId: number, numeroIntegra: string, o: Record<string, unknown>) {
-    const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1 ORDER BY id_riga`,
-      o.id_ordine ? Number(o.id_ordine) : 0,
-    );
-
+  private async allineaOrdineB2b(ordineId: number, numeroIntegra: string, o: Record<string, unknown>, righe: Record<string, unknown>[]) {
     const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
     const totale = righe.reduce((s, r) => s + (num(r.quantita) ?? 0) * (num(r.prezzo_netto) ?? 0), 0);
 
@@ -2961,25 +2955,28 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
     if (!righe.length) return;
 
     await this.prisma.rigaOrdine.deleteMany({ where: { ordineId } });
-    for (const r of righe) {
-      const listino = num(r.prezzo_listino);
-      const netto = num(r.prezzo_netto);
-      await this.prisma.rigaOrdine.create({
-        data: {
-          ordineId,
-          numeroRiga: r.id_riga ? Number(r.id_riga) : null,
-          codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
-          descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
-          quantita: num(r.quantita),
-          prezzo: netto,
-          prezzoListino: listino,
-          prezzoNetto: netto,
-          scontoPct: listino && netto != null && listino > 0
-            ? Math.round((1 - netto / listino) * 1000) / 10
-            : null,
-        },
-      });
-    }
+    await this.prisma.rigaOrdine.createMany({
+      data: righe
+        .slice()
+        .sort((a, b) => (num(a.id_riga) ?? 0) - (num(b.id_riga) ?? 0))
+        .map((r) => {
+          const listino = num(r.prezzo_listino);
+          const netto = num(r.prezzo_netto);
+          return {
+            ordineId,
+            numeroRiga: r.id_riga ? Number(r.id_riga) : null,
+            codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
+            descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
+            quantita: num(r.quantita),
+            prezzo: netto,
+            prezzoListino: listino,
+            prezzoNetto: netto,
+            scontoPct: listino && netto != null && listino > 0
+              ? Math.round((1 - netto / listino) * 1000) / 10
+              : null,
+          };
+        }),
+    });
   }
 
   /** Genera descrizione AI del cliente (mix anagrafica + corrispondenza + web). */

@@ -101,26 +101,36 @@ export class AdminOrdiniService {
           }
         : null,
       notaSped: o.notaSpedizione ?? undefined,
-      items: await Promise.all(o.righe.map(async (r) => {
-        const codice = (r.codiceProdotto ?? "").trim();
-        const descDB = (r.descrizione ?? "").trim();
-        let nome = descDB || codice;
-        if (codice) {
-          const variante = await this.prisma.variante.findUnique({
-            where: { codice },
-            select: { descrizione: true, articolo: { select: { nome: true } } },
-          });
-          if (variante) nome = variante.articolo.nome || variante.descrizione || nome;
-        }
-        return {
-          codice,
-          nome,
-          qty: Number(r.quantita ?? 0),
-          prezzo: Number(r.prezzo ?? 0),
-          listino: Number(r.prezzoListino ?? r.prezzo ?? 0),
-        };
-      })),
+      items: await this.righeDettaglio(o.righe),
     };
+  }
+
+  private async righeDettaglio(righe: { codiceProdotto: string | null; descrizione: string | null; quantita: unknown; prezzo: unknown; prezzoListino: unknown }[]) {
+    const codici = [...new Set(righe.map((r) => (r.codiceProdotto ?? "").trim()).filter(Boolean))];
+    const varianti = codici.length
+      ? await this.prisma.variante.findMany({
+          where: { codice: { in: codici } },
+          select: { codice: true, descrizione: true, articolo: { select: { nome: true } } },
+        })
+      : [];
+    const varianteMap = new Map(varianti.map((v) => [v.codice, v]));
+
+    return righe.map((r) => {
+      const codice = (r.codiceProdotto ?? "").trim();
+      const descDB = (r.descrizione ?? "").trim();
+      let nome = descDB || codice;
+      if (codice) {
+        const variante = varianteMap.get(codice);
+        if (variante) nome = variante.articolo.nome || variante.descrizione || nome;
+      }
+      return {
+        codice,
+        nome,
+        qty: Number(r.quantita ?? 0),
+        prezzo: Number(r.prezzo ?? 0),
+        listino: Number(r.prezzoListino ?? r.prezzo ?? 0),
+      };
+    });
   }
 
   async getClientiLookup() {
