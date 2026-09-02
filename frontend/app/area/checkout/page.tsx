@@ -333,11 +333,31 @@ export default function CheckoutPage() {
       setSubmitError(`L'importo minimo per questa destinazione è di ${fmtEur(spedizione.minimoOrdine)}. Aggiungi altri articoli per procedere.`);
       return;
     }
-    setSubmitting(true); setSubmitError(null);
-    try {
-      const nuovoIndirizzo = showNuovo && !editingAddrId && nIndirizzo.trim() && nCap.trim() && nCitta.trim()
+
+    // Indirizzo di spedizione: in modalità corriere è sempre obbligatorio.
+    let nuovoIndirizzo: { ragioneSociale?: string; indirizzo: string; cap: string; citta: string; provincia?: string; abituale?: boolean } | undefined;
+    if (!isRitiro) {
+      const formNuovo = showNuovo && !editingAddrId && nIndirizzo.trim() && nCap.trim() && nCitta.trim()
         ? { ragioneSociale: nRagione || undefined, indirizzo: nIndirizzo.trim(), cap: nCap.trim(), citta: nCitta.trim(), provincia: nProvincia || undefined, abituale: nDefault }
         : undefined;
+      if (formNuovo) {
+        nuovoIndirizzo = formNuovo;
+      } else if (indirizzoId === -1) {
+        // "Sede" (anagrafica): non ha un id salvato → va inviata come nuovo indirizzo.
+        if (sedeLegale?.indirizzo && sedeLegale.cap && sedeLegale.citta) {
+          nuovoIndirizzo = { indirizzo: sedeLegale.indirizzo, cap: sedeLegale.cap, citta: sedeLegale.citta, provincia: sedeLegale.provincia || undefined };
+        } else {
+          setSubmitError("Seleziona un indirizzo di spedizione oppure indicane uno nuovo.");
+          return;
+        }
+      } else if (indirizzoId == null) {
+        setSubmitError("Seleziona un indirizzo di spedizione oppure indicane uno nuovo.");
+        return;
+      }
+    }
+
+    setSubmitting(true); setSubmitError(null);
+    try {
       const res = await api.post<OrdineConfermato>("/api/checkout/conferma", {
         modalitaConsegna: modalita, indirizzoSpedizioneId: isRitiro ? undefined : indirizzoId && indirizzoId !== -1 ? indirizzoId : undefined,
         nuovoIndirizzo, codicePagamento: paymentMethod || undefined,
@@ -771,6 +791,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Azioni */}
+            {submitError && <div className="checkout-error" style={{ marginBottom: 12 }}>{submitError}</div>}
             {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine && (
               <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginBottom: 12, lineHeight: 1.5 }}>
                 L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
