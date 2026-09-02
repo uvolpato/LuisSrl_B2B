@@ -66,13 +66,7 @@ export class DashboardController {
     return this.dashboard.testBox(body, clienteId);
   }
 
-  private async listinoDi(customerId: number): Promise<string | null> {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId },
-      select: { codiceListino: true },
-    });
-    if (customer?.codiceListino) return customer.codiceListino;
-    const fallback = await this.integrazione.getFirstListino();
-    return fallback?.codice_listino ?? 'LIS1';
+  private async listinoDi(customerId: number): Promise<string> {
+    return this.integrazione.codiceListinoCliente(customerId);
   }
 }

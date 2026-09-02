@@ -22,12 +22,7 @@ export class ProgettiService {
     let codiceListino: string | null = null;
     const raccolteMap = new Map<string, number>();
     if (clienteId) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
-      codiceListino = customer?.codiceListino ?? null;
-      if (!codiceListino) {
-        const fallback = await this.integrazione.getFirstListino();
-        codiceListino = fallback?.codice_listino ?? null;
-      }
+      codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
     }
 
     return Promise.all(items.map(async (it) => {

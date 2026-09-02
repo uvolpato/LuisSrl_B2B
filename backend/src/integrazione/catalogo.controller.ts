@@ -18,18 +18,10 @@ export class CatalogoController {
     private readonly events: EventsService,
   ) {}
 
-  /** Codice listino del cliente autenticato (fallback: primo listino attivo). */
+  /** Codice listino del cliente autenticato (fallback: config → primo listino → LIS1). */
   private async listinoDi(req?: AuthenticatedRequest): Promise<string> {
-    let codiceListino: string | null = null;
-    if (req?.user?.id) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
-      codiceListino = customer?.codiceListino ?? null;
-    }
-    if (!codiceListino) {
-      const fallback = await this.integrazione.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? 'LIS1';
-    }
-    return codiceListino;
+    if (req?.user?.id) return this.integrazione.codiceListinoCliente(req.user.id);
+    return (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
   }
 
   /** Lista paginata (infinite-scroll): filtri, ricerca testo, sort lato server. */
@@ -111,12 +103,7 @@ export class CatalogoController {
     const { promptAi, wizardStepTesti, ...pubblico } = art;
     void promptAi; void wizardStepTesti;
     const variantiAttive = pubblico.varianti.filter((v: any) => v.stato === 'attivo');
-    const customer = await this.prisma.customer.findUnique({ where: { id: req.user.id } });
-    let codiceListino = customer?.codiceListino;
-    if (!codiceListino) {
-      const fallback = await this.integrazione.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? null;
-    }
+    const codiceListino = await this.integrazione.codiceListinoCliente(req.user.id);
     const maxRaccSconto = Math.max(0, ...pubblico.raccolte.map((r: any) => r.sconto ?? 0));
     const variantiConPrezzi = await Promise.all(
       variantiAttive.map(async (v: any) => {

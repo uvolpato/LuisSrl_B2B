@@ -331,11 +331,7 @@ export class CheckoutService {
         ? (dto.codiceVettore ?? customer?.codiceVettore ?? null)
         : null;
 
-    let codiceListino = customer?.codiceListino;
-    if (!codiceListino) {
-      const fallback = await this.integrazione.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? null;
-    }
+    const codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
 
     // Calcola importo totale usando i prezzi reali
     let importoTotale = 0;

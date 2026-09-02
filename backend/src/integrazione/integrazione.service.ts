@@ -1596,15 +1596,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     const top = scored.slice(0, 4);
 
     // Prezzi per il listino del cliente
-    let codiceListino: string | null = null;
-    if (clienteId) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
-      codiceListino = customer?.codiceListino ?? null;
-    }
-    if (!codiceListino) {
-      const fallback = await this.getFirstListino();
-      codiceListino = fallback?.codice_listino ?? 'LIS1';
-    }
+    const codiceListino = clienteId ? await this.codiceListinoCliente(clienteId) : (await this.getFirstListino())?.codice_listino ?? 'LIS1';
     const ids = top.map((t) => t.art.id);
     const prezzi = await this.getPrezziMinimiArticoli(ids, codiceListino);
 
@@ -2741,52 +2733,9 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
         // silenzioso — il sync periodico riallineerà
       }
 
-      // Importa ordini da integra_ordini (salta duplicati per numeroOrdine + cliente)
+      // Importa ordini da integra_ordini (dedupe riferimento_b2b + numeroOrdine, in batch)
       try {
-        const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-          `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
-          codice,
-        );
-        for (const o of ordini) {
-          const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
-          if (!ordineId) continue;
-          const numOrd = o.numero_ordine ? String(o.numero_ordine) : `ORD-${ordineId}`;
-
-          const giaImportato = await this.prisma.ordineCliente.findFirst({
-            where: { customerId: cust.id, numeroOrdine: numOrd },
-          });
-          if (giaImportato) continue;
-
-          const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-            `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1`,
-            ordineId,
-          );
-          const totaleOrdine = righe.reduce(
-            (s, r) => s + (r.quantita ? Number(r.quantita) : 0) * (r.prezzo_netto ? Number(r.prezzo_netto) : 0),
-            0,
-          );
-          const newOrd = await this.prisma.ordineCliente.create({
-            data: {
-              numeroOrdine: numOrd,
-              dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
-              customerId: cust.id,
-              importoTotale: totaleOrdine > 0 ? totaleOrdine : null,
-              stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
-            },
-          });
-          for (const r of righe) {
-            await this.prisma.rigaOrdine.create({
-              data: {
-                ordineId: newOrd.id,
-                numeroRiga: r.id_riga ? Number(r.id_riga) : null,
-                codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
-                descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
-                quantita: r.quantita ? Number(r.quantita) : null,
-                prezzo: r.prezzo_netto ? Number(r.prezzo_netto) : null,
-              },
-            });
-          }
-        }
+        await this.importaOrdiniCliente(codice);
       } catch {
         // integra_ordini assente o vuoto: gli ordini arriveranno dopo
       }
@@ -2893,79 +2842,93 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
   }
 
   async syncOrdiniCliente(codiceCliente: string): Promise<{ importati: number }> {
-    const customer = await this.prisma.customer.findUnique({ where: { codiceCliente: codiceCliente } });
-    if (!customer) throw new Error('Cliente non trovato');
+    return { importati: await this.importaOrdiniCliente(codiceCliente) };
+  }
 
-    let importati = 0;
-    try {
-      const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-        `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
-        codiceCliente,
+  /**
+   * Importa (o riallinea) gli ordini di un cliente da integra_ordini.
+   * Unica implementazione usata sia dall'import cliente sia dal sync ordini:
+   * dedupe per riferimento_b2b (mvt_vsrif) e per numeroOrdine, righe in batch.
+   */
+  private async importaOrdiniCliente(codiceCliente: string): Promise<number> {
+    const customer = await this.prisma.customer.findUnique({ where: { codiceCliente } });
+    if (!customer) return 0;
+
+    const ordini = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT * FROM integra_ordini WHERE codice_cliente = $1 AND (flag_obsoleto IS NULL OR flag_obsoleto = 0)`,
+      codiceCliente,
+    );
+    if (!ordini.length) return 0;
+
+    const locali = await this.prisma.ordineCliente.findMany({
+      where: { customerId: customer.id },
+      select: { id: true, numeroOrdine: true },
+    });
+    const esistenti = new Set(locali.map((o) => o.numeroOrdine));
+    // Ordini nati sul B2B ed esportati: il documento Integra li riporta in
+    // riferimento_b2b. Senza questo match verrebbero reimportati come duplicati.
+    const perRiferimento = new Map(locali.map((o) => [o.numeroOrdine, o]));
+
+    // Righe in batch (una sola query invece di N).
+    const ids = ordini.map((o) => Number(o.id_ordine)).filter((n) => Number.isFinite(n));
+    const righeByOrdine = new Map<number, Record<string, unknown>[]>();
+    if (ids.length) {
+      const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT * FROM integra_righe_ordini WHERE id_ordine = ANY($1::int[])`,
+        ids,
       );
-      const locali = await this.prisma.ordineCliente.findMany({
-        where: { customerId: customer.id },
-        select: { id: true, numeroOrdine: true, numeroIntegra: true },
-      });
-      const esistenti = new Set(locali.map((o) => o.numeroOrdine));
-      // Ordini nati sul B2B ed esportati: il documento Integra li riporta in
-      // riferimento_b2b (mvt_vsrif). Senza questo match verrebbero reimportati
-      // come ordini nuovi e il cliente ne vedrebbe due.
-      const perRiferimento = new Map(locali.map((o) => [o.numeroOrdine, o]));
-
-      for (const o of ordini) {
-        const numOrd = o.numero_ordine ? String(o.numero_ordine) : null;
-        if (!numOrd) continue;
-
-        const rifB2b = o.riferimento_b2b ? String(o.riferimento_b2b).trim() : '';
-        const localeB2b = rifB2b ? perRiferimento.get(rifB2b) : undefined;
-        if (localeB2b) {
-          await this.allineaOrdineB2b(localeB2b.id, numOrd, o);
-          continue;
-        }
-
-        if (esistenti.has(numOrd)) continue;
-
-        const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
-        if (!ordineId) continue;
-
-        const righe = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-          `SELECT * FROM integra_righe_ordini WHERE id_ordine = $1`,
-          ordineId,
-        );
-        const totaleOrdine = righe.reduce(
-          (s, r) => s + (r.quantita ? Number(r.quantita) : 0) * (r.prezzo_netto ? Number(r.prezzo_netto) : 0),
-          0,
-        );
-
-        const newOrd = await this.prisma.ordineCliente.create({
-          data: {
-            numeroOrdine: numOrd,
-            dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
-            customerId: customer.id,
-            importoTotale: totaleOrdine > 0 ? totaleOrdine : null,
-            stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
-          },
-        });
-
-        for (const r of righe) {
-          await this.prisma.rigaOrdine.create({
-            data: {
-              ordineId: newOrd.id,
-              numeroRiga: r.id_riga ? Number(r.id_riga) : null,
-              codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
-              descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
-              quantita: r.quantita ? Number(r.quantita) : null,
-              prezzo: r.prezzo_netto ? Number(r.prezzo_netto) : null,
-            },
-          });
-        }
-        importati++;
+      for (const r of righe) {
+        const oid = Number(r.id_ordine);
+        if (!righeByOrdine.has(oid)) righeByOrdine.set(oid, []);
+        righeByOrdine.get(oid)!.push(r);
       }
-    } catch {
-      // integra_ordini non disponibile
     }
 
-    return { importati };
+    let importati = 0;
+    for (const o of ordini) {
+      const numOrd = o.numero_ordine ? String(o.numero_ordine) : null;
+      if (!numOrd) continue;
+
+      const rifB2b = o.riferimento_b2b ? String(o.riferimento_b2b).trim() : '';
+      const localeB2b = rifB2b ? perRiferimento.get(rifB2b) : undefined;
+      if (localeB2b) {
+        await this.allineaOrdineB2b(localeB2b.id, numOrd, o);
+        continue;
+      }
+      if (esistenti.has(numOrd)) continue;
+
+      const ordineId = o.id_ordine ? Number(o.id_ordine) : null;
+      if (!ordineId) continue;
+
+      const righe = righeByOrdine.get(ordineId) ?? [];
+      const totale = righe.reduce(
+        (s, r) => s + (r.quantita ? Number(r.quantita) : 0) * (r.prezzo_netto ? Number(r.prezzo_netto) : 0),
+        0,
+      );
+      const newOrd = await this.prisma.ordineCliente.create({
+        data: {
+          numeroOrdine: numOrd,
+          dataOrdine: o.data_ordine ? new Date(String(o.data_ordine)) : null,
+          customerId: customer.id,
+          importoTotale: totale > 0 ? totale : null,
+          stato: Number(o.flag_obsoleto) === 1 ? 'Annullato' : 'Ricevuto',
+        },
+      });
+      if (righe.length) {
+        await this.prisma.rigaOrdine.createMany({
+          data: righe.map((r) => ({
+            ordineId: newOrd.id,
+            numeroRiga: r.id_riga ? Number(r.id_riga) : null,
+            codiceProdotto: r.codice_prodotto ? String(r.codice_prodotto) : null,
+            descrizione: r.descrizione_riga ? String(r.descrizione_riga) : null,
+            quantita: r.quantita ? Number(r.quantita) : null,
+            prezzo: r.prezzo_netto ? Number(r.prezzo_netto) : null,
+          })),
+        });
+      }
+      importati++;
+    }
+    return importati;
   }
 
   /**
@@ -3133,6 +3096,16 @@ ${contesto}`;
       `SELECT codice_listino FROM integra_listini LIMIT 1`,
     );
     return rows.length > 0 ? rows[0] : null;
+  }
+
+  /** Risoluzione canonica del listino di un cliente (un solo punto di verità):
+   *  codiceListino → checkout_default_listino → primo listino → 'LIS1'. */
+  async codiceListinoCliente(customerId: number): Promise<string> {
+    const c = await this.prisma.customer.findUnique({ where: { id: customerId }, select: { codiceListino: true } });
+    if (c?.codiceListino) return c.codiceListino;
+    const cfg = await this.prisma.siteConfig.findUnique({ where: { key: 'checkout_default_listino' } });
+    if (cfg?.value?.trim()) return cfg.value.trim();
+    return (await this.getFirstListino())?.codice_listino ?? 'LIS1';
   }
 
   async getPrezzo(codiceListino: string, codiceProdotto: string, maxExtraSconto?: number) {
