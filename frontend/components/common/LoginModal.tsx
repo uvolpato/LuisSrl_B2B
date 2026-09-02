@@ -44,16 +44,18 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
   return (
     <FocusTrap>
       <Modal size="sm" maxWidth={480} noHeader onClose={onClose}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--muted)", padding: 0, lineHeight: 1 }}
-            aria-label="Chiudi"
-          >
-            &times;
-          </button>
+        <div style={{ padding: "16px 28px 28px" }}>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--muted)", padding: 0, lineHeight: 1 }}
+              aria-label="Chiudi"
+            >
+              &times;
+            </button>
+          </div>
+          <LoginForm onLoginSuccess={onLoginSuccess} />
         </div>
-        <LoginForm onLoginSuccess={onLoginSuccess} />
       </Modal>
     </FocusTrap>
   );
