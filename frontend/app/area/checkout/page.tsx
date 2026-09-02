@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/use-auth";
 import { api, ApiError } from "../../../lib/api";
+import { groupBy } from "../../../lib/helpers";
+import { thumbUrl } from "../../../lib/thumb";
 import { useConfirm } from "../../../components/common/ConfirmProvider";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import Modal from "../../../components/common/Modal";
@@ -18,6 +20,7 @@ interface CartItem {
   quantita: number;
   salvato: boolean;
   articoloNome: string | null;
+  articoloCodiceLinea: string | null;
   varianteDescrizione: string | null;
   dimensioni: string;
   immagineUrl: string | null;
@@ -230,6 +233,7 @@ export default function CheckoutPage() {
   const subtotalQty = items.reduce((s, i) => s + i.quantita, 0);
   const subtotalAmount = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
   const subtotalListino = items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoListino ?? 0), 0);
+  const recapGroups = useMemo(() => groupBy(items, (i) => i.articoloCodiceLinea ?? i.varianteCodice), [items]);
 
   const couponDiscount = couponActive ? (couponIsPct ? (couponScope ?? subtotalAmount) * couponValue : couponValue) : 0;
   const subScontato = subtotalAmount - couponDiscount;
@@ -671,21 +675,38 @@ export default function CheckoutPage() {
                 Articoli ({subtotalQty} prodotti)
               </h2>
               <div className="recap-items">
-                {items.map(item => {
-                  const tot = item.quantita * (item.prezzo?.prezzoNetto ?? 0);
-                  const scontoPct = item.prezzo?.sconto ?? item.prezzo?.scontoListino ?? 0;
+                {recapGroups.map(([linea, vars]) => {
+                  const first = vars[0];
+                  const totQty = vars.reduce((s, v) => s + v.quantita, 0);
                   return (
-                    <div key={item.varianteCodice} className="recap-item">
-                      <div className="recap-item-row1">
-                        <span className="badge code">{item.varianteCodice}</span>
-                        <span className="desc">{item.articoloNome ?? item.varianteCodice}</span>
+                    <div key={linea} className="recap-item">
+                      <div className="recap-item-row1" style={{ gap: 12 }}>
+                        {first.immagineUrl
+                          ? <img src={thumbUrl(first.immagineUrl, 200)} alt={first.articoloNome ?? ""} style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+                          : <span style={{ width: 48, height: 48, borderRadius: 8, background: "var(--fg-soft)", flexShrink: 0, display: "inline-block" }} />}
+                        <span className="desc" style={{ fontWeight: 600 }}>
+                          {first.articoloNome ?? linea}
+                          {vars.length > 1 && <span style={{ fontWeight: 400, color: "var(--muted)", marginLeft: 8 }}>{totQty} pz</span>}
+                        </span>
                       </div>
-                      <div className="recap-item-row2">
-                        {scontoPct > 0 && <span className="listino">{fmtEur(item.prezzo?.prezzoListino ?? 0)}</span>}
-                        {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
-                        <span className="riga">{item.quantita} × {fmtEur(item.prezzo?.prezzoNetto ?? 0)}</span>
-                        <span className="netto">{fmtEur(tot)}</span>
-                      </div>
+                      {vars.map((v) => {
+                        const tot = v.quantita * (v.prezzo?.prezzoNetto ?? 0);
+                        const scontoPct = v.prezzo?.sconto ?? v.prezzo?.scontoListino ?? 0;
+                        return (
+                          <div key={v.varianteCodice} className="recap-item-row2" style={{ paddingLeft: 60, justifyContent: "space-between" }}>
+                            <span style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+                              <span className="badge code">{v.varianteCodice}</span>
+                              {v.dimensioni && <span style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap" }}>{v.dimensioni}</span>}
+                            </span>
+                            <span style={{ display: "flex", alignItems: "baseline", gap: 8, whiteSpace: "nowrap" }}>
+                              {scontoPct > 0 && <span className="listino">{fmtEur(v.prezzo?.prezzoListino ?? 0)}</span>}
+                              {scontoPct > 0 && <span className="sconto">−{scontoPct}%</span>}
+                              <span className="riga">{v.quantita} × {fmtEur(v.prezzo?.prezzoNetto ?? 0)}</span>
+                              <span className="netto">{fmtEur(tot)}</span>
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
