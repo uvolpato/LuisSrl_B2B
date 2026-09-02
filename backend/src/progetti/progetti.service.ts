@@ -19,25 +19,35 @@ export class ProgettiService {
    */
   private async enrich(items: { varianteCodice: string; quantita: number }[], clienteId?: number) {
     // Prezzi solo per il proprietario del progetto.
-    let codiceListino: string | null = null;
-    const raccolteMap = new Map<string, number>();
-    if (clienteId) {
-      codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
-    }
-
-    return Promise.all(items.map(async (it) => {
-      const v = await this.prisma.variante.findUnique({
-        where: { codice: it.varianteCodice },
-        include: {
-          articolo: {
-            select: {
-              nome: true, codiceLinea: true,
-              raccolte: { include: { raccolta: { select: { sconto: true } } } },
-              immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
-            },
+    const codici = items.map((i) => i.varianteCodice);
+    const varianti = await this.prisma.variante.findMany({
+      where: { codice: { in: codici } },
+      include: {
+        articolo: {
+          select: {
+            nome: true, codiceLinea: true,
+            raccolte: { include: { raccolta: { select: { sconto: true } } } },
+            immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
           },
         },
-      });
+      },
+    });
+    const variantiMap = new Map(varianti.map((v) => [v.codice, v]));
+
+    let codiceListino: string | null = null;
+    if (clienteId) codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
+
+    const extraSconto = new Map<string, number>();
+    for (const v of varianti) {
+      const maxSconto = Math.max(0, ...v.articolo.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
+      if (maxSconto > 0) extraSconto.set(v.codice, maxSconto);
+    }
+    const prezzi = codiceListino
+      ? await this.integrazione.getPrezziMulti(codiceListino, codici, extraSconto.size ? extraSconto : undefined)
+      : new Map<string, { prezzoNetto: number; prezzoListino: number; sconto: number }>();
+
+    return items.map((it) => {
+      const v = variantiMap.get(it.varianteCodice) ?? null;
       const dims: string[] = [];
       if (v?.dimensioni && typeof v.dimensioni === 'object') {
         for (const [k, val] of Object.entries(v.dimensioni as Record<string, any>)) {
@@ -45,11 +55,6 @@ export class ProgettiService {
           const unit = (k === 'diametro' || k === 'altezza') ? ' cm' : '';
           dims.push(`${prefix}${val?.valore ?? val}${unit}`);
         }
-      }
-      let prezzo: any = null;
-      if (clienteId && codiceListino && v) {
-        const maxSconto = Math.max(0, ...v.articolo.raccolte.map((ar) => ar.raccolta.sconto ?? 0));
-        prezzo = await this.integrazione.getPrezzo(codiceListino, it.varianteCodice, maxSconto > 0 ? maxSconto : undefined);
       }
       return {
         varianteCodice: it.varianteCodice,
@@ -60,9 +65,9 @@ export class ProgettiService {
         dimensioni: dims.join(' · '),
         immagineUrl: v?.articolo.immagini[0]?.url ?? null,
         multiplo: v?.multiplo ?? 1,
-        prezzo,
+        prezzo: prezzi.get(it.varianteCodice) ?? null,
       };
-    }));
+    });
   }
 
   private async own(clienteId: number, id: number) {

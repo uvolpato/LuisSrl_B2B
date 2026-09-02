@@ -105,15 +105,11 @@ export class CatalogoController {
     const variantiAttive = pubblico.varianti.filter((v: any) => v.stato === 'attivo');
     const codiceListino = await this.integrazione.codiceListinoCliente(req.user.id);
     const maxRaccSconto = Math.max(0, ...pubblico.raccolte.map((r: any) => r.sconto ?? 0));
-    const variantiConPrezzi = await Promise.all(
-      variantiAttive.map(async (v: any) => {
-        let prezzo = null;
-        if (codiceListino) {
-          prezzo = await this.integrazione.getPrezzo(codiceListino, v.codice, maxRaccSconto > 0 ? maxRaccSconto : undefined);
-        }
-        return { ...v, prezzo };
-      }),
-    );
+    const codici = variantiAttive.map((v: any) => v.codice);
+    const prezzi = codiceListino
+      ? await this.integrazione.getPrezziMulti(codiceListino, codici, maxRaccSconto > 0 ? new Map(codici.map((c: string) => [c, maxRaccSconto])) : undefined)
+      : new Map<string, { prezzoNetto: number; prezzoListino: number; sconto: number }>();
+    const variantiConPrezzi = variantiAttive.map((v: any) => ({ ...v, prezzo: prezzi.get(v.codice) ?? null }));
     void this.events.track('articolo.view', { entita: 'articolo', entitaId: codiceLinea, dettagli: { nome: pubblico.nome } });
     return { ...pubblico, varianti: variantiConPrezzi, variantiCount: variantiConPrezzi.length };
   }

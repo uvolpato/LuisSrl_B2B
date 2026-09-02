@@ -26,23 +26,22 @@ export class CarrelloService {
       orderBy: { createdAt: 'asc' },
     });
     const codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
-    const varianti = await Promise.all(
-      items.map(async (item) => {
-        const v = await this.prisma.variante.findUnique({
-          where: { codice: item.varianteCodice },
-          include: {
-            articolo: {
-              select: {
-                nome: true,
-                codiceLinea: true,
-                immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
-              },
-            },
+    const codici = items.map((i) => i.varianteCodice);
+    const variantiRows = await this.prisma.variante.findMany({
+      where: { codice: { in: codici } },
+      include: {
+        articolo: {
+          select: {
+            nome: true,
+            codiceLinea: true,
+            immagini: { where: { inGalleria: true }, orderBy: [{ copertina: 'desc' }, { ordinamento: 'asc' }], take: 1 },
           },
-        });
-        return { item, variante: v };
-      }),
-    );
+        },
+      },
+    });
+    const variantiMap = new Map(variantiRows.map((v) => [v.codice, v]));
+    const varianti = items.map((item) => ({ item, variante: variantiMap.get(item.varianteCodice) ?? null }));
+
     const codiceLinee = [...new Set(varianti.map((v) => v.variante?.articolo.codiceLinea).filter(Boolean) as string[])];
     const raccolteMap = new Map<string, number>();
     if (codiceLinee.length > 0) {
@@ -55,32 +54,35 @@ export class CarrelloService {
         if (maxSconto > 0) raccolteMap.set(a.codiceLinea, maxSconto);
       }
     }
-    const enriched = await Promise.all(
-      varianti.map(async ({ item, variante }) => {
-        const dims: string[] = [];
-        if (variante?.dimensioni && typeof variante.dimensioni === 'object') {
-          for (const [k, v] of Object.entries(variante.dimensioni as Record<string, any>)) {
-            const prefix = k === 'diametro' ? 'Ø' : k === 'altezza' ? 'H' : '';
-            dims.push(`${prefix}${v.valore}${(k === 'diametro' || k === 'altezza') ? ' cm' : ''}`);
-          }
+    // Prezzi in batch (un solo giro di query, niente getPrezzo per item).
+    const extraSconto = new Map<string, number>();
+    for (const { variante } of varianti) {
+      const cl = variante?.articolo.codiceLinea;
+      const s = cl ? raccolteMap.get(cl) : undefined;
+      if (s && s > 0 && variante) extraSconto.set(variante.codice, s);
+    }
+    const prezzi = await this.integrazione.getPrezziMulti(codiceListino, codici, extraSconto.size ? extraSconto : undefined);
+
+    const enriched = varianti.map(({ item, variante }) => {
+      const dims: string[] = [];
+      if (variante?.dimensioni && typeof variante.dimensioni === 'object') {
+        for (const [k, v] of Object.entries(variante.dimensioni as Record<string, any>)) {
+          const prefix = k === 'diametro' ? 'Ø' : k === 'altezza' ? 'H' : '';
+          dims.push(`${prefix}${v.valore}${(k === 'diametro' || k === 'altezza') ? ' cm' : ''}`);
         }
-        let prezzo: any = null;
-        if (codiceListino) {
-          const maxRaccSconto = variante?.articolo.codiceLinea ? raccolteMap.get(variante.articolo.codiceLinea) : undefined;
-          prezzo = await this.integrazione.getPrezzo(codiceListino, item.varianteCodice, maxRaccSconto);
-        }
-        return {
-          ...item,
-          articoloNome: variante?.articolo.nome ?? null,
-          articoloCodiceLinea: variante?.articolo.codiceLinea ?? null,
-          varianteDescrizione: variante?.descrizione ?? null,
-          dimensioni: dims.join(' · '),
-          immagineUrl: variante?.articolo.immagini[0]?.url ?? null,
-          multiplo: variante?.multiplo ?? 1,
-          prezzo,
-        };
-      }),
-    );
+      }
+      const prezzo = prezzi.get(item.varianteCodice) ?? null;
+      return {
+        ...item,
+        articoloNome: variante?.articolo.nome ?? null,
+        articoloCodiceLinea: variante?.articolo.codiceLinea ?? null,
+        varianteDescrizione: variante?.descrizione ?? null,
+        dimensioni: dims.join(' · '),
+        immagineUrl: variante?.articolo.immagini[0]?.url ?? null,
+        multiplo: variante?.multiplo ?? 1,
+        prezzo,
+      };
+    });
     return { id: carrello.id, items: enriched };
   }
 

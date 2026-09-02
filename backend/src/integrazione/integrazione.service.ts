@@ -3105,30 +3105,51 @@ ${contesto}`;
     return (await this.getFirstListino())?.codice_listino ?? 'LIS1';
   }
 
-  async getPrezzo(codiceListino: string, codiceProdotto: string, maxExtraSconto?: number) {
+  /** Sconto % complessivo da sconti a cascata (sconto_1..4). */
+  private scontoCascata(prezzoListino: number, sconti: number[]): number {
+    let netto = prezzoListino;
+    for (const s of sconti) if (s) netto *= 1 - s / 100;
+    return prezzoListino > 0 ? Math.round((1 - netto / prezzoListino) * 100) : 0;
+  }
+
+  /**
+   * Prezzi netti in batch per più codici variante. `extraSconto` (es. sconto
+   * raccolta) si somma in modo "max" rispetto allo sconto listino, come getPrezzo.
+   */
+  async getPrezziMulti(
+    codiceListino: string,
+    codici: string[],
+    extraSconto?: Map<string, number>,
+  ): Promise<Map<string, { prezzoNetto: number; prezzoListino: number; sconto: number }>> {
+    const out = new Map<string, { prezzoNetto: number; prezzoListino: number; sconto: number }>();
+    if (!codici.length) return out;
     const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4
+      `SELECT codice_prodotto, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4
        FROM integra_listini_righe
-       WHERE codice_listino = $1 AND codice_prodotto = $2
-       LIMIT 1`,
+       WHERE codice_listino = $1 AND codice_prodotto = ANY($2::text[])`,
       codiceListino,
-      codiceProdotto,
+      codici,
     );
-    if (rows.length === 0) return null;
-    const r = rows[0];
-    const prezzoListino = Number(r.prezzo_listino) || 0;
-    const s1 = Number(r.sconto_1) || 0;
-    const s2 = Number(r.sconto_2) || 0;
-    const s3 = Number(r.sconto_3) || 0;
-    const s4 = Number(r.sconto_4) || 0;
-    const prezzoNettoListino = prezzoListino * (1 - s1 / 100) * (1 - s2 / 100) * (1 - s3 / 100) * (1 - s4 / 100);
-    const scontoListino = prezzoListino > 0 ? Math.round((1 - prezzoNettoListino / prezzoListino) * 100) : 0;
-    const scontoFinale = maxExtraSconto != null && maxExtraSconto > scontoListino ? maxExtraSconto : scontoListino;
-    const prezzoNetto = scontoFinale > 0 ? Math.round(prezzoListino * (1 - scontoFinale / 100) * 100) / 100 : prezzoListino;
-    return {
-      prezzoNetto,
-      prezzoListino,
-      sconto: scontoFinale,
-    };
+    for (const r of rows) {
+      const codice = String(r.codice_prodotto);
+      const prezzoListino = Number(r.prezzo_listino) || 0;
+      const scontoListino = this.scontoCascata(prezzoListino, [
+        Number(r.sconto_1) || 0, Number(r.sconto_2) || 0, Number(r.sconto_3) || 0, Number(r.sconto_4) || 0,
+      ]);
+      const extra = extraSconto?.get(codice);
+      const sconto = extra != null && extra > scontoListino ? extra : scontoListino;
+      const prezzoNetto = sconto > 0 ? Math.round(prezzoListino * (1 - sconto / 100) * 100) / 100 : prezzoListino;
+      out.set(codice, { prezzoNetto, prezzoListino, sconto });
+    }
+    return out;
+  }
+
+  async getPrezzo(codiceListino: string, codiceProdotto: string, maxExtraSconto?: number) {
+    const m = await this.getPrezziMulti(
+      codiceListino,
+      [codiceProdotto],
+      maxExtraSconto != null ? new Map([[codiceProdotto, maxExtraSconto]]) : undefined,
+    );
+    return m.get(codiceProdotto) ?? null;
   }
 }
