@@ -25,17 +25,7 @@ export class CarrelloService {
       where: { carrelloId: carrello.id },
       orderBy: { createdAt: 'asc' },
     });
-    const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
-    let codiceListino = customer?.codiceListino;
-    if (!codiceListino) {
-      const cfg = await this.prisma.siteConfig.findUnique({ where: { key: 'checkout_default_listino' } });
-      if (cfg?.value) {
-        codiceListino = cfg.value;
-      } else {
-        const fallback = await this.integrazione.getFirstListino();
-        codiceListino = fallback?.codice_listino ?? null;
-      }
-    }
+    const codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
     const varianti = await Promise.all(
       items.map(async (item) => {
         const v = await this.prisma.variante.findUnique({

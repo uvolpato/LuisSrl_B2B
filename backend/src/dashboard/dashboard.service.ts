@@ -476,10 +476,8 @@ export class DashboardService {
       : this.generaBox(box, target, listino);
   }
 
-  private async listinoDi(customerId: number): Promise<string | null> {
-    const customer = await this.prisma.customer.findUnique({ where: { id: customerId }, select: { codiceListino: true } });
-    if (customer?.codiceListino) return customer.codiceListino;
-    return (await this.integrazione.getFirstListino())?.codice_listino ?? 'LIS1';
+  private listinoDi(customerId: number): Promise<string> {
+    return this.integrazione.codiceListinoCliente(customerId);
   }
 
   /** Chiama Gemini chiedendo JSON e lo parsa in modo tollerante. Null su errore. */
