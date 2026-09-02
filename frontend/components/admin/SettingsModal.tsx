@@ -60,10 +60,21 @@ export default function SettingsModal({
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("account");
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [showPwModal, setShowPwModal] = useState(false);
 
   const filteredItems = MENU_ITEMS.filter((item) =>
     item.label.toLowerCase().includes(search.toLowerCase()),
   );
+
+  // Cambio password: sostituisce la modale impostazioni (una sola modale alla volta).
+  if (showPwModal) {
+    return (
+      <ChangePasswordModal
+        onClose={() => setShowPwModal(false)}
+        onChanged={() => setShowPwModal(false)}
+      />
+    );
+  }
 
   return (
     <Modal size="lg" noHeader onClose={onClose}>
@@ -121,7 +132,7 @@ export default function SettingsModal({
             </button>
           </div>
           <div className="settings-page">
-            {activeTab === "account" && <AccountTab user={user} onUserUpdate={onUserUpdate} />}
+            {activeTab === "account" && <AccountTab user={user} onUserUpdate={onUserUpdate} onOpenPw={() => setShowPwModal(true)} />}
             {activeTab === "informazioni" && <InfoTab />}
           </div>
         </div>
@@ -175,9 +186,11 @@ function InfoTab() {
 function AccountTab({
   user,
   onUserUpdate,
+  onOpenPw,
 }: {
   user: UserProfile;
   onUserUpdate?: (u: UserProfile) => void;
+  onOpenPw: () => void;
 }) {
   const [nome, setNome] = useState(user.nome);
   const [bio, setBio] = useState(user.bio ?? "");
@@ -186,7 +199,6 @@ function AccountTab({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPwModal, setShowPwModal] = useState(false);
 
   async function save() {
     setSaving(true);
@@ -279,17 +291,10 @@ function AccountTab({
 
       <div className="account-divider" />
 
-      <button className="account-pw-toggle" onClick={() => setShowPwModal(true)}>
+      <button className="account-pw-toggle" onClick={onOpenPw}>
         <span>Cambia password</span>
         <span className="account-pw-action">Modifica</span>
       </button>
-
-      {showPwModal && (
-        <ChangePasswordModal
-          onClose={() => setShowPwModal(false)}
-          onChanged={() => setShowPwModal(false)}
-        />
-      )}
     </div>
   );
 }
