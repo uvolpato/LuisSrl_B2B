@@ -625,8 +625,8 @@ export class DashboardService {
     esclusi?: Set<string>,
   ): Promise<Candidato[]> {
     const conds: string[] = [`a.configurato = true`, `a.stato = 'ATTIVO'`, `f.stato = 'ATTIVO'`];
-    const params: unknown[] = [customerId];
-    let idx = 2;
+    const params: unknown[] = [];
+    let idx = 1;
 
     if (esclusi?.size) {
       conds.push(`NOT (a.codice_linea = ANY($${idx}::text[]))`);
@@ -650,10 +650,12 @@ export class DashboardService {
       conds.push(`NOT EXISTS (
         SELECT 1 FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
         JOIN varianti v ON v.codice = ro.codice_prodotto
-        WHERE v.articolo_id = a.id AND o.customer_id = $1)`);
+        WHERE v.articolo_id = a.id AND o.customer_id = $${idx})`);
       conds.push(`NOT EXISTS (
         SELECT 1 FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
-        WHERE ro.codice_prodotto = a.codice_linea AND o.customer_id = $1)`);
+        WHERE ro.codice_prodotto = a.codice_linea AND o.customer_id = $${idx})`);
+      params.push(customerId);
+      idx++;
     }
     // Giacenza: i box non propongono articoli esauriti (vincolo sempre attivo per ora).
     conds.push(`EXISTS (
@@ -886,11 +888,14 @@ export class DashboardService {
     codiceListino?: string | null,
     esclusi?: Set<string>,
   ) {
-    const n = box.nArticoli;
     const conds: string[] = [`a.configurato = true`, `a.stato = 'ATTIVO'`, `f.stato = 'ATTIVO'`];
+    const params: unknown[] = [];
+    let idx = 1;
+
     if (esclusi?.size) {
-      const list = [...esclusi].map((c) => `'${c.replace(/'/g, "''")}'`).join(',');
-      conds.push(`a.codice_linea NOT IN (${list})`);
+      conds.push(`NOT (a.codice_linea = ANY($${idx}::text[]))`);
+      params.push([...esclusi]);
+      idx++;
     }
     if (box.soloInOfferta) {
       conds.push(`EXISTS (
@@ -901,21 +906,27 @@ export class DashboardService {
           AND (array_length(p.famiglie, 1) IS NULL OR a.famiglia_codice = ANY(p.famiglie))
       )`);
     }
-    if (box.scopeFamiglia?.trim()) conds.push(`a.famiglia_codice = '${box.scopeFamiglia.trim()}'`);
+    if (box.scopeFamiglia?.trim()) {
+      conds.push(`a.famiglia_codice = $${idx}`);
+      params.push(box.scopeFamiglia.trim());
+      idx++;
+    }
     if (box.scopeRaccolta?.trim()) {
       conds.push(`EXISTS (
         SELECT 1 FROM articoli_raccolte ar JOIN raccolte r ON r.id = ar.raccolta_id
-        WHERE ar.articolo_id = a.id AND r.codice = '${box.scopeRaccolta.trim()}'
-      )`);
+        WHERE ar.articolo_id = a.id AND r.slug = $${idx} AND r.stato = 'ATTIVO')`);
+      params.push(box.scopeRaccolta.trim());
+      idx++;
     }
-    const where = conds.join(' AND ');
+
     const rows = await this.prisma.$queryRawUnsafe<Candidato[]>(
       `SELECT a.id, a.codice_linea AS "codiceLinea", a.famiglia_codice AS "famigliaCodice"
        FROM articoli a
        JOIN famiglie f ON f.codice = a.famiglia_codice
-       WHERE ${where}
+       WHERE ${conds.join(' AND ')}
        ORDER BY random()
-       LIMIT ${n}`,
+       LIMIT $${idx}::int`,
+      ...params, box.nArticoli,
     );
     if (!rows.length) return [];
     return this.arricchisci(box, rows, codiceListino);
