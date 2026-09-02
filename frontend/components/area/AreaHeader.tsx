@@ -400,7 +400,8 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
           <div className="header-right">
             <nav className={isCompact ? "nav-hidden" : ""}>
               <Link href="/area" className={pathname === "/area" ? "active" : ""}>Dashboard</Link>
-              <Link href="/area/famiglie" className={pathname.startsWith("/area/famiglie") || pathname.startsWith("/area/catalogo") ? "active" : ""}>Catalogo</Link>
+              <Link href="/area/catalogo" className={pathname.startsWith("/area/catalogo") ? "active" : ""}>Catalogo</Link>
+              <Link href="/area/famiglie" className={pathname.startsWith("/area/famiglie") ? "active" : ""}>Famiglie</Link>
               <Link href="/area/progetti" className={pathname.startsWith("/area/progetti") ? "active" : ""}>Progetti</Link>
               <Link href="/area/ordini" className={pathname.startsWith("/area/ordini") ? "active" : ""}>Ordini</Link>
             </nav>
@@ -512,11 +513,17 @@ export default function AreaHeader({ children }: { children?: React.ReactNode })
             </svg>
             Dashboard
           </Link>
-          <Link href="/area/famiglie" className={pathname.startsWith("/area/famiglie") || pathname.startsWith("/area/catalogo") ? "active" : ""} onClick={() => setMobileOpen(false)}>
+          <Link href="/area/catalogo" className={pathname.startsWith("/area/catalogo") ? "active" : ""} onClick={() => setMobileOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
             </svg>
             Catalogo
+          </Link>
+          <Link href="/area/famiglie" className={pathname.startsWith("/area/famiglie") ? "active" : ""} onClick={() => setMobileOpen(false)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            Famiglie
           </Link>
             <Link href="/area/progetti" className={pathname.startsWith("/area/progetti") ? "active" : ""} onClick={() => setMobileOpen(false)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -628,7 +628,7 @@ export default function AreaClientePage() {
 
               {/* Action cards */}
               <div className="action-grid">
-                <Link href="/area/famiglie" className="action-card">
+                <Link href="/area/catalogo" className="action-card">
                   <span className="card-icon"><SearchIcon size={22} /></span>
                   <h3>Esplora il Catalogo</h3>
                   <p>Sfoglia l'intero catalogo con filtri per linea, famiglia, prezzo e disponibilità a magazzino.</p>
@@ -678,7 +678,7 @@ export default function AreaClientePage() {
               {activeTab !== 0 && (
                 <div className="dash-bottom-cta">
                   <Link
-                    href="/area/famiglie"
+                    href="/area/catalogo"
                     className="btn btn-primary"
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 8,
