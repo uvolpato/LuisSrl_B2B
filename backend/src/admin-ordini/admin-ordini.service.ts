@@ -20,19 +20,14 @@ export class AdminOrdiniService {
     const clienti = clientiSet.size;
 
     const totaleListino = ordini.reduce(
-      (s, o) => s + o.righe.reduce((rs, r) => rs + Number(r.quantita ?? 0) * 0, 0),
+      (s, o) => s + o.righe.reduce((rs, r) => rs + Number(r.quantita ?? 0) * Number(r.prezzoListino ?? 0), 0),
       0,
     );
     const scontoMedio = totaleListino > 0 ? Math.round((1 - totale / totaleListino) * 1000) / 10 : 0;
 
-    const ordiniConSped = ordini.filter((o) => Number(o.importoTotale ?? 0) > 0 && o.codiceSpedizione !== "RITIRO");
-    const spedizioniCount = ordiniConSped.length;
-    const spedizioneMedia =
-      spedizioniCount > 0
-        ? Math.round((ordini.reduce((s, o) => s + (o.codiceSpedizione === "RITIRO" ? 0 : 0), 0) / spedizioniCount) * 100) / 100
-        : null;
-
-    return { count, totale, scontoMedio, spedizioneMedia: 0, pezzi, clienti, inAttesa };
+    // Spedizione: non esiste un importo spedizione persistito sull'ordine (solo la
+    // modalità). Nessun dato reale da aggregare → null (la UI mostra "—"), niente 0 finti.
+    return { count, totale, scontoMedio, spedizioneMedia: null, pezzi, clienti, inAttesa };
   }
 
   async findAll(dataDa: string, dataA?: string, page = 1, limit = 10, search?: string) {
@@ -95,7 +90,7 @@ export class AdminOrdiniService {
       pagamento: o.codicePagamento ?? "",
       totale: Number(o.importoTotale ?? 0),
       pezzi: o.righe.reduce((s, r) => s + Number(r.quantita ?? 0), 0),
-      spedizione: 0,
+      spedizione: null,
       indirizzo: indirizzo
         ? {
             nome: indirizzo.ragioneSociale ?? "",
@@ -122,7 +117,7 @@ export class AdminOrdiniService {
           nome,
           qty: Number(r.quantita ?? 0),
           prezzo: Number(r.prezzo ?? 0),
-          listino: Number(r.prezzo ?? 0),
+          listino: Number(r.prezzoListino ?? r.prezzo ?? 0),
         };
       })),
     };
