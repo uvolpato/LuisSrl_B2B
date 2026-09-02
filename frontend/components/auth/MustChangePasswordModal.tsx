@@ -74,7 +74,7 @@ export default function MustChangePasswordModal({
   return (
     <FocusTrap>
       <Modal size="sm" maxWidth={480} noHeader onClose={onClose}>
-        <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ maxWidth: "100%", maxHeight: 48, width: "auto", height: "auto", marginBottom: 6 }} />
+        <img src="/images/b2b/logo.webp" alt="Luis S.r.l." style={{ maxWidth: "100%", maxHeight: 48, width: "auto", height: "auto", marginBottom: 6, alignSelf: "center" }} />
         <h2 style={{ margin: 0 }}>Cambio password richiesto</h2>
         <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 16 }}>
           Al primo accesso è necessario cambiare la password provvisoria.
