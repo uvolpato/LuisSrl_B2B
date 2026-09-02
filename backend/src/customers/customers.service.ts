@@ -367,17 +367,21 @@ export class CustomersService {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
 
-    // Con storico ordini il cliente NON si cancella: "Elimina" = blocco permanente.
-    const ordini = await this.prisma.ordineCliente.count({ where: { customerId } });
-    if (ordini > 0) {
+    // Blocca (preserva) SOLO se ci sono ordini nati sul B2B e non ancora esportati a
+    // Integra: esistono solo localmente e andrebbero persi. Gli ordini importati da
+    // Integra o gia' esportati sono in Integra e si recuperano reimportando il cliente.
+    const inCoda = await this.prisma.ordineCliente.count({
+      where: { customerId, esportatoIl: null, numeroOrdine: { startsWith: 'B2B-' } },
+    });
+    if (inCoda > 0) {
       await this.prisma.customer.update({ where: { id: customerId }, data: { stato: 'BLOCCATO' } });
       await this.audit.log({ actorId, azione: 'customer.block_permanente', entita: 'customers', entitaId: String(customerId), ip });
       return;
     }
 
-    // Nessun ordine (né acquisiti da Integra né in attesa di export): eliminazione reale
-    // a cascata. Le tabelle con FK (progetti, indirizzi, contatti, carrello) cascano via
-    // onDelete: Cascade; le altre vanno ripulite a mano.
+    // Nessun ordine locale in attesa di export: eliminazione reale a cascata. Le tabelle
+    // con FK (progetti, indirizzi, contatti, carrello) cascano via onDelete: Cascade;
+    // le altre vanno ripulite a mano.
     await this.prisma.$transaction(async (tx) => {
       await tx.customerProfile.deleteMany({ where: { customerId } });
       await tx.customerInsight.deleteMany({ where: { customerId } });
