@@ -20,11 +20,6 @@ export class SyncService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async syncCron() {
-    this.logger.log('Sync automatico avviato');
-    await this.sync();
-  }
-
   async sync(): Promise<SyncResult> {
     const startedAt = new Date();
     let logId: number | null = null;
@@ -700,16 +695,6 @@ export class SyncService {
   }
 
   // ── Sync listini (full-replace per listino attivo) ──
-
-  async syncListiniCron() {
-    this.logger.log('Sync automatico listini avviato');
-    await this.syncListini();
-  }
-
-  async syncGiacenzaCron() {
-    this.logger.log('Sync automatico giacenze avviato');
-    await this.syncGiacenza();
-  }
 
   async syncListini(codiceSpecifico?: string): Promise<SyncResult> {
     const startedAt = new Date();

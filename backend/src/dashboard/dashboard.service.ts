@@ -33,10 +33,9 @@ interface PesiSegnali {
   tracking: number;
   progetti: number;
   affinita: number;
-  profilo: number;
 }
 
-const DEFAULT_PESI: PesiSegnali = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15, profilo: 0 };
+const DEFAULT_PESI: PesiSegnali = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15 };
 
 /** customerId sentinella per i box "generale" (cache condivisa da tutti i clienti). */
 const GENERALE_ID = 0;
@@ -52,7 +51,6 @@ interface Segnali {
   tracking: { famiglie: Map<string, number>; articoli: Map<string, number> };
   progetti: Map<string, number>;
   affinita: Map<string, number>;
-  profilo: Map<string, number>;
 }
 
 @Injectable()
@@ -680,14 +678,13 @@ export class DashboardService {
   // ── Segnali ────────────────────────────────────────────────────────────────
 
    private async segnaliCliente(customerId: number): Promise<Segnali> {
-     const [acquisti, tracking, progetti, affinita, profilo] = await Promise.all([
+     const [acquisti, tracking, progetti, affinita] = await Promise.all([
        this.acquistiCliente(customerId),
        this.trackingCliente(customerId),
        this.progettiCliente(customerId),
        this.affinitaCliente(customerId),
-       this.profiloCliente(customerId),
      ]);
-     return { acquisti, tracking, progetti, affinita, profilo };
+     return { acquisti, tracking, progetti, affinita };
    }
 
   /** Famiglie preferite dagli acquisti del cliente (peso = righe ordinate). */
@@ -781,13 +778,8 @@ export class DashboardService {
        const prefs = await this.acquistiCliente(s.customerId);
        for (const [fc, w] of prefs) combined.set(fc, (combined.get(fc) ?? 0) + s.score * w);
      }
-     return this.normalizza(combined);
-   }
-
-  /** Segnale dal profilo intelligence: pesi le famiglie menzionate negli interessi principali. */
-  private async profiloCliente(customerId: number): Promise<Map<string, number>> {
-    return new Map();
-  }
+      return this.normalizza(combined);
+    }
 
 
   // ── Intento semantico del prompt ───────────────────────────────────────────
@@ -817,14 +809,13 @@ export class DashboardService {
 
    private pesiNormalizzati(raw: Prisma.JsonValue | null): PesiSegnali {
      const base = { ...DEFAULT_PESI, ...(raw && typeof raw === 'object' ? (raw as unknown as PesiSegnali) : {}) };
-     const tot = base.acquisti + base.tracking + base.progetti + base.affinita + base.profilo;
+     const tot = base.acquisti + base.tracking + base.progetti + base.affinita;
      if (!(tot > 0)) return DEFAULT_PESI;
      return {
        acquisti: base.acquisti / tot,
        tracking: base.tracking / tot,
        progetti: base.progetti / tot,
        affinita: base.affinita / tot,
-       profilo: base.profilo / tot,
      };
    }
 
@@ -835,8 +826,7 @@ export class DashboardService {
        pesi.acquisti * (s.acquisti.get(c.famigliaCodice) ?? 0) +
        pesi.tracking * Math.max(trackFam, trackArt) +
        pesi.progetti * (s.progetti.get(c.famigliaCodice) ?? 0) +
-       pesi.affinita * (s.affinita.get(c.famigliaCodice) ?? 0) +
-       pesi.profilo * (s.profilo.get(c.famigliaCodice) ?? 0)
+       pesi.affinita * (s.affinita.get(c.famigliaCodice) ?? 0)
      );
    }
 
