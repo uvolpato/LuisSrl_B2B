@@ -62,6 +62,7 @@
     "fieldPhone": "Telefono",
     "fieldLanguage": "Lingua preferita",
     "confirmBlock": "Bloccare l'accesso di questo cliente? Lo storico resta conservato.",
+    "confirmBlockNonImportati": "Cliente con ordini non ancora importati in Integra: non è possibile eliminarlo. Posso bloccarlo al suo posto (lo storico resta conservato). Procedo?",
     "confirmReset": "Generare una nuova password provvisoria per questo cliente?",
     "confirmDelete": "Eliminare definitivamente questo cliente e tutti i dati collegati (indirizzi, contatti, ordini)? L'operazione non puo' essere annullata.",
     "confirmDiscard": "Ci sono modifiche non salvate. Chiudere senza salvare?",
