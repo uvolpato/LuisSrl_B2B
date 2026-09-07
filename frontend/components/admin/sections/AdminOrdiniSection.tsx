@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import AdminTopBar from "../AdminTopBar";
 import DataTable from "../DataTable";
 import type { Column, RowAction } from "../DataTable";
@@ -82,6 +83,7 @@ function toISODate(d: Date): string {
 }
 
 export default function AdminOrdiniSection() {
+  const tServer = useTranslations("server");
   const today = toISODate(new Date());
   const [dataDa, setDataDa] = useState(today);
   const [dataA, setDataA] = useState(today);
@@ -191,7 +193,7 @@ export default function AdminOrdiniSection() {
       )}
 
       <div className="admin-content">
-        {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
 
         {dash && (
           <div className="dash-grid">

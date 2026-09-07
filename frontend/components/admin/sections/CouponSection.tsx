@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import AdminTopBar from "../AdminTopBar";
 import DataTable from "../DataTable";
 import type { Column, RowAction } from "../DataTable";
@@ -52,6 +53,7 @@ function typeDisplay(t: string, v: number): string {
 }
 
 export default function CouponSection() {
+  const tServer = useTranslations("server");
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [search, setSearch] = useState("");
@@ -147,7 +149,7 @@ export default function CouponSection() {
       </AdminTopBar>
 
       <div className="admin-content">
-        {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
 
         {dash && (
           <div className="dash-grid">

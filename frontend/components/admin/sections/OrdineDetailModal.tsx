@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import Modal from "../../common/Modal";
 import { api, ApiError } from "../../../lib/api";
 
@@ -62,6 +63,7 @@ function fmtDate(d: string): string {
 }
 
 export default function OrdineDetailModal({ orderId, onClose }: { orderId: number; onClose: () => void }) {
+  const tServer = useTranslations("server");
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export default function OrdineDetailModal({ orderId, onClose }: { orderId: numbe
 
       <div className="modal-root-body" style={{ padding: "24px 28px" }}>
         {loading && <p style={{ color: "var(--muted)", textAlign: "center", padding: 40 }}>Caricamento…</p>}
-        {error && <p style={{ color: "var(--red)", textAlign: "center", padding: 40 }}>{error}</p>}
+        {error && <p style={{ color: "var(--red)", textAlign: "center", padding: 40 }}>{tServer(error)}</p>}
 
         {order && (
           <>
