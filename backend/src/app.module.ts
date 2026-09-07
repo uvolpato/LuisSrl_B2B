@@ -31,7 +31,10 @@ import { HttpErrorFilter } from './common/http-error.filter';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     // limite generale anti-abuso; il login ha il suo limite piu' severo
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 100 }],
+      getTracker: (req) => (req.session?.userId != null ? `user:${req.session.userId}` : `ip:${req.ip}`),
+    }),
     PrismaModule,
     AuditModule,
     AuthModule,
