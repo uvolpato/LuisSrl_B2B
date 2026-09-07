@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import AdminTopBar from "../AdminTopBar";
 import DataTable from "../DataTable";
 import type { Column, RowAction } from "../DataTable";
@@ -61,6 +62,7 @@ function fmtDt(d: string): string {
 }
 
 export default function EventLogSection() {
+  const tServer = useTranslations("server");
   const today = new Date().toISOString().slice(0, 10);
   const [stats, setStats] = useState<Stats | null>(null);
   const [items, setItems] = useState<EventLogItem[]>([]);
@@ -135,7 +137,7 @@ export default function EventLogSection() {
       />
 
       <div className="admin-content">
-        {error && <div style={{ color: "var(--red)", marginBottom: 12 }}>{error}</div>}
+        {error && <div style={{ color: "var(--red)", marginBottom: 12 }}>{tServer(error)}</div>}
 
         {stats && (
           <div className="dash-grid">
