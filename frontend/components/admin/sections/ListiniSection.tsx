@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { api } from "../../../lib/api";
+import { useTranslations } from "next-intl";
+import { api, ApiError } from "../../../lib/api";
 import DataTable, { type Column } from "../DataTable";
 import Notice from "../../common/Notice";
 import { PAGE_SIZE } from "../types";
@@ -36,6 +37,7 @@ interface RigheResponse {
 }
 
 export default function ListiniSection() {
+  const tServer = useTranslations("server");
   const [listini, setListini] = useState<Listino[]>([]);
   const [selectedListino, setSelectedListino] = useState("");
 
@@ -51,6 +53,7 @@ export default function ListiniSection() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevPageRef = useRef(1);
   const [listiniLoaded, setListiniLoaded] = useState(false);
 
   async function doSync() {
@@ -95,13 +98,17 @@ export default function ListiniSection() {
 
   function loadRighe() {
     if (!selectedListino) return;
+    const targetPage = page;
     setLoading(true);
     setError(null);
     api.get<RigheResponse>(
-      `/api/integrazione/listini/${selectedListino}/righe?search=${encodeURIComponent(search)}&page=${page}&limit=${PAGE_SIZE}`
+      `/api/integrazione/listini/${selectedListino}/righe?search=${encodeURIComponent(search)}&page=${targetPage}&limit=${PAGE_SIZE}`
     )
-      .then((data) => { setItems(data.items); setTotal(data.total); })
-      .catch((e) => setError(e?.message ?? "Errore nel caricamento delle righe"))
+      .then((data) => { prevPageRef.current = targetPage; setItems(data.items); setTotal(data.total); })
+      .catch((e) => {
+        setError(e instanceof ApiError ? e.code : "errors.generic");
+        setPage(prevPageRef.current);
+      })
       .finally(() => setLoading(false));
   }
 
@@ -113,7 +120,7 @@ export default function ListiniSection() {
         setListini(data);
         if (data.length > 0) setSelectedListino(data[0].codice);
       })
-      .catch(() => setError("Errore nel caricamento dei listini"))
+      .catch(() => setError("errors.generic"))
       .finally(() => setListiniLoaded(true));
   }, []);
 
@@ -265,7 +272,7 @@ export default function ListiniSection() {
           </div>
         )}
 
-        {error && <Notice variant="error" onClose={() => setError(null)}>{error}</Notice>}
+        {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
         {syncError && <Notice variant="error" onClose={() => setSyncError(null)} style={{ marginBottom: 8 }}>{syncError}</Notice>}
 
         <DataTable
