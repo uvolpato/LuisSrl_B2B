@@ -532,6 +532,8 @@ conferma; può esportarlo o condividerlo.
 |   | Rimuovere `variantExamplePrice()` e commento "Listini non ancora integrati" da `[codiceLinea]/page.tsx`. I prezzi sono reali da `integra_listini_righe`. | |
 | 5 | **Catalogo — filtro sticky si ferma a fine contenuto** | media |
 |   | È fatto (item 1) ma: quando i filtri in sidebar superano l'altezza dello schermo, lo sticky si ferma una volta raggiunta la fine del proprio contenitore (limite nativo di `position: sticky`) e non segue più lo scroll. Valutare sidebar scorrevole a piena altezza o `max-height` con scroll interno. | |
+| 6 | **AI — Chatbot che segue il cliente** | alta |
+|   | Assistente conversazionale in-app per il cliente B2B: risponde su **ordini, articoli e scadenze** usando tool reali (dati dal DB, mai inventati dall'LLM) e suggerimenti contestuali secondo il contesto di pagina. Progettazione completa in `specifica-chatbot-ai.md`. | |
 
 ---
 
