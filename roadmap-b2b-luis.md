@@ -530,6 +530,8 @@ conferma; può esportarlo o condividerlo.
 |   | La sezione riepilogo dell'ordine nella pagina di checkout va sistemata (dati mancanti o layout rotto). | |
 | 4 | **Codice morto listini** | media |
 |   | Rimuovere `variantExamplePrice()` e commento "Listini non ancora integrati" da `[codiceLinea]/page.tsx`. I prezzi sono reali da `integra_listini_righe`. | |
+| 5 | **Catalogo — filtro sticky si ferma a fine contenuto** | media |
+|   | È fatto (item 1) ma: quando i filtri in sidebar superano l'altezza dello schermo, lo sticky si ferma una volta raggiunta la fine del proprio contenitore (limite nativo di `position: sticky`) e non segue più lo scroll. Valutare sidebar scorrevole a piena altezza o `max-height` con scroll interno. | |
 
 ---
 
