@@ -358,7 +358,7 @@ export class CustomersService {
     const years: number[] = await this.prisma.$queryRawUnsafe<{ anno: number }[]>(
       `SELECT DISTINCT EXTRACT(YEAR FROM data_ordine) AS anno FROM ordini_clienti WHERE customer_id = $1 AND data_ordine IS NOT NULL ORDER BY anno DESC`,
       customerId,
-    ).then((rows) => rows.map((r) => r.anno));
+    ).then((rows) => rows.map((r) => Number(r.anno)));
 
     return { items, total, years };
   }
