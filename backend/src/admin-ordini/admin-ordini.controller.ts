@@ -1,8 +1,9 @@
-import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Query, UseGuards } from "@nestjs/common";
 import { AuthenticatedGuard } from "../auth/guards/authenticated.guard";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { RequirePermission } from "../auth/decorators/permission.decorator";
 import { AdminOrdiniService } from "./admin-ordini.service";
+import { AggiornaStatoOrdineDto } from "./dto/aggiorna-stato-ordine.dto";
 
 @Controller("admin/ordini")
 @UseGuards(AuthenticatedGuard, PermissionsGuard)
@@ -38,5 +39,13 @@ export class AdminOrdiniController {
   @Get(":id")
   async findOne(@Param("id", ParseIntPipe) id: number) {
     return this.service.findOne(id);
+  }
+
+  @Patch(":id/stato")
+  async aggiornaStato(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: AggiornaStatoOrdineDto,
+  ) {
+    return this.service.aggiornaStato(id, dto.stato);
   }
 }

@@ -108,7 +108,9 @@
       "email_exists": "An account with this email already exists.",
       "piva_exists": "An account for this VAT number already exists.",
       "not_found": "Customer not found.",
-      "cannot_block_admin": "Administrators cannot be blocked."
+      "cannot_block_admin": "Administrators cannot be blocked.",
+      "ordine_not_found": "Order not found.",
+      "stato_non_consentito": "Invalid order status."
     },
     "security": {
       "csrf": "Invalid session, reload the page."

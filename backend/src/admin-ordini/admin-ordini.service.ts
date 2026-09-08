@@ -1,9 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class AdminOrdiniService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async getDashboard(dataDa: string, dataA?: string, search?: string) {
     const where = this.buildWhere(dataDa, dataA, search);
@@ -103,6 +107,33 @@ export class AdminOrdiniService {
       notaSped: o.notaSpedizione ?? undefined,
       items: await this.righeDettaglio(o.righe),
     };
+  }
+
+  /** Forza lo stato dell'ordine (admin). Tracciato in audit: chi, da quale stato, a quale. */
+  async aggiornaStato(id: number, stato: string) {
+    const ordine = await this.prisma.ordineCliente.findUnique({
+      where: { id },
+      select: { id: true, numeroOrdine: true, stato: true },
+    });
+    if (!ordine) throw new NotFoundException('admin.ordine_not_found');
+
+    // 'BOZZA' = rimette l'ordine in coda export: azzera il flag di esportazione
+    // (idempotenza) così l'Excel viene rigenerato al run successivo.
+    const data: { stato: string; esportatoIl?: null; esportatoFile?: null } = { stato };
+    if (stato === 'BOZZA') {
+      data.esportatoIl = null;
+      data.esportatoFile = null;
+    }
+
+    await this.prisma.ordineCliente.update({ where: { id }, data });
+    await this.audit.log({
+      azione: 'ordine.stato_forced',
+      entita: 'ordini_clienti',
+      entitaId: String(id),
+      dettagli: { numeroOrdine: ordine.numeroOrdine, da: ordine.stato ?? null, a: stato, riesportaExcel: stato === 'BOZZA' },
+    });
+
+    return { id, stato };
   }
 
   private async righeDettaglio(righe: { codiceProdotto: string | null; descrizione: string | null; quantita: unknown; prezzo: unknown; prezzoListino: unknown }[]) {
