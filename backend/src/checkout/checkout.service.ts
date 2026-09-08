@@ -333,6 +333,20 @@ export class CheckoutService {
 
     const codiceListino = await this.integrazione.codiceListinoCliente(clienteId);
 
+    // Descrizioni dal catalogo: il carrello (CartItem) non persiste la descrizione,
+    // quindi lato server la si risolve dalla variante/articolo. Senza questo lookup
+    // su righe_ordini finirebbe salvato solo il codice (fonte di verita' = backend).
+    const codici = [...new Set(items.map((i) => i.varianteCodice))];
+    const catalogo = codici.length
+      ? await this.prisma.variante.findMany({
+          where: { codice: { in: codici } },
+          select: { codice: true, descrizione: true, articolo: { select: { descrizione: true } } },
+        })
+      : [];
+    const descCatalog = new Map<string, string>(
+      catalogo.map((v) => [v.codice, (v.descrizione || v.articolo.descrizione || '').trim()]),
+    );
+
     // Calcola importo totale usando i prezzi reali
     let importoTotale = 0;
     const righe = [];
@@ -348,7 +362,7 @@ export class CheckoutService {
       importoTotale += netto * item.quantita;
       righe.push({
         codiceProdotto: item.varianteCodice,
-        descrizione: (item as any).varianteDescrizione || item.varianteCodice,
+        descrizione: descCatalog.get(item.varianteCodice) || item.varianteCodice,
         quantita: item.quantita,
         prezzo: netto,
         // Composizione congelata: listini e promozioni cambiano, ricalcolarla domani
