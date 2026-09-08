@@ -6,11 +6,18 @@
 --
 -- Prerequisito: eseguire prima setup-fdw.sql per creare il
 -- server FDW e importare le foreign table.
+--
+-- IMPORTANTE (bug in produzione risolto 2026-09):
+-- La vista esegue la query come il PROPRIETARIO. Ogni b2b_* deve
+-- essere di proprieta' di `integra` (unico ruolo con USER MAPPING
+-- su integra_server). Se una vista viene ricreata da `postgres`,
+-- le query FDW falliscono con "mappatura utenti non trovata".
+-- Dopo ogni CREATE/OR REPLACE verificare:
+--   ALTER VIEW b2b_xxx OWNER TO integra;
 -- ============================================================
 
 -- VIEW public.b2b_prodotti
-DROP VIEW IF EXISTS public.b2b_prodotti;
-CREATE VIEW public.b2b_prodotti AS
+CREATE OR REPLACE VIEW public.b2b_prodotti AS
 SELECT t0.azi_cdazi,
     t0.pro_id,
     t0.pro_cod,
@@ -51,8 +58,10 @@ FROM integra.prodotti t0
 -- VIEW public.b2b_clienti
 DROP VIEW IF EXISTS public.b2b_clienti;
 CREATE VIEW public.b2b_clienti AS
-SELECT c.cli_cdcli AS id_cliente,
-    c.cli_cdclistr AS codice_cliente,
+SELECT ca.cla_cod AS id_cliente,
+    ca.cla_codstr AS codice_cliente,
+    c.cli_cdcli AS id_master,
+    c.cli_cdclistr AS codice_master,
     c.cli_rgsoc AS ragione_sociale,
     c.cli_rgsoc2 AS ragione_sociale_2,
     c.cli_cognome AS cognome,
@@ -97,12 +106,11 @@ SELECT c.cli_cdcli AS id_cliente,
     to_timestamp(extract(epoch from c.cli_dtins) + c.cli_orains * 3600 + c.cli_minins * 60) AS data_inserimento,
     to_timestamp(extract(epoch from c.cli_dtvar) + c.cli_oravar * 3600 + c.cli_minvar * 60) AS data_modifica
  FROM integra.clienti c
-    LEFT JOIN integra.cliazi ca ON ca.azi_cdazi = '001' AND ca.cla_tipo = 'C' AND ca.cla_clicdcli = c.cli_cdcli AND ca.cla_obsoleto = 0
+    JOIN integra.cliazi ca ON ca.azi_cdazi = '001' AND ca.cla_tipo = 'C' AND ca.cla_clicdcli = c.cli_cdcli AND ca.cla_obsoleto = 0
  WHERE c.cli_obsoleto = 0 AND c.cli_cdcli > 0;
 
 -- VIEW public.b2b_indirizzi_clienti
-DROP VIEW IF EXISTS public.b2b_indirizzi_clienti;
-CREATE VIEW public.b2b_indirizzi_clienti AS
+CREATE OR REPLACE VIEW public.b2b_indirizzi_clienti AS
 SELECT d.dst_id AS id_destinazione,
     d.dst_clicdcli AS id_cliente,
     c.cli_cdclistr AS codice_cliente,
@@ -133,8 +141,7 @@ SELECT d.dst_id AS id_destinazione,
  WHERE d.dst_obsoleto = 0 AND d.dst_clicdcli > 0;
 
 -- VIEW public.b2b_pagamenti_clienti
-DROP VIEW IF EXISTS public.b2b_pagamenti_clienti;
-CREATE VIEW public.b2b_pagamenti_clienti AS
+CREATE OR REPLACE VIEW public.b2b_pagamenti_clienti AS
 SELECT ca.cla_clicdcli AS id_cliente,
     c.cli_cdclistr AS codice_cliente,
     c.cli_rgsoc AS ragione_sociale,
@@ -167,8 +174,7 @@ SELECT ca.cla_clicdcli AS id_cliente,
  WHERE ca.azi_cdazi = '001' AND ca.cla_tipo = 'C' AND ca.cla_obsoleto = 0 AND ca.cla_clicdcli > 0;
 
 -- VIEW public.b2b_ordini_clienti
-DROP VIEW IF EXISTS public.b2b_ordini_clienti;
-CREATE VIEW public.b2b_ordini_clienti AS
+CREATE OR REPLACE VIEW public.b2b_ordini_clienti AS
 SELECT t.mvt_id AS id_ordine,
     t.mvt_num AS numero_ordine,
     t.mvt_numnum AS numero_progressivo,
@@ -219,8 +225,7 @@ SELECT t.mvt_id AS id_ordine,
  WHERE t.azi_cdazi = '001' AND t.mvt_natmov = 'ORD' AND t.mvt_obsoleto = 0 AND t.mvt_clacod > 0;
 
 -- VIEW public.b2b_righe_ordini
-DROP VIEW IF EXISTS public.b2b_righe_ordini;
-CREATE VIEW public.b2b_righe_ordini AS
+CREATE OR REPLACE VIEW public.b2b_righe_ordini AS
 SELECT r.mvr_mvtid AS id_ordine,
     t.mvt_num AS numero_ordine,
     t.mvt_dtmov AS data_ordine,
@@ -253,8 +258,7 @@ SELECT r.mvr_mvtid AS id_ordine,
  WHERE r.azi_cdazi = '001' AND r.mvr_obsoleto = 0;
 
 -- VIEW public.b2b_listini_testata
-DROP VIEW IF EXISTS public.b2b_listini_testata;
-CREATE VIEW public.b2b_listini_testata AS
+CREATE OR REPLACE VIEW public.b2b_listini_testata AS
 SELECT t.tls_cod AS codice_listino,
     t.tls_descr AS descrizione_listino,
     t.tls_tipo AS tipo_listino,
@@ -269,8 +273,7 @@ SELECT t.tls_cod AS codice_listino,
  WHERE t.azi_cdazi = '001';
 
 -- VIEW public.b2b_listini_righe
-DROP VIEW IF EXISTS public.b2b_listini_righe;
-CREATE VIEW public.b2b_listini_righe AS
+CREATE OR REPLACE VIEW public.b2b_listini_righe AS
 SELECT r.lst_id AS id_riga_listino,
     r.lst_tlscod AS codice_listino,
     r.lst_proid AS id_prodotto,
@@ -298,8 +301,7 @@ SELECT r.lst_id AS id_riga_listino,
  WHERE r.azi_cdazi = '001' AND r.lst_obsoleto = 0 AND r.lst_progr = 1;
 
 -- VIEW public.b2b_tabpag
-DROP VIEW IF EXISTS public.b2b_tabpag;
-CREATE VIEW public.b2b_tabpag AS
+CREATE OR REPLACE VIEW public.b2b_tabpag AS
 SELECT t.pag_cod AS codice_pagamento,
     t.pag_descr AS descrizione_pagamento,
     t.pag_tiposcad AS tipo_scadenza,
@@ -316,8 +318,7 @@ SELECT t.pag_cod AS codice_pagamento,
  WHERE t.azi_cdazi = '001';
 
 -- VIEW public.b2b_tabpor
-DROP VIEW IF EXISTS public.b2b_tabpor;
-CREATE VIEW public.b2b_tabpor AS
+CREATE OR REPLACE VIEW public.b2b_tabpor AS
 SELECT t.por_cod AS codice_porto,
     t.por_descr AS descrizione_porto,
     t.por_obsoleto AS obsoleto,
@@ -327,8 +328,7 @@ SELECT t.por_cod AS codice_porto,
  WHERE t.azi_cdazi = '001';
 
 -- VIEW public.b2b_tabspe
-DROP VIEW IF EXISTS public.b2b_tabspe;
-CREATE VIEW public.b2b_tabspe AS
+CREATE OR REPLACE VIEW public.b2b_tabspe AS
 SELECT t.spe_cod AS codice_spedizione,
     t.spe_descr AS descrizione_spedizione,
     t.spe_obsoleto AS obsoleto,
@@ -338,8 +338,7 @@ SELECT t.spe_cod AS codice_spedizione,
  WHERE t.azi_cdazi = '001';
 
 -- VIEW public.b2b_vettori
-DROP VIEW IF EXISTS public.b2b_vettori;
-CREATE VIEW public.b2b_vettori AS
+CREATE OR REPLACE VIEW public.b2b_vettori AS
 SELECT v.vet_cod AS codice_vettore,
     v.vet_clicdcli AS id_cliente,
     c.cli_rgsoc AS descrizione_vettore,
@@ -352,8 +351,7 @@ SELECT v.vet_cod AS codice_vettore,
  WHERE v.azi_cdazi = '001';
 
 -- VIEW public.b2b_giacenze
-DROP VIEW IF EXISTS public.b2b_giacenze;
-CREATE VIEW public.b2b_giacenze AS
+CREATE OR REPLACE VIEW public.b2b_giacenze AS
 SELECT mi.mai_proid AS id_prodotto,
     p.pro_cod AS codice_prodotto,
     SUM(mi.mai_esistenza) AS giacenza,
