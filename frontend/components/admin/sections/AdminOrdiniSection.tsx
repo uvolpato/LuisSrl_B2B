@@ -59,6 +59,7 @@ const STATI: Record<string, string> = {
   evaso: "Evaso",
   annullato: "Annullato",
   attesa: "In attesa",
+  BOZZA: "Da esportare",
 };
 
 const STATO_CLS: Record<string, string> = {
@@ -246,7 +247,7 @@ export default function AdminOrdiniSection() {
       </div>
 
       {detailId !== null && (
-        <OrdineDetailModal orderId={detailId} onClose={() => setDetailId(null)} />
+        <OrdineDetailModal orderId={detailId} onClose={() => setDetailId(null)} onSaved={fetchAll} />
       )}
     </>
   );

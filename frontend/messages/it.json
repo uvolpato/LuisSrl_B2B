@@ -108,7 +108,9 @@
       "email_exists": "Esiste già un account con questa email.",
       "piva_exists": "Esiste già un account per questa partita IVA.",
       "not_found": "Cliente non trovato.",
-      "cannot_block_admin": "Non si può bloccare un amministratore."
+      "cannot_block_admin": "Non si può bloccare un amministratore.",
+      "ordine_not_found": "Ordine non trovato.",
+      "stato_non_consentito": "Stato ordine non valido."
     },
     "security": {
       "csrf": "Sessione non valida, ricarica la pagina."

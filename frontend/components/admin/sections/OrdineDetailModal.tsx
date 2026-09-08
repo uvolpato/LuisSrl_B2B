@@ -43,6 +43,7 @@ const STATI: Record<string, string> = {
   evaso: "Evaso",
   annullato: "Annullato",
   attesa: "In attesa",
+  BOZZA: "Da esportare",
 };
 
 const STATO_CLS: Record<string, string> = {
@@ -53,6 +54,18 @@ const STATO_CLS: Record<string, string> = {
   attesa: "st-amber",
 };
 
+// Stati gestibili dall'admin nel portale B2B (ciclo d'ordine). 'BOZZA' rimette
+// l'ordine in coda export: il backend azzera il flag di esportazione e il run
+// successivo rigenera l'Excel.
+const STATI_EDITABILI: { value: string; label: string }[] = [
+  { value: "attesa", label: "In attesa" },
+  { value: "confermato", label: "Confermato" },
+  { value: "inoltrato", label: "Inoltrato a fornitore" },
+  { value: "evaso", label: "Evaso" },
+  { value: "annullato", label: "Annullato" },
+  { value: "BOZZA", label: "Da esportare — ricrea Excel" },
+];
+
 function fmtEur(n: number): string {
   return n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
@@ -62,19 +75,47 @@ function fmtDate(d: string): string {
   return `${day}/${m}/${y}`;
 }
 
-export default function OrdineDetailModal({ orderId, onClose }: { orderId: number; onClose: () => void }) {
+export default function OrdineDetailModal({ orderId, onClose, onSaved }: { orderId: number; onClose: () => void; onSaved?: () => void }) {
   const tServer = useTranslations("server");
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statoSel, setStatoSel] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     api.get<OrderDetail>(`/api/admin/ordini/${orderId}`)
-      .then(setOrder)
+      .then((o) => {
+        setOrder(o);
+        setStatoSel(o.stato ?? "attesa");
+      })
       .catch((e) => setError(e instanceof ApiError ? e.code : "errors.generic"))
       .finally(() => setLoading(false));
   }, [orderId]);
+
+  const statiOptions = order
+    ? [...STATI_EDITABILI, ...(order.stato && !STATI_EDITABILI.some((s) => s.value === order.stato) ? [{ value: order.stato, label: order.stato }] : [])]
+    : STATI_EDITABILI;
+
+  const salvaStato = async () => {
+    if (!order || statoSel === order.stato) return;
+    setSaving(true);
+    setSaveError(null);
+    setSaved(false);
+    try {
+      await api.patch<{ id: number; stato: string }>(`/api/admin/ordini/${order.id}/stato`, { stato: statoSel });
+      setOrder({ ...order, stato: statoSel });
+      setSaved(true);
+      onSaved?.();
+    } catch (e) {
+      setSaveError(e instanceof ApiError ? e.code : "errors.generic");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Modal open onClose={onClose} size="lg" noHeader>
@@ -106,6 +147,30 @@ export default function OrdineDetailModal({ orderId, onClose }: { orderId: numbe
                 <span className={`status-pill ${STATO_CLS[order.stato] ?? "st-amber"}`}>
                   <span className="sd">●</span>{STATI[order.stato] ?? order.stato}
                 </span>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+                  <label style={{ fontSize: 13, color: "var(--muted)" }} htmlFor="stato-forza">Forza stato</label>
+                  <select
+                    id="stato-forza"
+                    className="input"
+                    value={statoSel}
+                    onChange={(e) => setStatoSel(e.target.value)}
+                    disabled={saving}
+                    style={{ minWidth: 220, maxWidth: "100%" }}
+                  >
+                    {statiOptions.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={salvaStato}
+                    disabled={saving || statoSel === order.stato}
+                  >
+                    {saving ? "Salvataggio…" : "Salva"}
+                  </button>
+                </div>
+                {saveError && <p style={{ color: "var(--red)", fontSize: 13, marginTop: 8 }}>{tServer(saveError)}</p>}
+                {saved && <p style={{ color: "var(--green)", fontSize: 13, marginTop: 8 }}>Stato aggiornato.</p>}
               </div>
               <div className="detail-section">
                 <h3>Pagamento</h3>
