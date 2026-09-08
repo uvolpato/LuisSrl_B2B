@@ -4,8 +4,9 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../../lib/use-auth";
-import { api } from "../../../../lib/api";
+import { api, ApiError } from "../../../../lib/api";
 import LoadingScreen from "../../../../components/common/LoadingScreen";
+import Notice from "../../../../components/common/Notice";
 
 import PositionedImage from "../../../../components/common/PositionedImage";
 import AddToProjectModal from "../../../../components/area/AddToProjectModal";
@@ -204,6 +205,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
     setAddProjOpen(true);
   }
   const [addBtnText, setAddBtnText] = useState("Aggiungi al carrello");
+  const [gridError, setGridError] = useState<string | null>(null);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [galleryModalIdx, setGalleryModalIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -374,24 +376,36 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
     if (!v) return;
     try {
       await api.post("/api/carrello", { varianteCodice: v.codice, quantita: buyQty ?? v.multiplo });
+      setBuyError(null);
       notifyCart();
       setBuyBtnText("Aggiunto ✓");
       setTimeout(() => setBuyBtnText("Aggiungi al carrello"), 2000);
-    } catch { /* ignore */ }
+    } catch (e) {
+      setBuyError(e instanceof ApiError ? e.code : "errors.generic");
+    }
   }
 
   const [buyBtnText, setBuyBtnText] = useState("Aggiungi al carrello");
+  const [buyError, setBuyError] = useState<string | null>(null);
 
   async function addAllToCart() {
     const toAdd = filteredVarianti.filter((v) => (gridQtys[v.codice] || 0) > 0);
     if (toAdd.length === 0) return;
-    try {
-      await Promise.all(toAdd.map((v) => api.post("/api/carrello", { varianteCodice: v.codice, quantita: gridQtys[v.codice] })));
+    const results = await Promise.allSettled(
+      toAdd.map((v) => api.post("/api/carrello", { varianteCodice: v.codice, quantita: gridQtys[v.codice] })),
+    );
+    const failures = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+    if (failures.length > 0) {
+      const reason = failures[0].reason as unknown;
+      setGridError(reason instanceof ApiError ? reason.code : "errors.generic");
+    } else {
+      setGridError(null);
       notifyCart();
       setGridQtys({});
       setAddBtnText(`${toAdd.length} articoli aggiunti ✓`);
       setTimeout(() => setAddBtnText("Aggiungi al carrello"), 2000);
-    } catch { /* ignore */ }
+    }
+    if (results.some((r) => r.status === "fulfilled")) notifyCart();
   }
 
   useEffect(() => {
@@ -597,6 +611,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   </div>
                 </div>
 
+                {buyError && <Notice onClose={() => setBuyError(null)} style={{ marginBottom: 12 }}>{buyError}</Notice>}
                 <button className="btn btn-primary add-to-cart" disabled={(!selectedVariant && !singleVariant) || buyOut}
                   onClick={addSingleToCart}
                   style={{ width: "100%", justifyContent: "center", padding: 12, fontSize: 15, opacity: ((!selectedVariant && !singleVariant) || buyOut) ? 0.5 : 1 }}>
@@ -709,6 +724,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                 </div>
 
                 <div className="variant-grid-footer">
+                  {gridError && <Notice onClose={() => setGridError(null)} style={{ marginBottom: 12, width: "100%" }}>{gridError}</Notice>}
                   <div className="total-info">
                     Righe selezionate: <strong>{gridTotals.count}</strong>
                     <span className="total-sep">·</span>

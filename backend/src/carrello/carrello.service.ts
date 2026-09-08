@@ -86,22 +86,36 @@ export class CarrelloService {
     return { id: carrello.id, items: enriched };
   }
 
+  private readonly GIACENZA_ERR =
+    "La disponibilità dell'articolo non garantisce la quantità richiesta. Riduci la quantità oppure contatta il tuo agente commerciale.";
+
   async addItem(clienteId: number, varianteCodice: string, quantita: number) {
-    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true, giacenza: true } });
     const multiplo = v?.multiplo ?? 1;
     if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
     const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
-    void this.events.track('carrello.add', { entita: 'variante', entitaId: varianteCodice, dettagli: { quantita: qty } });
-    return this.prisma.cartItem.upsert({
-      where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
-      create: { carrelloId: carrello.id, varianteCodice, quantita: qty },
-      update: { quantita: { increment: qty } },
+    const item = await this.prisma.$transaction(async (tx) => {
+      const esistente = await tx.cartItem.findUnique({
+        where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
+        select: { quantita: true },
+      });
+      const totale = (esistente?.quantita ?? 0) + qty;
+      if (v && v.giacenza < totale) {
+        throw new BadRequestException(this.GIACENZA_ERR);
+      }
+      return tx.cartItem.upsert({
+        where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
+        create: { carrelloId: carrello.id, varianteCodice, quantita: qty },
+        update: { quantita: { increment: qty } },
+      });
     });
+    void this.events.track('carrello.add', { entita: 'variante', entitaId: varianteCodice, dettagli: { quantita: qty } });
+    return item;
   }
 
   async updateQty(clienteId: number, varianteCodice: string, quantita: number) {
-    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true } });
+    const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true, giacenza: true } });
     const multiplo = v?.multiplo ?? 1;
     if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
     const qty = Math.round(quantita / multiplo) * multiplo;
@@ -110,6 +124,9 @@ export class CarrelloService {
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
     });
     if (!item) throw new NotFoundException('Item non trovato nel carrello');
+    if (v && v.giacenza < qty) {
+      throw new BadRequestException(this.GIACENZA_ERR);
+    }
     void this.events.track('carrello.update', { entita: 'variante', entitaId: varianteCodice, dettagli: { quantita: qty } });
     return this.prisma.cartItem.update({
       where: { id: item.id },
