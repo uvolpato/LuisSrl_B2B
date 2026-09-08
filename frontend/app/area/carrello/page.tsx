@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../lib/use-auth";
-import { api } from "../../../lib/api";
+import { api, ApiError } from "../../../lib/api";
 import LoadingScreen from "../../../components/common/LoadingScreen";
+import Notice from "../../../components/common/Notice";
 import AddToProjectModal from "../../../components/area/AddToProjectModal";
 import CartLineGroup from "../../../components/area/CartLineGroup";
 import { formatPrice, groupBy } from "../../../lib/helpers";
@@ -37,6 +38,7 @@ export default function CarrelloPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [projOpen, setProjOpen] = useState(false);
   const [projItems, setProjItems] = useState<{ varianteCodice: string; quantita: number }[]>([]);
+  const [qtyError, setQtyError] = useState<string | null>(null);
 
   const fetchCart = useCallback(async () => {
     try {
@@ -63,7 +65,9 @@ export default function CarrelloPage() {
     setItems((prev) => prev.map((i) => i.varianteCodice === codice ? { ...i, quantita: qty } : i));
     try {
       await api.patch(`/api/carrello/${encodeURIComponent(codice)}/qty`, { quantita: qty });
-    } catch {
+      setQtyError(null);
+    } catch (e) {
+      setQtyError(e instanceof ApiError ? e.code : "errors.generic");
       setItems((prev) => prev.map((i) => i.varianteCodice === codice ? { ...i, quantita: item.quantita } : i));
     }
   }
@@ -110,6 +114,8 @@ export default function CarrelloPage() {
           <div className="page-title">
             <h1>Il tuo carrello</h1>
           </div>
+
+          {qtyError && <Notice onClose={() => setQtyError(null)} style={{ marginBottom: 16 }}>{qtyError}</Notice>}
 
           {loading ? (
             <p style={{ paddingBlock: 48, color: "var(--muted)" }}>Caricamento…</p>
