@@ -146,15 +146,21 @@ export class SyncManagerService implements OnModuleInit {
             try {
               const agg = await this.integrazioneService.aggregateUngroupedArticles();
               const msg = `${agg.aggregati} spostate, ${agg.articoliEliminati} vuoti, ${agg.descrizioniAggiornate ?? 0} desc`;
-              console.log(`[syncManager] Aggregazione: ${msg}`);
+              const st = await this.integrazioneService.allineaStatoIntegra();
+              const msgSt = `obsoleti: ${st.variantiNascoste} var, ${st.articoliNascosti} art · famiglie: ${st.famiglieRiallineate} agg, ${st.famiglieCreate} create`;
+              console.log(`[syncManager] Aggregazione: ${msg} | ${msgSt}`);
               result = { ...result, errorText: msg };
               await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
-                msg,
+                `UPDATE sync_log SET progress_phase = $1
+                 WHERE entity = 'articoli'
+                   AND id = (SELECT id FROM sync_log WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1)`,
+                `${msg} · ${msgSt}`,
               );
             } catch (e) {
               await this.prisma.$executeRawUnsafe(
-                `UPDATE sync_log SET progress_phase = $1 WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1`,
+                `UPDATE sync_log SET progress_phase = $1
+                 WHERE entity = 'articoli'
+                   AND id = (SELECT id FROM sync_log WHERE entity = 'articoli' ORDER BY started_at DESC LIMIT 1)`,
                 `Aggr err: ${e instanceof Error ? e.message : String(e)}`,
               );
             }

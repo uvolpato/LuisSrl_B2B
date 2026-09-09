@@ -562,6 +562,132 @@ export class IntegrazioneService {
     return { aggregati: moved, articoliEliminati: deleted, descrizioniAggiornate: descUpdated, diagnostica: { toFixCount: toFix.length } };
   }
 
+  /**
+   * Post-sync articoli: nasconde varianti/articoli dichiarati obsoleti in Integra
+   * (monodirezionale: solo NASCOSTO, mai riattivazioni) e riallinea gli articoli
+   * già importati alla famiglia corrente, creandola se manca nel portale.
+   */
+  async allineaStatoIntegra() {
+    let variantiNascoste = 0;
+    let articoliNascosti = 0;
+
+    // 1) Varianti obsolete in Integra → NASCOSTO (one-way)
+    try {
+      const res = await this.prisma.$executeRawUnsafe(
+        `UPDATE varianti v
+         SET stato = 'NASCOSTO', updated_at = now()
+         FROM integra_articoli ia
+         WHERE ia.pro_cod = v.codice
+           AND ia.prodotto_obsoleto = true
+           AND v.stato <> 'NASCOSTO'`,
+      );
+      variantiNascoste = typeof res === 'number' ? res : 0;
+    } catch (e) {
+      console.error(`[allineaStatoIntegra] Varianti obsolete: ${e instanceof Error ? e.message : e}`);
+    }
+
+    // 2) Articoli gestiti da Integra senza più varianti visibili → NASCOSTO
+    try {
+      const res = await this.prisma.$executeRawUnsafe(
+        `UPDATE articoli a
+         SET stato = 'NASCOSTO', updated_at = now()
+         WHERE a.stato <> 'NASCOSTO'
+           AND EXISTS (
+             SELECT 1
+             FROM varianti v
+             JOIN integra_articoli ia ON ia.pro_cod = v.codice
+             WHERE v.articolo_id = a.id
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM varianti v
+             WHERE v.articolo_id = a.id AND v.stato <> 'NASCOSTO'
+           )`,
+      );
+      articoliNascosti = typeof res === 'number' ? res : 0;
+    } catch (e) {
+      console.error(`[allineaStatoIntegra] Articoli nascosti: ${e instanceof Error ? e.message : e}`);
+    }
+
+    // 3) Riallinea la famiglia degli articoli importati (crea la famiglia se manca)
+    let famiglieRiallineate = 0;
+    let famiglieCreate = 0;
+    try {
+      // Mappa codice famiglia numerico → codice FAM_* + nome (da FDW, come in importaVarianti)
+      const famMap = new Map<string, { proCod: string; nome: string }>();
+      const famRows = await this.prisma.$queryRawUnsafe<{ codice: string; codice_numerico: string; nome: string }[]>(
+        `SELECT codice, codice_numerico, nome FROM integra_famiglie WHERE codice_numerico IS NOT NULL`,
+      );
+      for (const r of famRows) famMap.set(r.codice_numerico, { proCod: r.codice, nome: r.nome });
+
+      const rows = await this.prisma.$queryRawUnsafe<{
+        articolo_id: number;
+        codice_linea: string;
+        famiglia_attuale: string;
+        fam_numerico: string | null;
+      }[]>(
+        `SELECT DISTINCT
+           a.id AS articolo_id,
+           a.codice_linea,
+           a.famiglia_codice AS famiglia_attuale,
+           ia.famiglia_codice AS fam_numerico
+         FROM articoli a
+         JOIN varianti v ON v.articolo_id = a.id
+         JOIN integra_articoli ia ON ia.pro_cod = v.codice
+         WHERE ia.famiglia_codice IS NOT NULL AND ia.famiglia_codice <> ''`,
+      );
+
+      // Raggruppa per articolo: una sola famiglia attesa, altrimenti skip (ambigua)
+      const byArt = new Map<number, { attuale: string; fams: Set<string> }>();
+      for (const r of rows) {
+        let e = byArt.get(r.articolo_id);
+        if (!e) {
+          e = { attuale: r.famiglia_attuale, fams: new Set() };
+          byArt.set(r.articolo_id, e);
+        }
+        if (r.fam_numerico) {
+          e.fams.add(r.fam_numerico);
+        }
+      }
+
+      for (const [artId, info] of byArt) {
+        if (info.fams.size !== 1) continue; // famiglia ambigua tra varianti
+        const famNum = [...info.fams][0];
+        const mapped = famMap.get(famNum);
+        if (!mapped) continue; // famiglia numerica non mappata in integra_famiglie
+        if (info.attuale === mapped.proCod) continue;
+
+        // Crea la famiglia nel portale se non esiste già
+        let targetCodice = mapped.proCod;
+        const existing = await this.prisma.$queryRawUnsafe<{ codice: string }[]>(
+          `SELECT codice FROM famiglie WHERE codice = $1
+           UNION SELECT codice FROM famiglie WHERE LOWER(nome) = LOWER($2) AND codice != $1
+           LIMIT 1`,
+          mapped.proCod, mapped.nome,
+        );
+        if (existing.length > 0) {
+          targetCodice = existing[0].codice;
+        } else {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO famiglie (codice, nome, updated_at) VALUES ($1, $2, now())
+             ON CONFLICT (codice) DO UPDATE SET nome = EXCLUDED.nome, updated_at = now()`,
+            mapped.proCod, mapped.nome,
+          );
+          famiglieCreate++;
+        }
+
+        await this.prisma.articolo.update({ where: { id: artId }, data: { famigliaCodice: targetCodice } });
+        famiglieRiallineate++;
+      }
+    } catch (e) {
+      console.error(`[allineaStatoIntegra] Famiglie: ${e instanceof Error ? e.message : e}`);
+    }
+
+    console.log(
+      `[allineaStatoIntegra] Obsoleti: ${variantiNascoste} var, ${articoliNascosti} art · Famiglie: ${famiglieRiallineate} riallineate, ${famiglieCreate} create`,
+    );
+    return { variantiNascoste, articoliNascosti, famiglieRiallineate, famiglieCreate };
+  }
+
   /** Filtri sidebar catalogo (famiglie/raccolte con conteggi) — query leggera. */
   async getCatalogoFacets(codiceListino: string = 'LIS1') {
     const arts = await this.prisma.articolo.findMany({
