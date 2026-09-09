@@ -16,6 +16,43 @@
 }
 ```
 
+## Impronta attuale (riferimento congelato — v1 Luis)
+
+Valori reali in produzione, spec di partenza per il tema white-label (To do #7
+in `roadmap-b2b-luis.md`). Fonte: `frontend/app/globals.css:3-19`.
+
+```css
+:root {
+  /* neutri caldi */
+  --bg:      oklch(97% 0.005 80);   /* carta leggermente crema */
+  --surface: oklch(100% 0 0);       /* bianco card */
+  --fg:      oklch(22% 0.02 60);    /* testo: carbone scuro caldo */
+  --muted:   oklch(52% 0.015 60);   /* secondario: grigio caldo */
+  --border:  oklch(88% 0.01 70);    /* divisore caldo chiaro */
+
+  /* accento (CTA) */
+  --accent:      oklch(55% 0.14 45);  /* terracotta */
+  --accent-soft: oklch(95% 0.03 45);  /* velo terracotta (fondi evidenze) */
+
+  /* semantici */
+  --danger: oklch(55% 0.18 25);   --red: oklch(55% 0.18 25);
+  --ok:     oklch(55% 0.12 150);
+  --amber:  oklch(60% 0.13 65);
+  --blue:   oklch(55% 0.15 250);
+  /* varianti -soft via color-mix(in oklch, <base> 14–16%, transparent) */
+
+  --radius: 12px;
+
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+}
+```
+
+Nota per il tema configurabile: tutta la UI deriva da questi token (`color-mix(in
+oklch, var(--accent) …)`, link, focus, pill, badge, checkout), quindi gli override
+dovranno ridimensionare anche le varianti soft.
+
 ## Font Stacks
 
 ```css

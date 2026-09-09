@@ -534,6 +534,8 @@ conferma; può esportarlo o condividerlo.
 |   | È fatto (item 1) ma: quando i filtri in sidebar superano l'altezza dello schermo, lo sticky si ferma una volta raggiunta la fine del proprio contenitore (limite nativo di `position: sticky`) e non segue più lo scroll. Valutare sidebar scorrevole a piena altezza o `max-height` con scroll interno. | |
 | 6 | **AI — Chatbot che segue il cliente** | alta |
 |   | Assistente conversazionale in-app per il cliente B2B: risponde su **ordini, articoli e scadenze** usando tool reali (dati dal DB, mai inventati dall'LLM) e suggerimenti contestuali secondo il contesto di pagina. Progettazione completa in `specifica-chatbot-ai.md`. | |
+| 7 | **Tema white-label — colori e brand configurabili** | media |
+|   | Rendere la palette (oggi token `:root` in `frontend/app/globals.css:3-19`, spec in `brand-spec.md`, impronta attuale congelata lì) configurabile per rivendere il B2B ad altre realtà: override di `--bg/--surface/--fg/--muted/--border/--accent(+soft)/--danger/--ok/--amber/--blue` senza toccare il codice, più logo/nome azienda (pagina login, header, email) da configurazione (env o tab admin). Verificare contrasto WCAG 2.2 AA su ogni combinazione e che i `color-mix` derivati si adattino. | |
 
 ---
 
