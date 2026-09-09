@@ -272,18 +272,34 @@ export class AdminService {
   }
 
   async deleteFamiglia(codice: string, actorId: number, ip?: string) {
-    const famiglia = await this.prisma.famiglia.findUnique({
-      where: { codice },
-      include: { _count: { select: { articoli: true } } },
-    });
+    const famiglia = await this.prisma.famiglia.findUnique({ where: { codice } });
     if (!famiglia) throw new NotFoundException('admin.famiglia_not_found');
-    if (famiglia._count.articoli > 0) {
-      throw new BadRequestException('admin.famiglia_has_articoli');
-    }
 
-    await this.prisma.famiglia.delete({ where: { codice } });
-    await this.audit.log({ actorId, azione: 'admin.famiglia_delete', entita: 'famiglie', entitaId: codice, ip });
-    return { deleted: true };
+    // Eliminazione distruttiva in transazione: varianti → articoli (cascata DB su
+    // immagini, articoli_raccolte, embeddings) → famiglia.
+    const { varianti, articoli } = await this.prisma.$transaction(async (tx) => {
+      const v = await tx.$executeRawUnsafe(
+        `DELETE FROM varianti
+         WHERE articolo_id IN (SELECT id FROM articoli WHERE famiglia_codice = $1)`,
+        codice,
+      );
+      const a = await tx.$executeRawUnsafe(
+        `DELETE FROM articoli WHERE famiglia_codice = $1`,
+        codice,
+      );
+      await tx.$executeRawUnsafe(`DELETE FROM famiglie WHERE codice = $1`, codice);
+      return { varianti: v, articoli: a };
+    });
+
+    await this.audit.log({
+      actorId,
+      azione: 'admin.famiglia_delete',
+      entita: 'famiglie',
+      entitaId: codice,
+      ip,
+      dettagli: { varianti, articoli },
+    });
+    return { deleted: true, varianti, articoli };
   }
 
   // ── Raccolte ──
