@@ -5,7 +5,6 @@ import { api, ApiError } from "../../../lib/api";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import Modal from "../../common/Modal";
 import Notice from "../../common/Notice";
-import { useConfirm } from "../../common/ConfirmProvider";
 import { PAGE_SIZE, PLACEHOLDER_IMG as PLACEHOLDER } from "../types";
 import { IconEdit, IconEye, IconEyeOff, IconGrid, IconList } from "../icons";
 import AdminTopBar from "../AdminTopBar";
@@ -28,8 +27,6 @@ interface Famiglia {
 const displayNome = (r: Famiglia) => r.nomePortale || r.nome;
 
 export default function FamiglieSection() {
-  const confirm = useConfirm();
-
   const [items, setItems] = useState<Famiglia[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -41,6 +38,44 @@ export default function FamiglieSection() {
 
   const [editFamiglia, setEditFamiglia] = useState<Famiglia | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Flusso eliminazione famiglia: doppia conferma con codice di verifica.
+  const [pendingDelete, setPendingDelete] = useState<{
+    famiglia: Famiglia;
+    step: 1 | 2;
+    code: string;
+    typed: string;
+    deleting: boolean;
+    delError: string | null;
+  } | null>(null);
+
+  const DELETE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  function genDeleteCode(len = 6) {
+    let s = "";
+    const arr = new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    for (let i = 0; i < len; i++) s += DELETE_CODE_CHARS[arr[i] % DELETE_CODE_CHARS.length];
+    return s;
+  }
+
+  function requestDelete(famiglia: Famiglia) {
+    setModalOpen(false);
+    setPendingDelete({ famiglia, step: 1, code: genDeleteCode(), typed: "", deleting: false, delError: null });
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setPendingDelete((p) => (p ? { ...p, deleting: true, delError: null } : p));
+    try {
+      await api.del(`/api/admin/famiglie/${pendingDelete.famiglia.codice}`);
+      setPendingDelete(null);
+      await reload();
+    } catch (err) {
+      setPendingDelete((p) =>
+        p ? { ...p, deleting: false, delError: err instanceof ApiError ? err.code : "Errore nell'eliminazione" } : p,
+      );
+    }
+  }
 
   // Riordino card (drag&drop): possibile solo in vista griglia senza ricerca/filtro,
   // così l'ordine visibile coincide con l'ordine completo salvato.
@@ -142,30 +177,7 @@ export default function FamiglieSection() {
     }
   }
 
-async function handleDelete(codice: string) {
-    const ok = await confirm({
-      title: "Elimina famiglia",
-      message: "Sicuro di voler eliminare questa famiglia? L'operazione è irreversibile.",
-      confirmLabel: "Elimina",
-      tone: "danger",
-    });
-    if (!ok) return;
-    try {
-      await api.del(`/api/admin/famiglie/${codice}`);
-      setModalOpen(false);
-      await reload();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.code === "admin.famiglia_has_articoli") {
-          throw new Error("Impossibile eliminare: la famiglia ha articoli associati.");
-        }
-        throw err;
-      }
-      throw new Error("Errore nell'eliminazione");
-    }
-  }
-
-  const columns: Column<Famiglia>[] = [
+const columns: Column<Famiglia>[] = [
     {
       key: "nome",
       header: "Nome",
@@ -367,9 +379,92 @@ async function handleDelete(codice: string) {
           open={modalOpen}
           famiglia={editFamiglia}
           onSave={handleSave}
-          onDelete={handleDelete}
+          onDelete={requestDelete}
           onClose={() => setModalOpen(false)}
         />
+
+        {pendingDelete && pendingDelete.step === 1 && (
+          <Modal open onClose={() => setPendingDelete(null)} size="sm" noHeader>
+            <div className="modal-root-header">
+              <h2>Elimina famiglia</h2>
+              <button className="modal-root-close" onClick={() => setPendingDelete(null)} aria-label="Chiudi">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body-edit" style={{ display: "grid", gap: 10 }}>
+              <p style={{ margin: 0 }}>
+                Stai per eliminare la famiglia <strong>{displayNome(pendingDelete.famiglia)}</strong>{" "}
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)" }}>{pendingDelete.famiglia.codice}</span>.
+              </p>
+              <p style={{ margin: 0 }}>
+                Verranno eliminati definitivamente <strong>tutti</strong> gli {pendingDelete.famiglia._count.articoli} articoli della
+                famiglia con le relative varianti, immagini e raccolte. L&apos;operazione è <strong>irreversibile</strong>.
+              </p>
+            </div>
+            <div className="modal-root-footer">
+              <div style={{ flex: 1 }} />
+              <button className="btn btn-secondary btn-sm" onClick={() => setPendingDelete(null)}>Annulla</button>
+              <button className="btn btn-danger btn-sm" onClick={() => setPendingDelete((p) => (p ? { ...p, step: 2 } : p))}>
+                Continua
+              </button>
+            </div>
+          </Modal>
+        )}
+
+        {pendingDelete && pendingDelete.step === 2 && (
+          <Modal open onClose={() => setPendingDelete(null)} size="sm" noHeader>
+            <div className="modal-root-header">
+              <h2>Conferma eliminazione</h2>
+              <button className="modal-root-close" onClick={() => setPendingDelete(null)} aria-label="Chiudi">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body-edit" style={{ display: "grid", gap: 10 }}>
+              {pendingDelete.delError && (
+                <Notice variant="error" onClose={() => setPendingDelete((p) => (p ? { ...p, delError: null } : p))}>
+                  {pendingDelete.delError}
+                </Notice>
+              )}
+              <p style={{ margin: 0 }}>
+                Digita il codice qui sotto per eliminare definitivamente tutti gli articoli della famiglia{" "}
+                <strong>{displayNome(pendingDelete.famiglia)}</strong>.
+              </p>
+              <div
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, letterSpacing: "0.35em", textAlign: "center",
+                  background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 0",
+                }}
+              >
+                {pendingDelete.code}
+              </div>
+              <input
+                className="input"
+                value={pendingDelete.typed}
+                onChange={(e) => setPendingDelete((p) => (p ? { ...p, typed: e.target.value.toUpperCase() } : p))}
+                placeholder="Codice di conferma"
+                autoFocus
+                disabled={pendingDelete.deleting}
+              />
+            </div>
+            <div className="modal-root-footer">
+              <button className="btn btn-secondary btn-sm" onClick={() => setPendingDelete(null)} disabled={pendingDelete.deleting}>
+                Annulla
+              </button>
+              <div style={{ flex: 1 }} />
+              <button
+                className="btn btn-danger btn-sm"
+                disabled={pendingDelete.deleting || pendingDelete.typed !== pendingDelete.code}
+                onClick={confirmDelete}
+              >
+                {pendingDelete.deleting ? "Eliminazione…" : "Elimina definitivamente"}
+              </button>
+            </div>
+          </Modal>
+        )}
       </div>
     </>
   );
@@ -383,7 +478,7 @@ function FamigliaEditModal({
   onSave: (form: {
     nomePortale?: string; descrizione?: string; immagine?: string; immagineAI?: boolean; stato: string;
   }, pendingFile?: File | null) => Promise<void>;
-  onDelete?: (codice: string) => Promise<void>;
+  onDelete?: (famiglia: Famiglia) => void;
   onClose: () => void;
 }) {
   const [nomePortale, setNomePortale] = useState("");
@@ -397,18 +492,10 @@ function FamigliaEditModal({
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isEditing = !!famiglia;
-  const [deleting, setDeleting] = useState(false);
 
-  async function handleDeleteClick() {
-    if (!famiglia || !onDelete || deleting) return;
-    setDeleting(true);
-    try {
-      await onDelete(famiglia.codice);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Errore nell'eliminazione");
-    } finally {
-      setDeleting(false);
-    }
+  function handleDeleteClick() {
+    if (!famiglia || !onDelete) return;
+    onDelete(famiglia);
   }
 
   useEffect(() => {
@@ -525,7 +612,7 @@ function FamigliaEditModal({
               type="button"
               className="btn btn-danger-outline btn-sm"
               onClick={handleDeleteClick}
-              disabled={deleting || saving}
+              disabled={saving}
             >
               Elimina
             </button>
