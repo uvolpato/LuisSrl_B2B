@@ -27,6 +27,7 @@ npm-debug.log*
 frontend/public/images/
 
 # --- Script/artefatti temporanei di debug (usa-e-getta) ---
+costi-cliente.html
 _*.cjs
 backend/check-*.ts
 backend/check-*.js
