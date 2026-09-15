@@ -28,9 +28,8 @@ async function bootstrap() {
   app.enableCors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      for (const o of allowedOrigins) {
-        if (origin.startsWith(o)) return callback(null, true);
-      }
+      // Match ESATTO: startsWith permetterebbe https://shop.luisbg.it.attacker.com
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       // auto-permetti LAN 192.168.x.x / 10.x.x.x su porta 3000 (HTTP o HTTPS)
       if (/^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):3000$/.test(origin)) {
         return callback(null, true);

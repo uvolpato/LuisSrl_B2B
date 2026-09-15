@@ -52,7 +52,7 @@ export class AuthController {
   /** Login: max 5 tentativi al minuto per IP. */
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     const user = await this.auth.validateLogin(dto.email, dto.password, req.ip);
 

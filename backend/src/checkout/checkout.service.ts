@@ -239,6 +239,11 @@ export class CheckoutService {
   }
 
   async impostaPredefinito(clienteId: number, id: number) {
+    if (id > 0) {
+      // Verifica proprietà: l'update per solo id sarebbe una scrittura cross-tenant
+      const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
+      if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    }
     await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
     if (id > 0) {
       await this.prisma.indirizzoCliente.update({ where: { id }, data: { flagAbituale: true } });
