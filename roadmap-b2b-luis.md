@@ -17,13 +17,13 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 | **4** — Gestione articoli + AI | ✅ COMPLETATO | — |
 | **5** — Catalogo lato cliente | ✅ COMPLETATO | 🔴 3 fix UI in ToDo (filtri sticky, responsive carrello, riepilogo checkout) |
 | **6** — Clienti e inviti | ✅ COMPLETATO | — |
-| **7** — Giacenza | ⚠️ Parziale | ❌ filtro "solo disponibili"; ❌ data ultimo aggiornamento (in admin) |
-| **8** — Ordini | ⚠️ Parziale | ⚠️ admin cambio stato/note manuale; ✅ mail conferma + transazione + sync ordini schedulata |
+| **7** — Giacenza | ⚠️ Quasi completo | ✅ badge 3 livelli + filtro "solo disponibili"; ❌ data ultimo aggiornamento (~2 h) |
+| **8** — Ordini | ⚠️ Quasi completo | ✅ carrello, checkout, admin cambio stato, mail conferma, sync schedulata; ❌ note interne (~3 h), ❌ mail cambio stato (~3 h) |
 | **9** — Export ordini verso Integra | ✅ COMPLETATO | .xlsx + riconciliazione `mvt_vsrif` + vista `riferimento_b2b` + dedupe import |
-| **10** — AI lato cliente | ⚠️ Parziale | ✅ ricerca semantica/immagine + cache embedding (LRU); ❌ cronologia visite |
+| **10** — AI lato cliente | ⚠️ Quasi completo | ✅ ricerca semantica/immagine + cache embedding (LRU); ❌ cronologia visite (~6 h) |
 | **11** — Collaudo, formazione, go‑live | ❌ NON INIZIATO | — |
-| **12** — Tracciamento clienti | ⚠️ Parziale | ✅ `CustomerEvent` (beacon) attivo; ❌ funnel/analisi avanzate |
-| **13** — Dashboard AI: box suggerimenti personalizzati | ⚠️ Parziale | ✅ engine + cache + cron + Fase 2 (LLM) + Fase 3 (planner/anteprima) + dedupe/profilo; ❌ CRUD promozioni |
+| **12** — Tracciamento clienti | ⚠️ Quasi completo | ✅ eventi + beacon + funnel + timeline + sintesi AI (`customer_insight`); ❌ tabella sessioni aggregate (~10 h) |
+| **13** — Dashboard AI: box suggerimenti personalizzati | ⚠️ Quasi completo | ✅ engine + cache + cron a finestra + selezione LLM + planner/anteprima + dedupe/profilo; ❌ CRUD promozioni (~10 h), ❌ click per box (~4 h) |
 | **14** — Assistente commerciale: catalogo ad hoc | ❌ NON INIZIATO | Progettato in `DASHBOARD-SUGGERIMENTI-AI.md` §14 |
 
 ### Fatto in questa sessione (2 settembre 2026)
@@ -158,7 +158,6 @@ Approccio: sviluppo AI-assisted (Claude), tutto in LAN
 admin con sezioni complete, modale impostazioni, pannello amministrazione con tabella utenti.
 Tutto in italiano o inglese.
 
-**Valore: €1.050 (3 giorni × €350)**
 
 ---
 
@@ -259,7 +258,6 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** il sistema legge le viste Postgres e popola il catalogo con Articoli e Varianti, raggruppati per Famiglia principale.
 
-**Valore: €1.400 (4 giorni × €350)**
 
 ---
 
@@ -276,7 +274,6 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** i listini arrivano dalle viste Postgres, il cliente vede il prezzo corretto.
 
-**Valore: €700 (2 giorni × €350)**
 
 ---
 
@@ -297,7 +294,6 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** admin seleziona articolo, carica foto, genera descrizione e immagini AI, vede risultato finale. L'inferenza va al Mini PC in LAN.
 
-**Valore: €1.400 (4 giorni × €350)**
 
 ---
 
@@ -313,7 +309,6 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** cliente loggato naviga catalogo con prezzi personalizzati.
 
-**Valore: €700 (2 giorni × €350)**
 
 ---
 
@@ -330,7 +325,6 @@ Tutto in italiano o inglese.
 
 **Cosa si vede:** cliente riceve invito, si registra, vede i suoi prezzi.
 
-**Valore: €700 (2 giorni × €350)**
 
 ---
 
@@ -340,12 +334,11 @@ Tutto in italiano o inglese.
 |----------|-----------|-------|
 | Lettura giacenza da viste Postgres | Quantità per Variante (codice articolo) | ✅ backend (`syncGiacenza()`) |
 | Badge disponibilità | Solo "Disponibile" / "Non disponibile" in griglia e scheda | ✅ (3 livelli: ok/low/out) |
-| Filtro disponibilità | Mostra solo articoli disponibili | ❌ mancante |
-| Data ultimo aggiornamento | Trasparenza sul dato mostrato | ❌ mancante |
+| Filtro disponibilità | Mostra solo articoli disponibili | ✅ `soloDisponibili` (catalogo, controller, service) |
+| Data ultimo aggiornamento | Trasparenza sul dato mostrato | ❌ mancante (~2 h) |
 
 **Cosa si vede:** badge colorati in catalogo, filtro funzionante.
 
-**Valore: €350 (1 giorno × €350)**
 
 ---
 
@@ -358,12 +351,13 @@ Tutto in italiano o inglese.
 | Stati ordine | Bozza → Confermato → In lavorazione → Spedito | ✅ backend (solo BOZZA usato) |
 | Storico ordini cliente | Elenco ordini con stato e data | ✅ |
 | Dettaglio ordine | Righe, quantità, prezzi, stato | ✅ `OrdineDetailModal` |
-| Admin: gestione ordini | Elenco, cambio stato, note interne | ❌ mancante |
-| Notifica email | Conferma ordine, aggiornamento stato | ❌ mancante (MailModule esiste) |
+| Admin: gestione ordini | Elenco, cambio stato | ✅ `AdminOrdiniSection` + `PATCH /:id/stato` |
+| Admin: note interne | Annotazioni sull'ordine visibili solo allo staff | ❌ mancante (~3 h) |
+| Notifica email: conferma ordine | Template modificabile, logo, immagini prodotto | ✅ `sendConfermaOrdine` (`fda6022`) |
+| Notifica email: cambio stato | Avviso al cliente quando l'ordine avanza | ❌ mancante (~3 h) |
 
 **Cosa si vede:** cliente ordina, admin evasa, email di notifica.
 
-**Valore: €1.050 (3 giorni × €350)**
 
 ---
 
@@ -380,7 +374,6 @@ Tutto in italiano o inglese.
 Riconciliazione ordine B2B ↔ documento Integra via `mvt_vsrif` (`f876225`) e vista `riferimento_b2b`
 (`0017db8`); storicizzati listino/sconto sulla riga (`b1449d6`).
 
-**Valore: €700 (2 giorni × €350)**
 
 ---
 
@@ -395,12 +388,11 @@ Riconciliazione ordine B2B ↔ documento Integra via `mvt_vsrif` (`f876225`) e v
 | Ricerca semantica | Input linguaggio naturale → pgvector `text_vec` → risultati | ✅ `POST /api/catalogo/ricerca` |
 | Ricerca per immagini | Upload foto → Gemini Vision → pgvector → articoli simili | ✅ `POST /api/catalogo/ricerca-immagine` |
 | Banner homepage | "Articoli interessanti" basati su cronologia cliente | ➡️ spostato al **Blocco 13** (`DASHBOARD-SUGGERIMENTI-AI.md`) |
-| Cronologia visite | "Ripresi da dove hai lasciato" | ❌ sezione statica (in Blocco 13) |
+| Cronologia visite | "Ripresi da dove hai lasciato" | ❌ mancante (~6 h) |
 | Cache embedding | Memoizzazione query→vettore | ✅ cache LRU in-memory (`EmbeddingService`) |
 
 **Cosa si vede:** cliente cerca "vasi rettangolari grandi per esterno" e trova risultati; carica foto e trova articoli simili.
 
-**Valore: €1.050 (3 giorni × €350)**
 
 ---
 
@@ -419,14 +411,15 @@ structured output (selezione/ordine/rationale). **Il LLM non inventa mai prodott
 
 | Attività | Dettaglio | Stato |
 |----------|-----------|-------|
-| Modello `Promozione` | Tabella + CRUD admin + fonte dati (prerequisito dei box "offerta") | ❌ da fare |
-| Motore deterministico | Vincoli duri in SQL (in offerta/escludi acquistati/giacenza/scope) + intento semantico dal prompt (pgvector) | ❌ da fare |
-| Score pesato | Acquisti/tracking/**progetti**/affinità con pesi editabili per box (default 40/25/20/15) | ❌ da fare |
-| LLM structured output | Gemini JSON schema: selezione, ordine, rationale (fallback deterministico) | ❌ da fare |
-| **Admin UI box** | CRUD "titolo+prompt+pesi+vincoli" (pattern `PromptTemplate`) + **LLM-planner a edit-time** (il prompt genera un piano di query revisionabile) + **anteprima test** | ❌ da fare |
-| Endpoint + cache | `GET /dashboard/suggerimenti` + tabella `DashboardBox` (cache per cliente) | ❌ da fare |
-| Batch notturno + trigger | Rigenerazione schedulata (`@nestjs/schedule`) + on-demand su ordine/promo/esaurito | ❌ da fare |
-| Frontend + misurazione | Box da dati reali, nascosti se vuoti; tracciamento click-per-box per tarare i pesi | ❌ da fare |
+| Motore deterministico | Vincoli duri in SQL (in offerta/escludi acquistati/giacenza/scope) + intento semantico dal prompt | ✅ `dashboard.service` |
+| Score pesato | Acquisti/tracking/**progetti**/affinità con pesi editabili per box (default 40/25/20/15) | ✅ pesi su `SuggestionBox` |
+| LLM structured output | Gemini: selezione, ordine e rationale, con fallback deterministico | ✅ flag `DASHBOARD_LLM_SELECTION` |
+| **Admin UI box** | CRUD "titolo+prompt+pesi+vincoli" + LLM-planner a edit-time + anteprima test | ✅ `BoxSuggerimentiSection` |
+| Endpoint + cache | `GET /dashboard/suggerimenti` + tabella `DashboardBox` (cache per cliente) | ✅ |
+| Batch notturno + trigger | Rigenerazione schedulata a finestra (max N clienti a notte) + rigenera per singolo cliente e reset globale | ✅ |
+| Frontend | Box da dati reali, nascosti se vuoti, con titolo del box mantenuto nel catalogo | ✅ |
+| Modello `Promozione` | Tabella + **CRUD admin** (prerequisito dei box "in offerta", oggi vuoti) | ⚠️ modello a DB, manca l'interfaccia (~10 h) |
+| Misurazione | Tracciamento click-per-box per tarare i pesi | ❌ mancante (~4 h) |
 
 **Cosa si vede:** l'admin definisce i box (titolo+prompt) senza codice e ne vede
 l'anteprima; il cliente in dashboard vede box personalizzati con prodotti reali, prezzi del
@@ -440,7 +433,6 @@ suo listino e giacenza, rigenerati a batch notturno.
 - Costi LLM contenuti: caching a batch, ≤10 box attivi, monitorati da `AiUsage`.
 - GDPR: prompt con candidati minimizzati, mai dati di altri clienti; log rigenerazioni.
 
-**Valore: €1.750 (5 giorni × €350)**
 
 ---
 
@@ -475,7 +467,6 @@ conferma; può esportarlo o condividerlo.
 - Costi agentici per sessione utente (non a batch) → monitorare `AiUsage`.
 - GDPR: bozza con dati cliente → permessi per operatore, audit salvataggio, retention.
 
-**Valore: €1.750 (5 giorni × €350)**
 
 ---
 
@@ -493,7 +484,6 @@ conferma; può esportarlo o condividerlo.
 
 **Cosa si vede:** tutto funzionante con dati reali e clienti operativi.
 
-**Valore: €1.050 (3 giorni × €350)**
 
 ---
 
@@ -501,11 +491,12 @@ conferma; può esportarlo o condividerlo.
 
 > Progettazione completa in `CUSTOMER-TRACKING.md`.
 
-| Attività | Dettaglio |
-|----------|-----------|
-| **Fase 1 — Base** | Tabella `customer_event` (append-only: customerId, tipo, entità, dettagli JSON, ip, ts). Logging server-side degli eventi già in transito: login, view articolo, ricerca, carrello add/remove, ordine create/view. Timeline cronologica in admin. |
-| **Fase 2 — Client** | Endpoint `POST /api/eventi` con batch beacon (`navigator.sendBeacon`). Micro-eventi: page.view, page.leave (permanenza), scroll.depth. Tabella `customer_session` (aggregata per sessione: pagine viste, articoli visitati, ricerche, device). Scheda comportamentale per cliente + funnel vede→aggiunge→ordina. |
-| **Fase 3 — AI** | Job periodico di sintesi → `customer_insight` (testo in linguaggio naturale + metriche JSONB). Embedding pgvector dei riassunti. "Prossima azione consigliata" per up-sell/riattivazione. Segmentazione automatica (esploratori, ricompratori, dormienti). |
+| Attività | Dettaglio | Stato |
+|----------|-----------|-------|
+| **Fase 1 — Base** | Tabella `customer_event` (append-only: customerId, tipo, entità, dettagli JSON, ip, ts). Logging server-side degli eventi già in transito: login, view articolo, ricerca, carrello add/remove, ordine create/view. Timeline cronologica in admin. | ✅ `CustomerEvent` + `CustomerTimeline` |
+| **Fase 2 — Client** | Endpoint `POST /api/eventi` con batch beacon (`navigator.sendBeacon`). Micro-eventi: page.view, page.leave (permanenza), scroll.depth. Scheda comportamentale per cliente + funnel vede→aggiunge→ordina. | ✅ beacon + metriche aggregate con funnel (`events.service`) |
+| **Fase 2 — Sessioni** | Tabella `customer_session` aggregata per sessione: pagine viste, articoli visitati, ricerche, device | ❌ mancante (~10 h) — oggi `session_id` è sull'evento, non aggregato |
+| **Fase 3 — AI** | Job periodico di sintesi → `customer_insight` (testo in linguaggio naturale + metriche JSONB). Embedding dei riassunti. "Prossima azione consigliata" per up-sell/riattivazione. Segmentazione automatica. | ✅ `insight.service` + embedding + clienti simili |
 
 **Cosa si vede:** admin vede timeline cliente, scheda comportamentale, funnel, alert commerciali; AI risponde su comportamento clienti.
 
@@ -514,7 +505,6 @@ conferma; può esportarlo o condividerlo.
 - Tabelle dedicate (non mischiare con AuditLog admin)
 - Nessun tool esterno (GA, Hotjar) — tutto in-house
 
-**Valore: €1.400 (4 giorni × €350)**
 
 ---
 
@@ -541,41 +531,66 @@ conferma; può esportarlo o condividerlo.
 
 ## Riepilogo economico
 
-| # | Blocco | Giorni | €/giorno | **Valore** |
-|---|--------|--------|----------|-----------|
-| 1 | Infrastruttura e accessi | 3 | €350 | **€1.050** |
-| 1A | Profilazione ruoli e permessi admin | 3 | €350 | **€1.050** |
-| 2 | Integrazione Integra (viste Postgres + Excel AGOMIR) | 4 | €350 | **€1.400** |
-| 3 | Listini e prezzi | 2 | €350 | **€700** |
-| 4 | Gestione articoli + AI | 4 | €350 | **€1.400** |
-| 5 | Catalogo lato cliente | 2 | €350 | **€700** |
-| 6 | Clienti e inviti | 2 | €350 | **€700** |
-| 7 | Giacenza | 1 | €350 | **€350** |
-| 8 | Ordini | 3 | €350 | **€1.050** |
-| 9 | Export ordini verso Integra | 2 | €350 | **€700** |
-| 10 | AI lato cliente | 3 | €350 | **€1.050** |
-| 11 | Collaudo, formazione, go-live | 3 | €350 | **€1.050** |
-| 12 | Tracciamento comportamento clienti | 4 | €350 | **€1.400** |
-| 13 | Dashboard AI: box suggerimenti personalizzati | 5 | €350 | **€1.750** |
-| 14 | Assistente commerciale: catalogo ad hoc | 5 | €350 | **€1.750** |
-| | **Totale** | **46 giorni** | | **€16.100** |
+> **Nota sulla lettura.** Le ore qui sotto servono a **dimensionare il perimetro** in fase di
+> pianificazione: non sono un importo. La fatturazione è a ore effettive su due tariffe
+> (€90/h analisi, €50/h sviluppo) — vedi «Tariffe» e «Consuntivo economico» più sotto.
+
+| # | Blocco | Peso relativo | Ore indicative |
+|---|--------|---------------|----------------|
+| 1 | Infrastruttura e accessi | medio | ~17 |
+| 1A | Profilazione ruoli e permessi admin | medio | ~17 |
+| 2 | Integrazione Integra (viste Postgres + Excel AGOMIR) | alto | ~23 |
+| 3 | Listini e prezzi | basso | ~11 |
+| 4 | Gestione articoli + AI | alto | ~23 |
+| 5 | Catalogo lato cliente | basso | ~11 |
+| 6 | Clienti e inviti | basso | ~11 |
+| 7 | Giacenza | minimo | ~6 |
+| 8 | Ordini | medio | ~17 |
+| 9 | Export ordini verso Integra | basso | ~11 |
+| 10 | AI lato cliente | medio | ~17 |
+| 11 | Collaudo, formazione, go-live | medio | ~17 |
+| 12 | Tracciamento comportamento clienti | alto | ~23 |
+| 13 | Dashboard AI: box suggerimenti personalizzati | molto alto | ~29 |
+| 14 | Assistente commerciale: catalogo ad hoc | molto alto | ~29 |
+| | **Totale perimetro** | | **~262 h** |
+
+Le ore indicative servono a **dimensionare il perimetro** in fase di pianificazione. La
+fatturazione è a ore effettive sulle due tariffe: a oggi il consuntivo reale è di 215 h e
+il residuo stimato di 96 h, per un totale di ~311 h: il dimensionamento iniziale era ottimistico.
 
 ### Consuntivo ore (al 9 settembre 2026)
 
-Misurato sulla cronologia git, unica fonte oggettiva disponibile. Metodo: i commit
-vengono raggruppati in sessioni (nuova sessione se passano più di 2 ore dal commit
-precedente), si somma la durata di ogni sessione e si aggiungono 30 minuti di avvio
-per sessione (il lavoro che precede il primo commit).
+Misurato sulla cronologia git, unica fonte oggettiva disponibile. Metodo: i commit vengono
+raggruppati in sessioni (nuova sessione se passano più di 2 ore dal commit precedente), si
+somma la durata di ogni sessione e si aggiungono **30 minuti prima del primo commit e 30
+dopo l'ultimo**: il lavoro non comincia col primo salvataggio e non finisce con l'ultimo —
+prima c'è l'analisi del problema, dopo restano verifica, deploy e prove.
+
+| Ipotesi di calcolo | Ore |
+|--------------------|-----|
+| 30 min solo in avvio (lettura minima) | 173 |
+| **30 min in avvio e in chiusura** — adottata | **215** |
+| Soglia sessione a 3 h, 30 min per lato | 233 |
+| Soglia 3 h, 45 min per lato | 269 |
 
 | Misura | Valore |
 |--------|--------|
 | Periodo | 5 giugno → 9 settembre 2026 |
 | Commit | 847 |
 | Giornate con attività | 45 |
-| Sessioni di lavoro | 83 (media 2,1 h) |
-| **Ore stimate** | **~172 h** |
-| Sensibilità del metodo | 155 h (soglia 1 h) — 197 h (soglia 3 h) |
-| Equivalente in giornate da 8 h | **~21,5** |
+| Sessioni di lavoro | 84 (media 2,6 h) |
+| **Ore misurate** | **~215 h** |
+| di cui **analisi** (commit su sole specifiche e prototipi) | **~47 h** |
+| di cui **sviluppo** (commit che toccano codice) | **~168 h** |
+
+> **Resta un minimo.** Anche 215 h contano solo le sessioni che hanno prodotto almeno un
+> commit. Restano fuori per intero: riunioni e analisi con il cliente, scambi con AGOMIR sui
+> tracciati, prove in produzione, deploy e sessioni di studio che non hanno lasciato codice.
+> Quelle ore esistono ma non sono in git: vanno aggiunte a parte, su dichiarazione.
+
+La separazione tra analisi e sviluppo è ricavata dai file toccati da ogni commit: 166 commit
+riguardano solo specifiche, documenti e prototipi HTML, 682 toccano codice. Il rapporto
+risultante, **22/78**, è applicato alle ore misurate.
 
 > **Il dato è un minimo, non un totale.** La cronologia git vede solo il lavoro che
 > finisce in un commit: restano fuori analisi e progettazione, prove in produzione,
@@ -583,54 +598,180 @@ per sessione (il lavoro che precede il primo commit).
 
 ### Avanzamento economico
 
-| Stato | Blocchi | Valore |
-|-------|---------|--------|
-| ✅ Completati | 1, 1A, 2, 4, 5, 6, 9 | **€7.000** |
-| ✅ Backend completo, rifiniture UI | 3 | €700 |
-| ⚠️ Parziali | 7, 8, 10, 12, 13 | €5.600 |
-| ❌ Non iniziati | 11, 14 | €2.800 |
-| | **Totale preventivato** | **€16.100** |
+| Stato | Blocchi | Peso sul perimetro |
+|-------|---------|--------------------|
+| ✅ Completati | 1, 1A, 2, 4, 5, 6, 9 | 43% |
+| ✅ Backend completo, rifiniture UI | 3 | 4% |
+| ⚠️ Quasi completi | 7, 8, 10, 12, 13 | 35% |
+| ❌ Non iniziati | 11, 14 | 18% |
+
+I cinque blocchi "quasi completi" sono consegnati nella sostanza: il residuo verificato voce
+per voce è di **38 ore**.
+
+| Blocco | Cosa manca | Ore |
+|--------|-----------|-----|
+| 7 Giacenza | Data ultimo aggiornamento del dato in admin | 2 |
+| 8 Ordini | Note interne sull'ordine · email al cambio stato | 6 |
+| 10 AI cliente | "Riprendi da dove hai lasciato" (cronologia visite) | 6 |
+| 12 Tracciamento | Tabella sessioni aggregate + scheda relativa | 10 |
+| 13 Box | CRUD promozioni · tracciamento click per box | 14 |
+| | **Totale residuo** | **38 h** |
 
 ### Lavoro fuori perimetro (non previsto nel preventivo)
 
-Sviluppato su richiesta in corso d'opera, non riconducibile a nessun blocco:
+Sviluppato su richiesta in corso d'opera e non riconducibile a nessun blocco. Il preventivo
+a 15 blocchi non contiene nulla di tutto questo:
 
-| Voce | Evidenza git | Ore stimate |
-|------|--------------|-------------|
-| Coupon e campagne (modello, CRUD admin, validazione a checkout) | 36 commit | ~6 h |
-| Spese di spedizione (tariffe per nazione/regione, soglie, simulatore) | 52 commit | ~11 h |
-| Analisi sistema agentico (`SISTEMA-AGENTICO-LUIS.md`) | 1 commit | non misurabile col metodo |
+| Area | Cosa è stato costruito |
+|------|------------------------|
+| **Profilo cliente AI** | `CustomerProfile`: settore, dimensione, fatturato stimato, composizione del business, sedi, contatti chiave, interessi principali e secondari, stagionalità, cosa il cliente **non comprerà mai**. Generato da LLM con ricerca web (grounding) e arricchito dal registro imprese via P.IVA (`DatiImpresaService`) |
+| **Dossier commerciale** | `CustomerIntelligence`: fatturato 12 mesi e trend su anno precedente, ticket medio, cadenza d'ordine, giorni dall'ultimo ordine, stagionalità su 12 mesi, composizione del basket per famiglia, concentrazione (indice HHI), segmento e **stato di salute** (buona / media / a rischio) |
+| **Motore offerte** | Raccomandazioni deterministiche per cliente: riordino ciclico sugli articoli a cadenza regolare e cross-sell sui best-seller delle famiglie che già compra, con esclusione di ciò che il profilo segnala come non vendibile. Da lì si genera un'offerta pronta (`Progetto` condivisibile) |
+| **Coupon e campagne** | Modello, CRUD admin, destinatari e filtri, QR, validazione server-side al checkout, tracciamento utilizzi |
+| **Spese di spedizione** | Tariffe per nazione e regione, soglie di gratuità, minimi d'ordine, range per fascia, simulatore di calcolo e banner soglia |
+| **Uso e costi AI** | Registrazione di ogni chiamata AI con token e costo stimato, attribuzione all'attore, cruscotto costi per tipo/modello/giorno, prompt di sistema modificabili da interfaccia |
+| **Log eventi unificato** | `event_log` e `anomalia_log` unificati in `audit_log`, intercettore di accesso, `requestId` di correlazione, sezione "Log eventi" in amministrazione |
+| **Pagina di manutenzione** | Pagina di cortesia con logo mostrata durante i deploy, con rientro automatico al termine |
+| **Analisi sistema agentico** | `SISTEMA-AGENTICO-LUIS.md`: analisi e piano per un sistema multi-agente che elabori clienti, ordini, carrelli, mercato e prezzi in continuo |
 
-Le ore qui sopra sono **già incluse** nelle 172 h complessive: sono estratte per
-mostrare cosa è stato consegnato oltre il perimetro concordato, non da sommare.
-L'analisi del sistema agentico è un documento di strategia: se si decide di
-realizzarlo va quotato a parte.
+### Quotazione del fuori perimetro
 
-### Opzioni di fatturazione
+Attribuire ore a singole funzioni è il punto debole della misura, perché quasi tutto è stato
+costruito in sessioni che toccano più aree. Sono stati provati tre metodi, con esiti molto
+diversi sullo stesso lavoro:
 
-| Opzione | Importo | Note |
-|---------|---------|------|
-| **Forfait unico** | **€9.450** | Prezzo fisso, pagato a milestone |
-| **Giornaliera** | €350/giorno | Fatturato a fine mese su ore effettive → **~172 h = 21,5 gg = €7.525 a oggi** |
-| **Solo blocchi 1-4** (primo rilascio utile) | €4.900 | Cliente inizia subito a caricare articoli, poi si decide il resto |
+| Metodo | Totale extra | Difetto |
+|--------|--------------|---------|
+| Solo sessioni contigue sull'area | ~11 h | **Sottostima**: ignora il lavoro intrecciato con altre aree (il dossier risulta 0 h) |
+| Sessione divisa in parti uguali tra le aree toccate | 44 h | Sovrastima le aree sfiorate per pochi minuti |
+| Sessione divisa in proporzione ai file toccati | 10,8 h | **Sottostima**: il perimetro base tocca sempre molti più file |
+
+La misura fornisce quindi un intervallo, non un numero. La colonna **Stima** è il valore che
+riteniamo corretto: parte dall'intervallo misurato e lo corregge con la dimensione e la
+complessità di quanto effettivamente consegnato.
+
+| Area | Misurato | **Stima** | Importo |
+|------|----------|-----------|---------|
+| Spese di spedizione | 5 – 17 h | **16 h** | €944 |
+| Profilo cliente AI | 2 – 7 h | **10 h** | €590 |
+| Dossier e motore offerte | 1 – 3 h | **9 h** | €531 |
+| Coupon e campagne | 4 – 7 h | **9 h** | €531 |
+| Uso e costi AI | 1 – 6 h | **5 h** | €295 |
+| Log eventi unificato | 1 – 3 h | **5 h** | €295 |
+| Pagina manutenzione | 1 – 1,5 h | **2 h** | €118 |
+| **Totale fuori perimetro** | 13 – 44 h | **~56 h** | **~€3.300** |
+
+Intervalli e stime riportati alla base di 215 h.
+
+Importi alla media effettiva di €59/h (ripartizione 22/78 tra analisi e sviluppo).
+
+**Dove la misura sottostimava, e perché.** Il dossier commerciale risultava 0,7–2,3 h: sono
+321 righe di analisi dense di SQL (RFM, stagionalità su 12 mesi, concentrazione del basket,
+stato di salute) più il motore di raccomandazione e la generazione dell'offerta, costruite in
+sessioni condivise con il resto del portale. Stessa dinamica per il profilo cliente, dove
+gran parte del lavoro è stata la messa a punto dei prompt e del grounding, che lascia poca
+traccia nei file. Per le spese di spedizione, invece, la misura alta è attendibile: è un'area
+isolata, con prototipo e specifica propri.
+
+Con la stima corretta il perimetro base scende a ~159 h: il **26% del consuntivo** è lavoro
+che il preventivo non prevedeva.
+
+> **Non si sommano al consuntivo: ne fanno parte.** Con la fatturazione a ore effettive queste
+> 56 h sono già dentro le 215 h e quindi già dentro i €12.630. La tabella serve a rendere
+> visibile quanto del consuntivo è lavoro **mai previsto dal preventivo**: circa un quinto.
+> Sommarle di nuovo significherebbe fatturarle due volte.
+
+> **Limite dell'attribuzione.** Quando una sessione tocca più aree il tempo viene diviso in
+> parti uguali, senza pesare quanto lavoro è andato a ciascuna. Per questo il dossier
+> commerciale risulta basso (2,3 h) pur essendo un servizio corposo: è stato costruito in
+> sessioni condivise con altre aree. I totali sono solidi, la ripartizione fine no.
+
+L'analisi del sistema agentico non è in tabella: è un documento di strategia e, se si decide
+di realizzarla, va quotata a parte.
+
+### Tariffe
+
+La fatturazione è a ore effettive, con due tariffe distinte per tipo di attività:
+
+| Attività | Tariffa | Cosa comprende |
+|----------|---------|----------------|
+| **Analisi** | **€90/h** | Requisiti, progettazione, specifiche, tracciati, prototipi, scelte architetturali |
+| **Sviluppo AI-assisted** | **€50/h** | Implementazione, test, correzioni, deploy |
+
+La distinzione riflette una differenza reale: l'analisi è lavoro umano non comprimibile
+(capire il gestionale, i tracciati, il processo commerciale), lo sviluppo è la parte dove
+l'assistenza AI incide di più. Sul consuntivo la media effettiva è **€59/h**, perché
+l'analisi pesa il 22% delle ore.
+
+### Consuntivo economico a oggi
+
+| Voce | Ore | Tariffa | Importo |
+|------|-----|---------|---------|
+| Analisi | 47 h | €90 | €4.230 |
+| Sviluppo | 168 h | €50 | €8.400 |
+| **Totale maturato** | **215 h** | | **€12.630** |
+
+A cui vanno aggiunte le ore fuori da git (riunioni, analisi con il cliente, prove in
+produzione): da quantificare su dichiarazione, non sono stimabili dal codice.
+
+### Stima per completare
+
+Due voci: il residuo dei blocchi quasi completi, verificato voce per voce, e i due blocchi non
+ancora avviati (collaudo/formazione e assistente commerciale), stimati al ritmo osservato di
+7,2 h per giornata preventivata.
+
+| Voce | Ore stimate |
+|------|-------------|
+| Residuo blocchi 7, 8, 10, 12, 13 | 38 h |
+| Blocchi 11 e 14 (8 giornate preventivate) | ~58 h |
+| **Totale** | **~96 h** |
+
+Con la stessa ripartizione 22/78 tra analisi e sviluppo:
+
+| Voce | Ore stimate | Tariffa | Importo |
+|------|-------------|---------|---------|
+| Analisi | ~21 h | €90 | €1.890 |
+| Sviluppo | ~75 h | €50 | €3.750 |
+| **Totale da completare** | **~96 h** | | **~€5.640** |
+
+**Totale progetto stimato: ~€18.300** (215 h maturate + ~96 h da completare), al netto delle
+ore non tracciate da git.
+
+> I giorni indicati nei blocchi restano il riferimento per **dimensionare il perimetro**, non
+> per fatturare: la fatturazione è a ore effettive sulle due tariffe.
+
+### Rilascio parziale
+
+Se si vuole fermare il perimetro prima di completarlo, il punto naturale è la fine del
+Blocco 4: il catalogo è caricabile e utilizzabile e il resto si decide dopo. Tutto ciò che
+segue resta da concordare a ore sulle stesse tariffe.
 
 ### Confronto con prezzi di mercato
 
 A titolo informativo, il benchmark di mercato Italia 2026 per un profilo full-stack senior
 (Next.js + NestJS + PostgreSQL + AI) è:
 
-| Figura | Tariffa/giorno | Su 46 giorni |
-|--------|---------------|--------------|
-| **Consulente senior diretto** | €450–550/giorno | **€20.700–25.300** |
-| **Agenzia di sviluppo** | €600–800/giorno | **€27.600–36.800** |
-| **Prezzo applicato (€350/giorno)** | **€350/giorno** | **€16.100** |
+| Figura | Tariffa oraria | Su questo progetto |
+|--------|---------------|--------------------|
+| **Consulente senior diretto** | €56–69/h | €20.600–25.400 |
+| **Agenzia di sviluppo** | €75–100/h | €27.600–36.800 |
+| **Tariffe applicate** | **€90/h analisi · €50/h sviluppo** | **~€15.000** |
 
-Il prezzo applicato è circa il **30% sotto il mercato** per un senior diretto
-e circa la **metà di un'agenzia**. Il risparmio riflette:
+Il confronto assume che senza assistenza AI lo stesso perimetro richieda le ~368 ore che la
+pianificazione iniziale stimava, contro le ~311 ore di questo progetto. È
+l'assunzione che regge il paragone: a parità di ore le tariffe sarebbero simili a quelle di
+un consulente senior: il vantaggio non sta nel prezzo orario, sta nel numero di ore.
 
-- Sviluppo AI-assisted (Claude) che riduce i tempi rispetto a codice manuale
-- Assenza di overhead aziendale (IVA esclusa, partita IVA del professionista)
-- Collaborazione diretta, nessun intermediario
+Sul consuntivo a oggi la **media effettiva è €59/h** (€12.630 su 215 h), perché l'analisi
+pesa il 22% delle ore. È dentro la fascia di un consulente senior diretto e ben sotto quella
+di un'agenzia, ma il confronto onesto non è sulla tariffa: è sul **totale**. Il vantaggio non
+viene dal prezzo orario, viene dalle ore — lo sviluppo assistito consuma 7,2 h per giornata
+preventivata invece di 8.
+
+Le due tariffe distinte riflettono una differenza reale: l'analisi è lavoro umano non
+comprimibile (capire il gestionale, i tracciati, il processo commerciale), lo sviluppo è la
+parte dove l'assistenza AI incide di più. Pagare meno l'ora dove la produttività è più alta
+è coerente con come il lavoro viene effettivamente prodotto.
 
 ### Costi operativi mensili (a carico del cliente)
 
