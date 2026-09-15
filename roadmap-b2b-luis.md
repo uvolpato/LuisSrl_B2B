@@ -400,7 +400,7 @@ Riconciliazione ordine B2B ↔ documento Integra via `mvt_vsrif` (`f876225`) e v
 
 **Cosa si vede:** cliente cerca "vasi rettangolari grandi per esterno" e trova risultati; carica foto e trova articoli simili.
 
-**Valore: €1.400 (4 giorni × €350)**
+**Valore: €1.050 (3 giorni × €350)**
 
 ---
 
@@ -560,12 +560,58 @@ conferma; può esportarlo o condividerlo.
 | 14 | Assistente commerciale: catalogo ad hoc | 5 | €350 | **€1.750** |
 | | **Totale** | **46 giorni** | | **€16.100** |
 
+### Consuntivo ore (al 9 settembre 2026)
+
+Misurato sulla cronologia git, unica fonte oggettiva disponibile. Metodo: i commit
+vengono raggruppati in sessioni (nuova sessione se passano più di 2 ore dal commit
+precedente), si somma la durata di ogni sessione e si aggiungono 30 minuti di avvio
+per sessione (il lavoro che precede il primo commit).
+
+| Misura | Valore |
+|--------|--------|
+| Periodo | 5 giugno → 9 settembre 2026 |
+| Commit | 847 |
+| Giornate con attività | 45 |
+| Sessioni di lavoro | 83 (media 2,1 h) |
+| **Ore stimate** | **~172 h** |
+| Sensibilità del metodo | 155 h (soglia 1 h) — 197 h (soglia 3 h) |
+| Equivalente in giornate da 8 h | **~21,5** |
+
+> **Il dato è un minimo, non un totale.** La cronologia git vede solo il lavoro che
+> finisce in un commit: restano fuori analisi e progettazione, prove in produzione,
+> deploy, scambi con AGOMIR, ricerca sui tracciati e tutto ciò che non produce codice.
+
+### Avanzamento economico
+
+| Stato | Blocchi | Valore |
+|-------|---------|--------|
+| ✅ Completati | 1, 1A, 2, 4, 5, 6, 9 | **€7.000** |
+| ✅ Backend completo, rifiniture UI | 3 | €700 |
+| ⚠️ Parziali | 7, 8, 10, 12, 13 | €5.600 |
+| ❌ Non iniziati | 11, 14 | €2.800 |
+| | **Totale preventivato** | **€16.100** |
+
+### Lavoro fuori perimetro (non previsto nel preventivo)
+
+Sviluppato su richiesta in corso d'opera, non riconducibile a nessun blocco:
+
+| Voce | Evidenza git | Ore stimate |
+|------|--------------|-------------|
+| Coupon e campagne (modello, CRUD admin, validazione a checkout) | 36 commit | ~6 h |
+| Spese di spedizione (tariffe per nazione/regione, soglie, simulatore) | 52 commit | ~11 h |
+| Analisi sistema agentico (`SISTEMA-AGENTICO-LUIS.md`) | 1 commit | non misurabile col metodo |
+
+Le ore qui sopra sono **già incluse** nelle 172 h complessive: sono estratte per
+mostrare cosa è stato consegnato oltre il perimetro concordato, non da sommare.
+L'analisi del sistema agentico è un documento di strategia: se si decide di
+realizzarlo va quotato a parte.
+
 ### Opzioni di fatturazione
 
 | Opzione | Importo | Note |
 |---------|---------|------|
 | **Forfait unico** | **€9.450** | Prezzo fisso, pagato a milestone |
-| **Giornaliera** | €350/giorno | Fatturato a fine mese su ore effettive |
+| **Giornaliera** | €350/giorno | Fatturato a fine mese su ore effettive → **~172 h = 21,5 gg = €7.525 a oggi** |
 | **Solo blocchi 1-4** (primo rilascio utile) | €4.900 | Cliente inizia subito a caricare articoli, poi si decide il resto |
 
 ### Confronto con prezzi di mercato
