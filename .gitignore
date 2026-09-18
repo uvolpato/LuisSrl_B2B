@@ -86,3 +86,6 @@ ordini/*
 
 # --- Anteprima mail generata da scripts/anteprima-mail-ordine.ts ---
 backend/anteprima-ordine.html
+
+# Segreti solo locali: mai in git
+SEGRETI-LOCALI.md
