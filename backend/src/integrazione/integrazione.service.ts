@@ -1016,17 +1016,20 @@ export class IntegrazioneService {
       .filter((f) => f.count > 0);
   }
 
-  /** Batch query: prezzo minimo netto per ogni articolo, dato un codice listino. */
+  /** Batch query: prezzo minimo netto per ogni articolo, dato un codice listino.
+   *  Per ciascuna variante si tiene solo la riga base (netto piu alto, sconto piu basso):
+   *  eventuali righe duplicate (scaglioni quantita/promo) non devono abbassare il prezzo mostrato. */
   private async getPrezziMinimiArticoli(artIds: number[], codiceListino: string): Promise<Map<number, number | null>> {
     if (!artIds.length) return new Map();
-    const priceExpr = `(plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric`;
     const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; prezzo: number | null }>>(
-      `SELECT v.articolo_id AS art_id, min(${priceExpr}) AS prezzo
-       FROM varianti v
-       JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
-       WHERE v.articolo_id = ANY($1::int[])
-         AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
-       GROUP BY v.articolo_id`,
+      `SELECT base.art_id, min(base.netto) AS prezzo FROM (
+         SELECT DISTINCT ON (v.codice) v.articolo_id AS art_id,
+           (plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100))::numeric AS netto
+         FROM varianti v
+         JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
+         WHERE v.articolo_id = ANY($1::int[]) AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
+         ORDER BY v.codice, netto DESC
+       ) base GROUP BY base.art_id`,
       artIds, codiceListino,
     );
     const map = new Map<number, number | null>();
@@ -1137,12 +1140,16 @@ export class IntegrazioneService {
   private async getScontoMaxArticoli(artIds: number[], codiceListino: string): Promise<Map<number, number>> {
     const map = new Map<number, number>();
     if (!artIds.length) return map;
-    const nettoExpr = `plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100)`;
+    // Stessa base di getPrezziMinimiArticoli: riga base per variante (netto piu alto),
+    // poi max sconto tra le varianti. Evita badge gonfiati da righe duplicate (scaglioni/promo).
     const rows = await this.prisma.$queryRawUnsafe<Array<{ art_id: number; sconto: number | null }>>(
-      `SELECT v.articolo_id AS art_id, max(round((1 - (${nettoExpr}) / plr.prezzo_listino) * 100)) AS sconto
+      `SELECT base.art_id, max(round((1 - base.netto / base.prezzo_listino) * 100)) AS sconto FROM (
+         SELECT DISTINCT ON (v.codice) v.articolo_id AS art_id, plr.prezzo_listino,
+           (plr.prezzo_listino * (1-coalesce(plr.sconto_1,0)/100) * (1-coalesce(plr.sconto_2,0)/100) * (1-coalesce(plr.sconto_3,0)/100) * (1-coalesce(plr.sconto_4,0)/100)) AS netto
          FROM varianti v JOIN integra_listini_righe plr ON plr.codice_prodotto = v.codice
-        WHERE v.articolo_id = ANY($1::int[]) AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
-        GROUP BY v.articolo_id`,
+         WHERE v.articolo_id = ANY($1::int[]) AND plr.codice_listino = $2 AND plr.prezzo_listino > 0
+         ORDER BY v.codice, netto DESC
+       ) base GROUP BY base.art_id`,
       artIds, codiceListino,
     );
     for (const r of rows) { const s = r.sconto != null ? Number(r.sconto) : 0; if (s > 0) map.set(r.art_id, s); }
@@ -3261,9 +3268,10 @@ ${contesto}`;
     const out = new Map<string, { prezzoNetto: number; prezzoListino: number; sconto: number }>();
     if (!codici.length) return out;
     const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT codice_prodotto, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4
+      `SELECT DISTINCT ON (codice_prodotto) codice_prodotto, prezzo_listino, sconto_1, sconto_2, sconto_3, sconto_4
        FROM integra_listini_righe
-       WHERE codice_listino = $1 AND codice_prodotto = ANY($2::text[])`,
+       WHERE codice_listino = $1 AND codice_prodotto = ANY($2::text[])
+       ORDER BY codice_prodotto, (prezzo_listino * (1-coalesce(sconto_1,0)/100) * (1-coalesce(sconto_2,0)/100) * (1-coalesce(sconto_3,0)/100) * (1-coalesce(sconto_4,0)/100)) DESC`,
       codiceListino,
       codici,
     );
