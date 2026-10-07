@@ -36,6 +36,10 @@ export class CouponController {
   @Get("ai-suggestions")
   aiSuggestions() { return this.svc.getAISuggestions(); }
 
+  @Post("ai-suggestions")
+  @RequirePermission("vendite.coupon.edit")
+  generateAiSuggestions() { return this.svc.generateAISuggestions(); }
+
   @Post("qrcode")
   qrcode(@Body() body: { code: string }) { return this.svc.generateQR(body.code); }
 

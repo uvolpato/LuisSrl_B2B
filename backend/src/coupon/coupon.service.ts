@@ -1,24 +1,41 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { IntegrazioneService } from "../integrazione/integrazione.service";
+import { provinciaToRegione } from "../common/geo";
 
-const DEMO_CLIENTS = [
-  { id: 1, nome: "Verdepiù di Bianchi & C.", cod: "C001", piva: "IT01234567890", regione: "Lombardia", ultimoOrdine: 12, scontoMedio: 18, volume: 14500 },
-  { id: 2, nome: "Floricoltura Lombardi", cod: "C002", piva: "IT02345678901", regione: "Lombardia", ultimoOrdine: 45, scontoMedio: 22, volume: 8900 },
-  { id: 3, nome: "Green Garden Center", cod: "C003", piva: "IT03456789012", regione: "Toscana", ultimoOrdine: 8, scontoMedio: 12, volume: 3200 },
-  { id: 4, nome: "Piante e Dintorni", cod: "C004", piva: "IT04567890123", regione: "Veneto", ultimoOrdine: 3, scontoMedio: 25, volume: 21500 },
-  { id: 5, nome: "Vivai Riuniti Veneto", cod: "C005", piva: "IT05678901234", regione: "Veneto", ultimoOrdine: 120, scontoMedio: 8, volume: 9800 },
-  { id: 6, nome: "Terra e Colore Sas", cod: "C006", piva: "IT06789012345", regione: "Lombardia", ultimoOrdine: 60, scontoMedio: 15, volume: 34000 },
-  { id: 7, nome: "GardenShop Bergamo", cod: "C007", piva: "IT07890123456", regione: "Lombardia", ultimoOrdine: 15, scontoMedio: 20, volume: 7200 },
-  { id: 8, nome: "Il Giardino Segreto", cod: "C008", piva: "IT08901234567", regione: "Lazio", ultimoOrdine: 90, scontoMedio: 30, volume: 5200 },
-  { id: 9, nome: "Agriverde Cooperativa", cod: "C009", piva: "IT09012345678", regione: "Emilia-R.", ultimoOrdine: 2, scontoMedio: 10, volume: 18500 },
-  { id: 10, nome: "Fiori e Foglie", cod: "C010", piva: "IT00123456789", regione: "Campania", ultimoOrdine: 200, scontoMedio: 5, volume: 4200 },
-  { id: 11, nome: "Ortoflor Commerciale", cod: "C011", piva: "IT11234567890", regione: "Piemonte", ultimoOrdine: 30, scontoMedio: 18, volume: 26000 },
-  { id: 12, nome: "Verde Casa Martinelli", cod: "C012", piva: "IT12234567890", regione: "Sicilia", ultimoOrdine: 180, scontoMedio: 28, volume: 3100 },
-];
+/** Cliente con metriche di segmentazione calcolate dai dati reali del portale. */
+type SegCustomer = {
+  id: number;
+  nome: string;
+  cod: string | null;
+  regione: string | null;
+  /** Giorni dall'ultimo ordine; 9999 = mai ordinato. */
+  ultimoOrdine: number;
+  /** Sconto medio % (1 - netto/listino); null = senza righe scontabili. */
+  scontoMedio: number | null;
+  /** Volume ordini ultimi 12 mesi in €. */
+  volume: number;
+};
+
+type SegFilter = { field: string; value: string };
+
+/** Valori ammessi per filtro: sono esattamente quelli dell'UI Destinatari. */
+const FILTER_VALUES: Record<string, string[]> = {
+  regione: ["Lombardia", "Veneto", "Toscana", "Lazio", "Emilia-R.", "Piemonte", "Campania", "Sicilia"],
+  ultimo: ["30", "90", "over90", "over180"],
+  sconto: ["low", "mid", "high"],
+  volume: ["small", "low", "mid", "large"],
+};
+/** Il mapping provincia→regione restituisce il nome esteso. */
+const REGION_ALIASES: Record<string, string> = { "Emilia-R.": "Emilia-Romagna" };
+
+const SUGGESTIONS_KEY = "coupon_ai_suggestions";
+
+type Suggestion = { title: string; description: string; filters: Record<string, string>; count: number };
 
 @Injectable()
 export class CouponService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private integrazione: IntegrazioneService) {}
 
   async getDashboard() {
     const campaigns = await this.prisma.campaign.findMany();
@@ -51,39 +68,185 @@ export class CouponService {
     });
   }
 
-  async previewSegment(filters: any[]) {
-    let customers = [...DEMO_CLIENTS];
-    for (const f of filters) {
-      if (f.field === "regione" && f.value) customers = customers.filter(c => c.regione === f.value);
-      if (f.field === "ultimoOrdine") {
-        if (f.value === "30") customers = customers.filter(c => c.ultimoOrdine <= 30);
-        else if (f.value === "90") customers = customers.filter(c => c.ultimoOrdine <= 90);
-        else if (f.value === "over90") customers = customers.filter(c => c.ultimoOrdine > 90);
-        else if (f.value === "over180") customers = customers.filter(c => c.ultimoOrdine > 180);
-        else if (f.value === "none") customers = customers.filter(c => c.ultimoOrdine === 0);
-      }
-      if (f.field === "scontoMedio") {
-        if (f.value === "low") customers = customers.filter(c => c.scontoMedio < 10);
-        else if (f.value === "mid") customers = customers.filter(c => c.scontoMedio >= 10 && c.scontoMedio <= 25);
-        else if (f.value === "high") customers = customers.filter(c => c.scontoMedio > 25);
-      }
-      if (f.field === "volume") {
-        if (f.value === "small") customers = customers.filter(c => c.volume < 1000);
-        else if (f.value === "low") customers = customers.filter(c => c.volume < 5000);
-        else if (f.value === "mid") customers = customers.filter(c => c.volume >= 5000 && c.volume <= 20000);
-        else if (f.value === "large") customers = customers.filter(c => c.volume > 20000);
-      }
-    }
-    return { count: customers.length, customers };
+  /** Bacino reale: tutti i clienti del portale (stessa sezione admin "Clienti")
+   *  con metriche calcolate da ordini_clienti + righe_ordini. */
+  async loadSegment(): Promise<SegCustomer[]> {
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(`
+      SELECT c.id, c.ragione_sociale, c.nome, c.codice_cliente, c.provincia,
+             CASE WHEN o.ultimo IS NULL THEN 9999
+                  ELSE LEAST(9999, FLOOR(EXTRACT(EPOCH FROM (now() - o.ultimo)) / 86400))::int
+             END AS giorni,
+             COALESCE(o.volume12, 0)::float8 AS volume,
+             d.sconto_medio::float8 AS sconto_medio
+      FROM customers c
+      LEFT JOIN (
+        SELECT customer_id, MAX(data_ordine) AS ultimo,
+               SUM(importo_totale) FILTER (WHERE data_ordine >= now() - INTERVAL '12 months') AS volume12
+        FROM ordini_clienti GROUP BY customer_id
+      ) o ON o.customer_id = c.id
+      LEFT JOIN (
+        SELECT oo.customer_id,
+               (1 - SUM(r.prezzo_netto) / SUM(r.prezzo_listino)) * 100 AS sconto_medio
+        FROM ordini_clienti oo
+        JOIN righe_ordini r ON r.ordine_id = oo.id
+        WHERE r.prezzo_listino > 0 AND r.prezzo_netto IS NOT NULL
+        GROUP BY oo.customer_id
+      ) d ON d.customer_id = c.id
+      ORDER BY c.id
+    `);
+    return rows.map(r => ({
+      id: Number(r.id),
+      nome: String(r.ragione_sociale || r.nome || `Cliente #${r.id}`),
+      cod: r.codice_cliente == null ? null : String(r.codice_cliente),
+      regione: r.provincia ? provinciaToRegione(String(r.provincia).toUpperCase()) : null,
+      ultimoOrdine: Number(r.giorni ?? 9999),
+      scontoMedio: r.sconto_medio == null ? null : Math.round(Number(r.sconto_medio) * 10) / 10,
+      volume: Math.round(Number(r.volume ?? 0)),
+    }));
   }
 
-  async getAISuggestions() {
-    return [
-      { title: "Clienti inattivi da oltre 90 giorni", description: "12 clienti non ordinano da 3+ mesi. Una campagna con sconto 10-15% potrebbe riattivarli.", count: 12, filters: { ultimo: "over90" } },
-      { title: "Top spender senza sconto recente", description: "4 clienti con volume >20k€ e sconto medio <10%. Premiali con un codice esclusivo.", count: 4, filters: { volume: "large", sconto: "low" } },
-      { title: "Nuovi clienti da fidelizzare", description: "3 clienti con volume <1k€. Uno sconto di benvenuto li incentiverebbe a ordinare di più.", count: 3, filters: { volume: "small" } },
-      { title: "Lombardia — campagna regionale", description: "5 clienti in Lombardia. Puoi targettizzarli con una promo dedicata alla zona.", count: 5, filters: { regione: "Lombardia" } },
-    ];
+  /** Applica i filtri dell'UI Destinatari a un bacino già caricato. */
+  private applySegFilters(customers: SegCustomer[], filters: SegFilter[]): SegCustomer[] {
+    let out = customers;
+    for (const f of filters) {
+      if (f.field === "regione" && f.value) {
+        const want = REGION_ALIASES[f.value] ?? f.value;
+        out = out.filter(c => c.regione === want);
+      }
+      if (f.field === "ultimoOrdine") {
+        if (f.value === "30") out = out.filter(c => c.ultimoOrdine <= 30);
+        else if (f.value === "90") out = out.filter(c => c.ultimoOrdine <= 90);
+        else if (f.value === "over90") out = out.filter(c => c.ultimoOrdine > 90);
+        else if (f.value === "over180") out = out.filter(c => c.ultimoOrdine > 180);
+        else if (f.value === "none") out = out.filter(c => c.ultimoOrdine >= 9999);
+      }
+      if (f.field === "scontoMedio") {
+        if (f.value === "low") out = out.filter(c => c.scontoMedio != null && c.scontoMedio < 10);
+        else if (f.value === "mid") out = out.filter(c => c.scontoMedio != null && c.scontoMedio >= 10 && c.scontoMedio <= 25);
+        else if (f.value === "high") out = out.filter(c => c.scontoMedio != null && c.scontoMedio > 25);
+      }
+      if (f.field === "volume") {
+        if (f.value === "small") out = out.filter(c => c.volume < 1000);
+        else if (f.value === "low") out = out.filter(c => c.volume < 5000);
+        else if (f.value === "mid") out = out.filter(c => c.volume >= 5000 && c.volume <= 20000);
+        else if (f.value === "large") out = out.filter(c => c.volume > 20000);
+      }
+    }
+    return out;
+  }
+
+  async previewSegment(filters: any[]) {
+    const customers = await this.loadSegment();
+    const matched = this.applySegFilters(customers, (filters ?? []).filter(f => f?.field && f?.value));
+    return { count: matched.length, customers: matched.map(c => ({ id: c.id, nome: c.nome, cod: c.cod })) };
+  }
+
+  /** Proposte salvate in site_config (nessuna spesa AI alla riapertura del modal). */
+  async getAISuggestions(): Promise<{ generatedAt: string | null; items: Suggestion[] }> {
+    const sc = await this.prisma.siteConfig.findUnique({ where: { key: SUGGESTIONS_KEY } });
+    if (!sc) return { generatedAt: null, items: [] };
+    try {
+      const parsed = JSON.parse(sc.value);
+      return { generatedAt: parsed.generatedAt ?? null, items: Array.isArray(parsed.items) ? parsed.items : [] };
+    } catch {
+      return { generatedAt: null, items: [] };
+    }
+  }
+
+  /** Genera 3 proposte con AI: il modello suggerisce i filtri, il DB calcola i count. */
+  async generateAISuggestions(): Promise<{ generatedAt: string; items: Suggestion[] }> {
+    const seg = await this.loadSegment();
+    const prompt = this.buildSuggestionsPrompt(seg);
+    const raw = await this.integrazione.generaSintesiAI(prompt, "coupon_suggestions");
+    const candidates = this.parseSuggestions(raw);
+
+    const items: Suggestion[] = [];
+    for (const c of candidates) {
+      const filters = this.toSegFilters(c.filters);
+      if (!filters.length) continue;
+      const count = this.applySegFilters(seg, filters).length;
+      if (count === 0) continue;
+      items.push({ title: c.title, description: c.description, filters: c.filters, count });
+    }
+    if (!items.length) throw new BadRequestException("L'AI non ha prodotto proposte applicabili ai clienti del portale. Riprova.");
+
+    const payload = { generatedAt: new Date().toISOString(), items };
+    const value = JSON.stringify(payload);
+    await this.prisma.siteConfig.upsert({
+      where: { key: SUGGESTIONS_KEY },
+      create: { key: SUGGESTIONS_KEY, value },
+      update: { value },
+    });
+    return payload;
+  }
+
+  /** Aggregati del bacino: al modello vanno solo statistiche, mai righe per cliente. */
+  private buildSuggestionsPrompt(seg: SegCustomer[]) {
+    const digest = {
+      totaleClienti: seg.length,
+      perRegione: {} as Record<string, number>,
+      inattivi: { oltre90gg: 0, oltre180gg: 0, maiOrdinato: 0 },
+      volume12mesi: { sotto1k: 0, sotto5k: 0, da5kA20k: 0, oltre20k: 0 },
+      scontoMedio: { sotto10pct: 0, da10a25pct: 0, oltre25pct: 0, senzaDati: 0 },
+    };
+    for (const c of seg) {
+      const reg = c.regione ?? "non nota";
+      digest.perRegione[reg] = (digest.perRegione[reg] ?? 0) + 1;
+      if (c.ultimoOrdine > 90) digest.inattivi.oltre90gg++;
+      if (c.ultimoOrdine > 180) digest.inattivi.oltre180gg++;
+      if (c.ultimoOrdine >= 9999) digest.inattivi.maiOrdinato++;
+      if (c.volume < 1000) digest.volume12mesi.sotto1k++;
+      else if (c.volume < 5000) digest.volume12mesi.sotto5k++;
+      else if (c.volume <= 20000) digest.volume12mesi.da5kA20k++;
+      else digest.volume12mesi.oltre20k++;
+      if (c.scontoMedio == null) digest.scontoMedio.senzaDati++;
+      else if (c.scontoMedio < 10) digest.scontoMedio.sotto10pct++;
+      else if (c.scontoMedio <= 25) digest.scontoMedio.da10a25pct++;
+      else digest.scontoMedio.oltre25pct++;
+    }
+
+    return `Sei un consulente di marketing B2B per Luis S.r.l., grossista di vasi e complementi per fioristi e garden center.
+Ti fornisco statistiche AGGREGATE del bacino clienti del portale (nessun dato personale):
+${JSON.stringify(digest)}
+
+Proponi esattamente 3 proposte di segmentazione per campagne coupon.
+Ogni proposta deve essere esprimibile SOLO con questi filtri e questi valori ammessi:
+- regione: ${FILTER_VALUES.regione.map(v => `"${v}"`).join(", ")}
+- ultimo (giorni dall'ultimo ordine; over90/over180 includono chi non ha mai ordinato): ${FILTER_VALUES.ultimo.map(v => `"${v}"`).join(", ")}
+- sconto (sconto medio percentuale): "low" = sotto 10%, "mid" = 10-25%, "high" = oltre 25%
+- volume (ordini ultimi 12 mesi): "small" = sotto 1k€, "low" = sotto 5k€, "mid" = 5-20k€, "large" = oltre 20k€
+
+Regole: almeno un filtro e almeno un filtro per proposta; usa solo i valori ammessi; title max 60 caratteri; description max 140 caratteri in italiano SENZA numeri né conteggi (la piattaforma li aggiunge).
+Rispondi SOLO con JSON valido, senza altro testo:
+{"suggestions":[{"title":"","description":"","filters":{}}]}`;
+  }
+
+  private parseSuggestions(raw: string): { title: string; description: string; filters: Record<string, string> }[] {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new BadRequestException("Risposta AI non interpretabile. Riprova.");
+    let data: any;
+    try { data = JSON.parse(match[0]); } catch { throw new BadRequestException("Risposta AI non interpretabile. Riprova."); }
+    const list = Array.isArray(data?.suggestions) ? data.suggestions : [];
+    return list.filter((s: any) => {
+      if (typeof s?.title !== "string" || !s.title.trim()) return false;
+      if (typeof s?.description !== "string" || !s.description.trim()) return false;
+      if (typeof s?.filters !== "object" || s.filters == null) return false;
+      // Fail closed: ogni filtro proposto deve stare nella grammatica dell'UI.
+      return Object.entries(s.filters).every(([k, v]) =>
+        FILTER_VALUES[k] !== undefined && FILTER_VALUES[k].includes(String(v)));
+    }).map((s: any) => ({
+      title: s.title.trim().slice(0, 80),
+      description: s.description.trim().slice(0, 200),
+      filters: s.filters as Record<string, string>,
+    }));
+  }
+
+  /** Filtri proposti dal modello (chiavi regione/ultimo/sconto/volume) → campi segmento. */
+  private toSegFilters(filters: Record<string, string>): SegFilter[] {
+    const FIELD: Record<string, string> = { regione: "regione", ultimo: "ultimoOrdine", sconto: "scontoMedio", volume: "volume" };
+    return Object.entries(filters)
+      .filter(([k, v]) => FIELD[k] !== undefined && FILTER_VALUES[k]?.includes(String(v)))
+      .map(([k, v]) => ({ field: FIELD[k], value: String(v) }));
   }
 
   async generateQR(code: string) {

@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Modal from "../../common/Modal";
 import DataTable from "../DataTable";
 import type { Column, RowAction } from "../DataTable";
 import DataTip from "../../common/DataTip";
-import { api } from "../../../lib/api";
+import { api, ApiError } from "../../../lib/api";
 import { formatPrice } from "../../../lib/helpers";
 
 const stl: Record<string, any> = { width: "100%", padding: "9px 12px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", font: "inherit", fontSize: 14, color: "var(--fg)", boxSizing: "border-box" };
+
+type AiSuggestion = { title: string; description: string; filters: Record<string, string>; count: number };
+type AiSuggestionsResponse = { generatedAt: string | null; items: AiSuggestion[] };
 
 export default function CouponEditorModal({ onClose, onSaved, initial }: { onClose: () => void; onSaved: () => void; initial?: any }) {
   const isEdit = !!initial;
@@ -55,20 +58,45 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
   }
 
   // Step 2: Destinatari
-  const [segCount, setSegCount] = useState(0);
   const [segged, setSegged] = useState<any[]>([]);
+  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [clientSearch, setClientSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showResults, setShowResults] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedClients, setSelectedClients] = useState<Record<number, any>>({});
   const [showClientList, setShowClientList] = useState(false);
   const [filtroRegione, setFiltroRegione] = useState("");
   const [filtroUltimo, setFiltroUltimo] = useState("");
   const [filtroSconto, setFiltroSconto] = useState("");
   const [filtroVolume, setFiltroVolume] = useState("");
-  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [reloadTick, setReloadTick] = useState(0);
+  const [aiSuggestions, setAiSuggestions] = useState<AiSuggestion[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { api.get<any[]>("/api/admin/coupon/ai-suggestions").then(setAiSuggestions).catch(() => {}); }, []);
+  useEffect(() => {
+    api.get<AiSuggestionsResponse>("/api/admin/coupon/ai-suggestions")
+      .then(r => { setAiSuggestions(r.items ?? []); setAiGeneratedAt(r.generatedAt); })
+      .catch(() => {});
+  }, []);
+
+  async function generateAISuggestions() {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const r = await api.post<AiSuggestionsResponse>("/api/admin/coupon/ai-suggestions");
+      setAiSuggestions(r.items);
+      setAiGeneratedAt(r.generatedAt);
+    } catch (e) {
+      setAiError(e instanceof ApiError ? e.message : "Errore nella generazione. Riprova.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   const updateQR = useCallback(async (c: string) => {
     if (!c) { setQrCode(null); return; }
@@ -83,30 +111,50 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
     setCode(r);
   }
 
-  const applyFilters = useCallback(async () => {
-    const filters: any[] = [];
+  useEffect(() => {
+    const filters: { field: string; value: string }[] = [];
     if (filtroRegione) filters.push({ field: "regione", value: filtroRegione });
     if (filtroUltimo) filters.push({ field: "ultimoOrdine", value: filtroUltimo });
     if (filtroSconto) filters.push({ field: "scontoMedio", value: filtroSconto });
     if (filtroVolume) filters.push({ field: "volume", value: filtroVolume });
-    if (filters.length === 0) { setSegCount(0); setSegged([]); return; }
-    try { const res = await api.post<{ count: number; customers: any[] }>("/api/admin/coupon/preview-segment", { filters }); setSegCount(res.count); setSegged(res.customers); } catch { setSegCount(0); }
-  }, [filtroRegione, filtroUltimo, filtroSconto, filtroVolume]);
-
-  useEffect(() => { applyFilters(); }, [applyFilters]);
+    if (filters.length === 0) { setSegged([]); return; }
+    setExcludedIds(new Set()); // ogni riapplicazione (filtro o suggerimento) azzera le esclusioni
+    void reloadTick; // trigger: ricliccando lo stesso suggerimento, filtri identici ma esegui comunque la preview
+    let stale = false;
+    api.post<{ count: number; customers: any[] }>("/api/admin/coupon/preview-segment", { filters })
+      .then(res => { if (!stale) setSegged(res.customers); })
+      .catch(() => { if (!stale) setSegged([]); });
+    return () => { stale = true; };
+  }, [filtroRegione, filtroUltimo, filtroSconto, filtroVolume, reloadTick]);
 
   async function searchClients() {
     if (!clientSearch.trim()) return;
     try {       const list = await api.get<any>(`/api/customers?q=${encodeURIComponent(clientSearch)}`);
-      setSearchResults(list?.items ?? list ?? []); } catch { setSearchResults([]); }
+      setSearchResults(list?.items ?? list ?? []); setShowResults(true); } catch { setSearchResults([]); setShowResults(false); }
   }
 
-  function toggleClient(id: number) {
-    setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  useEffect(() => {
+    if (!showResults) return;
+    const h = (e: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [showResults]);
+
+  function toggleClient(c: any) {
+    setSelectedIds(prev => { const next = new Set(prev); if (next.has(c.id)) next.delete(c.id); else next.add(c.id); return next; });
+    setSelectedClients(prev => { const next = { ...prev }; if (next[c.id]) delete next[c.id]; else next[c.id] = c; return next; });
+  }
+
+  // Togliere il flag a una riga dell'elenco = rimuoverla dalla lista (deselezione esplicita + esclusione dal segmento)
+  function removeFromList(c: any) {
+    setSelectedIds(prev => { const next = new Set(prev); next.delete(c.id); return next; });
+    setSelectedClients(prev => { const next = { ...prev }; delete next[c.id]; return next; });
+    setExcludedIds(prev => new Set(prev).add(c.id));
   }
 
   function applyAISuggestion(s: any) {
     setFiltroRegione(s.filters?.regione ?? ""); setFiltroUltimo(s.filters?.ultimo ?? ""); setFiltroSconto(s.filters?.sconto ?? ""); setFiltroVolume(s.filters?.volume ?? "");
+    setReloadTick(t => t + 1); // ricliccando lo stesso suggerimento si riesegue il segmento (azzera le esclusioni)
   }
 
   async function handleCreate() {
@@ -122,13 +170,15 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
         await api.post("/api/admin/coupon", {
           code, name, type, value, scope, scopeDetail: scopeDetail || undefined,
           minOrder: minOrder || undefined, usage, validFrom, validTo: validTo || undefined,
-          targetCount: segCount + selectedIds.size, customerIds: [...selectedIds],
+          targetCount: listRows.length, customerIds: [...selectedIds],
         });
       }
       setSaving(false);
       onSaved();
     } catch { setSaving(false); }
   }
+
+  const listRows = [...new Map([...(excludedIds.size ? segged.filter(c => !excludedIds.has(c.id)) : segged), ...Object.values(selectedClients)].map(c => [c.id, c])).values()] as { id: number; nome?: string; ragioneSociale?: string | null; cod?: string | null; codiceCliente?: string | null }[];
 
   const iconCal = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 
@@ -207,9 +257,9 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
               </div>
             ) : (
               <>
-            <div style={{ position: "relative", marginBottom: 12 }}>
+            <div ref={searchRef} style={{ position: "relative", marginBottom: 12 }}>
             <div style={{ display: "flex", gap: 8 }}><input style={{ ...stl, flex: 1 }} value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Cerca per codice cliente, ragione sociale o P.IVA..." onKeyDown={e => e.key === "Enter" && searchClients()} /><button className="btn btn-secondary btn-sm" onClick={searchClients}>Cerca</button></div>
-            {searchResults.length > 0 && (<div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", boxShadow: "0 8px 24px oklch(0% 0 0 / 0.15)", marginTop: 4 }}>{searchResults.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13, cursor: "pointer" }} onClick={() => toggleClient(c.id)}><input type="checkbox" checked={selectedIds.has(c.id)} readOnly style={{ accentColor: "var(--accent)", width: 16, height: 16, flexShrink: 0, margin: 0 }} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.ragioneSociale || c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{c.cod || c.codiceCliente || ""}</span></div>))}</div>)}
+            {showResults && searchResults.length > 0 && (<div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", boxShadow: "0 8px 24px oklch(0% 0 0 / 0.15)", marginTop: 4 }}>{searchResults.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13, cursor: "pointer" }} onClick={() => { toggleClient(c); setShowResults(false); }}><input type="checkbox" checked={selectedIds.has(c.id)} readOnly style={{ accentColor: "var(--accent)", width: 16, height: 16, flexShrink: 0, margin: 0 }} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.ragioneSociale || c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{c.cod || c.codiceCliente || ""}</span></div>))}</div>)}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 12 }}>
               <div><label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 4 }}>Regione</label><select style={stl} value={filtroRegione} onChange={e => setFiltroRegione(e.target.value)}><option value="">Tutte</option><option value="Lombardia">Lombardia</option><option value="Veneto">Veneto</option><option value="Toscana">Toscana</option><option value="Lazio">Lazio</option><option value="Emilia-R.">Emilia-R.</option><option value="Piemonte">Piemonte</option><option value="Campania">Campania</option><option value="Sicilia">Sicilia</option></select></div>
@@ -217,9 +267,24 @@ export default function CouponEditorModal({ onClose, onSaved, initial }: { onClo
               <div><label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 4 }}>Sconto medio</label><select style={stl} value={filtroSconto} onChange={e => setFiltroSconto(e.target.value)}><option value="">Qualsiasi</option><option value="low">&lt;10%</option><option value="mid">10–25%</option><option value="high">&gt;25%</option></select></div>
               <div><label style={{ fontSize: 12, color: "var(--muted)", display: "block", marginBottom: 4 }}>Volume 12 mesi</label><select style={stl} value={filtroVolume} onChange={e => setFiltroVolume(e.target.value)}><option value="">Qualsiasi</option><option value="small">&lt;1k€</option><option value="low">&lt;5k€</option><option value="mid">5–20k€</option><option value="large">&gt;20k€</option></select></div>
             </div>
-            {aiSuggestions.length > 0 && (<div style={{ padding: "12px 16px", background: "color-mix(in oklch, var(--blue) 8%, transparent)", border: "1px solid var(--blue)", borderRadius: 10, marginBottom: 12 }}><div style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>{iconCal}Suggerimenti AI</div>{aiSuggestions.map((s: any, i: number) => (<div key={i} onClick={() => applyAISuggestion(s)} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 6, marginBottom: 4, background: "var(--surface)", fontSize: 13 }}><div style={{ fontWeight: 500 }}>{s.title}</div><div style={{ color: "var(--muted)", fontSize: 12 }}>{s.description} <strong>{s.count} clienti</strong></div></div>))}</div>)}
-            {(segCount > 0 || selectedIds.size > 0) && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--fg-soft)", borderRadius: 8, fontSize: 13 }}><span>Clienti selezionati: <strong style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{segCount + selectedIds.size}</strong></span>{segCount > 0 && (<button className="btn btn-ghost btn-sm" onClick={() => setShowClientList(!showClientList)}>{showClientList ? "Nascondi ▲" : "Vedi elenco ▼"}</button>)}</div>)}
-            {showClientList && segged.length > 0 && (<div style={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, marginTop: 8 }}>{segged.map((c: any) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13 }}><input type="checkbox" checked readOnly style={{ accentColor: "var(--accent)" }} /><span style={{ flex: 1 }}>{c.nome}</span><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.cod}</span></div>))}</div>)}
+            <div style={{ padding: "12px 16px", background: "color-mix(in oklch, var(--blue) 8%, transparent)", border: "1px solid var(--blue)", borderRadius: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>{iconCal}Suggerimenti AI</span>
+                <button className="btn btn-secondary btn-sm" onClick={generateAISuggestions} disabled={aiLoading}>{aiLoading ? "Generazione…" : aiSuggestions.length > 0 ? "Rigenera" : "Genera proposte"}</button>
+              </div>
+              {aiGeneratedAt && !aiLoading && <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>Proposte aggiornate alle {new Date(aiGeneratedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</div>}
+              {aiError && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{aiError}</div>}
+              {aiLoading && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>Analisi del bacino clienti e generazione con AI…</div>}
+              {!aiLoading && !aiError && aiSuggestions.length === 0 && <div style={{ fontSize: 12, color: "var(--muted)" }}>Nessuna proposta: generarne di nuove sui clienti del portale.</div>}
+              {aiSuggestions.map((s, i) => (<div key={i} onClick={() => applyAISuggestion(s)} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 6, marginBottom: 4, background: "var(--surface)", fontSize: 13 }}><div style={{ fontWeight: 500 }}>{s.title}</div><div style={{ color: "var(--muted)", fontSize: 12 }}>{s.description} <strong>{s.count} clienti</strong></div></div>))}
+            </div>
+            {listRows.length > 0 && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--fg-soft)", borderRadius: 8, fontSize: 13 }}><span>Clienti selezionati: <strong style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{listRows.length}</strong></span><button className="btn btn-ghost btn-sm" onClick={() => setShowClientList(!showClientList)}>{showClientList ? "Nascondi ▲" : "Vedi elenco ▼"}</button></div>)}
+            {showClientList && listRows.length > 0 && (<div style={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border)", borderRadius: 8, marginTop: 8 }}>{listRows.map(c => (
+              <div key={c.id} onClick={() => removeFromList(c)} title="Clicca per rimuovere" style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderBottom: "1px solid var(--border)", fontSize: 13, cursor: "pointer" }}>
+                <input type="checkbox" checked readOnly style={{ accentColor: "var(--accent)", width: 16, height: 16, flexShrink: 0, margin: 0 }} />
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.ragioneSociale || c.nome}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{c.cod || c.codiceCliente || ""}</span>
+              </div>))}</div>)}
               </>
             )}
           </div>

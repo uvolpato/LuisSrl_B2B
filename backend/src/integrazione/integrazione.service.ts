@@ -2142,8 +2142,8 @@ Rispondi SOLO con JSON valido, senza testo attorno:
   // ── AI: wizard descrizione sensoriale ──
 
   /** Generazione testo AI riutilizzabile (es. sintesi comportamentale cliente). */
-  async generaSintesiAI(prompt: string): Promise<string> {
-    return this.callGeminiText(prompt, undefined, 'insight');
+  async generaSintesiAI(prompt: string, usageTipo = 'insight'): Promise<string> {
+    return this.callGeminiText(prompt, undefined, usageTipo);
   }
 
   /** Selezione/ordine dei candidati di un box dashboard (Fase 2). Il chiamante
