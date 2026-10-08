@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!--
+  PROTOTIPO restyling — conferma d'ordine — Portale B2B Luis S.r.l.
+  Originale invariato: backend/src/mail/templates/ordine-conferma.html
+
+  Dati di esempio per l'anteprima. Al rilascio sostituire con i segnaposto originali:
+    {{DOMAIN}}            URL pubblico del portale (per logo, immagini e link)
+    {{RAGIONE_SOCIALE}}   intestatario dell'ordine
+    {{NUMERO_ORDINE}}     numero ordine B2B
+    {{DATA_ORDINE}}       data in gg/mm/aaaa
+    {{TOTALE}}            totale IVA esclusa, gia' formattato
+    {{N_ARTICOLI}}        numero di righe
+    {{INDIRIZZO}}         destinazione della merce (blocco di testo)
+    {{NOTE}}              note d'ordine (vuoto se assenti)
+
+  Il logo va caricato con src="cid:logo" (allegato dal backend); qui e' un file
+  locale solo perche' l'anteprima nel browser non risolve i cid.
+
+  Il blocco tra RIGA_START e RIGA_END viene ripetuto per ogni riga dell'ordine:
+  nel template attivo ne e' presente UNA sola riga-modello (qui replicata 3 volte
+  per l'anteprima). I marcatori vanno mantenuti identici:
+    <!--RIGA_START-->  ...  <!--RIGA_END-->
+  Segnaposto di riga: {{R_IMMAGINE}} {{R_DESCRIZIONE}} {{R_CODICE}} {{R_QTA}} {{R_PREZZO}} {{R_TOTALE}}
+-->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conferma ordine — Portale B2B Luis</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f1ec;font-family:Arial,Helvetica,sans-serif;color:#221811;">
+  <div style="display:none;max-height:0;overflow:hidden;">Ordine B2B-2026-0184 del 08/10/2026 — totale 383,40 € (IVA esclusa) — grazie per il tuo ordine.</div>
+
+  <div style="background:#2b2622;color:#efe9e3;font-size:11px;letter-spacing:.04em;text-align:center;padding:7px 12px;">
+    PROTOTIPO restyling — originale: backend/src/mail/templates/ordine-conferma.html
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f1ec;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e2db;border-radius:14px;overflow:hidden;">
+
+        <!-- Logo (rilascio: src="cid:logo") -->
+        <tr>
+          <td align="center" style="padding:30px 24px 6px;">
+            <img src="frontend/public/images/b2b/logo.webp" alt="Luis S.r.l." width="170"
+                 style="display:block;border:0;width:170px;max-width:60%;height:auto;">
+          </td>
+        </tr>
+
+        <!-- Titolo -->
+        <tr>
+          <td style="padding:14px 36px 0;">
+            <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#b2511e;">Conferma d'ordine</p>
+            <h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;color:#221811;">Grazie per il suo ordine</h1>
+            <p style="margin:0 0 8px;font-size:15px;line-height:1.6;">Gentile <strong>Rossi Giardini S.r.l.</strong>,</p>
+            <p style="margin:0 0 8px;font-size:15px;line-height:1.6;">
+              abbiamo ricevuto con successo il suo ordine e la ringraziamo per la fiducia
+              accordata a Luis S.r.l.
+            </p>
+            <p style="margin:0;font-size:15px;line-height:1.6;">
+              Il nostro team lo ha gi&agrave; preso in carico: la ricontatteremo al pi&ugrave; presto
+              per confermarle disponibilit&agrave; e tempi di consegna.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Riepilogo ordine -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#f7f5f1;border:1px solid #e7e2db;border-radius:8px;">
+              <tr>
+                <td width="34%" style="padding:12px 16px;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Ordine n.</span>
+                  <strong style="font-size:15px;">B2B-2026-0184</strong>
+                </td>
+                <td width="33%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Data</span>
+                  <strong style="font-size:15px;">08/10/2026</strong>
+                </td>
+                <td width="33%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Articoli</span>
+                  <strong style="font-size:15px;">3</strong>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Righe -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+              <tr>
+                <td width="64" style="padding:0 12px 8px 0;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Articolo</span>
+                </td>
+                <td style="padding:0 0 8px;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Descrizione</span>
+                </td>
+                <td align="right" style="padding:0 0 8px;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Totale</span>
+                </td>
+              </tr>
+
+              <!--RIGA_START-->
+              <tr>
+                <td width="64" valign="top" style="padding:12px 12px 12px 0">
+                  <img src="frontend/public/images/b2b/catalogo-cotto-esterni.webp" alt="" width="64"
+                       style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
+                </td>
+                <td valign="top" style="padding:12px 0;border-bottom:1px solid #efeae5">
+                  <strong>Vaso alto cotto Ø34</strong><br>
+                  <span style="color:#706760;font-size:12px">COD-VAS034</span><br>
+                  <span style="color:#706760;font-size:13px">12 &times; 8,90 &euro;</span>
+                </td>
+                <td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
+                  <strong>106,80 &euro;</strong>
+                </td>
+              </tr>
+              <!--RIGA_END-->
+
+              <!-- copie della riga-modello, solo per l'anteprima -->
+              <tr>
+                <td width="64" valign="top" style="padding:12px 12px 12px 0">
+                  <img src="frontend/public/images/b2b/catalogo-cesti.webp" alt="" width="64"
+                       style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
+                </td>
+                <td valign="top" style="padding:12px 0;border-bottom:1px solid #efeae5">
+                  <strong>Cesto vimini Ø40</strong><br>
+                  <span style="color:#706760;font-size:12px">COD-CEST40</span><br>
+                  <span style="color:#706760;font-size:13px">6 &times; 24,50 &euro;</span>
+                </td>
+                <td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
+                  <strong>147,00 &euro;</strong>
+                </td>
+              </tr>
+              <tr>
+                <td width="64" valign="top" style="padding:12px 12px 12px 0">
+                  <img src="frontend/public/images/b2b/catalogo-fiberstone.webp" alt="" width="64"
+                       style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
+                </td>
+                <td valign="top" style="padding:12px 0;border-bottom:1px solid #efeae5">
+                  <strong>Fioriera fiberstone 50</strong><br>
+                  <span style="color:#706760;font-size:12px">COD-FIB050</span><br>
+                  <span style="color:#706760;font-size:13px">24 &times; 5,40 &euro;</span>
+                </td>
+                <td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
+                  <strong>129,60 &euro;</strong>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Totale -->
+        <tr>
+          <td style="padding:16px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#fdf3ee;border:1px solid #f2ddd0;border-radius:8px;">
+              <tr>
+                <td style="padding:14px 18px;font-size:14px;"><strong>Totale (IVA esclusa)</strong></td>
+                <td align="right" style="padding:14px 18px;white-space:nowrap;">
+                  <strong style="font-size:20px;color:#b2511e;">383,40 &euro;</strong>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Consegna -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#f7f5f1;border:1px solid #e7e2db;border-radius:8px;">
+              <tr>
+                <td style="padding:16px 18px;font-size:13px;line-height:1.6;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;margin-bottom:6px;">Consegna</span>
+                  Via Roma 12<br>24010 Sorisole (BG)
+                  <br><br><strong style="font-size:14px">Note</strong><br><span style="color:#706760">Consegna preferibile nel pomeriggio, citofono Rossi.</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td align="center" style="padding:26px 36px 8px;">
+            <a href="{{DOMAIN}}/area/ordini"
+               style="background:#b2511e;color:#ffffff;padding:13px 40px;border-radius:9px;text-decoration:none;font-weight:bold;display:inline-block;font-size:15px;">
+              Vedi i tuoi ordini
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 36px 28px;">
+            <hr style="border:none;border-top:1px solid #efeae5;margin:0 0 12px;">
+            <p style="margin:0;font-size:11.5px;line-height:1.6;color:#706760;">
+              Luis S.r.l. &middot; Via F. Bellafino 28/30, Bergamo<br>
+              Messaggio automatico: non rispondere a questo indirizzo.
+              Per assistenza usi i riferimenti del portale.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
