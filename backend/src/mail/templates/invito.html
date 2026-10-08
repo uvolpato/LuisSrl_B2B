@@ -7,7 +7,8 @@
     {{RAGIONE_SOCIALE}}  intestatario dell'invito
     {{EMAIL}}            indirizzo email dell'account
     {{PASSWORD}}         password temporanea
-    {{DOMAIN}}           URL pubblico del portale (logo e link)
+    {{DOMAIN}}           URL pubblico del portale (link)
+  Il logo e' un allegato inline: src="cid:logo", allegato dal backend.
 -->
 <html lang="it">
 <head>
@@ -27,7 +28,7 @@
         <!-- Header: logo -->
         <tr>
           <td align="center" style="padding:30px 24px 22px;border-bottom:3px solid #b2511e;">
-            <img src="{{DOMAIN}}/images/b2b/logo.webp" alt="Luis S.r.l." height="44"
+            <img src="cid:logo" alt="Luis S.r.l." height="44"
                  style="display:block;height:44px;width:auto;">
           </td>
         </tr>

@@ -115,6 +115,7 @@ export class MailService {
       to: recipient,
       subject,
       html,
+      attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
     });
   }
 
@@ -150,6 +151,7 @@ export class MailService {
       to: recipient,
       subject: 'Il tuo invito al Portale B2B Luis S.r.l.',
       html,
+      attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
     });
   }
 
@@ -174,6 +176,15 @@ export class MailService {
     return this.buildConfermaOrdine(dati).html;
   }
 
+  /** Logo come allegato inline (cid:logo): non dipende dal dominio pubblico e i client che non
+   *  supportano il webp (Outlook) lo comunque mostrano. */
+  private allegatoLogo(): { filename: string; path: string; cid: string }[] {
+    const logoPath = join(this.assetsBase, 'b2b', 'logo-email.png');
+    return existsSync(logoPath)
+      ? [{ filename: 'logo.png', path: logoPath, cid: 'logo' }]
+      : [];
+  }
+
   /**
    * HTML + allegati inline della conferma d'ordine. Solo il logo viene
    * incorporato come `cid:` (cosi' l'intestazione si vede sempre). Le immagini
@@ -184,10 +195,7 @@ export class MailService {
     html: string;
     attachments: { filename: string; path: string; cid: string }[];
   } {
-    const attachments: { filename: string; path: string; cid: string }[] = [];
-
-    const logoPath = join(this.assetsBase, 'b2b', 'logo-email.png');
-    if (existsSync(logoPath)) attachments.push({ filename: 'logo.png', path: logoPath, cid: 'logo' });
+    const attachments = this.allegatoLogo();
 
     const tpl = this.leggiTemplate('ordine-conferma.html');
     if (!tpl) {
