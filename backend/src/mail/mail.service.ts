@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
@@ -12,8 +12,6 @@ export class MailService {
   private from: string;
   private domain: string;
   private testEmail: string | null;
-  private template: string;
-  private invitoTemplate: string;
   private assetsBase: string;
 
   constructor(private config: ConfigService) {
@@ -30,19 +28,6 @@ export class MailService {
     this.domain = this.config.get<string>('APP_DOMAIN') ?? 'http://localhost:3000';
     this.testEmail = this.config.get<string>('TEST_EMAIL') ?? null;
     this.assetsBase = ASSETS_BASE_DIR;
-
-    try {
-      this.template = readFileSync(join(__dirname, 'templates', 'password-reset.html'), 'utf-8');
-    } catch {
-      this.logger.warn('Template email non trovato, usa fallback inline');
-      this.template = '';
-    }
-    try {
-      this.invitoTemplate = readFileSync(join(__dirname, 'templates', 'invito.html'), 'utf-8');
-    } catch {
-      this.logger.warn('Template invito non trovato, usa fallback inline');
-      this.invitoTemplate = '';
-    }
   }
 
   /**
@@ -51,13 +36,17 @@ export class MailService {
    * sovrascritto a ogni deploy). Ritorna '' se manca: chi chiama usa il fallback inline.
    */
   private leggiTemplate(nome: string): string {
+    const configurata = this.config.get<string>('MAIL_TEMPLATES_DIR');
     const dirs = [
-      this.config.get<string>('MAIL_TEMPLATES_DIR'),
+      configurata ? resolve(configurata) : null,
       join(__dirname, 'templates'),
     ].filter(Boolean) as string[];
     for (const dir of dirs) {
       try {
-        return readFileSync(join(dir, nome), 'utf-8');
+        const file = join(dir, nome);
+        const html = readFileSync(file, 'utf-8');
+        this.logger.log(`Template ${nome} letto da ${file}`);
+        return html;
       } catch { /* provo il prossimo */ }
     }
     this.logger.warn(`Template ${nome} non trovato, uso il fallback inline`);
@@ -89,8 +78,9 @@ export class MailService {
     const recipient = this.resolveRecipient(to);
 
     let html: string;
-    if (this.template) {
-      html = this.template
+    const tpl = this.leggiTemplate('password-reset.html');
+    if (tpl) {
+      html = tpl
         .replace(/\{\{NOME\}\}/g, nome)
         .replace(/\{\{EMAIL\}\}/g, to)
         .replace(/\{\{PASSWORD\}\}/g, provisionalPassword)
@@ -124,8 +114,9 @@ export class MailService {
     const recipient = this.resolveRecipient(to);
 
     let html: string;
-    if (this.invitoTemplate) {
-      html = this.invitoTemplate
+    const tplInvito = this.leggiTemplate('invito.html');
+    if (tplInvito) {
+      html = tplInvito
         .replace(/\{\{RAGIONE_SOCIALE\}\}/g, ragioneSociale)
         .replace(/\{\{EMAIL\}\}/g, to)
         .replace(/\{\{PASSWORD\}\}/g, provisionalPassword)
