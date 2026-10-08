@@ -29,9 +29,13 @@ export class AdminOrdiniService {
     );
     const scontoMedio = totaleListino > 0 ? Math.round((1 - totale / totaleListino) * 1000) / 10 : 0;
 
-    // Spedizione: non esiste un importo spedizione persistito sull'ordine (solo la
-    // modalità). Nessun dato reale da aggregare → null (la UI mostra "—"), niente 0 finti.
-    return { count, totale, scontoMedio, spedizioneMedia: null, pezzi, clienti, inAttesa };
+    const spedizioni = ordini
+      .map((o) => Number(o.costoTrasporto ?? 0))
+      .filter((v) => v > 0);
+    const spedizioneMedia = spedizioni.length
+      ? Math.round((spedizioni.reduce((s, v) => s + v, 0) / spedizioni.length) * 100) / 100
+      : null;
+    return { count, totale, scontoMedio, spedizioneMedia, pezzi, clienti, inAttesa };
   }
 
   async findAll(dataDa: string, dataA?: string, page = 1, limit = 10, search?: string) {
@@ -94,7 +98,7 @@ export class AdminOrdiniService {
       pagamento: o.codicePagamento ?? "",
       totale: Number(o.importoTotale ?? 0),
       pezzi: o.righe.reduce((s, r) => s + Number(r.quantita ?? 0), 0),
-      spedizione: null,
+      spedizione: Number(o.costoTrasporto ?? 0),
       indirizzo: indirizzo
         ? {
             nome: indirizzo.ragioneSociale ?? "",

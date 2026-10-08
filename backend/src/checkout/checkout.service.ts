@@ -379,23 +379,10 @@ export class CheckoutService {
       });
     }
 
-    let costoTrasporto = 0;
-
-    // Calcola spese di spedizione se l'indirizzo ha provincia (Italia)
-    if (indirizzoSpedizioneId) {
-      const addr = await this.prisma.indirizzoCliente.findUnique({ where: { id: indirizzoSpedizioneId } });
-      if (addr?.provincia) {
-        const regione = provinciaToRegione(addr.provincia.toUpperCase());
-        const resolved = this.speseSpedizione.resolveTariffa('IT', regione ?? null);
-        if (resolved) {
-          costoTrasporto = Calcola(resolved.t, importoTotale, 0).fee;
-        }
-      }
-    }
-
     // Applica coupon se presente - calcolo server-side
     let couponRiga: any = null;
     let couponCampaignId: number | null = null;
+    let spedizioneGratuita = false;
     try {
     if (dto.codiceCoupon) {
       const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
@@ -458,7 +445,7 @@ export class CheckoutService {
             discountAmount = Math.min(Number(campaign.value), scopeTotal);
             descr += ` (−${Number(campaign.value).toFixed(2)} €)`;
           } else if (campaign.type === 'free-ship') {
-            costoTrasporto = 0;
+            spedizioneGratuita = true;
             descr += ' (Spedizione gratuita)';
           }
           if (campaign.scopeDetail) descr += ` su ${campaign.scopeDetail}`;
@@ -481,6 +468,21 @@ export class CheckoutService {
     }
     } catch (e) { /* coupon error non deve bloccare l'ordine */ }
 
+    // Spese di spedizione: ricalcolate sul totale post-coupon (fonte di verita' = backend).
+    let costoTrasporto = 0;
+    if (!spedizioneGratuita && indirizzoSpedizioneId) {
+      const addr = await this.prisma.indirizzoCliente.findUnique({ where: { id: indirizzoSpedizioneId } });
+      if (addr?.provincia) {
+        const regione = provinciaToRegione(addr.provincia.toUpperCase());
+        const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione ?? null);
+        if (resolved) {
+          costoTrasporto = Calcola(resolved.t, importoTotale, 0).fee;
+        }
+      }
+    }
+    costoTrasporto = Math.round(costoTrasporto * 100) / 100;
+    importoTotale = Math.round((importoTotale + costoTrasporto) * 100) / 100;
+
     const numeroOrdine = `B2B-${Date.now()}`;
     const righeFinali = couponRiga ? [...righe, couponRiga] : righe;
 
@@ -494,6 +496,7 @@ export class CheckoutService {
           dataOrdine: new Date(),
           customerId: clienteId,
           importoTotale,
+          costoTrasporto,
           stato: 'BOZZA',
           indirizzoSpedizioneId,
           codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,
