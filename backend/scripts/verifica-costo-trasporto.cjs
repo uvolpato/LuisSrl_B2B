@@ -131,6 +131,7 @@ async function setCart(items) {
   assert.ok(Number(sped.prezzo) > 0, 'importo riga spedizione non positivo');
   assert.strictEqual(tot, righeSum, 'importo_totale != somma delle righe (spedizione non inclusa?)');
   assert.strictEqual(Number(ordine.importoTotale), tot, 'risposta conferma != importo persistito');
+  assert.ok(/^-?\d+(\.\d{1,2})?$/.test(String(db.importoTotale)), 'importo_totale non arrotondato a 2 decimali: ' + db.importoTotale);
 
   console.log(`OK: riga spedizione ${Number(sped.prezzo)} inclusa; totale = somma righe = ${tot}`);
 })()

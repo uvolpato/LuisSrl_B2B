@@ -456,7 +456,7 @@ export class CheckoutService {
               codiceProdotto: campaign.code,
               descrizione: descr,
               quantita: 1,
-              prezzo: -Math.round(discountAmount * 100) / 100,
+              prezzo: (-Math.round(discountAmount * 100) / 100).toFixed(2),
             };
           }
 
@@ -483,13 +483,11 @@ export class CheckoutService {
         }
       }
     }
-    if (costoTrasporto > 0) {
-      importoTotale = Math.round((importoTotale + costoTrasporto) * 100) / 100;
-    }
+    importoTotale = Math.round((importoTotale + costoTrasporto) * 100) / 100;
 
     const numeroOrdine = `B2B-${Date.now()}`;
     const spedizioneRiga = costoTrasporto > 0
-      ? [{ codiceProdotto: null, descrizione: 'Spese di spedizione', quantita: 1, prezzo: costoTrasporto }]
+      ? [{ codiceProdotto: null, descrizione: 'Spese di spedizione', quantita: 1, prezzo: costoTrasporto.toFixed(2) }]
       : [];
     const righeFinali = [...righe, ...(couponRiga ? [couponRiga] : []), ...spedizioneRiga];
 
@@ -502,7 +500,10 @@ export class CheckoutService {
           numeroOrdine,
           dataOrdine: new Date(),
           customerId: clienteId,
-          importoTotale,
+          // Stringa a 2 decimali: un number JS inviato a una colonna numeric viene
+          // serializzato come float8 e Postgres ne espande la rappresentazione binaria
+          // (es. 97.68000000000001). Cosi' il totale resta esatto.
+          importoTotale: importoTotale.toFixed(2),
           stato: 'BOZZA',
           indirizzoSpedizioneId,
           codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,
@@ -519,7 +520,7 @@ export class CheckoutService {
 
       if (couponCampaignId) {
         await tx.campaignUsage.create({
-          data: { campaignId: couponCampaignId, customerId: clienteId, orderId: created.id, importo: importoTotale },
+          data: { campaignId: couponCampaignId, customerId: clienteId, orderId: created.id, importo: importoTotale.toFixed(2) },
         });
         await tx.campaign.update({ where: { id: couponCampaignId }, data: { usedCount: { increment: 1 } } });
       }
