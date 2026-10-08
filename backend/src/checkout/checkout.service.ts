@@ -395,8 +395,8 @@ export class CheckoutService {
         // Controlla utilizzo per cliente
         let canUse = true;
         if (campaign.usage === 'once') {
-          const already = await this.prisma.campaignUsage.findUnique({
-            where: { campaignId_customerId: { campaignId: campaign.id, customerId: clienteId } },
+          const already = await this.prisma.campaignUsage.findFirst({
+            where: { campaignId: campaign.id, customerId: clienteId },
           });
           if (already) canUse = false;
         } else if (campaign.usage === 'single') {

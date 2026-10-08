@@ -652,6 +652,6 @@ model CampaignUsage {
   revokedBy  Int?      @map("revoked_by")
   campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  @@unique([campaignId, customerId])
+  @@unique([campaignId, orderId])
   @@map("campaign_usage")
 }
