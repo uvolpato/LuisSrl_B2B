@@ -901,22 +901,33 @@ export class SyncService {
       `);
       const updatedCount = typeof updated === 'number' ? updated : 0;
 
+      // Azzera le varianti attive sparite dalla vista (prodotto obsoleto/rimosso da Integra):
+      // senza questo passaggio resterebbero con la giacenza vecchia, mostrando "disponibile" a torto.
+      const reset = await this.prisma.$executeRawUnsafe(`
+        UPDATE varianti v
+        SET giacenza = 0
+        WHERE v.stato <> 'NASCOSTO'
+          AND v.giacenza IS DISTINCT FROM 0
+          AND NOT EXISTS (SELECT 1 FROM b2b_giacenze g WHERE g.codice_prodotto = v.codice)
+      `);
+      const resetCount = typeof reset === 'number' ? reset : 0;
+
       await this.setProgress(logId, 100, 'Completato');
       const durationMs = Date.now() - startedAt.getTime();
-      await this.completeLog(logId, 'ok', total, updatedCount, 0);
+      await this.completeLog(logId, 'ok', total, updatedCount + resetCount, 0);
       this.logger.log(
-        `Sync giacenze: ${total} righe vista, ${matched} varianti collegate, ${updatedCount} aggiornate (${durationMs}ms)`,
+        `Sync giacenze: ${total} righe vista, ${matched} varianti collegate, ${updatedCount} aggiornate, ${resetCount} azzerate (${durationMs}ms)`,
       );
 
       return {
         entity: 'giacenza',
         status: 'ok',
         rowsTotal: total,
-        rowsOk: updatedCount,
+        rowsOk: updatedCount + resetCount,
         rowsError: 0,
         durationMs,
         progressPct: 100,
-        progressPhase: `Completato: ${updatedCount} aggiornate su ${matched} collegate`,
+        progressPhase: `Completato: ${updatedCount} aggiornate, ${resetCount} azzerate su ${matched} collegate`,
       };
     } catch (err) {
       const durationMs = Date.now() - startedAt.getTime();
