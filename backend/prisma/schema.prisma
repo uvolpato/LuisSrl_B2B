@@ -208,7 +208,6 @@ model OrdineCliente {
   dataOrdine        DateTime? @map("data_ordine")
   customerId        Int      @map("customer_id")
   importoTotale     Decimal? @map("importo_totale")
-  costoTrasporto    Decimal? @map("costo_trasporto")
   stato             String?
   indirizzoSpedizioneId Int? @map("indirizzo_spedizione_id")
   codicePorto       String?  @map("codice_porto")

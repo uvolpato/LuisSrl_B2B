@@ -381,8 +381,8 @@ export class CheckoutService {
 
     // Applica coupon se presente - calcolo server-side
     let couponRiga: any = null;
-    let couponCampaignId: number | null = null;
     let spedizioneGratuita = false;
+    let couponCampaignId: number | null = null;
     try {
     if (dto.codiceCoupon) {
       const campaign = await this.prisma.campaign.findUnique({ where: { code: dto.codiceCoupon.toUpperCase() } });
@@ -468,7 +468,10 @@ export class CheckoutService {
     }
     } catch (e) { /* coupon error non deve bloccare l'ordine */ }
 
-    // Spese di spedizione: ricalcolate sul totale post-coupon (fonte di verita' = backend).
+    // Spese di spedizione come riga d'ordine (non come campo dell'ordine): cosi'
+    // totale e riepiloghi (cliente e admin) restano coerenti senza logica duplicata.
+    // codiceProdotto null => la riga non finisce nel tracciato Excel verso Integra.
+    // Ricalcolate sul totale post-coupon; con coupon free-ship non si aggiungono.
     let costoTrasporto = 0;
     if (!spedizioneGratuita && indirizzoSpedizioneId) {
       const addr = await this.prisma.indirizzoCliente.findUnique({ where: { id: indirizzoSpedizioneId } });
@@ -476,15 +479,19 @@ export class CheckoutService {
         const regione = provinciaToRegione(addr.provincia.toUpperCase());
         const resolved = await this.speseSpedizione.resolveTariffaAsync('IT', regione ?? null);
         if (resolved) {
-          costoTrasporto = Calcola(resolved.t, importoTotale, 0).fee;
+          costoTrasporto = Math.round(Calcola(resolved.t, importoTotale, 0).fee * 100) / 100;
         }
       }
     }
-    costoTrasporto = Math.round(costoTrasporto * 100) / 100;
-    importoTotale = Math.round((importoTotale + costoTrasporto) * 100) / 100;
+    if (costoTrasporto > 0) {
+      importoTotale = Math.round((importoTotale + costoTrasporto) * 100) / 100;
+    }
 
     const numeroOrdine = `B2B-${Date.now()}`;
-    const righeFinali = couponRiga ? [...righe, couponRiga] : righe;
+    const spedizioneRiga = costoTrasporto > 0
+      ? [{ codiceProdotto: null, descrizione: 'Spese di spedizione', quantita: 1, prezzo: costoTrasporto }]
+      : [];
+    const righeFinali = [...righe, ...(couponRiga ? [couponRiga] : []), ...spedizioneRiga];
 
     // Scritture atomiche: ordine + righe + uso coupon + svuotamento carrello.
     // Se una fallisce, nessuna viene applicata (niente coupon "once" bruciato
@@ -496,7 +503,6 @@ export class CheckoutService {
           dataOrdine: new Date(),
           customerId: clienteId,
           importoTotale,
-          costoTrasporto,
           stato: 'BOZZA',
           indirizzoSpedizioneId,
           codicePorto: dto.codicePorto ?? customer?.codicePorto ?? null,

@@ -1,15 +1,17 @@
 /*
- * Verifica: il costo di spedizione entra nell'ordine finale.
+ * Verifica: il costo di spedizione entra nell'ordine come RIGA (non come campo),
+ * cosi' totale e riepiloghi (cliente e admin) restano automaticamente coerenti.
  *
  * Crea un ordine reale via API (sessione vera del cliente test), controlla che
- * costo_trasporto sia persistito e che importo_totale = somma righe + spedizione,
- * poi cancella l'ordine e ripristina carrello e credenziali del cliente.
+ * esista una riga "Spese di spedizione" senza codice prodotto e che
+ * importo_totale == somma delle righe (spedizione inclusa). Poi cancella l'ordine
+ * e ripristina carrello e credenziali del cliente.
  *
  * Uso: node scripts/verifica-costo-trasporto.cjs   (backend in ascolto su :3001)
  *
- * Dati di test: usa il cliente uvolpato@gmail.com (id 2). La password viene
- * sostituita temporaneamente e ripristinata a fine script; l'ordine creato viene
- * eliminato. Nota: l'ordine invia la mail di conferma (best-effort).
+ * Dati di test: cliente uvolpato@gmail.com (id 2). La password viene sostituita
+ * temporaneamente e ripristinata a fine script; l'ordine creato viene eliminato.
+ * Nota: l'ordine invia la mail di conferma (best-effort).
  */
 require('dotenv').config();
 const assert = require('node:assert');
@@ -41,6 +43,32 @@ function api(path, { method = 'GET', body } = {}) {
   });
 }
 
+// Prodotti usati solo se il carrello e' vuoto, per poter confermare un ordine.
+const SEED = [
+  { varianteCodice: 'LU2091', quantita: 3, salvato: false },
+  { varianteCodice: 'LU2092', quantita: 3, salvato: false },
+];
+
+async function readCart() {
+  const r = await api('/carrello');
+  assert.ok(r.ok, 'GET /carrello: ' + r.status);
+  const c = await r.json();
+  return c.items.map((i) => ({ varianteCodice: i.varianteCodice, quantita: i.quantita, salvato: i.salvato }));
+}
+
+// Riporta il carrello esattamente a `items` (svuota e ricrea). Usa la sessione attiva.
+async function setCart(items) {
+  for (const it of await readCart()) {
+    const r = await api(`/carrello/${encodeURIComponent(it.varianteCodice)}`, { method: 'DELETE' });
+    if (!r.ok) console.error('svuotamento carrello fallito', it.varianteCodice, r.status);
+  }
+  for (const it of items) {
+    const r = await api('/carrello', { method: 'POST', body: { varianteCodice: it.varianteCodice, quantita: it.quantita } });
+    if (!r.ok) console.error('ripristino carrello fallito', it.varianteCodice, r.status);
+    else if (it.salvato) await api(`/carrello/${encodeURIComponent(it.varianteCodice)}/salva`, { method: 'PATCH' });
+  }
+}
+
 (async () => {
   const cust = await p.customer.findFirst({
     where: { email: EMAIL },
@@ -60,14 +88,18 @@ function api(path, { method = 'GET', body } = {}) {
   });
   const liText = await li.text();
   assert.ok(li.ok, 'login fallito: ' + li.status + ' ' + liText);
-  const liBody = JSON.parse(liText);
-  sess = { cookie: cookiesFrom(li), csrf: liBody.csrfToken };
+  sess = { cookie: cookiesFrom(li), csrf: JSON.parse(liText).csrfToken };
 
   const cartRes = await api('/carrello');
   assert.ok(cartRes.ok, 'GET /carrello: ' + cartRes.status);
   const cart = await cartRes.json();
   snapshot = cart.items.map((i) => ({ varianteCodice: i.varianteCodice, quantita: i.quantita, salvato: i.salvato }));
-  assert.ok(snapshot.length > 0, 'carrello vuoto: niente da ordinare');
+  if (snapshot.length === 0) {
+    console.log('Carrello vuoto: aggiungo articoli di test (verranno rimossi a fine script).');
+    await setCart(SEED);
+    const seeded = await api('/carrello');
+    cart.items = (await seeded.json()).items;
+  }
 
   const dati = await (await api('/checkout/dati')).json();
   const addr = dati.indirizzi.find((a) => a.provincia && a.flagSpedizione) || dati.indirizzi.find((a) => a.provincia);
@@ -75,7 +107,7 @@ function api(path, { method = 'GET', body } = {}) {
 
   const imponibile = cart.items.reduce((s, i) => s + i.quantita * (i.prezzo?.prezzoNetto ?? 0), 0);
   const sp = await (await api(`/checkout/spedizione?provincia=${addr.provincia}&nazione=${addr.nazione ?? 'IT'}&imponibile=${imponibile}&sconto=0`)).json();
-  console.log('Spedizione (endpoint):', sp);
+  console.log('Spedizione (endpoint):', sp.importo, sp.descrizione);
 
   const confRes = await api('/checkout/conferma', {
     method: 'POST',
@@ -87,17 +119,20 @@ function api(path, { method = 'GET', body } = {}) {
   ordineId = ordine.id;
 
   const db = await p.ordineCliente.findUnique({ where: { id: ordine.id }, include: { righe: true } });
-  const righeSum = db.righe.reduce((s, r) => s + Number(r.quantita) * Number(r.prezzo), 0);
-  const costo = Number(db.costoTrasporto ?? 0);
+  const righeSum = Math.round(db.righe.reduce((s, r) => s + Number(r.quantita) * Number(r.prezzo), 0) * 100) / 100;
   const tot = Number(db.importoTotale ?? 0);
-  console.log('Persistito:', { numero: db.numeroOrdine, righeSum, costoSpedizione: costo, importoTotale: tot });
 
-  assert.ok(costo > 0, 'costo_trasporto non persistito (0)');
-  assert.strictEqual(costo, Number(sp.importo), 'costo_trasporto != tariffa calcolata dall\'endpoint');
-  assert.strictEqual(tot, Math.round((righeSum + costo) * 100) / 100, 'importo_totale != somma righe + spedizione');
+  const sped = db.righe.find((r) => !(r.codiceProdotto ?? '').trim());
+  console.log('Righe ordine:', db.righe.map((r) => `${r.codiceProdotto ?? '(spedizione)'} x${r.quantita} = ${r.prezzo}`).join(' | '));
+  console.log('Persistito:', { numero: db.numeroOrdine, righeSum, importoTotale: tot });
+
+  assert.ok(sped, 'nessuna riga di spedizione (codice prodotto vuoto) nell\'ordine');
+  assert.strictEqual(Number(sped.prezzo), Number(sp.importo), 'importo riga spedizione != tariffa calcolata');
+  assert.ok(Number(sped.prezzo) > 0, 'importo riga spedizione non positivo');
+  assert.strictEqual(tot, righeSum, 'importo_totale != somma delle righe (spedizione non inclusa?)');
   assert.strictEqual(Number(ordine.importoTotale), tot, 'risposta conferma != importo persistito');
 
-  console.log(`OK: righe ${righeSum} + spedizione ${costo} = totale ${tot}`);
+  console.log(`OK: riga spedizione ${Number(sped.prezzo)} inclusa; totale = somma righe = ${tot}`);
 })()
   .catch((e) => {
     console.error('FALLITO:', e.message);
@@ -106,13 +141,8 @@ function api(path, { method = 'GET', body } = {}) {
   .finally(async () => {
     try {
       if (ordineId) await p.ordineCliente.delete({ where: { id: ordineId } });
-      if (sess) {
-        for (const it of snapshot) {
-          const r = await api('/carrello', { method: 'POST', body: { varianteCodice: it.varianteCodice, quantita: it.quantita } });
-          if (!r.ok) console.error('ripristino carrello fallito', it.varianteCodice, r.status);
-          else if (it.salvato) await api(`/carrello/${it.varianteCodice}/salva`, { method: 'PATCH' });
-        }
-      }
+      // Riporta il carrello esattamente com'era all'inizio (anche se era vuoto).
+      if (sess && snapshot) await setCart(snapshot);
       if (restore) {
         await p.customer.update({
           where: { id: restore.id },

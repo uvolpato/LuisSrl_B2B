@@ -19,7 +19,9 @@ export class AdminOrdiniService {
     const count = ordini.length;
     const totale = ordini.reduce((s, o) => s + Number(o.importoTotale ?? 0), 0);
     const inAttesa = ordini.filter((o) => o.stato === "attesa").length;
-    const pezzi = ordini.reduce((s, o) => s + o.righe.reduce((rs, r) => rs + Number(r.quantita ?? 0), 0), 0);
+    // Pezzi e sconto si basano sulle sole righe di prodotto: le righe tecniche
+    // (coupon con importo negativo, spedizione senza codice prodotto) non sono articoli.
+    const pezzi = ordini.reduce((s, o) => s + this.pezziOrdine(o.righe), 0);
     const clientiSet = new Set(ordini.map((o) => o.customerId));
     const clienti = clientiSet.size;
 
@@ -27,13 +29,14 @@ export class AdminOrdiniService {
       (s, o) => s + o.righe.reduce((rs, r) => rs + Number(r.quantita ?? 0) * Number(r.prezzoListino ?? 0), 0),
       0,
     );
-    const scontoMedio = totaleListino > 0 ? Math.round((1 - totale / totaleListino) * 1000) / 10 : 0;
+    const scontoMedio = totaleListino > 0
+      ? Math.round((1 - this.nettoProdotti(ordini) / totaleListino) * 1000) / 10
+      : 0;
 
-    const spedizioni = ordini
-      .map((o) => Number(o.costoTrasporto ?? 0))
-      .filter((v) => v > 0);
+    // Spedizione media: dalle righe tecniche di spedizione (senza codice prodotto, importo > 0).
+    const spedizioni = ordini.flatMap((o) => o.righe).filter((r) => !r.codiceProdotto && Number(r.prezzo ?? 0) > 0);
     const spedizioneMedia = spedizioni.length
-      ? Math.round((spedizioni.reduce((s, v) => s + v, 0) / spedizioni.length) * 100) / 100
+      ? Math.round((spedizioni.reduce((s, r) => s + Number(r.quantita ?? 0) * Number(r.prezzo ?? 0), 0) / spedizioni.length) * 100) / 100
       : null;
     return { count, totale, scontoMedio, spedizioneMedia, pezzi, clienti, inAttesa };
   }
@@ -46,7 +49,7 @@ export class AdminOrdiniService {
         where,
         include: {
           customer: { select: { id: true, ragioneSociale: true } },
-          righe: { select: { id: true, quantita: true } },
+          righe: { select: { id: true, quantita: true, codiceProdotto: true, prezzo: true } },
         },
         orderBy: { dataOrdine: "desc" },
         skip,
@@ -67,7 +70,7 @@ export class AdminOrdiniService {
       stato: o.stato ?? "confermato",
       pagamento: o.codicePagamento ?? "",
       totale: Number(o.importoTotale ?? 0),
-      pezzi: o.righe.reduce((s, r) => s + Number(r.quantita ?? 0), 0),
+      pezzi: this.pezziOrdine(o.righe),
     }));
 
     return { items: mapped, total, page, pages: Math.ceil(total / limit) || 1 };
@@ -97,8 +100,8 @@ export class AdminOrdiniService {
       stato: o.stato ?? "confermato",
       pagamento: o.codicePagamento ?? "",
       totale: Number(o.importoTotale ?? 0),
-      pezzi: o.righe.reduce((s, r) => s + Number(r.quantita ?? 0), 0),
-      spedizione: Number(o.costoTrasporto ?? 0),
+      pezzi: this.pezziOrdine(o.righe),
+      spedizione: null,
       indirizzo: indirizzo
         ? {
             nome: indirizzo.ragioneSociale ?? "",
@@ -166,6 +169,24 @@ export class AdminOrdiniService {
         listino: Number(r.prezzoListino ?? r.prezzo ?? 0),
       };
     });
+  }
+
+  /** Riga di prodotto: codice valorizzato e importo non negativo. Le righe tecniche
+   *  (coupon: importo negativo; spedizione: senza codice) non sono articoli. Stessa
+   *  regola dell'export Excel (vedi ExportOrdiniService). */
+  private isProdotto(r: { codiceProdotto: string | null; prezzo: unknown }): boolean {
+    return !!r.codiceProdotto && Number(r.prezzo ?? 0) >= 0;
+  }
+
+  private pezziOrdine(righe: { codiceProdotto: string | null; prezzo: unknown; quantita: unknown }[]): number {
+    return righe.reduce((s, r) => s + (this.isProdotto(r) ? Number(r.quantita ?? 0) : 0), 0);
+  }
+
+  private nettoProdotti(ordini: { righe: { codiceProdotto: string | null; prezzo: unknown; quantita: unknown }[] }[]): number {
+    return ordini.reduce(
+      (s, o) => s + o.righe.reduce((rs, r) => rs + (this.isProdotto(r) ? Number(r.quantita ?? 0) * Number(r.prezzo ?? 0) : 0), 0),
+      0,
+    );
   }
 
   async getClientiLookup() {
