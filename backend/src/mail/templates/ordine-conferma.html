@@ -1,10 +1,12 @@
+<!DOCTYPE html>
 <!--
   Conferma d'ordine — Portale B2B Luis S.r.l.
   Template modificabile: viene riletto a ogni invio, non serve riavviare il backend.
   In produzione si puo' tenere fuori dal build con MAIL_TEMPLATES_DIR.
+  Il logo va incorporato dal backend come allegato cid:logo.
 
   Segnaposto disponibili:
-    {{DOMAIN}}            URL pubblico del portale (per logo, immagini e link)
+    {{DOMAIN}}            URL pubblico del portale (per immagini e link)
     {{RAGIONE_SOCIALE}}   intestatario dell'ordine
     {{NUMERO_ORDINE}}     numero ordine B2B
     {{DATA_ORDINE}}       data in gg/mm/aaaa
@@ -13,127 +15,164 @@
     {{INDIRIZZO}}         destinazione della merce (blocco di testo)
     {{NOTE}}              note d'ordine (vuoto se assenti)
 
-  Il blocco tra RIGA_START e RIGA_END viene ripetuto per ogni riga dell'ordine.
+  Il blocco tra RIGA_START e RIGA_END viene ripetuto per ogni riga dell'ordine:
+  qui va lasciata UNA sola riga-modello. I marcatori sono commenti HTML esatti,
+  scritti senza spaziature (li cerca il backend con indexOf).
+
   Segnaposto di riga: {{R_IMMAGINE}} {{R_DESCRIZIONE}} {{R_CODICE}} {{R_QTA}} {{R_PREZZO}} {{R_TOTALE}}
 -->
-<div style="margin:0;padding:0;background:#f7f5f1;font-family:Arial,Helvetica,sans-serif;color:#221811">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f1;padding:24px 12px">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #dcd6d1;border-radius:12px;overflow:hidden">
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conferma ordine — Portale B2B Luis</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f1ec;font-family:Arial,Helvetica,sans-serif;color:#221811;">
+  <div style="display:none;max-height:0;overflow:hidden;">Ordine {{NUMERO_ORDINE}} del {{DATA_ORDINE}} — totale {{TOTALE}} (IVA esclusa) — grazie per il suo ordine.</div>
 
-          <!-- Logo -->
-          <tr>
-            <td align="center" style="padding:28px 24px 8px">
-              <img src="cid:logo" alt="Luis S.r.l." width="180"
-                   style="display:block;border:0;width:180px;max-width:60%;height:auto">
-            </td>
-          </tr>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f1ec;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e2db;border-radius:14px;overflow:hidden;">
 
-          <!-- Titolo -->
-          <tr>
-            <td style="padding:8px 32px 0">
-              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:normal;color:#221811">
-                Grazie per il suo ordine
-              </h1>
-              <p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#221811">
-                Gentile <strong>{{RAGIONE_SOCIALE}}</strong>,
-              </p>
-              <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#221811">
-                abbiamo ricevuto con successo il suo ordine e la ringraziamo per la fiducia
-                accordata a Luis S.r.l.
-              </p>
-              <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#221811">
-                Il nostro team lo ha gi&agrave; preso in carico: la ricontatteremo al pi&ugrave; presto
-                per confermarle disponibilit&agrave; e tempi di consegna.
-              </p>
-            </td>
-          </tr>
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding:30px 24px 6px;">
+            <img src="cid:logo" alt="Luis S.r.l." width="170"
+                 style="display:block;border:0;width:170px;max-width:60%;height:auto;">
+          </td>
+        </tr>
 
-          <!-- Riepilogo ordine -->
-          <tr>
-            <td style="padding:20px 32px 0">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                     style="background:#f7f5f1;border:1px solid #e4ded8;border-radius:8px">
-                <tr>
-                  <td style="padding:12px 16px;font-size:14px">
-                    <strong>Ordine n. {{NUMERO_ORDINE}}</strong><br>
-                    <span style="color:#706760">del {{DATA_ORDINE}} &middot; {{N_ARTICOLI}} articoli</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+        <!-- Titolo -->
+        <tr>
+          <td style="padding:14px 36px 0;">
+            <p style="margin:0 0 8px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#b2511e;">Conferma d'ordine</p>
+            <h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;color:#221811;">Grazie per il suo ordine</h1>
+            <p style="margin:0 0 8px;font-size:15px;line-height:1.6;">Gentile <strong>{{RAGIONE_SOCIALE}}</strong>,</p>
+            <p style="margin:0 0 8px;font-size:15px;line-height:1.6;">
+              abbiamo ricevuto con successo il suo ordine e la ringraziamo per la fiducia
+              accordata a Luis S.r.l.
+            </p>
+            <p style="margin:0;font-size:15px;line-height:1.6;">
+              Il nostro team lo ha gi&agrave; preso in carico: la ricontatteremo al pi&ugrave; presto
+              per confermarle disponibilit&agrave; e tempi di consegna.
+            </p>
+          </td>
+        </tr>
 
-          <!-- Righe -->
-          <tr>
-            <td style="padding:20px 32px 0">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">
-                <!--RIGA_START-->
-                <tr>
-                  <td width="64" valign="top" style="padding:10px 12px 10px 0">
-                    <img src="{{R_IMMAGINE}}" alt="" width="64"
-                         style="display:block;border:1px solid #e4ded8;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
-                  </td>
-                  <td valign="top" style="padding:10px 0;border-bottom:1px solid #efeae5">
-                    <strong style="color:#221811">{{R_DESCRIZIONE}}</strong><br>
-                    <span style="color:#706760;font-size:12px">{{R_CODICE}}</span><br>
-                    <span style="color:#706760;font-size:13px">{{R_QTA}} &times; {{R_PREZZO}}</span>
-                  </td>
-                  <td valign="top" align="right" style="padding:10px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
-                    <strong>{{R_TOTALE}}</strong>
-                  </td>
-                </tr>
-                <!--RIGA_END-->
-              </table>
-            </td>
-          </tr>
+        <!-- Riepilogo ordine -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#f7f5f1;border:1px solid #e7e2db;border-radius:8px;">
+              <tr>
+                <td width="34%" style="padding:12px 16px;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Ordine n.</span>
+                  <strong style="font-size:15px;">{{NUMERO_ORDINE}}</strong>
+                </td>
+                <td width="33%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Data</span>
+                  <strong style="font-size:15px;">{{DATA_ORDINE}}</strong>
+                </td>
+                <td width="33%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Articoli</span>
+                  <strong style="font-size:15px;">{{N_ARTICOLI}}</strong>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-          <!-- Totale -->
-          <tr>
-            <td style="padding:16px 32px 0">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="font-size:15px;padding-top:8px"><strong>Totale (IVA esclusa)</strong></td>
-                  <td align="right" style="font-size:18px;padding-top:8px;color:#b2511e"><strong>{{TOTALE}}</strong></td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+        <!-- Righe -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+              <tr>
+                <td width="64" style="padding:0 12px 8px 0;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Articolo</span>
+                </td>
+                <td style="padding:0 0 8px;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Descrizione</span>
+                </td>
+                <td align="right" style="padding:0 0 8px;border-bottom:1px solid #e7e2db;">
+                  <span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Totale</span>
+                </td>
+              </tr>
 
-          <!-- Consegna -->
-          <tr>
-            <td style="padding:20px 32px 0;font-size:13px;line-height:1.6;color:#221811">
-              <strong style="font-size:14px">Consegna</strong><br>
-              <span style="color:#706760">{{INDIRIZZO}}</span>
-              {{NOTE}}
-            </td>
-          </tr>
+              <!--RIGA_START-->
+              <tr>
+                <td width="64" valign="top" style="padding:12px 12px 12px 0">
+                  <img src="{{R_IMMAGINE}}" alt="" width="64"
+                       style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1">
+                </td>
+                <td valign="top" style="padding:12px 0;border-bottom:1px solid #efeae5">
+                  <strong>{{R_DESCRIZIONE}}</strong><br>
+                  <span style="color:#706760;font-size:12px">{{R_CODICE}}</span><br>
+                  <span style="color:#706760;font-size:13px">{{R_QTA}} &times; {{R_PREZZO}}</span>
+                </td>
+                <td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid #efeae5;white-space:nowrap">
+                  <strong>{{R_TOTALE}}</strong>
+                </td>
+              </tr>
+              <!--RIGA_END-->
+            </table>
+          </td>
+        </tr>
 
-          <!-- CTA -->
-          <tr>
-            <td align="center" style="padding:24px 32px 8px">
-              <a href="{{DOMAIN}}/area/ordini"
-                 style="background:#b2511e;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;font-size:14px">
-                Vedi i tuoi ordini
-              </a>
-            </td>
-          </tr>
+        <!-- Totale -->
+        <tr>
+          <td style="padding:16px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#fdf3ee;border:1px solid #f2ddd0;border-radius:8px;">
+              <tr>
+                <td style="padding:14px 18px;font-size:14px;"><strong>Totale (IVA esclusa)</strong></td>
+                <td align="right" style="padding:14px 18px;white-space:nowrap;">
+                  <strong style="font-size:20px;color:#b2511e;">{{TOTALE}}</strong>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-          <!-- Footer -->
-          <tr>
-            <td style="padding:20px 32px 28px">
-              <hr style="border:none;border-top:1px solid #efeae5;margin:0 0 12px">
-              <p style="margin:0;font-size:11px;line-height:1.6;color:#706760">
-                Luis S.r.l. &middot; Via F. Bellafino 28/30, Bergamo<br>
-                Messaggio automatico: non rispondere a questo indirizzo.
-                Per assistenza usi i riferimenti del portale.
-              </p>
-            </td>
-          </tr>
+        <!-- Consegna -->
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#f7f5f1;border:1px solid #e7e2db;border-radius:8px;">
+              <tr>
+                <td style="padding:16px 18px;font-size:13px;line-height:1.6;">
+                  <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;margin-bottom:6px;">Consegna</span>
+                  {{INDIRIZZO}}
+                  {{NOTE}}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-        </table>
-      </td>
-    </tr>
+        <!-- CTA -->
+        <tr>
+          <td align="center" style="padding:26px 36px 8px;">
+            <a href="{{DOMAIN}}/area/ordini"
+               style="background:#b2511e;color:#ffffff;padding:13px 40px;border-radius:9px;text-decoration:none;font-weight:bold;display:inline-block;font-size:15px;">
+              Vedi i tuoi ordini
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 36px 28px;">
+            <hr style="border:none;border-top:1px solid #efeae5;margin:0 0 12px;">
+            <p style="margin:0;font-size:11.5px;line-height:1.6;color:#706760;">
+              Luis S.r.l. &middot; Via F. Bellafino 28/30, Bergamo<br>
+              Messaggio automatico: non rispondere a questo indirizzo.
+              Per assistenza usi i riferimenti del portale.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
   </table>
-</div>
+</body>
+</html>
