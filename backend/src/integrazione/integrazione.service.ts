@@ -1960,7 +1960,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     return this.aiCache.get(id);
   }
 
-  /** Legge le config AI da site_config con fallback a env → hardcoded. */
+  /** Legge le config AI da site_config con fallback ai default hardcoded. */
   private aiConfigCache: { ts: number; immagini: Record<string, string>; testi: Record<string, string> } | null = null;
   private readonly AI_CONFIG_TTL = 60_000; // 1 minuto
 
@@ -1980,13 +1980,11 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       this.aiConfigCache = { ts: now, immagini, testi };
     }
     const map = scope === 'immagini' ? this.aiConfigCache.immagini : this.aiConfigCache.testi;
-    const get = (key: string, fallback: string, env?: string) =>
-      map[key] ?? (env ? (process.env[env] || fallback) : fallback);
+    const get = (key: string, fallback: string) => map[key] ?? fallback;
     return {
       provider:  get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Provider`, 'gemini'),
       model:     get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Modello`,
-                    scope === 'immagini' ? 'gemini-2.5-flash-image' : 'gemini-2.5-flash',
-                    scope === 'immagini' ? 'GEMINI_IMAGE_MODEL' : 'GEMINI_TEXT_MODEL'),
+                    scope === 'immagini' ? 'gemini-2.5-flash-image' : 'gemini-2.5-flash'),
       endpoint:  get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Endpoint`,
                     'https://generativelanguage.googleapis.com/v1beta/models/'),
       temperature: parseFloat(get(`AI_${scope === 'immagini' ? 'Immagini' : 'Testi'}_Temperature`,

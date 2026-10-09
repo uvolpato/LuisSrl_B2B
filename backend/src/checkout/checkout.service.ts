@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { EventsService } from '../events/events.service';
 import { SpeseSpedizioneService, Calcola } from '../spese-spedizione/spese-spedizione.service';
-import { MailService } from '../mail/mail.service';
+import { MailService, DatiOrdineMail } from '../mail/mail.service';
 import { provinciaToRegione } from '../common/geo';
 
 export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE';
@@ -532,8 +532,11 @@ export class CheckoutService {
 
     void this.events.track('ordine.create', { entita: 'ordine', entitaId: numeroOrdine, dettagli: { importo: importoTotale, righe: righe.length } });
 
-    // Conferma d'ordine: best-effort, non deve mai far fallire un ordine gia' registrato.
+    // Conferma d'ordine al cliente: best-effort
     void this.inviaConfermaOrdine(ordine.id).catch(() => undefined);
+
+    // Notifica ordine interno a shop@luisbg.it: best-effort
+    void this.inviaNotificaOrdineInterna(ordine.id).catch(() => undefined);
 
     return ordine;
   }
@@ -590,6 +593,99 @@ export class CheckoutService {
         immagineUrl: immagini.get(r.codiceProdotto ?? '') ?? null,
       })),
     });
+  }
+
+  /**
+   * Notifica ordine interno a shop@luisbg.it. Best-effort: non deve mai far fallire l'ordine.
+   * Usa il template email-notifica-ordine-interna.html.
+   */
+  private async inviaNotificaOrdineInterna(ordineId: number): Promise<void> {
+    const ordine = await this.prisma.ordineCliente.findUnique({
+      where: { id: ordineId },
+      include: { righe: { orderBy: { id: 'asc' } }, customer: true },
+    });
+    if (!ordine) return;
+
+    const c = ordine.customer;
+    if (!c) return;
+
+    // Descrizioni articoli dal catalogo
+    const codici = ordine.righe.map((r) => r.codiceProdotto).filter((c): c is string => !!c);
+    const catalogo = codici.length
+      ? await this.prisma.variante.findMany({
+          where: { codice: { in: codici } },
+          select: { codice: true, descrizione: true, articolo: { select: { descrizione: true } } },
+        })
+      : [];
+    const descCatalog = new Map<string, string>(
+      catalogo.map((v) => [v.codice, (v.descrizione || v.articolo.descrizione || '').trim()]),
+    );
+
+    // Indirizzo spedizione
+    const dest = ordine.indirizzoSpedizioneId
+      ? await this.prisma.indirizzoCliente.findUnique({ where: { id: ordine.indirizzoSpedizioneId } })
+      : null;
+
+    const indirizzoFatt = [c.ragioneSociale ?? c.nome, c.indirizzo, [c.cap, c.citta, c.provincia].filter(Boolean).join(' ')].filter(Boolean).join('\n');
+    const indirizzoSped = dest
+      ? [dest.ragioneSociale, dest.indirizzo, [dest.cap, dest.citta, dest.provincia].filter(Boolean).join(' ')].filter(Boolean).join('\n')
+      : indirizzoFatt;
+
+    const note = ordine.notaOrdine?.trim() || '';
+
+    const articoliMail: DatiOrdineMail['articoli'] = ordine.righe
+      .filter((r) => r.codiceProdotto) // esclude righe spedizione/coupon
+      .map((r, idx) => ({
+        numero: idx + 1,
+        codiceArticolo: r.codiceProdotto,
+        codiceVariante: r.codiceProdotto,
+        descrizioneArticolo: descCatalog.get(r.codiceProdotto ?? '') || r.descrizione || r.codiceProdotto,
+        descrizioneVariante: r.descrizione || r.codiceProdotto,
+        quantita: Number(r.quantita ?? 0),
+        unitaMisura: 'PZ',
+        prezzoIvaEsclusa: Number(r.prezzo ?? 0),
+        scontoPercentuale: Number(r.scontoPct ?? 0),
+        totaleRigaIvaEsclusa: Number(r.prezzo ?? 0) * Number(r.quantita ?? 0),
+      }));
+
+    const imponibile = Number(ordine.importoTotale ?? 0);
+    let costoTrasporto = 0;
+    const righeSpese = ordine.righe.filter((r) => r.codiceProdotto === null);
+    if (righeSpese.length > 0) {
+      costoTrasporto = righeSpese.reduce((s, r) => s + Number(r.prezzo ?? 0), 0);
+    }
+
+    const datiMail: DatiOrdineMail = {
+      numeroOrdine: ordine.numeroOrdine,
+      idOrdine: ordine.id,
+      dataOra: ordine.dataOrdine ?? new Date(),
+      cliente: {
+        ragioneSociale: c.ragioneSociale ?? c.nome ?? null,
+        codiceCliente: c.codiceCliente ?? null,
+        partitaIva: c.partitaIva ?? null,
+        codiceFiscale: null,
+        email: c.email ?? null,
+        telefono: c.telefono ?? null,
+        referente: null,
+        indirizzoFatturazione: c.indirizzo ?? null,
+        capFatturazione: c.cap ?? null,
+        cittaFatturazione: c.citta ?? null,
+        provinciaFatturazione: c.provincia ?? null,
+        nazioneFatturazione: 'Italia',
+        indirizzoSpedizione: dest?.indirizzo ?? c.indirizzo ?? null,
+        capSpedizione: dest?.cap ?? c.cap ?? null,
+        cittaSpedizione: dest?.citta ?? c.citta ?? null,
+        provinciaSpedizione: dest?.provincia ?? c.provincia ?? null,
+        nazioneSpedizione: dest?.nazione ?? 'Italia',
+      },
+      articoli: articoliMail,
+      imponibileIvaEsclusa: imponibile - costoTrasporto,
+      speseTrasportoIvaEsclusa: costoTrasporto,
+      totaleOrdineIvaEsclusa: imponibile,
+      noteCliente: note || null,
+    };
+
+    await this.mail.sendNotificaOrdineInterna(datiMail);
   }
 
   private mappaModalita(

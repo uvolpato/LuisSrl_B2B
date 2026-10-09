@@ -107,9 +107,9 @@ SMTP_FROM="Luis S.r.l. <noreply@luissrl.it>"
 ASSETS_BASE_DIR=../frontend/public/images
 ASSETS_PUBLIC_URL=/images
 
-# Generazione immagini AI (opzionale) — chiave da Google AI Studio
+# Generazione immagini AI (opzionale) — chiave da Google AI Studio.
+# I modelli si configurano da Admin -> AI — Configurazione (site_config).
 GEMINI_API_KEY=
-GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 ```
 
 Applicare migration, seed e build:

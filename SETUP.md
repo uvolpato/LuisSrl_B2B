@@ -29,7 +29,6 @@ DATABASE_URL="postgresql://user:pass@localhost:5432/luis_db"
 ADMIN_EMAIL=admin@luissrl.it
 ADMIN_PASSWORD=LuisAdmin2026!
 GEMINI_API_KEY=<tua-chiave-google>
-GEMINI_MODEL=gemini-2.5-flash-image
 ```
 
 ## 3. Avviamento (ogni sessione)

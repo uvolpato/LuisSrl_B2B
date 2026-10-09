@@ -249,6 +249,137 @@ export class MailService {
   <p style="font-size:12px;color:#706760">Luis S.r.l. — messaggio automatico, non rispondere.</p>
 </div>`;
   }
+
+  /** Invia la notifica interna ordine a shop@luisbg.it usando il template email-notifica-ordine-interna.html */
+  async sendNotificaOrdineInterna(dati: DatiOrdineMail): Promise<void> {
+    try {
+      const to = this.config.get<string>('MAIL_ORDINI_TO') || 'shop@luisbg.it';
+      const from = this.config.get<string>('MAIL_ORDINI_FROM') || '"Portale B2B Luis" <noreply@luissrl.it>';
+
+      const tpl = this.leggiTemplate('email-notifica-ordine-interna.html');
+      if (!tpl) {
+        this.logger.warn('Template email-notifica-ordine-interna.html non trovato');
+        return;
+      }
+
+      let html = tpl;
+
+      const formatEuro = (n: number | null | undefined): string => {
+        const val = Number(n || 0);
+        return val.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+      const formatNumero = (n: number | null | undefined, dec = 2): string => {
+        const val = Number(n || 0);
+        return val.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+      };
+      const formatDataOra = (d: Date | string): string => {
+        const dt = d instanceof Date ? d : new Date(d);
+        if (isNaN(dt.getTime())) return String(d);
+        const data = dt.toLocaleDateString('it-IT');
+        const ora = dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return `${data} ${ora}`;
+      };
+      const formatData = (d: Date | string): string => {
+        const dt = d instanceof Date ? d : new Date(d);
+        if (isNaN(dt.getTime())) return String(d);
+        return dt.toLocaleDateString('it-IT');
+      };
+      const buildIndirizzo = (indirizzo?: string | null, cap?: string | null, citta?: string | null, prov?: string | null, nazione?: string | null): string => {
+        const parti = [indirizzo?.trim(), cap?.trim(), citta?.trim(), prov?.trim(), nazione?.trim()].filter(p => p && p.length > 0);
+        return parti.join(' ');
+      };
+      const sostituisci = (html: string, chiave: string, valore: string | number | null | undefined): string => {
+        const v = valore === null || valore === undefined ? '' : String(valore);
+        let out = html.replace(new RegExp(`\\{\\{\\s*${chiave}\\s*\\}\\}`, 'gi'), v);
+        out = out.replace(new RegExp(`\\{\\{\\s*${chiave.toLowerCase()}\\s*\\}\\}`, 'gi'), v);
+        return out;
+      };
+
+      const dataOraFormatted = formatDataOra(dati.dataOra);
+      const dataFormatted = formatData(dati.dataOra);
+
+      const indirizzoFatt = buildIndirizzo(dati.cliente.indirizzoFatturazione, dati.cliente.capFatturazione, dati.cliente.cittaFatturazione, dati.cliente.provinciaFatturazione, dati.cliente.nazioneFatturazione);
+      const indirizzoSped = buildIndirizzo(dati.cliente.indirizzoSpedizione, dati.cliente.capSpedizione, dati.cliente.cittaSpedizione, dati.cliente.provinciaSpedizione, dati.cliente.nazioneSpedizione);
+
+      html = sostituisci(html, 'NUMERO_ORDINE', dati.numeroOrdine || '');
+      html = sostituisci(html, 'ID_ORDINE', dati.idOrdine ?? '');
+      html = sostituisci(html, 'DATA_ORDINE', dataFormatted);
+      html = sostituisci(html, 'DATA_ORA_ORDINE', dataOraFormatted);
+      html = sostituisci(html, 'DATAORA_ORDINE', dataOraFormatted);
+
+      html = sostituisci(html, 'RAGIONE_SOCIALE', dati.cliente.ragioneSociale || '');
+      html = sostituisci(html, 'CODICE_CLIENTE', dati.cliente.codiceCliente || '');
+      html = sostituisci(html, 'PARTITA_IVA', dati.cliente.partitaIva || '');
+      html = sostituisci(html, 'CODICE_FISCALE', dati.cliente.codiceFiscale || '');
+      html = sostituisci(html, 'EMAIL_CLIENTE', dati.cliente.email || '');
+      html = sostituisci(html, 'TELEFONO_CLIENTE', dati.cliente.telefono || '');
+      html = sostituisci(html, 'REFERENTE', dati.cliente.referente || '');
+
+      html = sostituisci(html, 'INDIRIZZO_FATTURAZIONE', indirizzoFatt);
+      html = sostituisci(html, 'INDIRIZZO_SPEDIZIONE', indirizzoSped);
+      html = sostituisci(html, 'INDIRIZZO_FATT', indirizzoFatt);
+      html = sostituisci(html, 'INDIRIZZO_SPE', indirizzoSped);
+
+      const note = dati.noteCliente?.trim() || '';
+      html = sostituisci(html, 'NOTE_CLIENTE', note);
+      html = sostituisci(html, 'NOTE', note);
+
+      html = sostituisci(html, 'IMPONIBILE_IVA_ESCL', formatEuro(dati.imponibileIvaEsclusa));
+      html = sostituisci(html, 'SPESE_TRASPORTO_IVA_ESCL', formatEuro(dati.speseTrasportoIvaEsclusa || 0));
+      html = sostituisci(html, 'TOTALE_ORDINE_IVA_ESCL', formatEuro(dati.totaleOrdineIvaEsclusa));
+      html = sostituisci(html, 'TOTALE_IVA_ESCL', formatEuro(dati.totaleOrdineIvaEsclusa));
+
+      const rigaTemplate = `
+        <tr>
+          <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{NUMERO}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{CODICE_ARTICOLO}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{CODICE_VARIANTE}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE_ARTICOLO}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE_VARIANTE}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{QUANTITA}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{UM}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{PREZZO_IVA_ESCL}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{SCONTO_PERC}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{TOTALE_RIGA_IVA_ESCL}}</td>
+        </tr>`;
+
+      const righeHtml = dati.articoli
+        .map((a, i) => {
+          let r = rigaTemplate;
+          r = r.replace('{{NUMERO}}', String(a.numero ?? i + 1));
+          r = r.replace('{{CODICE_ARTICOLO}}', a.codiceArticolo || '');
+          r = r.replace('{{CODICE_VARIANTE}}', a.codiceVariante || '');
+          r = r.replace('{{DESCRIZIONE_ARTICOLO}}', a.descrizioneArticolo || '');
+          r = r.replace('{{DESCRIZIONE_VARIANTE}}', a.descrizioneVariante || '');
+          r = r.replace('{{QUANTITA}}', formatNumero(a.quantita, 0));
+          r = r.replace('{{UM}}', a.unitaMisura || 'PZ');
+          r = r.replace('{{PREZZO_IVA_ESCL}}', formatEuro(a.prezzoIvaEsclusa));
+          r = r.replace('{{SCONTO_PERC}}', a.scontoPercentuale ? formatNumero(a.scontoPercentuale, 2) + '%' : '0,00%');
+          r = r.replace('{{TOTALE_RIGA_IVA_ESCL}}', formatEuro(a.totaleRigaIvaEsclusa));
+          return r;
+        })
+        .join('\n');
+
+      if (/\{\{\s*RIGHE_ARTICOLI\s*\}\}/i.test(html)) {
+        html = html.replace(/\{\{\s*RIGHE_ARTICOLI\s*\}\}/gi, righeHtml);
+      } else {
+        html = html.replace(/<tbody[^>]*>[\s\S]*?<\/tbody>/i, `<tbody>${righeHtml}</tbody>`);
+      }
+
+      const oggetto = `Nuovo ordine B2B ${dati.numeroOrdine} - ${dataFormatted}`;
+
+      await this.transporter.sendMail({
+        from,
+        to,
+        subject: oggetto,
+        html,
+      });
+
+      this.logger.log(`Mail notifica ordine interna inviata a ${to} per ordine ${dati.numeroOrdine}`);
+    } catch (error: any) {
+      this.logger.warn(`Invio mail notifica ordine interna fallito per ${dati.numeroOrdine}: ${error?.message || error}`);
+    }
+  }
 }
 
 export interface RigaConfermaOrdine {
@@ -269,9 +400,54 @@ export interface DatiConfermaOrdine {
   righe: RigaConfermaOrdine[];
 }
 
+export interface DatiClienteMail {
+  ragioneSociale?: string | null;
+  codiceCliente?: string | null;
+  partitaIva?: string | null;
+  codiceFiscale?: string | null;
+  email?: string | null;
+  telefono?: string | null;
+  referente?: string | null;
+  indirizzoFatturazione?: string | null;
+  capFatturazione?: string | null;
+  cittaFatturazione?: string | null;
+  provinciaFatturazione?: string | null;
+  nazioneFatturazione?: string | null;
+  indirizzoSpedizione?: string | null;
+  capSpedizione?: string | null;
+  cittaSpedizione?: string | null;
+  provinciaSpedizione?: string | null;
+  nazioneSpedizione?: string | null;
+}
+
+export interface RigaArticoloMail {
+  numero: number;
+  codiceArticolo?: string | null;
+  codiceVariante?: string | null;
+  descrizioneArticolo?: string | null;
+  descrizioneVariante?: string | null;
+  quantita: number;
+  unitaMisura?: string | null;
+  prezzoIvaEsclusa: number;
+  scontoPercentuale?: number | null;
+  totaleRigaIvaEsclusa: number;
+}
+
+export interface DatiOrdineMail {
+  numeroOrdine: string;
+  idOrdine?: number | string | null;
+  dataOra: Date | string;
+  cliente: DatiClienteMail;
+  articoli: RigaArticoloMail[];
+  imponibileIvaEsclusa: number;
+  speseTrasportoIvaEsclusa?: number | null;
+  totaleOrdineIvaEsclusa: number;
+  noteCliente?: string | null;
+}
+
 /** I dati arrivano dal DB e finiscono in HTML: vanno neutralizzati. */
 function esc(s: string | null | undefined): string {
-  return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return (s ?? '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
 }
 
 function euro(n: number): string {
