@@ -46,6 +46,7 @@ Prezzi sempre **IVA esclusa**. Lingua di UI e contenuti: **italiano**.
      ADMIN_EMAIL=admin@luissrl.it
      ADMIN_PASSWORD=LuisAdmin2026!
      GEMINI_API_KEY=<tua-chiave-google>
+     GEMINI_IMAGE_MODEL=gemini-2.5-flash-image  # default di fallback: il principale è nel DB (Admin -> AI — Configurazione)
      ```
    - **frontend/.env.local** — Se hai variabili (di solito vuoto)
 

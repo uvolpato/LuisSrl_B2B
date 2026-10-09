@@ -147,6 +147,11 @@ export default function EditImageModal({ open, image, onClose, onChange, onDelet
   useEffect(() => {
     if (!open) return;
     api.get<PromptTemplate[]>("/api/integrazione/prompt-templates").then(setPromptTemplates).catch(() => {});
+    // Temperature: la UI vince, il valore di partenza è quello configurato in DB (Admin -> AI).
+    api.get<{ key: string; value: string }[]>("/api/admin/config").then((cfg) => {
+      const v = parseFloat(cfg.find((c) => c.key === "AI_Immagini_Temperature")?.value ?? "");
+      if (!Number.isNaN(v)) setAiTemp(v);
+    }).catch(() => {});
   }, [open]);
   useEffect(() => { if (image) setTab("dettagli"); }, [image?.id]);
   if (!image) return null;
