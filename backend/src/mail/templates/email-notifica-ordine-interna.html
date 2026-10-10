@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <!--
-  ANTEPRIMA — notifica interna nuovo ordine — Portale B2B Luis S.r.l.
-  Destinatario: shop@luisbg.it (interno). Stile allineato a
-  backend/src/mail/templates/ordine-conferma.html ma schematico e sobrio:
-  niente saluto, niente CTA, sezioni con intestazione fissa.
+  Notifica interna nuovo ordine — Portale B2B Luis S.r.l.
+  Destinatario: shop@luisbg.it (interno).
+  Template con placeholder: viene popolato dal backend a ogni invio.
 
-  Questo file ha solo dati di esempio, per guardare l'impaginazione nel browser.
-
-  Se diventa un template attivo:
-  - togliere la riga OGGETTO (il soggetto lo passa il codice, non il corpo)
-  - usare i marcatori di riga come in ordine-conferma per la tabella articoli
-  - segnaposto suggeriti: {{NUMERO_ORDINE}} {{DATA_ORA}} {{ID_PORTALE}}
+  Segnaposto disponibili:
+    {{NUMERO_ORDINE}} {{DATA_ORA_ORDINE}} {{ID_ORDINE}}
     {{RAGIONE_SOCIALE}} {{CODICE_CLIENTE}} {{PARTITA_IVA}} {{CODICE_FISCALE}}
-    {{EMAIL}} {{TELEFONO}} {{REFERENTE}} {{INDIRIZZO_FATT}} {{INDIRIZZO_SPED}}
-    {{IMPONIBILE}} {{TRASPORTO}} {{TOTALE}} {{NOTE}}
-
-  Il logo va caricato con src="cid:logo" (allegato dal backend); qui e' un file
-  locale solo perche' l'anteprima nel browser non risolve i cid.
+    {{EMAIL_CLIENTE}} {{TELEFONO_CLIENTE}} {{REFERENTE}}
+    {{INDIRIZZO_FATTURAZIONE}} {{INDIRIZZO_SPEDIZIONE}}
+    {{IMPONIBILE_IVA_ESCL}} {{SPESE_TRASPORTO_IVA_ESCL}} {{TOTALE_ORDINE_IVA_ESCL}}
+    {{NOTE_CLIENTE}}
+    {{RIGHE_ARTICOLI}}  (sostituisce l'intero tbody della tabella articoli)
 -->
 <html lang="it">
 <head>
@@ -25,28 +20,16 @@
   <title>Notifica ordine — Portale B2B Luis</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f1ec;font-family:Arial,Helvetica,sans-serif;color:#221811;">
-  <div style="display:none;max-height:0;overflow:hidden;">Nuovo ordine ORD-20261009-9F3A — FIORERIA DEL CENTRO S.R.L. — 163,320 &euro; IVA esclusa.</div>
-
-  <div style="background:#2b2622;color:#efe9e3;font-size:11px;letter-spacing:.04em;text-align:center;padding:7px 12px;">
-    ANTEPRIMA — notifica interna nuovo ordine — destinatario: shop@luisbg.it
-  </div>
+  <div style="display:none;max-height:0;overflow:hidden;">Nuovo ordine {{NUMERO_ORDINE}} — {{RAGIONE_SOCIALE}} — {{TOTALE_ORDINE_IVA_ESCL}} IVA esclusa.</div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f1ec;padding:24px 12px;">
     <tr><td align="center">
       <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#ffffff;border:1px solid #e7e2db;border-radius:14px;overflow:hidden;">
 
-        <!-- OGGETTO: solo anteprima, non far parte del corpo in rilascio -->
-        <tr>
-          <td style="padding:13px 24px;border-bottom:1px solid #efeae5;">
-            <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:#706760;">Oggetto</span>
-            <div style="font-size:13.5px;margin-top:3px;">Nuovo ordine B2B ORD-20261009-9F3A - 09/10/2026 14:32</div>
-          </td>
-        </tr>
-
-        <!-- Logo (rilascio: src="cid:logo") -->
+        <!-- Logo -->
         <tr>
           <td align="center" style="padding:28px 24px 4px;">
-            <img src="frontend/public/images/b2b/logo.webp" alt="Luis S.r.l." width="150"
+            <img src="cid:logo" alt="Luis S.r.l." width="150"
                  style="display:block;border:0;width:150px;max-width:55%;height:auto;">
           </td>
         </tr>
@@ -67,15 +50,15 @@
               <tr>
                 <td width="40%" style="padding:12px 16px;">
                   <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Numero ordine</span>
-                  <strong style="font-family:'Courier New',monospace;font-size:15px;">ORD-20261009-9F3A</strong>
+                  <strong style="font-family:'Courier New',monospace;font-size:15px;">{{NUMERO_ORDINE}}</strong>
                 </td>
                 <td width="34%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
                   <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">Data e ora</span>
-                  <strong style="font-size:15px;">09/10/2026 14:32:18</strong>
+                  <strong style="font-size:15px;">{{DATA_ORA_ORDINE}}</strong>
                 </td>
                 <td width="26%" style="padding:12px 16px;border-left:1px solid #e7e2db;">
                   <span style="display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#706760;">ID portale</span>
-                  <strong style="font-size:15px;">123</strong>
+                  <strong style="font-size:15px;">{{ID_ORDINE}}</strong>
                 </td>
               </tr>
             </table>
@@ -97,31 +80,31 @@
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
                     <tr>
                       <td width="170" style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Ragione sociale</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;"><strong>FIORERIA DEL CENTRO S.R.L.</strong></td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;"><strong>{{RAGIONE_SOCIALE}}</strong></td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Codice cliente</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">CL000123</td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">{{CODICE_CLIENTE}}</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Partita IVA</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">IT01234567890</td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">{{PARTITA_IVA}}</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Codice Fiscale</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">01234567890</td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">{{CODICE_FISCALE}}</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Email</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;">commerciale@fioreriadelcentro.it</td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;">{{EMAIL_CLIENTE}}</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;border-bottom:1px solid #efeae5;">Telefono</td>
-                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;">02 1234567</td>
+                      <td style="padding:6px 0;border-bottom:1px solid #efeae5;">{{TELEFONO_CLIENTE}}</td>
                     </tr>
                     <tr>
                       <td style="padding:6px 12px 6px 0;color:#706760;">Referente</td>
-                      <td style="padding:6px 0;">Mario Rossi</td>
+                      <td style="padding:6px 0;">{{REFERENTE}}</td>
                     </tr>
                   </table>
 
@@ -129,11 +112,11 @@
                     <tr>
                       <td width="50%" valign="top" style="padding:14px 14px 0 0;border-top:1px solid #e7e2db;">
                         <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:#706760;">Indirizzo di fatturazione</span>
-                        <p style="margin:6px 0 0;font-size:13px;line-height:1.55;">Via Milano 15<br>20121 Milano (MI)<br>Italia</p>
+                        <p style="margin:6px 0 0;font-size:13px;line-height:1.55;">{{INDIRIZZO_FATTURAZIONE}}</p>
                       </td>
                       <td width="50%" valign="top" style="padding:14px 0 0 14px;border-top:1px solid #e7e2db;border-left:1px solid #efeae5;">
                         <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:#706760;">Indirizzo di spedizione</span>
-                        <p style="margin:6px 0 0;font-size:13px;line-height:1.55;">Via Milano 15<br>20121 Milano (MI)<br>Italia</p>
+                        <p style="margin:6px 0 0;font-size:13px;line-height:1.55;">{{INDIRIZZO_SPEDIZIONE}}</p>
                       </td>
                     </tr>
                   </table>
@@ -156,54 +139,23 @@
               <tr>
                 <td style="padding:12px 14px 14px;">
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;font-size:11px;">
-                    <tr>
-                      <td width="4.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">N.</td>
-                      <td width="10%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Cod.<br>articolo</td>
-                      <td width="10%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Cod.<br>variante</td>
-                      <td width="19%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Descrizione<br>articolo</td>
-                      <td width="14%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Descrizione<br>variante</td>
-                      <td width="6.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Q.t&agrave;</td>
-                      <td width="5.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">UM</td>
-                      <td width="10%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Prezzo<br>IVA escl.</td>
-                      <td width="8.5%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Sconto</td>
-                      <td width="12%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Totale<br>IVA escl.</td>
-                    </tr>
-                    <tr>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">1</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">0456</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">0456-01</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">Vaso cilindrico terracotta</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">&Oslash;20 x H18</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">12</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">PZ</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">4,800 &euro;</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">5,00%</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">54,720 &euro;</td>
-                    </tr>
-                    <tr>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">2</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">0789</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">0789-A</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">Cotto portoghese quadrato</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">15x15</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;">24</td>
-                      <td valign="top" style="padding:9px 4px;border-bottom:1px solid #efeae5;">PZ</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">2,900 &euro;</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">0,00%</td>
-                      <td valign="top" align="right" style="padding:9px 4px;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">69,600 &euro;</td>
-                    </tr>
-                    <tr>
-                      <td valign="top" style="padding:9px 4px;">3</td>
-                      <td valign="top" style="padding:9px 4px;font-family:'Courier New',monospace;">0123</td>
-                      <td valign="top" style="padding:9px 4px;font-family:'Courier New',monospace;">0123-R</td>
-                      <td valign="top" style="padding:9px 4px;">Sottovaso in ceramica</td>
-                      <td valign="top" style="padding:9px 4px;">Rosso</td>
-                      <td valign="top" align="right" style="padding:9px 4px;font-family:'Courier New',monospace;">6</td>
-                      <td valign="top" style="padding:9px 4px;">PZ</td>
-                      <td valign="top" align="right" style="padding:9px 4px;font-family:'Courier New',monospace;white-space:nowrap;">6,500 &euro;</td>
-                      <td valign="top" align="right" style="padding:9px 4px;font-family:'Courier New',monospace;white-space:nowrap;">0,00%</td>
-                      <td valign="top" align="right" style="padding:9px 4px;font-family:'Courier New',monospace;white-space:nowrap;">39,000 &euro;</td>
-                    </tr>
+                    <thead>
+                      <tr>
+                        <td width="4.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">N.</td>
+                        <td width="10%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Cod.<br>articolo</td>
+                        <td width="10%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Cod.<br>variante</td>
+                        <td width="19%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Descrizione<br>articolo</td>
+                        <td width="14%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Descrizione<br>variante</td>
+                        <td width="6.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Q.t&agrave;</td>
+                        <td width="5.5%" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">UM</td>
+                        <td width="10%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Prezzo<br>IVA escl.</td>
+                        <td width="8.5%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Sconto</td>
+                        <td width="12%" align="right" style="padding:0 4px 8px;border-bottom:1px solid #e7e2db;font-size:9px;letter-spacing:.3px;text-transform:uppercase;color:#706760;overflow-wrap:anywhere;">Totale<br>IVA escl.</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {{RIGHE_ARTICOLI}}
+                    </tbody>
                   </table>
                 </td>
               </tr>
@@ -226,11 +178,11 @@
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
                     <tr>
                       <td style="padding:9px 0;border-bottom:1px solid #efeae5;">Imponibile IVA esclusa</td>
-                      <td align="right" style="padding:9px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">163,320 &euro;</td>
+                      <td align="right" style="padding:9px 0;border-bottom:1px solid #efeae5;font-family:'Courier New',monospace;white-space:nowrap;">{{IMPONIBILE_IVA_ESCL}}</td>
                     </tr>
                     <tr>
                       <td style="padding:9px 0;">Spese di trasporto</td>
-                      <td align="right" style="padding:9px 0;font-family:'Courier New',monospace;white-space:nowrap;">0,000 &euro;</td>
+                      <td align="right" style="padding:9px 0;font-family:'Courier New',monospace;white-space:nowrap;">{{SPESE_TRASPORTO_IVA_ESCL}}</td>
                     </tr>
                   </table>
                 </td>
@@ -241,7 +193,7 @@
                     <tr>
                       <td style="font-size:13.5px;"><strong>Totale ordine IVA esclusa</strong></td>
                       <td align="right" style="white-space:nowrap;">
-                        <strong style="font-family:Georgia,'Times New Roman',serif;font-size:21px;color:#b2511e;">163,320 &euro;</strong>
+                        <strong style="font-family:Georgia,'Times New Roman',serif;font-size:21px;color:#b2511e;">{{TOTALE_ORDINE_IVA_ESCL}}</strong>
                       </td>
                     </tr>
                   </table>
@@ -262,7 +214,7 @@
                 </td>
               </tr>
               <tr>
-                <td style="padding:13px 16px;font-size:13.5px;line-height:1.6;">Consegna preferibile entro venerd&igrave;</td>
+                <td style="padding:13px 16px;font-size:13.5px;line-height:1.6;">{{NOTE_CLIENTE}}</td>
               </tr>
             </table>
           </td>

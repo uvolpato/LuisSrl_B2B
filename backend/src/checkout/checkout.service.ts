@@ -590,6 +590,8 @@ export class CheckoutService {
         descrizione: r.descrizione ?? r.codiceProdotto ?? '',
         quantita: Number(r.quantita ?? 0),
         prezzo: Number(r.prezzo ?? 0),
+        prezzoListino: r.prezzoListino ? Number(r.prezzoListino) : null,
+        scontoPercentuale: r.scontoPct ? Number(r.scontoPct) : null,
         immagineUrl: immagini.get(r.codiceProdotto ?? '') ?? null,
       })),
     });

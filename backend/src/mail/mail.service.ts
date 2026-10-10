@@ -208,7 +208,16 @@ export class MailService {
       .replace(/\{\{R_DESCRIZIONE\}\}/g, esc(r.descrizione))
       .replace(/\{\{R_CODICE\}\}/g, esc(r.codice))
       .replace(/\{\{R_QTA\}\}/g, String(r.quantita))
-      .replace(/\{\{R_PREZZO\}\}/g, euro(r.prezzo))
+      .replace(/\{\{R_PREZZO\}\}/g, (() => {
+        const netto = euro(r.prezzo);
+        const listino = r.prezzoListino && r.prezzoListino > r.prezzo
+          ? `<span style="text-decoration:line-through;color:#999;margin-right:6px;font-size:0.9em;">${euro(r.prezzoListino)}</span>`
+          : '';
+        return `${listino}${netto}`;
+      })())
+      .replace(/\{\{R_SCONTO\}\}/g, r.scontoPercentuale && r.scontoPercentuale > 0
+        ? `<span style="color:#b2511e;font-size:0.9em;">−${r.scontoPercentuale.toFixed(2).replace('.', ',')}%</span>`
+        : '')
       .replace(/\{\{R_TOTALE\}\}/g, euro(r.prezzo * r.quantita)),
     ).join('');
 
@@ -379,6 +388,7 @@ export class MailService {
         to: recipient,
         subject: oggetto,
         html,
+        attachments: this.allegatoLogo(),
       });
 
       this.logger.log(`Mail notifica ordine interna inviata a ${to} per ordine ${dati.numeroOrdine}`);
@@ -393,6 +403,8 @@ export interface RigaConfermaOrdine {
   descrizione: string;
   quantita: number;
   prezzo: number;
+  prezzoListino?: number | null;
+  scontoPercentuale?: number | null;
   immagineUrl: string | null;
 }
 
