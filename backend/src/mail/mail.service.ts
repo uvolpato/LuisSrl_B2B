@@ -205,6 +205,7 @@ export class MailService {
 
     // Prepara allegati immagini prodotto (inline cid:)
     const imageAttachments: { filename: string; path: string; cid: string }[] = [];
+    const immaginiMostrate = new Set<string>(); // una sola miniatura per articolo: la prima riga
     const righe = dati.righe.map((r, idx) => {
       let imgCell = '';
       this.logger.debug(`[Mail] Riga ${idx}: codice=${r.codice}, descrizione=${r.descrizione}, immagineUrl=${r.immagineUrl}`);
@@ -213,11 +214,15 @@ export class MailService {
         if (relPath.startsWith('images/')) relPath = relPath.slice('images/'.length);
         const absPath = join(this.assetsBase, relPath);
         this.logger.debug(`[Mail] Riga ${idx}: relPath=${relPath}, absPath=${absPath}, exists=${existsSync(absPath)}`);
-        if (existsSync(absPath)) {
+        if (immaginiMostrate.has(absPath)) {
+          imgCell = '<td width="64" valign="top" style="padding:12px 12px 12px 0"></td>';
+        } else if (existsSync(absPath)) {
+          immaginiMostrate.add(absPath);
           const cid = `prod-${idx}`;
           imageAttachments.push({ filename: `prod-${idx}.jpg`, path: absPath, cid });
           imgCell = `<td width="64" valign="top" style="padding:12px 12px 12px 0"><img src="cid:${cid}" alt="" width="64" style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1"></td>`;
         } else {
+          immaginiMostrate.add(absPath);
           imgCell = `<td width="64" valign="top" style="padding:12px 12px 12px 0"><img src="${this.urlAssoluto(r.immagineUrl)}" alt="" width="64" style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1"></td>`;
         }
       } else {
