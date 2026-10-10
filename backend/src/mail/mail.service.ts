@@ -203,23 +203,43 @@ export class MailService {
     }
     const modelloRiga = tpl.slice(inizio + '<!--RIGA_START-->'.length, fine);
 
-    const righe = dati.righe.map((r) => modelloRiga
-      .replace(/\{\{R_IMMAGINE\}\}/g, this.urlAssoluto(r.immagineUrl))
-      .replace(/\{\{R_DESCRIZIONE\}\}/g, esc(r.descrizione))
-      .replace(/\{\{R_CODICE\}\}/g, esc(r.codice))
-      .replace(/\{\{R_QTA\}\}/g, String(r.quantita))
-      .replace(/\{\{R_PREZZO\}\}/g, (() => {
-        const netto = euro(r.prezzo);
-        const listino = r.prezzoListino && r.prezzoListino > r.prezzo
-          ? `<span style="text-decoration:line-through;color:#999;margin-right:6px;font-size:0.9em;">${euro(r.prezzoListino)}</span>`
-          : '';
-        return `${listino}${netto}`;
-      })())
-      .replace(/\{\{R_SCONTO\}\}/g, r.scontoPercentuale && r.scontoPercentuale > 0
-        ? `<span style="color:#b2511e;font-size:0.9em;">−${r.scontoPercentuale.toFixed(2).replace('.', ',')}%</span>`
-        : '')
-      .replace(/\{\{R_TOTALE\}\}/g, euro(r.prezzo * r.quantita)),
-    ).join('');
+    // Prepara allegati immagini prodotto (inline cid:)
+    const imageAttachments: { filename: string; path: string; cid: string }[] = [];
+    const righe = dati.righe.map((r, idx) => {
+      let imgCid = '';
+      if (r.immagineUrl) {
+        const relPath = r.immagineUrl.startsWith('/') ? r.immagineUrl.slice(1) : r.immagineUrl;
+        const absPath = join(this.assetsBase, relPath);
+        if (existsSync(absPath)) {
+          const cid = `prod-${idx}`;
+          imageAttachments.push({ filename: `prod-${idx}.jpg`, path: absPath, cid });
+          imgCid = `cid:${cid}`;
+        } else {
+          imgCid = this.urlAssoluto(r.immagineUrl);
+        }
+      } else {
+        imgCid = `${this.domain}/images/b2b/placeholder-email.png`;
+      }
+      return modelloRiga
+        .replace(/\{\{R_IMMAGINE\}\}/g, imgCid)
+        .replace(/\{\{R_DESCRIZIONE\}\}/g, esc(r.descrizione))
+        .replace(/\{\{R_CODICE\}\}/g, esc(r.codice))
+        .replace(/\{\{R_QTA\}\}/g, String(r.quantita))
+        .replace(/\{\{R_PREZZO\}\}/g, (() => {
+          const netto = euro(r.prezzo);
+          const listino = r.prezzoListino && r.prezzoListino > r.prezzo
+            ? `<span style="text-decoration:line-through;color:#999;margin-right:6px;font-size:0.9em;">${euro(r.prezzoListino)}</span>`
+            : '';
+          return `${listino}${netto}`;
+        })())
+        .replace(/\{\{R_SCONTO\}\}/g, r.scontoPercentuale && r.scontoPercentuale > 0
+          ? `<span style="color:#b2511e;font-size:0.9em;">−${r.scontoPercentuale.toFixed(2).replace('.', ',')}%</span>`
+          : '')
+        .replace(/\{\{R_TOTALE\}\}/g, euro(r.prezzo * r.quantita));
+    }).join('');
+
+    // Aggiunge allegati immagini a quelli esistenti (logo)
+    attachments.push(...imageAttachments);
 
     const note = dati.note?.trim()
       ? `<br><br><strong style="font-size:14px">Note</strong><br><span style="color:#706760">${esc(dati.note)}</span>`
