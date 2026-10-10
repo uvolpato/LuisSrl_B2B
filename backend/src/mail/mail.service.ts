@@ -206,9 +206,8 @@ export class MailService {
     // Prepara allegati immagini prodotto (inline cid:)
     const imageAttachments: { filename: string; path: string; cid: string }[] = [];
     const righe = dati.righe.map((r, idx) => {
-      let imgCid = '';
+      let imgCell = '';
       if (r.immagineUrl) {
-        // immagineUrl es: "/images/linea_X/file.jpg" -> rimuovo "/images/" perchè assetsBase già include public/images
         let relPath = r.immagineUrl.startsWith('/') ? r.immagineUrl.slice(1) : r.immagineUrl;
         if (relPath.startsWith('images/')) relPath = relPath.slice('images/'.length);
         const absPath = join(this.assetsBase, relPath);
@@ -216,15 +215,15 @@ export class MailService {
         if (existsSync(absPath)) {
           const cid = `prod-${idx}`;
           imageAttachments.push({ filename: `prod-${idx}.jpg`, path: absPath, cid });
-          imgCid = `cid:${cid}`;
+          imgCell = `<td width="64" valign="top" style="padding:12px 12px 12px 0"><img src="cid:${cid}" alt="" width="64" style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1"></td>`;
         } else {
-          imgCid = this.urlAssoluto(r.immagineUrl);
+          imgCell = `<td width="64" valign="top" style="padding:12px 12px 12px 0"><img src="${this.urlAssoluto(r.immagineUrl)}" alt="" width="64" style="display:block;border:1px solid #efeae5;border-radius:6px;width:64px;height:auto;background:#f7f5f1"></td>`;
         }
       } else {
-        imgCid = `${this.domain}/images/b2b/placeholder-email.png`;
+        imgCell = '<td width="64" valign="top" style="padding:12px 12px 12px 0"></td>'; // spazio vuoto
       }
       return modelloRiga
-        .replace(/\{\{R_IMMAGINE\}\}/g, imgCid)
+        .replace(/\{\{R_IMMAGINE_CELL\}\}/g, imgCell)
         .replace(/\{\{R_DESCRIZIONE\}\}/g, esc(r.descrizione))
         .replace(/\{\{R_CODICE\}\}/g, esc(r.codice))
         .replace(/\{\{R_QTA\}\}/g, String(r.quantita))
