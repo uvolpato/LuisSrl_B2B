@@ -489,7 +489,9 @@ export default function ArticoloEditModal({
                         </span>
                     )},
                     { key: "descrizione", header: "Descrizione", cell: (v) => (
-                      <span className="desc-col" data-tip={v.descrizione}>{v.descrizione}</span>
+                      <Tooltip text={v.descrizione}>
+                        <span className="desc-col">{v.descrizione}</span>
+                      </Tooltip>
                     )},
                     { key: "dim_diametro", header: "Diam. esterno", width: "90px", mono: true, align: "right", cell: (v) => {
                       const d = v.dimensioni?.diametro;
