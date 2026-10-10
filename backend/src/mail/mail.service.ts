@@ -341,10 +341,8 @@ export class MailService {
       const rigaTemplate = `
         <tr>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{NUMERO}}</td>
-          <td style="padding:6px;border:1px solid #ddd;">{{CODICE_ARTICOLO}}</td>
-          <td style="padding:6px;border:1px solid #ddd;">{{CODICE_VARIANTE}}</td>
-          <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE_ARTICOLO}}</td>
-          <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE_VARIANTE}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{CODICE}}</td>
+          <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{QUANTITA}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{UM}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{PREZZO_LISTINO}}{{PREZZO_IVA_ESCL}}</td>
@@ -356,10 +354,8 @@ export class MailService {
         .map((a, i) => {
           let r = rigaTemplate;
           r = r.replace('{{NUMERO}}', String(a.numero ?? i + 1));
-          r = r.replace('{{CODICE_ARTICOLO}}', a.codiceArticolo || '');
-          r = r.replace('{{CODICE_VARIANTE}}', a.codiceVariante || '');
-          r = r.replace('{{DESCRIZIONE_ARTICOLO}}', a.descrizioneArticolo || '');
-          r = r.replace('{{DESCRIZIONE_VARIANTE}}', a.descrizioneVariante || '');
+          r = r.replace('{{CODICE}}', a.codiceArticolo || a.codiceVariante || '');
+          r = r.replace('{{DESCRIZIONE}}', a.descrizioneArticolo || a.descrizioneVariante || '');
           r = r.replace('{{QUANTITA}}', formatNumero(a.quantita, 0));
           r = r.replace('{{UM}}', a.unitaMisura || 'PZ');
           const prezzoNetto = formatEuro(a.prezzoIvaEsclusa);
