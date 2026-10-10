@@ -644,6 +644,7 @@ export class CheckoutService {
         quantita: Number(r.quantita ?? 0),
         unitaMisura: 'PZ',
         prezzoIvaEsclusa: Number(r.prezzo ?? 0),
+        prezzoListino: r.prezzoListino ? Number(r.prezzoListino) : null,
         scontoPercentuale: Number(r.scontoPct ?? 0),
         totaleRigaIvaEsclusa: Number(r.prezzo ?? 0) * Number(r.quantita ?? 0),
       }));

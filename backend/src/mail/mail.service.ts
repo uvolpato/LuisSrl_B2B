@@ -338,7 +338,7 @@ export class MailService {
           <td style="padding:6px;border:1px solid #ddd;">{{DESCRIZIONE_VARIANTE}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{QUANTITA}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{UM}}</td>
-          <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{PREZZO_IVA_ESCL}}</td>
+          <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{PREZZO_LISTINO}}{{PREZZO_IVA_ESCL}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:center;">{{SCONTO_PERC}}</td>
           <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{TOTALE_RIGA_IVA_ESCL}}</td>
         </tr>`;
@@ -353,7 +353,12 @@ export class MailService {
           r = r.replace('{{DESCRIZIONE_VARIANTE}}', a.descrizioneVariante || '');
           r = r.replace('{{QUANTITA}}', formatNumero(a.quantita, 0));
           r = r.replace('{{UM}}', a.unitaMisura || 'PZ');
-          r = r.replace('{{PREZZO_IVA_ESCL}}', formatEuro(a.prezzoIvaEsclusa));
+          const prezzoNetto = formatEuro(a.prezzoIvaEsclusa);
+          const prezzoListinoHtml = a.prezzoListino && a.prezzoListino > a.prezzoIvaEsclusa
+            ? `<span style="text-decoration:line-through;color:#999;margin-right:6px;font-size:0.9em;">${formatEuro(a.prezzoListino)}</span>`
+            : '';
+          r = r.replace('{{PREZZO_LISTINO}}', prezzoListinoHtml);
+          r = r.replace('{{PREZZO_IVA_ESCL}}', prezzoNetto);
           r = r.replace('{{SCONTO_PERC}}', a.scontoPercentuale ? formatNumero(a.scontoPercentuale, 2) + '%' : '0,00%');
           r = r.replace('{{TOTALE_RIGA_IVA_ESCL}}', formatEuro(a.totaleRigaIvaEsclusa));
           return r;
@@ -430,6 +435,7 @@ export interface RigaArticoloMail {
   quantita: number;
   unitaMisura?: string | null;
   prezzoIvaEsclusa: number;
+  prezzoListino?: number | null;
   scontoPercentuale?: number | null;
   totaleRigaIvaEsclusa: number;
 }
