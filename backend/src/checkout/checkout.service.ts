@@ -600,15 +600,7 @@ export class CheckoutService {
     const d = ordine.dataOrdine ?? new Date();
     const p = (n: number) => String(n).padStart(2, '0');
 
-    await this.mail.sendConfermaOrdine(c.email, {
-      ragioneSociale: c.ragioneSociale || c.nome || '',
-      numeroOrdine: ordine.numeroOrdine,
-      dataOrdine: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`,
-      totale: Number(ordine.importoTotale ?? 0),
-      indirizzo,
-      note: ordine.notaOrdine,
-      // La riga coupon (prezzo negativo) resta: al cliente lo sconto va mostrato.
-      righe: ordine.righe.map((r) => ({
+    const righeMail = ordine.righe.map((r) => ({
         codice: r.codiceProdotto ?? '',
         descrizione: r.descrizione ?? r.codiceProdotto ?? '',
         quantita: Number(r.quantita ?? 0),
@@ -618,7 +610,17 @@ export class CheckoutService {
         immagineUrl: r.codiceProdotto && varianteToArticolo.has(r.codiceProdotto)
           ? immaginePerArticolo.get(varianteToArticolo.get(r.codiceProdotto)!) ?? null
           : null,
-      })),
+      }));
+    console.log(`[Checkout] Righe mail: ${JSON.stringify(righeMail.map(r => ({ codice: r.codice, img: r.immagineUrl })))}`);
+
+    await this.mail.sendConfermaOrdine(c.email, {
+      ragioneSociale: c.ragioneSociale || c.nome || '',
+      numeroOrdine: ordine.numeroOrdine,
+      dataOrdine: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`,
+      totale: Number(ordine.importoTotale ?? 0),
+      indirizzo,
+      note: ordine.notaOrdine,
+      righe: righeMail,
     });
   }
 

@@ -207,11 +207,12 @@ export class MailService {
     const imageAttachments: { filename: string; path: string; cid: string }[] = [];
     const righe = dati.righe.map((r, idx) => {
       let imgCell = '';
+      this.logger.debug(`[Mail] Riga ${idx}: codice=${r.codice}, descrizione=${r.descrizione}, immagineUrl=${r.immagineUrl}`);
       if (r.immagineUrl) {
         let relPath = r.immagineUrl.startsWith('/') ? r.immagineUrl.slice(1) : r.immagineUrl;
         if (relPath.startsWith('images/')) relPath = relPath.slice('images/'.length);
         const absPath = join(this.assetsBase, relPath);
-        this.logger.debug(`[Mail] Riga ${idx}: immagineUrl=${r.immagineUrl}, relPath=${relPath}, absPath=${absPath}, exists=${existsSync(absPath)}`);
+        this.logger.debug(`[Mail] Riga ${idx}: relPath=${relPath}, absPath=${absPath}, exists=${existsSync(absPath)}`);
         if (existsSync(absPath)) {
           const cid = `prod-${idx}`;
           imageAttachments.push({ filename: `prod-${idx}.jpg`, path: absPath, cid });
