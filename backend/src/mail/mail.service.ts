@@ -208,8 +208,11 @@ export class MailService {
     const righe = dati.righe.map((r, idx) => {
       let imgCid = '';
       if (r.immagineUrl) {
-        const relPath = r.immagineUrl.startsWith('/') ? r.immagineUrl.slice(1) : r.immagineUrl;
+        // immagineUrl es: "/images/linea_X/file.jpg" -> rimuovo "/images/" perchè assetsBase già include public/images
+        let relPath = r.immagineUrl.startsWith('/') ? r.immagineUrl.slice(1) : r.immagineUrl;
+        if (relPath.startsWith('images/')) relPath = relPath.slice('images/'.length);
         const absPath = join(this.assetsBase, relPath);
+        this.logger.debug(`[Mail] Riga ${idx}: immagineUrl=${r.immagineUrl}, relPath=${relPath}, absPath=${absPath}, exists=${existsSync(absPath)}`);
         if (existsSync(absPath)) {
           const cid = `prod-${idx}`;
           imageAttachments.push({ filename: `prod-${idx}.jpg`, path: absPath, cid });
@@ -239,6 +242,7 @@ export class MailService {
     }).join('');
 
     // Aggiunge allegati immagini a quelli esistenti (logo)
+    this.logger.debug(`[Mail] Allegati immagini prodotti: ${imageAttachments.length}`);
     attachments.push(...imageAttachments);
 
     const note = dati.note?.trim()

@@ -353,6 +353,22 @@ export class CheckoutService {
       catalogo.map((v) => [v.codice, (v.descrizione || v.articolo.descrizione || '').trim()]),
     );
 
+    // Mappa immagini per articolo (una per articolo, no webp)
+    const variantiConImmagini = codici.length
+      ? await this.prisma.variante.findMany({
+          where: { codice: { in: codici } },
+          select: { codice: true, articoloId: true, articolo: { select: { immagini: { select: { url: true }, orderBy: { id: 'asc' } } } } },
+        })
+      : [];
+    const immaginePerArticolo = new Map<number, string | null>();
+    for (const v of variantiConImmagini) {
+      if (!immaginePerArticolo.has(v.articoloId)) {
+        const urls = v.articolo?.immagini.map((i) => i.url) ?? [];
+        const img = urls.find((u) => !/\.webp$/i.test(u)) ?? urls[0] ?? null;
+        immaginePerArticolo.set(v.articoloId, img);
+      }
+    }
+
     // Calcola importo totale usando i prezzi reali
     let importoTotale = 0;
     const righe = [];
@@ -555,16 +571,23 @@ export class CheckoutService {
     // Immagine per riga: stessa fonte del carrello (prima immagine dell'articolo).
     // I client di posta rendono male il webp: preferisco un formato universale se c'e'.
     const codici = ordine.righe.map((r) => r.codiceProdotto).filter((c): c is string => !!c);
-    const varianti = codici.length
+    // Mappa variante -> articoloId + immagine per articolo
+    const variantiConImmagini = codici.length
       ? await this.prisma.variante.findMany({
           where: { codice: { in: codici } },
-          select: { codice: true, articolo: { select: { immagini: { select: { url: true }, orderBy: { id: 'asc' } } } } },
+          select: { codice: true, articoloId: true, articolo: { select: { immagini: { select: { url: true }, orderBy: { id: 'asc' } } } } },
         })
       : [];
-    const immagini = new Map(varianti.map((v) => {
-      const urls = v.articolo?.immagini.map((i) => i.url) ?? [];
-      return [v.codice, urls.find((u) => !/\.webp$/i.test(u)) ?? urls[0] ?? null];
-    }));
+    const immaginePerArticolo = new Map<number, string | null>();
+    const varianteToArticolo = new Map<string, number>();
+    for (const v of variantiConImmagini) {
+      varianteToArticolo.set(v.codice, v.articoloId);
+      if (!immaginePerArticolo.has(v.articoloId)) {
+        const urls = v.articolo?.immagini.map((i) => i.url) ?? [];
+        const img = urls.find((u) => !/\.webp$/i.test(u)) ?? urls[0] ?? null;
+        immaginePerArticolo.set(v.articoloId, img);
+      }
+    }
 
     const dest = ordine.indirizzoSpedizioneId
       ? await this.prisma.indirizzoCliente.findUnique({ where: { id: ordine.indirizzoSpedizioneId } })
@@ -592,7 +615,9 @@ export class CheckoutService {
         prezzo: Number(r.prezzo ?? 0),
         prezzoListino: r.prezzoListino ? Number(r.prezzoListino) : null,
         scontoPercentuale: r.scontoPct ? Number(r.scontoPct) : null,
-        immagineUrl: immagini.get(r.codiceProdotto ?? '') ?? null,
+        immagineUrl: r.codiceProdotto && varianteToArticolo.has(r.codiceProdotto)
+          ? immaginePerArticolo.get(varianteToArticolo.get(r.codiceProdotto)!) ?? null
+          : null,
       })),
     });
   }
