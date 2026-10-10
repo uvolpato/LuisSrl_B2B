@@ -101,7 +101,8 @@ export default function AnteprimaArticoloPage({ params }: { params: Promise<{ co
 
   const varianti = useMemo(() => {
     if (!articolo) return [];
-    return articolo.varianti.sort((a, b) => a.codice.localeCompare(b.codice));
+    // Ordine server (campo ordinamento, impostabile dall'admin via drag&drop)
+    return [...articolo.varianti];
   }, [articolo]);
 
   const dimKeys = useMemo(() => {

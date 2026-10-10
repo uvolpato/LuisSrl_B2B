@@ -397,6 +397,7 @@ model Variante {
   stato       String    @default("ATTIVO")
   articoloId  Int       @map("articolo_id")
   articolo    Articolo  @relation(fields: [articoloId], references: [id])
+  ordinamento Int       @default(0)
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("varianti")

@@ -214,7 +214,8 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
   const varianti = useMemo(() => {
     if (!articolo) return [];
-    return articolo.varianti.filter((v) => v.stato === "attivo").sort((a, b) => a.codice.localeCompare(b.codice));
+    // Ordine server (campo ordinamento, impostabile dall'admin via drag&drop)
+    return articolo.varianti.filter((v) => v.stato === "attivo");
   }, [articolo]);
 
   const dimKeys = useMemo(() => {

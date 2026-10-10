@@ -1607,7 +1607,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     const art = await this.prisma.articolo.findUnique({
       where: { codiceLinea },
       include: {
-        varianti: true,
+        varianti: { orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }] },
         famiglia: true,
         immagini: { orderBy: { ordinamento: 'asc' } },
         raccolte: { include: { raccolta: { select: { id: true, nome: true, slug: true, sconto: true, stato: true } } } },
@@ -1743,7 +1743,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; variantiOrdine?: string[]; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -1797,6 +1797,16 @@ Rispondi SOLO con JSON valido, senza testo attorno:
           data: { multiplo },
         });
       }
+    }
+    if (data.variantiOrdine?.length) {
+      await this.prisma.$transaction(
+        data.variantiOrdine.map((codice, idx) =>
+          this.prisma.variante.updateMany({
+            where: { codice, articoloId: art.id },
+            data: { ordinamento: idx },
+          }),
+        ),
+      );
     }
     const deletedIds = new Set(data.immaginiDaEliminare ?? []);
     if (data.immaginiDaEliminare?.length) {

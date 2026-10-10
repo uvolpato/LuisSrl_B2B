@@ -98,6 +98,7 @@ export default function ArticoloEditModal({
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [immaginiOrdine, setImmaginiOrdine] = useState<number[] | null>(null);
+  const [variantiOrdine, setVariantiOrdine] = useState<string[] | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [immaginiGalleria, setImmaginiGalleria] = useState<Record<number, boolean> | null>(null);
@@ -171,6 +172,7 @@ export default function ArticoloEditModal({
       setVPage(1);
       setPendingImages([]);
       setImmaginiOrdine(null);
+      setVariantiOrdine(null);
       setUploadError(null);
       setImmaginiGalleria(null);
       setImmaginiDisplay({});
@@ -226,6 +228,7 @@ export default function ArticoloEditModal({
     if (pendingImages.length > 0) return true;
     if (pendingDeleteImages.length > 0) return true;
     if (immaginiOrdine) return true;
+    if (variantiOrdine) return true;
     if (Object.keys(immaginiDisplay).length > 0) return true;
     if (Object.keys(immaginiTipo).length > 0) return true;
     for (const v of article.varianti) {
@@ -240,7 +243,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, variantiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -264,6 +267,7 @@ export default function ArticoloEditModal({
       const payload: Record<string, unknown> = { nome: editNome, colore: editColore, coloreRgb: editColoreRgb || null, stato: editStato, varianti: editVarianti, variantiMultipli: editMultipli, descrizione: article.descrizione, descrizioneDettagliata: article.descrizioneDettagliata, promptAi: article.promptAi };
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
+      if (variantiOrdine) payload.variantiOrdine = variantiOrdine;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
       if (Object.keys(immaginiTipo).length > 0) payload.immaginiTipo = immaginiTipo;
@@ -469,6 +473,10 @@ export default function ArticoloEditModal({
                   Giacenza aggiornata il {article.ultimaSyncGiacenza ? new Date(article.ultimaSyncGiacenza).toLocaleString("it-IT") : "—"}.
                 </p>
                 {(() => {
+                  const byCodice = new Map(article.varianti.map((v) => [v.codice, v]));
+                  const vista = (variantiOrdine ?? article.varianti.map((v) => v.codice))
+                    .map((c) => byCodice.get(c))
+                    .filter((v): v is VarianteDetail => v !== undefined);
                   const vCols: Column<VarianteDetail>[] = [
                     { key: "codice", header: "Codice Integra", grow: true, cell: (v) => (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -528,14 +536,24 @@ export default function ArticoloEditModal({
                   return (
                     <DataTable
                       columns={vCols}
-                      rows={article.varianti}
+                      rows={vista}
                       rowKey={(v) => v.codice}
                       actions={vActions}
                       page={vPage}
                       pageSize={50}
-                      total={article.varianti.length}
+                      total={vista.length}
                       onPageChange={setVPage}
                       emptyText="Nessuna variante"
+                      onRowReorder={(from, to) => setVariantiOrdine((prev) => {
+                        const list = prev ?? article.varianti.map((v) => v.codice);
+                        const fi = list.indexOf(String(from));
+                        const ti = list.indexOf(String(to));
+                        if (fi < 0 || ti < 0) return prev;
+                        const copy = [...list];
+                        const [moved] = copy.splice(fi, 1);
+                        copy.splice(ti, 0, moved);
+                        return copy;
+                      })}
                     />
                   );
                 })()}

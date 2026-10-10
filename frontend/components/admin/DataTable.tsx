@@ -63,6 +63,9 @@ export interface DataTableProps<T> {
   /** Blocca la selezione (es. durante un'importazione): checkbox disabilitate,
    *  righe non toggle-abili. Le righe restano comunque visibili. */
   disabled?: boolean;
+  /** Se presente, DataTable rende una colonna maniglia "⋮" a inizio riga e le
+   *  righe diventano trascinabili: al drop chiama (fromKey, toKey). */
+  onRowReorder?: (fromKey: string | number, toKey: string | number) => void;
 }
 
 export default function DataTable<T>({
@@ -84,11 +87,23 @@ export default function DataTable<T>({
   onSelectionChange,
   rowSelectable,
   disabled = false,
+  onRowReorder,
 }: DataTableProps<T>) {
   // Selezione bloccata durante caricamento o operazione (import)
   const locked = loading || disabled;
   const [localSortKey, setLocalSortKey] = useState<string | null>(null);
   const [localSortDir, setLocalSortDir] = useState<"asc" | "desc">("asc");
+  const [dragKey, setDragKey] = useState<string | number | null>(null);
+  const [overKey, setOverKey] = useState<string | number | null>(null);
+
+  // La riga diventa draggable solo dopo mousedown sulla maniglia: al rilascio
+  // senza drag (anche fuori dalla maniglia) torna subito non-trascinabile.
+  useEffect(() => {
+    if (dragKey === null) return;
+    const clear = () => setDragKey(null);
+    window.addEventListener("mouseup", clear);
+    return () => window.removeEventListener("mouseup", clear);
+  }, [dragKey]);
 
   const isControlled = onSort !== undefined;
   const activeSortKey = isControlled ? propSortKey ?? null : localSortKey;
@@ -140,7 +155,7 @@ export default function DataTable<T>({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
-  const colCount = columns.length + (actions.length ? 1 : 0) + (selectable ? 1 : 0);
+  const colCount = columns.length + (actions.length ? 1 : 0) + (selectable ? 1 : 0) + (onRowReorder ? 1 : 0);
 
   const allSelected = sortedRows.length > 0 && sortedRows.every((r) => selectedKeys?.has(rowKey(r)));
   const someSelected = sortedRows.length > 0 && (selectedKeys?.size ?? 0) > 0 && !allSelected;
@@ -162,6 +177,7 @@ export default function DataTable<T>({
       <div className="data-table-scroll">
         <table>
           <colgroup>
+            {onRowReorder && <col style={{ width: "32px" }} />}
             {selectable && <col style={{ width: "44px" }} />}
             {columns.map((c) => (
               <col
@@ -180,6 +196,7 @@ export default function DataTable<T>({
           </colgroup>
           <thead>
             <tr>
+              {onRowReorder && <th aria-label="Riordina" />}
               {selectable && (
                 <th>
                   <input
@@ -225,10 +242,28 @@ export default function DataTable<T>({
                 return (
                   <tr
                     key={key}
-                    className={selectable && selectedKeys?.has(key) ? "selected" : undefined}
+                    className={[
+                      selectable && selectedKeys?.has(key) ? "selected" : "",
+                      onRowReorder && overKey === key && dragKey !== null && dragKey !== key ? "drag-over" : "",
+                    ].filter(Boolean).join(" ") || undefined}
                     onClick={selectable && !rowLocked ? () => toggleRow(key) : undefined}
                     style={selectable && !rowLocked ? { cursor: "pointer" } : undefined}
+                    draggable={onRowReorder !== undefined && dragKey === key}
+                    onDragStart={() => setDragKey(key)}
+                    onDragOver={onRowReorder ? (e) => { e.preventDefault(); setOverKey(key); } : undefined}
+                    onDrop={onRowReorder && dragKey !== null && dragKey !== key ? () => { onRowReorder(dragKey, key); setDragKey(null); setOverKey(null); } : undefined}
+                    onDragEnd={() => { setDragKey(null); setOverKey(null); }}
                   >
+                    {onRowReorder && (
+                      <td
+                        className="row-handle"
+                        onMouseDown={() => setDragKey(key)}
+                        aria-label="Trascina per riordinare"
+                        title="Trascina per riordinare"
+                      >
+                        ⋮
+                      </td>
+                    )}
                     {selectable && (
                       <td onClick={(e) => e.stopPropagation()}>
                         <input
