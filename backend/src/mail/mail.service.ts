@@ -368,9 +368,10 @@ export class MailService {
 
       const oggetto = `Nuovo ordine B2B ${dati.numeroOrdine} - ${dataFormatted}`;
 
+      const recipient = this.resolveRecipient(to);
       await this.transporter.sendMail({
         from,
-        to,
+        to: recipient,
         subject: oggetto,
         html,
       });
