@@ -1,11 +1,12 @@
 /* ==========================================================================
-   Luis Casa — storefront B2C · dati, carrello e rendering condivisi
+   Kappa Design — storefront B2C · dati, carrello e rendering condivisi
    ========================================================================== */
 (function () {
   'use strict';
 
   var IMG = 'img/';
-  var STORE = 'luis_casa_carrello';
+  var BRAND = 'Kappa Design';
+  var STORE = 'kappadesign_carrello';
 
   /* ── Catalogo prodotti (dati dimostrativi B2C) ───────────────────────── */
   var PRODOTTI = [
@@ -82,7 +83,7 @@
         '<div class="deliv">Consegna <b>GRATIS</b> ' + dataConsegna(p) + '</div>' +
         '<div class="prime"><span class="pz">prime</span> Disponibile in magazzino</div>' +
         '<div class="actions"><button class="btn btn-buy btn-block btn-sm" data-add="' + p.id + '">Aggiungi al carrello</button></div>' +
-        '<div class="muted-line">Venduto da <b>Luis Casa</b></div>' +
+        '<div class="muted-line">Venduto da <b>' + BRAND + '</b></div>' +
       '</div>' +
     '</article>';
   }
@@ -311,8 +312,8 @@
       '</div></div>' +
       '<header class="site-header">' +
         '<div class="wrap">' +
-          '<a class="logo" href="index.html"><span class="logo-mark">L</span>' +
-            '<span class="logo-txt"><span class="n">Luis Casa</span><span class="s">Vasi &amp; arredo</span></span></a>' +
+          '<a class="logo" href="index.html"><img class="logo-mark" src="img/logo-mark.png" alt="">' +
+            '<img class="logo-word" src="img/logo-word.png" alt="' + BRAND + '"></a>' +
           '<a class="hdr-chip loc" href="#"><span class="top">Consegna a</span><span class="bot">Bergamo 24100</span></a>' +
           '<form class="searchbar" id="search-form">' +
             '<select name="cat"><option value="">Tutte le categorie</option>' +
@@ -341,7 +342,7 @@
       '<footer class="site-foot">' +
         '<div class="wrap">' +
           '<div class="foot-grid">' +
-            '<div><div class="foot-brand"><span class="logo-mark">L</span><span style="font-family:var(--serif);font-size:19px;font-weight:700;color:#fff">Luis Casa</span></div>' +
+            '<div><div class="foot-brand"><img class="logo-mark" src="img/logo-mark.png" alt=""><img class="logo-word" src="img/logo-word.png" alt="' + BRAND + '"></div>' +
               '<p style="color:#bcd3c8;font-size:13px;margin-top:12px">Vasi, fioriere e complementi d\'arredo per la casa e il giardino. Spedizioni in tutta Italia.</p></div>' +
             '<div class="foot-col"><h4 style="color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Categorie</h4><ul>' +
               CATEGORIE.slice(0, 5).map(function (c) { return '<li><a style="color:#bcd3c8;font-size:13px;line-height:2" href="catalogo.html?cat=' + encodeURIComponent(c) + '">' + c + '</a></li>'; }).join('') +
@@ -352,10 +353,10 @@
             '<div class="foot-col"><h4 style="color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Contatti</h4><ul>' +
               '<li style="color:#bcd3c8;font-size:13px;line-height:2">Via F. Bellafino 28/30, Bergamo</li>' +
               '<li><a style="color:#bcd3c8;font-size:13px;line-height:2" href="tel:+390350521957">+39 035 0521957</a></li>' +
-              '<li><a style="color:#bcd3c8;font-size:13px;line-height:2" href="mailto:info@luiscasa.it">info@luiscasa.it</a></li></ul></div>' +
+              '<li><a style="color:#bcd3c8;font-size:13px;line-height:2" href="mailto:info@kappadesign.it">info@kappadesign.it</a></li></ul></div>' +
           '</div>' +
           '<div class="foot-bottom" style="border-top:1px solid rgba(255,255,255,.14);padding:16px 0;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12px;color:#9fb6aa">' +
-            '<span>© 2026 Luis Casa S.r.l. · C.F. e P. IVA 04253020160</span>' +
+            '<span>© 2026 Kappa Design S.r.l. · C.F. e P. IVA 04253020160</span>' +
             '<span class="pay"><span>VISA</span><span>MASTERCARD</span><span>PAYPAL</span><span>KLARNA</span><span>BONIFICO</span></span>' +
           '</div>' +
         '</div>' +
@@ -511,7 +512,7 @@
     if (!root) return;
     var id = new URLSearchParams(location.search).get('id');
     var p = trova(id) || PRODOTTI[0];
-    document.title = p.nome + ' · Luis Casa';
+    document.title = p.nome + ' · ' + BRAND;
     var imgs = p.imgs && p.imgs.length ? p.imgs : [p.img];
     document.getElementById('stage-img').src = imgs[0];
     document.getElementById('thumbs').innerHTML = imgs.map(function (src, i) {
@@ -519,7 +520,7 @@
     }).join('');
     document.getElementById('p-nome').textContent = p.nome;
     var cn = document.getElementById('crumb-nome'); if (cn) cn.textContent = p.nome;
-    document.getElementById('p-meta').innerHTML = 'Venduto da <b>Luis Casa</b> · Cod. ' + p.id.toUpperCase() + ' · ' + p.cat;
+    document.getElementById('p-meta').innerHTML = 'Venduto da <b>' + BRAND + '</b> · Cod. ' + p.id.toUpperCase() + ' · ' + p.cat;
     document.getElementById('p-rating').innerHTML = stelle(p.rating) + ' <span class="n">' + p.rating.toFixed(1) + '</span> <span>(' + p.rec + ' recensioni)</span>';
     var off = sconto(p);
     document.getElementById('p-price').innerHTML = '<span class="now">' + eur(p.prezzo) + '</span>' +
@@ -577,7 +578,7 @@
   }
 
   /* ── Export pubblico ─────────────────────────────────────────────────── */
-  window.LUIS = {
+  window.KappaDesign = {
     PRODOTTI: PRODOTTI, eur: eur, sconto: sconto, trova: trova, stelle: stelle,
     cardHTML: cardHTML, renderGrid: renderGrid, dataConsegna: dataConsegna, CATEGORIE: CATEGORIE,
     carrello: { leggi: leggi, aggiungi: aggiungi, imposta: imposta, conta: conta },

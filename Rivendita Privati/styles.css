@@ -1,30 +1,31 @@
 /* ==========================================================================
-   Luis Casa — storefront B2C
-   Sistema di design: palette verde bosco + ottone, impostazione Amazon-style
+   Kappa Design — storefront B2C
+   Sistema di design: palette derivata dal logo (verde ardesia + oro antico,
+   fondo panna) con impostazione Amazon-style
    ========================================================================== */
 
 :root {
-  --ink: #1a1a19;
-  --ink-2: #3a3833;
-  --muted: #6e6a62;
-  --faint: #98938a;
+  --ink: #24241e;
+  --ink-2: #3d3e35;
+  --muted: #716e62;
+  --faint: #9a9689;
   --paper: #ffffff;
-  --bg: #f2f0ea;
-  --bg-2: #e9e6de;
-  --line: #e3dfd6;
-  --line-2: #d6d1c6;
-  --brand: #1f4f3f;
-  --brand-2: #163a2e;
-  --brand-3: #0f2c22;
-  --brand-soft: #e7efeb;
-  --copper: #c1783c;
-  --copper-soft: #f6ece1;
-  --cta: #ffd814;
-  --cta-2: #f7ca00;
+  --bg: #f1efe7;
+  --bg-2: #e8e5da;
+  --line: #e2ded1;
+  --line-2: #d4cfbf;
+  --brand: #2d3f32;
+  --brand-2: #233026;
+  --brand-3: #1a251d;
+  --brand-soft: #e7ebe2;
+  --copper: #b08a4f;
+  --copper-soft: #f5eedd;
+  --cta: #d4a63c;
+  --cta-2: #c1962f;
   --sale: #b12704;
-  --star: #f5a623;
-  --link: #0f5ba8;
-  --good: #1b7a45;
+  --star: #cba24e;
+  --link: #2f6b4a;
+  --good: #2f7a4d;
   --radius: 10px;
   --radius-sm: 6px;
   --shadow-sm: 0 1px 2px rgba(20, 18, 12, .08);
@@ -67,13 +68,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-header .wrap { display: flex; align-items: center; gap: clamp(10px, 1.6vw, 20px); padding-block: 9px; }
 .logo { display: flex; align-items: center; gap: 9px; color: #fff; flex: 0 0 auto; }
 .logo:hover { text-decoration: none; }
-.logo-mark {
-  width: 34px; height: 34px; border-radius: 9px; background: var(--cta); color: var(--brand-3);
-  display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 20px;
-}
-.logo-txt { display: flex; flex-direction: column; line-height: 1; }
-.logo-txt .n { font-family: var(--serif); font-size: 20px; font-weight: 700; }
-.logo-txt .s { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #bcd3c8; margin-top: 3px; }
+.logo-mark { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; display: block; }
+.logo-word { height: 36px; width: auto; flex: 0 0 auto; display: block; }
 
 .hdr-chip {
   display: flex; flex-direction: column; justify-content: center; padding: 6px 8px; border-radius: var(--radius-sm);
@@ -144,7 +140,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.55); }
 .btn-ghost:hover { background: rgba(255,255,255,.12); }
 .btn-copper { background: var(--copper); color: #fff; }
-.btn-copper:hover { background: #a8672f; }
+.btn-copper:hover { background: #8f6d3c; }
 .btn-line { background: #fff; color: var(--ink); border-color: var(--line-2); }
 .btn-line:hover { border-color: var(--ink-2); }
 .btn-block { width: 100%; }
@@ -339,7 +335,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 .foot-col a { display: block; color: #b9cdc4; font-size: 13px; padding: 4px 0; }
 .foot-cols h4 { color: #fff; }
 .foot-brand { display: flex; align-items: center; gap: 10px; }
-.foot-brand .logo-mark { background: var(--cta); }
+.foot-brand .logo-mark { width: 46px; height: 46px; }
+.foot-brand .logo-word { height: 30px; }
 .foot-bottom { border-top: 1px solid rgba(255,255,255,.14); padding: 18px 0; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: #a9bdb4; }
 .pay { display: flex; gap: 8px; flex-wrap: wrap; }
 .pay span { background: rgba(255,255,255,.1); border-radius: 5px; padding: 4px 9px; font-size: 11px; letter-spacing: .04em; }
@@ -371,7 +368,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   .hdr-chip.loc, .searchbar select { display: none; }
   .hdr-right .hdr-chip:not(.cart-btn) { display: none; }
   .cart-btn .bot { display: none; }
-  .logo-txt .s { display: none; }
+  .logo-word { height: 31px; }
   .site-header .wrap { gap: 8px; }
   .searchbar { min-width: 0; }
   .searchbar input { min-width: 0; padding: 0 8px; }
