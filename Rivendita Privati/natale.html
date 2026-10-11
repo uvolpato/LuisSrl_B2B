@@ -15,6 +15,7 @@
   .hero-inner { text-shadow: 0 1px 14px rgba(6,26,20,.55); }
   .natale .site-header { position: relative; overflow: hidden; }
   .natale .site-header .wrap { position: relative; z-index: 1; }
+  .natale .site-header .logo-mark { border-radius: 0; object-fit: contain; }
   .natale .snowflake {
     position: absolute; top: 0; color: #fff; pointer-events: none; z-index: 0; line-height: 1; user-select: none;
     animation: flakeFall var(--dur, 6s) linear var(--delay, 0s) infinite,
@@ -163,7 +164,7 @@
       var h = document.querySelector(".site-header");
       if (!h || h.querySelector(".snowflake")) return;
       var lm = h.querySelector(".logo-mark");
-      if (lm) lm.src = "img/logo-mark-natale.png";
+      if (lm) lm.src = "img/logo_natale.png";
       for (var i = 0; i < 26; i++) {
         var s = document.createElement("span");
         s.className = "snowflake";
