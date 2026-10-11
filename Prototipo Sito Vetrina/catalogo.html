@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogo vetrina — Luis S.r.l.</title>
+<meta name="description" content="Catalogo vetrina Luis S.r.l.: collezioni di vasi in ceramica, cotto, metallo e fiberstone con elenco varianti. Prezzi e disponibilità riservati ai rivenditori registrati.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Nav -->
+<header class="site-nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html"><img src="../frontend/public/images/b2b/logo.webp" alt="Luis S.r.l."></a>
+      <nav class="nav-links">
+        <a href="index.html#azienda">Azienda</a>
+        <a href="index.html#collezioni">Collezioni</a>
+        <a href="catalogo.html">Catalogo</a>
+        <a href="index.html#contatti">Contatti</a>
+        <a class="btn btn-primary btn-arrow nav-cta" href="index.html#accesso">Richiedi accesso B2B</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- Banner vetrina -->
+<div class="vetrina-banner">
+  <div class="container">
+    <span>Vetrina pubblica: prezzi, disponibilità e ordini sono riservati ai rivenditori registrati.</span>
+    <a href="index.html#accesso">Richiedi l'accesso →</a>
+  </div>
+</div>
+
+<!-- Testata catalogo -->
+<section class="catalog-top">
+  <div class="container">
+    <p class="eyebrow">Catalogo</p>
+    <h1 class="h1" style="font-size:clamp(32px,4.6vw,52px)">Collezioni e varianti</h1>
+    <p class="lead">Sfoglia le linee Luis e i marchi internazionali con l'elenco completo delle varianti: codici, finiture e dimensioni. Per i prezzi personalizzati attiva l'accesso B2B.</p>
+  </div>
+</section>
+
+<!-- Toolbar -->
+<div class="container">
+  <div class="catalog-toolbar">
+    <div class="catalog-search">
+      <input id="cerca" type="search" placeholder="Cerca per nome, codice (LU3161) o linea (ROGERS)…" aria-label="Cerca nel catalogo">
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip active" data-k="tutti">Tutti</button>
+      <button class="chip" data-k="cesti">Cesti e Intrecci</button>
+      <button class="chip" data-k="cotto-interno">Cotto da interno</button>
+      <button class="chip" data-k="cotto-esterno">Cotto da esterno</button>
+      <button class="chip" data-k="metallo">Metallo</button>
+      <button class="chip" data-k="fiberstone">Fiberstone</button>
+      <button class="chip" data-k="marchi">Marchi rivenduti</button>
+    </div>
+  </div>
+  <p class="catalog-count" id="conta">9 prodotti</p>
+</div>
+
+<!-- Griglia -->
+<main class="container">
+  <div class="product-grid" id="griglia">
+
+    <article class="product-card" data-k="cotto-esterno">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-cotto-esterni.webp" alt="Vaso Rogers in cotto da esterno">
+      <div class="product-body">
+        <span class="product-kind">Cotto da esterno</span>
+        <h3 class="product-name">Vaso Rogers</h3>
+        <p class="product-desc">Vaso in cotto portoghese a parete spessa, adatto a esterni e gelo.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU3161</span><span class="v-desc">Terracotta naturale</span><span class="v-dim">Ø40 H50</span></li>
+          <li><span class="v-code">LU3162</span><span class="v-desc">Bianco</span><span class="v-dim">Ø40 H50</span></li>
+          <li><span class="v-code">LU3163</span><span class="v-desc">Grafite</span><span class="v-dim">Ø40 H50</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="cotto-esterno">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-cotto-esterni.webp" alt="Vaso in cotto portoghese">
+      <div class="product-body">
+        <span class="product-kind">Cotto da esterno</span>
+        <h3 class="product-name">Vaso Cotto Portoghese</h3>
+        <p class="product-desc">Formato grande per allestimenti e progetti paesaggistici.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU3050</span><span class="v-desc">Cotto rustico</span><span class="v-dim">Ø50 H60</span></li>
+          <li><span class="v-code">LU3051</span><span class="v-desc">Cotto bianco</span><span class="v-dim">Ø50 H60</span></li>
+          <li><span class="v-code">LU3052</span><span class="v-desc">Cotto rustico</span><span class="v-dim">Ø60 H70</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="cotto-interno">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-cotto-interni.webp" alt="Fioriera Colton in cotto da interno">
+      <div class="product-body">
+        <span class="product-kind">Cotto da interno</span>
+        <h3 class="product-name">Fioriera Colton</h3>
+        <p class="product-desc">Fioriera rettangolare smaltata, finitura opaca e linee pulite.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU2789</span><span class="v-desc">Bianco M</span><span class="v-dim">L60 P30 H40</span></li>
+          <li><span class="v-code">LU2790</span><span class="v-desc">Grigio</span><span class="v-dim">L60 P30 H40</span></li>
+          <li><span class="v-code">LU2791</span><span class="v-desc">Crema</span><span class="v-dim">L60 P30 H40</span></li>
+          <li><span class="v-code">LU2792</span><span class="v-desc">Bianco M</span><span class="v-dim">L80 P35 H45</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">4 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="cotto-interno">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-cotto-interni.webp" alt="Vaso Lakota in cotto da interno">
+      <div class="product-body">
+        <span class="product-kind">Cotto da interno</span>
+        <h3 class="product-name">Vaso Lakota</h3>
+        <p class="product-desc">Vaso in ceramica smaltata dal profilo classico, per interni e vetrine.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU2904</span><span class="v-desc">Crema</span><span class="v-dim">Ø28 H32</span></li>
+          <li><span class="v-code">LU2905</span><span class="v-desc">Verde</span><span class="v-dim">Ø28 H32</span></li>
+          <li><span class="v-code">LU2906</span><span class="v-desc">Terracotta</span><span class="v-dim">Ø28 H32</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="cesti">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-cesti.webp" alt="Cesto intrecciato Pecos">
+      <div class="product-body">
+        <span class="product-kind">Cesti e Intrecci</span>
+        <h3 class="product-name">Cesto Pecos</h3>
+        <p class="product-desc">Intreccio naturale a trama fitta, con coprivaso interno rimovibile.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU1520</span><span class="v-desc">Naturale</span><span class="v-dim">Ø35 H30</span></li>
+          <li><span class="v-code">LU1521</span><span class="v-desc">Testa di moro</span><span class="v-dim">Ø35 H30</span></li>
+          <li><span class="v-code">LU1522</span><span class="v-desc">Naturale</span><span class="v-dim">Ø45 H38</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="metallo">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-metallo.webp" alt="Portavaso metallo Missouri">
+      <div class="product-body">
+        <span class="product-kind">Metallo</span>
+        <h3 class="product-name">Portavaso Missouri</h3>
+        <p class="product-desc">Portavaso in metallo verniciato a polvere, forme contemporanee.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU4402</span><span class="v-desc">Nero opaco</span><span class="v-dim">Ø25 H28</span></li>
+          <li><span class="v-code">LU4403</span><span class="v-desc">Rame</span><span class="v-dim">Ø25 H28</span></li>
+          <li><span class="v-code">LU4404</span><span class="v-desc">Grigio</span><span class="v-dim">Ø25 H28</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="fiberstone">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-fiberstone.webp" alt="Fioriera Argo in fiberstone">
+      <div class="product-body">
+        <span class="product-kind">Fiberstone</span>
+        <h3 class="product-name">Fioriera Argo</h3>
+        <p class="product-desc">Leggera e resistente, effetto pietra per terrazzi e progetti moderni.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">LU5010</span><span class="v-desc">Grigio pietra</span><span class="v-dim">L80 P35 H45</span></li>
+          <li><span class="v-code">LU5011</span><span class="v-desc">Bianco ghiaccio</span><span class="v-dim">L80 P35 H45</span></li>
+          <li><span class="v-code">LU5012</span><span class="v-desc">Grigio pietra</span><span class="v-dim">L100 P40 H55</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="marchi">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-pottery-pots.webp" alt="Pottery Pots Urban Smooth">
+      <div class="product-body">
+        <span class="product-kind">Marchi · Pottery Pots</span>
+        <h3 class="product-name">Urban Smooth</h3>
+        <p class="product-desc">Vaso leggero e durevole del Dutch design, per interni ed esterni.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">PP-URB-01</span><span class="v-desc">Dark Grey</span><span class="v-dim">Ø36 H46</span></li>
+          <li><span class="v-code">PP-URB-02</span><span class="v-desc">Anthracite</span><span class="v-dim">Ø36 H46</span></li>
+          <li><span class="v-code">PP-URB-03</span><span class="v-desc">Dark Grey</span><span class="v-dim">Ø46 H56</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="product-card" data-k="marchi">
+      <img class="product-img" src="../frontend/public/images/b2b/catalogo-capi-europe.webp" alt="Capi Europe Ball Smooth">
+      <div class="product-body">
+        <span class="product-kind">Marchi · Capi Europe</span>
+        <h3 class="product-name">Ball Smooth</h3>
+        <p class="product-desc">Design sostenibile con materiali riciclati e colori contemporanei.</p>
+        <ul class="variant-list">
+          <li><span class="v-code">CE-BAL-01</span><span class="v-desc">Blu</span><span class="v-dim">Ø32 H30</span></li>
+          <li><span class="v-code">CE-BAL-02</span><span class="v-desc">Bianco</span><span class="v-dim">Ø32 H30</span></li>
+          <li><span class="v-code">CE-BAL-03</span><span class="v-desc">Verde</span><span class="v-dim">Ø42 H38</span></li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-variants">3 varianti</span>
+          <a class="product-lock" href="index.html#accesso">Prezzi riservati →</a>
+        </div>
+      </div>
+    </article>
+
+  </div>
+  <p class="catalog-empty" id="vuoto" style="display:none">Nessun prodotto trovato. Prova con un altro termine o cambia categoria.</p>
+</main>
+
+<!-- CTA -->
+<section class="catalog-cta">
+  <div class="container">
+    <div>
+      <h2>Vuoi vedere i tuoi prezzi e ordinare online?</h2>
+      <p>Attiva l'accesso B2B: prezzi personalizzati, giacenza in tempo reale e ordini in pochi click.</p>
+    </div>
+    <a class="btn btn-primary btn-arrow" href="index.html#accesso">Richiedi l'accesso B2B</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-foot">
+  <div class="container">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="../frontend/public/images/b2b/logo.webp" alt="Luis S.r.l.">
+        <p><strong>LUIS S.R.L.</strong> — Import di vasi in ceramica e articoli per garden e fioristi. Qualità e design al servizio dei professionisti del verde.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Navigazione</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#azienda">Azienda</a></li>
+          <li><a href="catalogo.html">Catalogo</a></li>
+          <li><a href="index.html#contatti">Contatti</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Documenti</h4>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Contatti</h4>
+        <ul>
+          <li><a href="tel:+390350521957">+39 035 0521957</a></li>
+          <li><a href="mailto:contatti@luisbg.it">contatti@luisbg.it</a></li>
+          <li><a href="index.html#accesso">Richiedi accesso B2B</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo · C.F. e P. IVA 04253020160</span>
+      <span>Realizzato da <strong>Ugo Volpato</strong> AI Consultant</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  var griglia = document.getElementById('griglia');
+  var cards = Array.prototype.slice.call(griglia.querySelectorAll('.product-card'));
+  var conta = document.getElementById('conta');
+  var vuoto = document.getElementById('vuoto');
+  var cerca = document.getElementById('cerca');
+  var chips = document.getElementById('chips');
+  var filtro = 'tutti';
+
+  function aggiorna() {
+    var q = cerca.value.trim().toLowerCase();
+    var visibili = 0;
+    cards.forEach(function (c) {
+      var okK = filtro === 'tutti' || c.dataset.k === filtro;
+      var okQ = !q || c.textContent.toLowerCase().indexOf(q) !== -1;
+      var show = okK && okQ;
+      c.style.display = show ? '' : 'none';
+      if (show) visibili++;
+    });
+    conta.textContent = visibili + ' prodott' + (visibili === 1 ? 'o' : 'i');
+    vuoto.style.display = visibili ? 'none' : 'block';
+  }
+
+  chips.addEventListener('click', function (e) {
+    var b = e.target.closest('.chip');
+    if (!b) return;
+    chips.querySelectorAll('.chip').forEach(function (x) { x.classList.toggle('active', x === b); });
+    filtro = b.dataset.k;
+    aggiorna();
+  });
+  cerca.addEventListener('input', aggiorna);
+</script>
+
+</body>
+</html>
