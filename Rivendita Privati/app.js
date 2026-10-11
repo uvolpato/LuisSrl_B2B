@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var IMG = '../frontend/public/images/';
+  var IMG = 'img/';
   var STORE = 'luis_casa_carrello';
 
   /* ── Catalogo prodotti (dati dimostrativi B2C) ───────────────────────── */
