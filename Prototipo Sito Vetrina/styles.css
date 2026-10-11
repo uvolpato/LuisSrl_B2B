@@ -90,6 +90,7 @@ a { color: var(--accent); }
 .nav-links a { font-size: 14px; color: var(--muted); text-decoration: none; }
 .nav-links a:hover { color: var(--fg); }
 .nav-cta { margin-left: 10px; }
+.nav-links a.nav-cta, .nav-links a.nav-cta:hover { color: #fff; }
 
 /* ── Hero ── */
 .hero { position: relative; overflow: hidden; background: oklch(25% 0.02 60); border-bottom: 1px solid var(--border); }
