@@ -61,6 +61,12 @@ export class MailService {
     return original;
   }
 
+  /** Email con zero-width space prima della @: i client di posta (Gmail)
+   *  non la trasformano in link mailto, ma a schermo si vede identica. */
+  private emailAntiLink(email: string): string {
+    return email.replace('@', '&#8203;@');
+  }
+
   async sendProvisionalPassword(
     to: string,
     nome: string,
@@ -82,7 +88,7 @@ export class MailService {
     if (tpl) {
       html = tpl
         .replace(/\{\{NOME\}\}/g, nome)
-        .replace(/\{\{EMAIL\}\}/g, to)
+        .replace(/\{\{EMAIL\}\}/g, this.emailAntiLink(to))
         .replace(/\{\{PASSWORD\}\}/g, provisionalPassword)
         .replace(/\{\{INTRO\}\}/g, intro)
         .replace(/\{\{DOMAIN\}\}/g, this.domain);
@@ -91,7 +97,7 @@ export class MailService {
 <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px">
   <p>Buongiorno <strong>${nome}</strong>,</p>
   <p>${intro}</p>
-  <p style="margin:20px 0"><strong>Email:</strong> ${to}<br>
+  <p style="margin:20px 0"><strong>Email:</strong> ${this.emailAntiLink(to)}<br>
   <strong>Password provvisoria:</strong> <code style="background:#f4f4f4;padding:2px 6px;border-radius:4px">${provisionalPassword}</code></p>
   <p>Al primo accesso ti verrà chiesto di cambiare la password.</p>
   <p><a href="${this.domain}/login" style="background:#b85c38;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Accedi al portale</a></p>
@@ -118,7 +124,7 @@ export class MailService {
     if (tplInvito) {
       html = tplInvito
         .replace(/\{\{RAGIONE_SOCIALE\}\}/g, ragioneSociale)
-        .replace(/\{\{EMAIL\}\}/g, to)
+        .replace(/\{\{EMAIL\}\}/g, this.emailAntiLink(to))
         .replace(/\{\{PASSWORD\}\}/g, provisionalPassword)
         .replace(/\{\{DOMAIN\}\}/g, this.domain);
     } else {
@@ -128,7 +134,7 @@ export class MailService {
   <h1 style="font-family:Georgia,serif;color:#221811;font-size:24px">Benvenuto nel Portale B2B Luis</h1>
   <p style="color:#221811">Gentile <strong>${ragioneSociale}</strong>, Luis S.r.l. ti invita al suo portale riservato ai rivenditori: catalogo con i tuoi prezzi (IVA esclusa), ordini online 24/7, novità e raccolte stagionali.</p>
   <p style="background:#fff;border:1px solid #b2511e;border-radius:8px;padding:14px;color:#221811">
-    <strong>Email:</strong> ${to}<br>
+    <strong>Email:</strong> ${this.emailAntiLink(to)}<br>
     <strong>Password temporanea:</strong> <code style="background:#f7f5f1;padding:2px 6px;border-radius:4px">${provisionalPassword}</code><br>
     <span style="font-size:12px;color:#706760">Al primo accesso ti verrà chiesto di cambiarla.</span>
   </p>
