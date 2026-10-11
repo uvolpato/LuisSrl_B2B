@@ -13,9 +13,18 @@
   .hero-img { opacity: .68; }
   .hero-veil { background: linear-gradient(90deg, rgba(6,26,20,.62) 0%, rgba(6,26,20,.3) 55%, rgba(6,26,20,.06) 100%); }
   .hero-inner { text-shadow: 0 1px 14px rgba(6,26,20,.55); }
+  .natale .site-header { position: relative; overflow: hidden; }
+  .natale .site-header .wrap { position: relative; z-index: 1; }
+  .natale .snowflake {
+    position: absolute; top: 0; color: #fff; pointer-events: none; z-index: 0; line-height: 1; user-select: none;
+    animation: flakeFall var(--dur, 6s) linear var(--delay, 0s) infinite,
+               flakeSway var(--sway, 5s) ease-in-out var(--delay, 0s) infinite;
+  }
+  @keyframes flakeFall { from { top: -24px; } to { top: calc(100% + 12px); } }
+  @keyframes flakeSway { 0%, 100% { margin-left: calc(-1 * var(--amp, 6px)); } 50% { margin-left: var(--amp, 6px); } }
 </style>
 </head>
-<body>
+<body class="natale">
 
 <div id="site-header"></div>
 
@@ -146,6 +155,33 @@
       S.textContent = pad(s % 60);
     }
     tick(); setInterval(tick, 1000);
+  })();
+</script>
+<script>
+  (function () {
+    function addSnow() {
+      var h = document.querySelector(".site-header");
+      if (!h || h.querySelector(".snowflake")) return;
+      var lm = h.querySelector(".logo-mark");
+      if (lm) lm.src = "img/logo-mark-natale.png";
+      for (var i = 0; i < 26; i++) {
+        var s = document.createElement("span");
+        s.className = "snowflake";
+        s.textContent = "\u2744";
+        s.setAttribute("aria-hidden", "true");
+        s.style.left = (Math.random() * 100).toFixed(2) + "%";
+        s.style.fontSize = (8 + Math.random() * 18).toFixed(1) + "px";
+        s.style.opacity = (0.3 + Math.random() * 0.55).toFixed(2);
+        s.style.transform = "translate(-50%,-50%) rotate(" + ((Math.random() * 360) | 0) + "deg)";
+        s.style.setProperty("--dur", (3.5 + Math.random() * 6).toFixed(2) + "s");
+        s.style.setProperty("--delay", (-Math.random() * 8).toFixed(2) + "s");
+        s.style.setProperty("--amp", (2 + Math.random() * 7).toFixed(1) + "px");
+        s.style.setProperty("--sway", (3 + Math.random() * 6).toFixed(2) + "s");
+        h.appendChild(s);
+      }
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addSnow);
+    else addSnow();
   })();
 </script>
 </body>
