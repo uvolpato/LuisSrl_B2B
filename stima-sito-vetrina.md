@@ -11,9 +11,11 @@ Basata su riutilizzo **massimo** dell'esistente (backend + componenti UI).
 | **Backend** (estensioni minime) | **~0,5 gg** | 0 € | Solo 3 metodi service + 1 controller pubblico |
 | **Frontend vetrina** (static export) | **~8–10 gg** | 0 € | Scaffold, home, catalogo read-only, form accesso, SEO |
 | **Deploy / DevOps** | **~1 gg** | 0 € | nginx config, build statico, DNS |
-| **Totale** | **~10–11,5 gg** | **0 €** (team interno) | Nessuna infrastruttura nuova |
+| **Totale vetrina** | **~10–11,5 gg** | **0 €** (team interno) | Nessuna infrastruttura nuova |
+| **Qualifica Lead (AI)** | **~9–13 gg** | **0 €** (team interno) | Backend only, Gemini API |
+| **Totale complessivo** | **~19–24,5 gg** | **0 €** (team interno) | Vetrina + lead qualification |
 
-> Se esternalizzato: ~80–100h × tariffa oraria.
+> Se esternalizzato: vetrina ~80–100h + lead ~70–105h × tariffa oraria.
 
 ---
 
@@ -118,7 +120,28 @@ Basata su riutilizzo **massimo** dell'esistente (backend + componenti UI).
 
 ---
 
-## 7. Prossimo passo
+## 7. Qualifica Lead con AI — Stima
+
+| Fase | Contenuto | Tempo | Note |
+|---|---|---|---|
+| **1 — Fondamenta** | Modelli `Lead`/`LeadEvent`, `POST /leads` pubblico, DTO, template mail | 2 gg | Backend only |
+| **2 — Indagine AI** | Gemini + Google Search grounding, segnali, timeout, fallback | 2–3 gg | Dipende da §8.2 (search grounding) |
+| **3 — Verdetto + pulsanti** | Logica 3 voci, token HMAC single-use, endpoint azioni | 2 gg | Backend only |
+| **4 — Excel Integra** | Generatore `.xlsx` anagrafica, cartella monitorata | 1–2 gg | **Bloccato su AGOMIR** (tracciato) |
+| **5 — Automazione invito** | `leadId` su Customer, post-import invito automatico | 1–2 gg | Riusa `invita()` |
+| **6 — Hardening** | Rate limit, spam, collaudo end-to-end | 1–2 gg | |
+| **Totale** | | **~9–13 gg** | |
+
+**Costo esterno (se esternalizzato):**
+
+| Voce | Ore | Tariffa €/h | Totale |
+|---|---|---|---|
+| Backend lead | 88 | 80 | 7.040 € |
+| **Totale** | **88** | — | **~7.040 €** |
+
+---
+
+## 8. Prossimo passo
 
 1. Approvi la stima?
 2. Creo lo scaffold `frontend-vetrina/` (Fase 1) → commit + push

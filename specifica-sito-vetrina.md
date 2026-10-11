@@ -24,7 +24,26 @@ che condivide il backend API col B2B ma ha ciclo di vita, build e deploy indipen
 
 ---
 
-## 2. Cartella e struttura
+## 2. Prototipo di riferimento
+
+La vetrina ha un **prototipo dedicato** nella cartella `Prototipo Sito Vetrina/`:
+
+| File | Contenuto | Note |
+|---|---|---|
+| `Prototipo Sito Vetrina/index.html` | Home marketing (hero, value props, CTA "Richiedi accesso B2B", link catalogo) | **Riferimento visivo 1:1** per la home |
+| `Prototipo Sito Vetrina/catalogo.html` | Lista famiglie/linee → griglia prodotti (read-only) | **Riferimento visivo 1:1** per il catalogo |
+| `Prototipo Sito Vetrina/styles.css` | Design system: colori, tipografia, bottoni, griglie | **Riferimento stile** per tutta la vetrina |
+
+**Regola:** in caso di dubbio su layout, colori, tipografia o componenti, aprire il
+prototipo corrispondente e riprodurre **esattamente** ciò che mostra. Il prototipo è
+la fonte di verità visiva, non il codice.
+
+Per i design tokens condivisi con il B2B (colori OKLch, spacing, bottoni) si continua a
+usare `brand-spec.md` + `frontend/components/ui/` come riferimento.
+
+---
+
+## 3. Cartella e struttura
 
 ```
 frontend-vetrina/
@@ -185,11 +204,19 @@ server {
 
 ## 8. Riferimenti
 
+**Prototipi vetrina (riferimento visivo 1:1):**
+- `Prototipo Sito Vetrina/index.html` — home marketing (hero, CTA accesso, link catalogo)
+- `Prototipo Sito Vetrina/catalogo.html` — catalogo read-only (lista famiglie → griglia)
+- `Prototipo Sito Vetrina/styles.css` — design system vetrina (colori, tipografia, bottoni)
+
+**Prototipi B2B (design tokens e componenti condivisi):**
+- `01-landing.html` … `06-admin.html` — prototipi portale B2B (design tokens, componenti UI)
 - `brand-spec.md` — design system (colori OKLch terracotta, tipografia, spacing)
+
+**Codice esistente:**
 - `specifiche-b2b-luis.md` § catalogo — gerarchia Famiglia → Articolo → Variante
 - `backend/src/integrazione/integrazione.service.ts` — endpoint catalogo riutilizzabili
 - `frontend/components/ui/PositionedImage.tsx` — **copiare identico**
-- `01-landing.html` … `06-admin.html` — prototipi visivi (vetrina ≈ `01-landing.html` + `02-catalog.html` read-only)
 
 ---
 
