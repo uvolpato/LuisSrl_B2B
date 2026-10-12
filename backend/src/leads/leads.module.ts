@@ -4,6 +4,7 @@ import { LeadsService } from './leads.service';
 import { IndagineService } from './indagine.service';
 import { AzioniLeadService } from './azioni.service';
 import { ExportClienteService } from './export-cliente.service';
+import { ConservazioneLeadService } from './conservazione.service';
 import { IntegrazioneModule } from '../integrazione/integrazione.module';
 import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
 
@@ -15,6 +16,7 @@ import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
     IndagineService,
     AzioniLeadService,
     ExportClienteService,
+    ConservazioneLeadService,
     DatiImpresaService,
   ],
 })

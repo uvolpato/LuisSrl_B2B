@@ -695,6 +695,8 @@ model Lead {
   /// File .xlsx anagrafica generato per l'import in Integra (dopo l'approvazione)
   esportatoIl        DateTime?   @map("esportato_il")
   esportatoFile      String?     @map("esportato_file")
+  /// Dati personali azzerati dal job di conservazione (GDPR, LEAD_RETENTION_MESI)
+  anonimizzatoIl     DateTime?   @map("anonimizzato_il")
   eventi             LeadEvent[]
 
   @@index([createdAt])

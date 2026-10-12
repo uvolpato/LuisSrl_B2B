@@ -217,6 +217,14 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 >   ordini (`EXPORT_ORDINI_DIR`). Idempotente (`esportato_file`), eventi `export_integra` / `export_errore`.
 > - Scrittura xlsx e cartella condivise con l'export ordini (`common/xlsx.ts`, nessuna duplicazione).
 > - Test: `export-cliente.spec.ts` (riga identica al modello). E2E: lead reale → BUONO → approva → file.
+>
+> **Conservazione (GDPR) (2026-10-13)** — `backend/src/leads/conservazione*.ts`: job notturno (03:30,
+> `LEAD_RETENTION_CRON`) che **anonimizza** i lead `SCARTATO` / `NUOVO` / `IN_VALUTAZIONE` più vecchi di
+> `LEAD_RETENTION_MESI` (default 12, da ultima decisione o creazione): azzera referente, email, telefono,
+> messaggio, IP, user agent, checklist del report e IP/UA negli eventi `azione_*`; colonna `anonimizzato_il`,
+> evento `anonimizzato`. Restano i dati aziendali (ragione sociale, P.IVA, sede, verdetto, date).
+> Gli `APPROVATO` restano (prova del consenso). Da riportare nell'informativa privacy del sito.
+> Nota: per le ditte individuali la ragione sociale può contenere il nome del titolare.
 
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|
