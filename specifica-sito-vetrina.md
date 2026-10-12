@@ -14,7 +14,7 @@ Il prototipo `Prototipo Sito Vetrina/` è il **riferimento visivo e comportament
 | Framework | Next.js 16.2.9 (App Router) | Stessa versione del B2B |
 | UI | React 19.2.4 + TypeScript | |
 | Styling | Tailwind CSS 4 + CSS custom properties | Design token in `globals.css` |
-| i18n | next-intl ^4.14.9 | Come il B2B (it/en) |
+| i18n | next-intl 4.13.0 (esatta, + override `@swc/core` 1.15.41) | Stesse versioni del B2B: la 4.14 porta `@swc/core` 1.16, che sul server fallisce (permessi cache SWC) |
 | Backend | NestJS (monorepo `backend/`) | Condiviso col B2B |
 | Database | PostgreSQL + Prisma | Stesso DB del B2B |
 | Font | Font di sistema (stack del prototipo) | Geist rimosso: non usato dal design |
