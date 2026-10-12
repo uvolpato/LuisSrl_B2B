@@ -273,30 +273,40 @@ Dettagli aggiuntivi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
 
 ## Sito vetrina (`frontend-vetrina/`)
 
-**Stato attuale: solo intranet** → `http://<ip-server>:3002`. Caddy e il portale
-B2B non vengono toccati.
+**Stato attuale: solo intranet** → `http://<ip-server>:3002`.
 
-Prima installazione (Administrator, dalla root, backend già attivo):
+```
+browser ──► Caddy :3002 (pagina di cortesia durante il deploy) ──► Next 127.0.0.1:3012 (servizio LuisVetrina)
+```
+
+Prima installazione (Administrator, dalla root, dopo `deploy-prod.cmd`):
 
 ```bat
-git pull
 setup-vetrina.cmd
 ```
 
-Crea il servizio `LuisVetrina` (`next start -p 3002`, `BACKEND_INTERNAL_URL=http://localhost:3001`)
-e apre la porta 3002 **solo** sui profili firewall Dominio/Privato.
-Da lì in poi `deploy-prod.cmd` aggiorna anche la vetrina (se il servizio esiste).
+Cosa fa:
+- build + servizio `LuisVetrina` su **127.0.0.1:3012** (non raggiungibile dalla rete);
+- scrive `Caddyfile.vetrina` (blocco `:3002` con pagina di cortesia `maintenance/vetrina.html`) e aggiunge
+  **solo** la riga `import Caddyfile.vetrina` al `Caddyfile` esistente (che non viene riscritto);
+  backup in `Caddyfile.bak-vetrina`, `caddy validate` prima di `nssm restart LuisCaddy`: se la
+  configurazione non è valida il Caddyfile viene ripristinato e Caddy non viene riavviato;
+- firewall: porta 3002 solo profili Dominio/Privato.
 
-La vetrina legge dal backend solo gli endpoint pubblici `/api/catalogo/pubblico/*`
+Da lì in poi `deploy-prod.cmd` aggiorna anche la vetrina: durante l'aggiornamento il flag
+`maintenance\maintenance.flag` fa mostrare a Caddy la pagina di cortesia sia al portale (`index.html`)
+sia alla vetrina (`vetrina.html`). `setup-services.cmd` rimette l'`import` se rigenera il Caddyfile.
+
+`Caddyfile*`, `caddy.exe`, `nssm.exe` sono in `.gitignore`: il `git stash -u` di `deploy-prod.cmd` non li tocca.
+
+La vetrina legge dal backend solo gli endpoint pubblici `/api/catalogo/pubblico/*` e `/api/leads`
 (senza prezzi) e proxa solo `/api/img`: dettagli in `specifica-sito-vetrina.md` §9.
 
-**Go-live su `www.luisbg.it` (futuro):** DNS `www`/apex → IP server, porte 80/443,
-blocco aggiuntivo nel Caddyfile e `nssm restart LuisCaddy`:
+**Go-live su `www.luisbg.it` (futuro):** DNS `www` → IP server, porte 80/443 aperte; in
+`setup-vetrina.cmd` impostare `set VE_SITE=www.luisbg.it` e rieseguirlo (HTTPS automatico).
+Redirect dal dominio nudo, se serve, aggiungendo a mano a `Caddyfile.vetrina`:
 
 ```
-www.luisbg.it {
-    reverse_proxy localhost:3002
-}
 luisbg.it {
     redir https://www.luisbg.it{uri} permanent
 }

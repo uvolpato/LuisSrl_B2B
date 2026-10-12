@@ -322,6 +322,7 @@ le funzioni esistenti del service.
 
 ### 9.4 Produzione
 
-- Per ora **solo intranet**: servizio Windows `LuisVetrina` su `http://<ip-server>:3002` (`setup-vetrina.cmd`).
+- Per ora **solo intranet** `http://<ip-server>:3002`: Caddy :3002 → servizio `LuisVetrina` su 127.0.0.1:3012 (`setup-vetrina.cmd`).
+- Pagina di cortesia durante il deploy: `maintenance/vetrina.html` (stesso flag del portale, testi propri del sito).
 - Aggiornamenti: `deploy-prod.cmd` (build + restart vetrina se il servizio esiste).
 - Dominio finale `www.luisbg.it` via Caddy: istruzioni in `SETUP-PRODUZIONE.md` § Sito vetrina.

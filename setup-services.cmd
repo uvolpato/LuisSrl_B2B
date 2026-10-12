@@ -146,6 +146,11 @@ REM /images/* servito da disco (Next non serve i file public aggiunti dopo il bu
 echo Accederai da: https://!LAN_HOST!:!HTTPS_PORT!  (certificato self-signed: accetta l'avviso)
 
 :caddy_svc
+REM Sito vetrina (setup-vetrina.cmd): il suo blocco vive in Caddyfile.vetrina, qui solo l'import.
+if exist "%ROOT%\Caddyfile.vetrina" (
+  >>"%ROOT%\Caddyfile" echo.
+  >>"%ROOT%\Caddyfile" echo import Caddyfile.vetrina
+)
 echo Caddyfile scritto in %ROOT%\Caddyfile
 "!NSSM!" stop %SVC_CADDY% >nul 2>nul
 "!NSSM!" remove %SVC_CADDY% confirm >nul 2>nul

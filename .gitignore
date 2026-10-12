@@ -8,6 +8,13 @@ dist/
 .next/
 *.tsbuildinfo
 
+# --- Configurazione e binari locali del server (generati dagli script; esclusi anche da git stash -u) ---
+Caddyfile
+Caddyfile.*
+caddy.exe
+nssm.exe
+caddy-validate.log
+
 # --- Log ---
 *.log
 npm-debug.log*
