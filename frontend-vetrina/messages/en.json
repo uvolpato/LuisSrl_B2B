@@ -93,7 +93,7 @@
     "ok": "Thank you! Your request has been received. We will contact you shortly with your login credentials.",
     "invia": "Send request",
     "nota": "Reply within 1–2 working days.",
-    "pivaFormato": "11 digits (e.g. 01234567890) or foreign VAT number with country prefix",
+    "pivaFormato": "11 digits, e.g. 01234567890 (Italian companies only)",
     "invio": "Sending…",
     "err_troppe": "Too many requests in a short time. Please try again in a minute.",
     "err_invalida": "Some details are not valid: please check VAT number, email and phone.",

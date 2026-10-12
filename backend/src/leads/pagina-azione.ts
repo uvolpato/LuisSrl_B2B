@@ -53,9 +53,12 @@ export function paginaAzione(
         verifica: 'Richiesta messa in verifica',
         scarta: 'Richiesta scartata',
       }[e.azione];
+      const x = e.export;
       const seguito =
         e.azione === 'approva'
-          ? '<p>Prossimo passo: creare il cliente in Integra e invitarlo dal portale (automatico nelle prossime fasi).</p>'
+          ? x?.ok
+            ? `<p>Anagrafica pronta per Integra: <strong>${esc(x.file)}</strong> nella cartella di import.</p>${x.sedeMancante ? '<p style="color:#a33b2e;">Sede non ricavata online: completare indirizzo, CAP, città e provincia in Integra.</p>' : ''}<p>Dopo l'importazione in Integra il cliente verrà importato nel portale e invitato.</p>`
+            : `<p style="color:#a33b2e;">Approvata, ma il file per Integra non è stato generato (${esc(x?.errore ?? 'errore')}). Avvisare l'amministratore.</p>`
           : e.azione === 'verifica'
             ? '<p>Puoi ancora approvare o scartare dalla stessa mail, dopo la verifica.</p>'
             : '<p>Al richiedente non viene inviata alcuna comunicazione.</p>';

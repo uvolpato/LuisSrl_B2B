@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { Lead } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  ExportClienteService,
+  type EsitoExport,
+} from './export-cliente.service';
+import {
   AZIONI,
   TRANSIZIONI,
   TTL_MS,
@@ -13,7 +17,7 @@ import {
 
 export type EsitoAzione =
   | { tipo: 'conferma'; lead: Lead; azione: Azione }
-  | { tipo: 'eseguita'; lead: Lead; azione: Azione }
+  | { tipo: 'eseguita'; lead: Lead; azione: Azione; export?: EsitoExport }
   | { tipo: 'gia_fatta'; lead: Lead; azione: Azione }
   | { tipo: 'errore'; motivo: 'invalido' | 'scaduto' | 'inesistente' };
 
@@ -22,7 +26,10 @@ type Parametri = { l?: unknown; a?: unknown; e?: unknown; s?: unknown };
 /** Pulsanti Approva/Verifica/Scarta della mail lead: link firmati, TTL 7 giorni, decisioni finali non ripetibili. */
 @Injectable()
 export class AzioniLeadService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly exportCliente: ExportClienteService,
+  ) {}
 
   /** URL dei tre pulsanti. Passano dal dominio del portale (APP_DOMAIN), che proxa /api al backend. */
   link(leadId: number): Record<Azione, string> {
@@ -79,6 +86,11 @@ export class AzioniLeadService {
         dettagli: { ip, userAgent: userAgent?.slice(0, 300) ?? null },
       },
     });
-    return { tipo: 'eseguita', lead, azione: t.azione };
+    // Approvato → anagrafica per Integra (best-effort: l'approvazione resta valida anche se il file fallisce).
+    const exp =
+      t.azione === 'approva'
+        ? await this.exportCliente.esporta(lead)
+        : undefined;
+    return { tipo: 'eseguita', lead, azione: t.azione, export: exp };
   }
 }

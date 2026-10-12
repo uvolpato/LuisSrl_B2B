@@ -23,6 +23,7 @@ export interface ReportIndagine {
   sintesi: string | null;
   durataMs: number;
   errore?: string;
+  sede: Sede | null;
 }
 
 /** Checksum ufficiale P.IVA italiana (11 cifre, algoritmo di Luhn modificato). */
@@ -40,14 +41,31 @@ export function pivaItalianaValida(piva: string): boolean {
   return (10 - (somma % 10)) % 10 === Number(piva[10]);
 }
 
-/** "01234567890" → IT + numero; "DE123456789" → DE + numero. null se formato non gestito. */
-export function scomponiPiva(
-  piva: string,
-): { paese: string; numero: string } | null {
-  const p = piva.replace(/\s/g, '').toUpperCase();
-  if (/^\d{11}$/.test(p)) return { paese: 'IT', numero: p };
-  const m = /^([A-Z]{2})([0-9A-Z]{2,13})$/.exec(p);
-  return m ? { paese: m[1], numero: m[2] } : null;
+export interface Sede {
+  indirizzo: string;
+  cap: string;
+  citta: string;
+  provincia: string;
+  fonte: 'VIES' | 'WEB';
+}
+
+/** Indirizzo VIES italiano ("VIA STATALE 47 \n23881 AIRUNO LC\n") → campi. null se non riconosciuto. */
+export function parseIndirizzoVies(
+  raw: string | null | undefined,
+): Omit<Sede, 'fonte'> | null {
+  const righe = (raw ?? '')
+    .split(/\r?\n/)
+    .map((r) => r.trim())
+    .filter(Boolean);
+  if (righe.length < 2) return null;
+  const m = /^(\d{5})\s+(.+?)\s+([A-Z]{2})$/.exec(righe[righe.length - 1]);
+  if (!m) return null;
+  return {
+    indirizzo: righe.slice(0, -1).join(' '),
+    cap: m[1],
+    citta: m[2],
+    provincia: m[3],
+  };
 }
 
 /**

@@ -1,7 +1,7 @@
 import {
   calcolaVerdetto,
   pivaItalianaValida,
-  scomponiPiva,
+  parseIndirizzoVies,
   type Segnale,
   type StatoSegnale,
 } from './indagine';
@@ -27,16 +27,19 @@ describe('Qualifica lead — logica pura', () => {
     expect(pivaItalianaValida('1234')).toBe(false);
   });
 
-  it('scompone P.IVA IT ed estere', () => {
-    expect(scomponiPiva('04253020160')).toEqual({
-      paese: 'IT',
-      numero: '04253020160',
+  it('ricava la sede dall indirizzo VIES', () => {
+    expect(parseIndirizzoVies('VIA STATALE 47 \n23881 AIRUNO LC\n')).toEqual({
+      indirizzo: 'VIA STATALE 47',
+      cap: '23881',
+      citta: 'AIRUNO',
+      provincia: 'LC',
     });
-    expect(scomponiPiva('de123456789')).toEqual({
-      paese: 'DE',
-      numero: '123456789',
-    });
-    expect(scomponiPiva('12-34')).toBeNull();
+    expect(
+      parseIndirizzoVies('VIA FRANCESCO BELLAFINO 30 \n24126 BERGAMO BG\n')
+        ?.citta,
+    ).toBe('BERGAMO');
+    expect(parseIndirizzoVies('---')).toBeNull();
+    expect(parseIndirizzoVies(null)).toBeNull();
   });
 
   it('BUONO solo con P.IVA confermata + presenza web + email non usa-e-getta', () => {

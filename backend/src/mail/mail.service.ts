@@ -471,6 +471,11 @@ export class MailService {
       LINGUA: d.lingua.toUpperCase(),
       PRIVACY: esc(`${consenso} · versione ${d.privacyVersione}`),
       IP: esc(d.ip) || 'non disponibile',
+      SEDE: d.report?.sede
+        ? esc(
+            `${d.report.sede.indirizzo}, ${d.report.sede.cap} ${d.report.sede.citta} (${d.report.sede.provincia}) · fonte ${d.report.sede.fonte}`,
+          )
+        : 'non ricavata: da completare',
       ...reportLeadHtml(d.report),
       // URL generati server-side e firmati (nessun parametro dal client): escape per l'attributo href.
       LINK_APPROVA: esc(d.azioni.approva),

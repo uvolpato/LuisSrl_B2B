@@ -685,6 +685,16 @@ model Lead {
   indagineIl         DateTime?   @map("indagine_il")
   /// Quando shop@ ha approvato/scartato dal pulsante della mail
   decisioneIl        DateTime?   @map("decisione_il")
+  /// Sede legale ricavata dall'indagine (VIES o web): serve all'anagrafica Integra
+  sedeIndirizzo      String?     @map("sede_indirizzo")
+  sedeCap            String?     @map("sede_cap")
+  sedeCitta          String?     @map("sede_citta")
+  sedeProvincia      String?     @map("sede_provincia")
+  /// VIES | WEB
+  sedeFonte          String?     @map("sede_fonte")
+  /// File .xlsx anagrafica generato per l'import in Integra (dopo l'approvazione)
+  esportatoIl        DateTime?   @map("esportato_il")
+  esportatoFile      String?     @map("esportato_file")
   eventi             LeadEvent[]
 
   @@index([createdAt])

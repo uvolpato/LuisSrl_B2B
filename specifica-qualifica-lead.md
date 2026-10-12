@@ -206,6 +206,17 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 >   APPROVATO/SCARTATO **finali** (`decisione_il`); link riusato o doppio click → 409. Evento `azione_*` con IP/UA.
 > - Approvazione con verdetto SCARTARE: avviso esplicito nella pagina di conferma.
 > - Esiti HTTP: 403 link alterato, 410 scaduto, 409 già gestita. Test: `azioni.spec.ts`.
+>
+> **Fase 4 completata (2026-10-12)** — `backend/src/leads/export-cliente*.ts`:
+> - Tracciato = modello `cli.xlsx` di AGOMIR: 18 colonne `cla_*`, due righe di testata, poi i dati.
+> - `cla_codstr` **vuoto**: il codice cliente lo assegna Integra in importazione.
+> - **Solo clienti italiani** (P.IVA 11 cifre nel form e nel DTO); stato `086 ITALIA`, regione `--`.
+> - Sede legale **ricavata online**: indirizzo VIES (ufficiale, combacia con l'anagrafica Integra) o, in
+>   mancanza, ricerca web; colonne `sede_*` + `sede_fonte`. Se manca → avviso "completare in Integra".
+> - All'approvazione: `lead-<id>.xlsx` (scrittura tmp→rename) in `IMPORT_CLIENTI_DIR`, default la cartella
+>   ordini (`EXPORT_ORDINI_DIR`). Idempotente (`esportato_file`), eventi `export_integra` / `export_errore`.
+> - Scrittura xlsx e cartella condivise con l'export ordini (`common/xlsx.ts`, nessuna duplicazione).
+> - Test: `export-cliente.spec.ts` (riga identica al modello). E2E: lead reale → BUONO → approva → file.
 
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|

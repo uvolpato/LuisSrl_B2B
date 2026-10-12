@@ -93,7 +93,7 @@
     "ok": "Grazie! La tua richiesta è stata registrata. Ti contatteremo al più presto con le credenziali di accesso.",
     "invia": "Invia richiesta",
     "nota": "Risposta entro 1–2 giorni lavorativi.",
-    "pivaFormato": "11 cifre (es. 01234567890) o partita IVA estera con prefisso paese",
+    "pivaFormato": "11 cifre, es. 01234567890 (solo aziende italiane)",
     "invio": "Invio in corso…",
     "err_troppe": "Troppe richieste in poco tempo. Riprova tra un minuto.",
     "err_invalida": "Alcuni dati non sono validi: controlla partita IVA, email e telefono.",

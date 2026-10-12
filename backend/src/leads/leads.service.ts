@@ -97,6 +97,13 @@ export class LeadsService {
           verdetto: report.verdetto,
           report: report as unknown as Prisma.InputJsonValue,
           indagineIl: new Date(),
+          ...(report.sede && {
+            sedeIndirizzo: report.sede.indirizzo,
+            sedeCap: report.sede.cap,
+            sedeCitta: report.sede.citta,
+            sedeProvincia: report.sede.provincia,
+            sedeFonte: report.sede.fonte,
+          }),
         },
       });
       await this.evento(lead.id, 'indagine', {

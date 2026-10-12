@@ -3,6 +3,7 @@ import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 import { IndagineService } from './indagine.service';
 import { AzioniLeadService } from './azioni.service';
+import { ExportClienteService } from './export-cliente.service';
 import { IntegrazioneModule } from '../integrazione/integrazione.module';
 import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
 
@@ -13,6 +14,7 @@ import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
     LeadsService,
     IndagineService,
     AzioniLeadService,
+    ExportClienteService,
     DatiImpresaService,
   ],
 })

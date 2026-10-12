@@ -44,7 +44,7 @@ export default function AccessoB2B() {
                 </div>
                 <div className='field'>
                   <label htmlFor='piva'>{t('piva')} {req}</label>
-                  <input id='piva' name='partitaIva' type='text' required pattern='[0-9]{11}|[A-Za-z]{2}[0-9A-Za-z]{2,13}' title={t('pivaFormato')} maxLength={15} />
+                  <input id='piva' name='partitaIva' type='text' required pattern='[0-9]{11}' inputMode='numeric' title={t('pivaFormato')} maxLength={11} />
                 </div>
                 <div className='field'>
                   <label htmlFor='cf'>{t('cf')}</label>

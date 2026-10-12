@@ -15,11 +15,9 @@ export class CreateLeadDto {
   @Length(2, 200)
   ragioneSociale!: string;
 
-  /** P.IVA italiana (11 cifre) o estera (prefisso paese + 2-13 alfanumerici). */
+  /** Solo clienti italiani (per ora): P.IVA di 11 cifre. Il checksum lo valuta l'indagine. */
   @IsString()
-  @Matches(/^([0-9]{11}|[A-Z]{2}[0-9A-Z]{2,13})$/i, {
-    message: 'validation.piva',
-  })
+  @Matches(/^[0-9]{11}$/, { message: 'validation.piva' })
   partitaIva!: string;
 
   @IsOptional()

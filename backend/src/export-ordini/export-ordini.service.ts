@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { promises as fs } from 'node:fs';
-import * as path from 'node:path';
-import ExcelJS from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { cartellaOrdiniIntegra, scriviXlsxAtomico } from '../common/xlsx';
 
 /**
  * Export degli ordini B2B verso Integra: un file .xlsx per ordine, sul tracciato
@@ -73,7 +71,7 @@ export class ExportOrdiniService {
   /** Cartella di destinazione. Il backend gira sempre con cwd = backend/ (in produzione
    *  AppDirectory del servizio, vedi setup-services.cmd), quindi il default e' <progetto>/ordini. */
   private get dir(): string {
-    return process.env.EXPORT_ORDINI_DIR?.trim() || path.resolve(process.cwd(), '..', 'ordini');
+    return cartellaOrdiniIntegra();
   }
 
   @Cron(process.env.EXPORT_ORDINI_CRON || '*/10 * * * *')
@@ -210,20 +208,8 @@ export class ExportOrdiniService {
     return { ...base, stato: 'ESPORTATO', file: nomeFile, righe: righe.length, righeEscluse: escluse };
   }
 
-  /** Scrive su nome temporaneo e poi rinomina: Integra non deve mai leggere un file a meta'. */
   private async scrivi(nomeFile: string, righe: (string | number)[][]): Promise<void> {
-    const dir = this.dir;
-    await fs.mkdir(dir, { recursive: true });
-
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Foglio1');
-    ws.addRow([...COLONNE]);
-    for (const r of righe) ws.addRow(r);
-
-    const finale = path.join(dir, nomeFile);
-    const tmp = path.join(dir, `.${nomeFile}.tmp`);
-    await wb.xlsx.writeFile(tmp);
-    await fs.rename(tmp, finale);
+    await scriviXlsxAtomico(this.dir, nomeFile, [[...COLONNE], ...righe]);
   }
 
   private async fallisci(ordineId: number, esito: EsitoOrdine, dryRun: boolean): Promise<EsitoOrdine> {
