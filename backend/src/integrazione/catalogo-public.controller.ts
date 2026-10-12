@@ -1,5 +1,6 @@
-import { Controller, Get, Header, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Param, Query } from '@nestjs/common';
 import { IntegrazioneService } from './integrazione.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Scheda articolo in anteprima pubblica, raggiungibile dal link "Condividi"
@@ -12,7 +13,10 @@ import { IntegrazioneService } from './integrazione.service';
  */
 @Controller('catalogo/pubblico')
 export class CatalogoPublicController {
-  constructor(private readonly integrazione: IntegrazioneService) {}
+  constructor(
+    private readonly integrazione: IntegrazioneService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /** Famiglie per il sito vetrina (sezione Collezioni). Stesso elenco della pagina
    *  Famiglie del B2B, ma solo campi di presentazione: niente conteggi, stato o
@@ -28,6 +32,60 @@ export class CatalogoPublicController {
       immagine: f.immagine,
       immagineAI: f.immagineAI,
     }));
+  }
+
+  /** Catalogo per il sito vetrina. Accetta SOLO page/famiglia/q: i filtri prezzo,
+   *  sort e listino del catalogo cliente non sono raggiungibili (niente oracolo sui prezzi).
+   *  Risposta senza prezzi, sconti né disponibilità. */
+  @Get('articoli')
+  @Header('Cache-Control', 'public, max-age=300')
+  async getArticoliPubblici(
+    @Query('page') page?: string,
+    @Query('famiglia') famiglia?: string,
+    @Query('q') q?: string,
+  ) {
+    const res = await this.integrazione.getCatalogoPaginato({
+      page: Math.min(Math.max(parseInt(page ?? '1', 10) || 1, 1), 100),
+      pageSize: 24,
+      famiglia: typeof famiglia === 'string' && famiglia ? [famiglia.slice(0, 50)] : undefined,
+      q: typeof q === 'string' && q.trim() ? q.trim().slice(0, 100) : undefined,
+    });
+    const codici = res.articoli.map((a) => a.id);
+    const dettagli = codici.length
+      ? await this.prisma.articolo.findMany({
+          where: { codiceLinea: { in: codici } },
+          select: {
+            codiceLinea: true,
+            descrizione: true,
+            varianti: {
+              where: { stato: { not: 'NASCOSTO' } },
+              select: { codice: true, descrizione: true, dimensioni: true },
+              orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
+            },
+          },
+        })
+      : [];
+    const perCodice = new Map(dettagli.map((d) => [d.codiceLinea, d]));
+    return {
+      total: res.total,
+      hasMore: res.hasMore,
+      articoli: res.articoli.map((a) => {
+        const d = perCodice.get(a.id);
+        return {
+          codiceLinea: a.id,
+          nome: a.nome,
+          descrizione: d?.descrizione ?? null,
+          famiglia: a.famiglia,
+          img: a.img,
+          imgAI: a.imgTipo === 'AI',
+          varianti: (d?.varianti ?? []).map((v) => ({
+            codice: v.codice,
+            descrizione: v.descrizione,
+            dimensioni: formatDimensioni(v.dimensioni),
+          })),
+        };
+      }),
+    };
   }
 
   @Get(':codiceLinea')
@@ -80,4 +138,14 @@ export class CatalogoPublicController {
       })),
     };
   }
+}
+
+/** {diametro:{valore:40}, altezza:{valore:50}} → "Ø40 H50" (stesso formato dell'anteprima /p). */
+function formatDimensioni(d: unknown): string {
+  if (!d || typeof d !== 'object') return '';
+  const dim = d as Record<string, { valore?: unknown } | undefined>;
+  return ([['diametro', 'Ø'], ['altezza', 'H']] as const)
+    .map(([k, prefix]) => (dim[k]?.valore != null ? `${prefix}${String(dim[k]!.valore)}` : ''))
+    .filter(Boolean)
+    .join(' ');
 }
