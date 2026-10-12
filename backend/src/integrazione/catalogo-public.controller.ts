@@ -59,7 +59,7 @@ export class CatalogoPublicController {
             descrizione: true,
             varianti: {
               where: { stato: { not: 'NASCOSTO' } },
-              select: { codice: true, descrizione: true, dimensioni: true },
+              select: { codice: true, dimensioni: true },
               orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
             },
           },
@@ -80,7 +80,6 @@ export class CatalogoPublicController {
           imgAI: a.imgTipo === 'AI',
           varianti: (d?.varianti ?? []).map((v) => ({
             codice: v.codice,
-            descrizione: v.descrizione,
             dimensioni: formatDimensioni(v.dimensioni),
           })),
         };

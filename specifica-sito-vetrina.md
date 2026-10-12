@@ -170,7 +170,7 @@ Server component, dati da `GET /api/catalogo/pubblico/articoli` (vedi §9).
   - chip = "Tutti" + famiglie reali (`?famiglia=<codice>`), mantengono la ricerca
 - Conteggio "N prodotti" (totale lato server)
 - Grid 3 colonne, 24 articoli per pagina; paginazione "← Precedenti / Successivi →" (`?page=`)
-- Card: immagine copertina (+ badge AI), famiglia, nome, descrizione (max 3 righe), lista varianti attive (codice + descrizione + dimensioni "Ø.. H.."), "N varianti" + "Prezzi riservati →" (`/#accesso`)
+- Card: immagine copertina (+ badge AI), famiglia, nome, descrizione (max 3 righe), lista varianti attive (codice a sinistra, dimensioni "Ø.. H.." a destra; niente descrizione variante), "N varianti" + "Prezzi riservati →" (`/#accesso`)
 - **Nessun prezzo, sconto, disponibilità o carrello**
 - Empty state: "Nessun prodotto trovato. Prova con un altro termine o cambia categoria."
 - Backend non raggiungibile: "Catalogo momentaneamente non disponibile. Riprova tra qualche minuto."
@@ -292,7 +292,7 @@ le funzioni esistenti del service.
 | Endpoint | Riusa | Parametri accettati | Risposta |
 |----------|-------|---------------------|----------|
 | `GET /api/catalogo/pubblico/famiglie` | `getFamiglieCliente()` | — | codice, nome, descrizione, immagine, immagineAI |
-| `GET /api/catalogo/pubblico/articoli` | `getCatalogoPaginato()` | **solo** `page` (1–100), `famiglia` (max 50 car.), `q` (max 100 car.) | total, hasMore, articoli: codiceLinea, nome, descrizione, famiglia, img, imgAI, varianti (codice, descrizione, dimensioni) |
+| `GET /api/catalogo/pubblico/articoli` | `getCatalogoPaginato()` | **solo** `page` (1–100), `famiglia` (max 50 car.), `q` (max 100 car.) | total, hasMore, articoli: codiceLinea, nome, descrizione, famiglia, img, imgAI, varianti (codice, dimensioni) |
 
 - Mai esposti: prezzi, sconti, listini, giacenze/disponibilità, stato, campi interni.
 - `prezzoMin/Max`, `sort`, `codiceListino` e gli altri filtri del catalogo cliente **non** sono
