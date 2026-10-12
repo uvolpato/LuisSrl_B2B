@@ -149,6 +149,13 @@ echo.
 echo === AGGIORNAMENTO COMPLETATO ===
 echo (Se prima e' stato fatto uno stash: recuperalo con "git stash pop" se ti serviva.)
 echo.
+if "!USE_VE!"=="1" (
+  echo Sito vetrina: http://localhost:3002  ^(intranet: http://IP-DEL-SERVER:3002^)
+) else (
+  echo [!] Sito vetrina NON installato: servizio %SVC_VE% assente.
+  echo     Eseguire una volta, come Administrator:  setup-vetrina.cmd
+)
+echo.
 pause
 goto :eof
 
