@@ -54,6 +54,7 @@ frontend-vetrina/
 │   │   └── globals.css             ← = styles.css del prototipo + aggiunte marcate
 │   └── lib/
 │       └── api.ts                  ← Unico punto di accesso al backend (solo server)
+├── messages/it.json, en.json       ← Tutti i testi del sito (chiavi identiche)
 ├── public/
 │   └── images/vetrina/             ← Immagini statiche del sito
 ├── next.config.mjs                 ← Security header + proxy solo /api/img
@@ -183,6 +184,7 @@ Server component, dati da `GET /api/catalogo/pubblico/articoli` (vedi §9).
 - Logo 34px + link: Azienda, Collezioni, Catalogo, **B2B** (link esterno `https://shop.luisbg.it`), Contatti
 - CTA: "Richiedi accesso B2B" (bottone primario, scritta **bianca**)
 - ≤ 720px: link nascosti, bottone hamburger che apre il menu a tendina (aggiunta rispetto al prototipo)
+- Selettore lingua IT/EN a destra: cookie `lang` + `router.refresh()`, stesso meccanismo del portale B2B (`i18n/request.ts`); default IT
 
 ### 4.4 Footer
 
@@ -277,7 +279,7 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 - [x] Responsive 980px e 720px
 - [x] Tutte le immagini locali o via backend, nessun hotlink
 - [ ] Form accesso collegato al backend
-- [ ] i18n next-intl (it/en)
+- [x] i18n next-intl (it/en): testi sito tradotti; dati catalogo dal backend restano in italiano
 - [ ] Build Next.js di produzione verificata
 
 ---
