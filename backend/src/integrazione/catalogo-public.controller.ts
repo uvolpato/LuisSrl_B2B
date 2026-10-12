@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Param } from '@nestjs/common';
 import { IntegrazioneService } from './integrazione.service';
 
 /**
@@ -13,6 +13,22 @@ import { IntegrazioneService } from './integrazione.service';
 @Controller('catalogo/pubblico')
 export class CatalogoPublicController {
   constructor(private readonly integrazione: IntegrazioneService) {}
+
+  /** Famiglie per il sito vetrina (sezione Collezioni). Stesso elenco della pagina
+   *  Famiglie del B2B, ma solo campi di presentazione: niente conteggi, stato o
+   *  dati commerciali. Dichiarata prima di `:codiceLinea` per non esserne catturata. */
+  @Get('famiglie')
+  @Header('Cache-Control', 'public, max-age=300')
+  async getFamigliePubbliche() {
+    const fams = await this.integrazione.getFamiglieCliente();
+    return fams.map((f) => ({
+      codice: f.codice,
+      nome: f.nome,
+      descrizione: f.descrizione,
+      immagine: f.immagine,
+      immagineAI: f.immagineAI,
+    }));
+  }
 
   @Get(':codiceLinea')
   async getArticoloPubblico(@Param('codiceLinea') codiceLinea: string) {
