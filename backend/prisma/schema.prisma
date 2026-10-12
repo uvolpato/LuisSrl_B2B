@@ -683,6 +683,8 @@ model Lead {
   /// Segnali, fonti (URL), checklist e sintesi dell'indagine
   report             Json?
   indagineIl         DateTime?   @map("indagine_il")
+  /// Quando shop@ ha approvato/scartato dal pulsante della mail
+  decisioneIl        DateTime?   @map("decisione_il")
   eventi             LeadEvent[]
 
   @@index([createdAt])

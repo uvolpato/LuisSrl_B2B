@@ -190,6 +190,22 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 >   Google non sono ancora estratti (servirebbe esporli da `callGeminiText`).
 > - Collaudo reale: Luis S.r.l. → BUONO; P.IVA inventata + mailinator → SCARTARE; P.IVA con checksum
 >   valido ma non registrata → SCARTARE (VIES). Test: `indagine.spec.ts`.
+>
+> **Mail di conferma al richiedente (2026-10-12)** — subito dopo l'invio del form: "richiesta ricevuta,
+> risposta in 1–2 giorni lavorativi". Template **provvisori** `lead-conferma.html` / `lead-conferma-en.html`
+> (lingua del form), da sostituire col prototipo definitivo. Anti-abuso: max 1 conferma/24h per indirizzo
+> (evento `conferma_saltata`), nessun testo libero del visitatore tranne il referente (escape).
+>
+> **Fase 3 completata (2026-10-12)** — `backend/src/leads/azioni*.ts`, `pagina-azione.ts`:
+> - Pulsanti Approva / Verifica / Scarta nella mail → `GET /api/leads/azione?l&a&e&s` (via `APP_DOMAIN`).
+> - Link firmati HMAC-SHA256 (`LEAD_ACTION_SECRET`, fallback derivato da `SESSION_SECRET`), TTL 7 giorni,
+>   confronto a tempo costante.
+> - **La GET non modifica nulla**: mostra una pagina di conferma con pulsante → `POST` (i client mail e gli
+>   antivirus aprono i link da soli). Esente da CSRF di sessione in `main.ts`: l'autorizzazione è il link.
+> - Transizioni atomiche (`updateMany` condizionato): verifica NUOVO→IN_VALUTAZIONE; approva/scarta →
+>   APPROVATO/SCARTATO **finali** (`decisione_il`); link riusato o doppio click → 409. Evento `azione_*` con IP/UA.
+> - Approvazione con verdetto SCARTARE: avviso esplicito nella pagina di conferma.
+> - Esiti HTTP: 403 link alterato, 410 scaduto, 409 già gestita. Test: `azioni.spec.ts`.
 
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|

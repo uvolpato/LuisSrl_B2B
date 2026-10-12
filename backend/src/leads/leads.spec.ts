@@ -3,6 +3,7 @@ import { validateSync } from 'class-validator';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { LeadsController } from './leads.controller';
 import type { LeadsService } from './leads.service';
+import type { AzioniLeadService } from './azioni.service';
 
 const valido = {
   ragioneSociale: 'Fioreria Test srl',
@@ -34,7 +35,10 @@ describe('Lead pubblico (vetrina)', () => {
 
   it('honeypot compilato: risponde ok ma non salva', async () => {
     const crea = jest.fn();
-    const ctrl = new LeadsController({ crea } as unknown as LeadsService);
+    const ctrl = new LeadsController(
+      { crea } as unknown as LeadsService,
+      {} as AzioniLeadService,
+    );
     const req = { ip: '1.2.3.4', get: () => 'bot' } as never;
     await expect(
       ctrl.crea({ ...valido, sito: 'http://spam' }, req),

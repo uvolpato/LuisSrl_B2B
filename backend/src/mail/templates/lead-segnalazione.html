@@ -10,7 +10,7 @@
   {{LEAD_ID}} {{DATA}} {{RAGIONE_SOCIALE}} {{PARTITA_IVA}} {{CODICE_FISCALE}} {{REFERENTE}}
   {{TIPO_ATTIVITA}} {{EMAIL}} {{TELEFONO}} {{CITTA}} {{MESSAGGIO}} {{LINGUA}} {{PRIVACY}} {{IP}}
   Fase 2: {{SEGNALI_ROWS}} {{SINTESI}} {{FONTI}} {{VERDETTO}} {{VERDETTO_COLORE}} {{VERDETTO_NOTA}} {{CHECKLIST_ROWS}}
-  Fase 3 (da fare): pulsanti Approva/Verifica/Scarta (vedi prototipo).
+  Fase 3: {{LINK_APPROVA}} {{LINK_VERIFICA}} {{LINK_SCARTA}}
 -->
 </head>
 <body style="background:#f3f1ec;margin:0;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#221811;">
@@ -72,6 +72,25 @@
     </div>
   </div>
 
+  <!-- Pulsanti azione -->
+  <div style="padding:20px 28px 8px;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;">Azioni richieste</p>
+    <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
+      <tr>
+        <td style="padding:0 6px 0 0;width:34%;">
+          <a href="{{LINK_APPROVA}}" style="display:block;background:#b2511e;color:#fff;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">&#10003; Approva</a>
+        </td>
+        <td style="padding:0 6px;">
+          <a href="{{LINK_VERIFICA}}" style="display:block;background:#fff;color:#221811;border:1px solid #d8d2c8;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">Verifica</a>
+        </td>
+        <td style="padding:0 0 0 6px;">
+          <a href="{{LINK_SCARTA}}" style="display:block;background:#fff;color:#a33b2e;border:1px solid #e8c4ba;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">Scarta</a>
+        </td>
+      </tr>
+    </table>
+    <p style="font-size:11.5px;color:#706760;margin:2px 0 0;">Link firmati, validi 7 giorni: si apre una pagina di conferma. Approvazione e scarto sono definitivi e registrati.</p>
+  </div>
+
   <!-- Checklist (solo se VERIFICARE) -->
   <div style="padding:14px 28px 0;">
     {{CHECKLIST_ROWS}}
@@ -87,7 +106,7 @@
 
   <!-- Prossimo passo -->
   <div style="padding:14px 28px 24px;">
-    <p style="font-size:12.5px;color:#706760;margin:0;">Rispondendo a questa mail scrivi direttamente al referente. Per attivare l'accesso: crea il cliente in Integra e invitalo dal portale.</p>
+    <p style="font-size:12.5px;color:#706760;margin:0;">Rispondendo a questa mail scrivi direttamente al referente. Dopo l'approvazione: crea il cliente in Integra e invitalo dal portale.</p>
   </div>
 
   <!-- Footer -->

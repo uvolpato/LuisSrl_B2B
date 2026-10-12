@@ -64,6 +64,8 @@ async function bootstrap() {
     if (safeMethods.includes(req.method)) return next();
     if (req.path === '/api/auth/login') return next();
     if (req.path === '/api/integrazione/sync') return next();
+    // Pulsanti mail lead: l'autorizzazione e' il link firmato HMAC (non la sessione).
+    if (req.path === '/api/leads/azione') return next();
     if (!req.session?.userId) return next();
     if (
       req.session.csrfToken &&

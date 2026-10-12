@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { ASSETS_BASE_DIR } from '../common/env';
+import { esc } from '../common/html';
 import type { ReportIndagine, StatoSegnale } from '../leads/indagine';
 
 @Injectable()
@@ -419,6 +420,32 @@ export class MailService {
     }
   }
 
+  /**
+   * Conferma al richiedente che la domanda di accesso e' stata ricevuta (risposta in 1-2 giorni).
+   * Template per lingua: lead-conferma.html (it) / lead-conferma-en.html, fallback all'italiano.
+   * L'indirizzo lo scrive chiunque nel form pubblico: niente testo libero del visitatore oltre al
+   * nome del referente (con escape), cosi' il form non diventa un canale per spam verso terzi.
+   */
+  async sendConfermaLead(to: string, referente: string, lingua: string, leadId: number): Promise<void> {
+    const en = lingua === 'en';
+    const tpl = (en && this.leggiTemplate('lead-conferma-en.html')) || this.leggiTemplate('lead-conferma.html');
+    if (!tpl) throw new Error('Template lead-conferma.html non trovato');
+    const valori: Record<string, string> = {
+      REFERENTE: esc(referente.slice(0, 120)),
+      LEAD_ID: String(leadId),
+      DOMAIN: esc(this.domain),
+    };
+    const html = riempi(tpl, valori);
+    await this.transporter.sendMail({
+      from: this.config.get<string>('MAIL_ORDINI_FROM') || '"Luis S.r.l." <noreply@luissrl.it>',
+      to: this.resolveRecipient(to),
+      subject: en ? 'We have received your B2B access request — Luis S.r.l.' : 'Abbiamo ricevuto la tua richiesta di accesso B2B — Luis S.r.l.',
+      html,
+      attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
+    });
+    this.logger.log(`Mail conferma lead #${leadId} inviata`);
+  }
+
   /** Segnala a shop@luisbg.it una richiesta di accesso B2B dal sito vetrina. Lancia in caso di errore. */
   async sendSegnalazioneLead(d: DatiLeadMail): Promise<void> {
     const to = this.config.get<string>('MAIL_LEAD_TO') || this.config.get<string>('MAIL_ORDINI_TO') || 'shop@luisbg.it';
@@ -445,8 +472,12 @@ export class MailService {
       PRIVACY: esc(`${consenso} · versione ${d.privacyVersione}`),
       IP: esc(d.ip) || 'non disponibile',
       ...reportLeadHtml(d.report),
+      // URL generati server-side e firmati (nessun parametro dal client): escape per l'attributo href.
+      LINK_APPROVA: esc(d.azioni.approva),
+      LINK_VERIFICA: esc(d.azioni.verifica),
+      LINK_SCARTA: esc(d.azioni.scarta),
     };
-    const html = tpl.replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, (m, k: string) => valori[k] ?? m);
+    const html = riempi(tpl, valori);
 
     await this.transporter.sendMail({
       from,
@@ -478,6 +509,7 @@ export interface DatiLeadMail {
   privacyVersione: string;
   ip: string | null;
   report: ReportIndagine | null;
+  azioni: { approva: string; verifica: string; scarta: string };
 }
 
 const BADGE: Record<StatoSegnale, [string, string]> = {
@@ -592,16 +624,11 @@ export interface DatiOrdineMail {
   noteCliente?: string | null;
 }
 
-/** I dati arrivano dal DB e finiscono in HTML: vanno neutralizzati. */
-function esc(s: string | null | undefined): string {
-  // Prima le sostituzioni erano no-op ('&' -> '&'): nessun escape effettivo.
-  return (s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+/** Sostituisce {{CHIAVE}} in un solo passaggio: i valori inseriti non vengono ri-scansionati. */
+function riempi(tpl: string, valori: Record<string, string>): string {
+  return tpl.replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, (m, k: string) => valori[k] ?? m);
 }
+
 
 function euro(n: number): string {
   return `${n.toFixed(2).replace('.', ',')} €`;

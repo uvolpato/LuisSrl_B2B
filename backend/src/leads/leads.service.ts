@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { IndagineService } from './indagine.service';
+import { AzioniLeadService } from './azioni.service';
 import type { ReportIndagine } from './indagine';
 import type { Lead, Prisma } from '@prisma/client';
 
@@ -19,6 +20,7 @@ export class LeadsService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly indagine: IndagineService,
+    private readonly azioni: AzioniLeadService,
   ) {}
 
   /** Salva il lead e notifica shop@ (best-effort: la richiesta resta salvata anche se la mail fallisce). */
@@ -47,10 +49,41 @@ export class LeadsService {
       },
     });
 
-    // Indagine + mail in background: il visitatore riceve subito la conferma.
+    // Conferma al richiedente, indagine e mail a shop@ in background: la risposta HTTP e' immediata.
+    void this.confermaAlRichiedente(lead);
     void this.qualifica(lead);
 
     return { id: lead.id };
+  }
+
+  /** Mail "richiesta ricevuta". Max una ogni 24h per indirizzo: il form non deve poter tempestare terzi. */
+  private async confermaAlRichiedente(lead: Lead) {
+    const recenti = await this.prisma.lead.count({
+      where: {
+        email: lead.email,
+        id: { not: lead.id },
+        createdAt: { gt: new Date(Date.now() - 24 * 3600 * 1000) },
+      },
+    });
+    if (recenti > 0) {
+      await this.evento(lead.id, 'conferma_saltata', {
+        motivo: 'gia inviata nelle 24h',
+      });
+      return;
+    }
+    try {
+      await this.mail.sendConfermaLead(
+        lead.email,
+        lead.referente,
+        lead.lingua,
+        lead.id,
+      );
+      await this.evento(lead.id, 'conferma_inviata');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(`Conferma lead #${lead.id} non inviata: ${msg}`);
+      await this.evento(lead.id, 'conferma_errore', { errore: msg });
+    }
   }
 
   /** Indagine AI (fail closed: errori → VERIFICARE) e poi mail a shop@ con il report. */
@@ -78,7 +111,11 @@ export class LeadsService {
     }
 
     try {
-      await this.mail.sendSegnalazioneLead({ ...lead, report });
+      await this.mail.sendSegnalazioneLead({
+        ...lead,
+        report,
+        azioni: this.azioni.link(lead.id),
+      });
       await this.evento(lead.id, 'mail_inviata');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
