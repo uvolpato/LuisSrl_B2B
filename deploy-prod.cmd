@@ -12,6 +12,7 @@ setlocal enabledelayedexpansion
 set SVC_BE=LuisBackend
 set SVC_FE=LuisFrontend
 set SVC_CADDY=LuisCaddy
+set SVC_VE=LuisVetrina
 set PG_USER=postgres
 set PG_DB=LuisSrlDb
 set BACKUP_DIR=C:\backup
@@ -25,6 +26,9 @@ for /f "delims=" %%n in ('where nssm 2^>nul') do if not defined NSSM set NSSM=%%
 if not defined NSSM if exist "%~dp0nssm.exe" set NSSM=%~dp0nssm.exe
 set USE_SVC=0
 if defined NSSM "!NSSM!" status %SVC_BE% >nul 2>nul && set USE_SVC=1
+REM Vetrina: inclusa solo se il servizio esiste (creato da setup-vetrina.cmd)
+set USE_VE=0
+if defined NSSM "!NSSM!" status %SVC_VE% >nul 2>nul && set USE_VE=1
 
 REM --- [1/6] Backup DB (facoltativo) ---
 echo.
@@ -57,6 +61,7 @@ goto pull
 
 :svc_stop
 "!NSSM!" stop %SVC_FE% >nul 2>nul
+if "!USE_VE!"=="1" "!NSSM!" stop %SVC_VE% >nul 2>nul
 "!NSSM!" stop %SVC_BE% >nul 2>nul
 timeout /t 3 /nobreak >nul
 
@@ -94,6 +99,16 @@ call npm ci || goto :err
 call npm run build || goto :err
 cd ..
 
+REM --- Vetrina (solo se installata con setup-vetrina.cmd) ---
+if not "!USE_VE!"=="1" goto after_ve
+echo.
+echo === [5b/6] Vetrina ===
+cd frontend-vetrina || goto :err
+call npm ci || goto :err
+call npm run build || goto :err
+cd ..
+:after_ve
+
 REM --- [6/6] Restart ---
 echo.
 echo === [6/6] Riavvio ===
@@ -105,6 +120,7 @@ goto done
 :svc_start
 "!NSSM!" start %SVC_BE% || goto :err
 "!NSSM!" start %SVC_FE% || goto :err
+if "!USE_VE!"=="1" "!NSSM!" start %SVC_VE% || goto :err
 if defined NSSM "!NSSM!" status %SVC_CADDY% >nul 2>nul && "!NSSM!" restart %SVC_CADDY% >nul 2>nul
 
 REM --- Attendo che il sito risponda davvero, poi tolgo la pagina di cortesia ---
@@ -148,7 +164,7 @@ exit /b 1
 :err
 echo.
 echo *** ERRORE durante l'aggiornamento (codice %errorlevel%). Interrotto. ***
-if "!USE_SVC!"=="1" echo *** Servizi fermi: riavviali con  nssm start %SVC_BE% ^&^& nssm start %SVC_FE% ***
+if "!USE_SVC!"=="1" echo *** Servizi fermi: riavviali con  nssm start %SVC_BE% ^&^& nssm start %SVC_FE% ^&^& nssm start %SVC_VE% ***
 echo *** La pagina di cortesia resta ATTIVA (sito non pronto). Quando tutto e' ok togli il flag: ***
 echo ***   del "%~dp0maintenance\maintenance.flag" ***
 pause

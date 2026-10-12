@@ -123,6 +123,7 @@ i servizi non esistono).
 | `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + migrate + seed + build + viste) |
 | `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` / `LuisCaddy` (nssm) |
 | `deploy-prod.cmd` | Aggiornamento sicuro (backup + stop servizi + pull + ci + migrate + build + restart) |
+| `setup-vetrina.cmd` | Sito vetrina: build + servizio `LuisVetrina` (porta 3002) + regola firewall solo rete interna — una volta |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
 | `backend/prisma/manual-fixups.sql` | Oggetti non coperti dalle migration (tabella `site_config`, colonne `raccolte`, chiavi AI) — idempotente |
 
@@ -269,3 +270,37 @@ log sono **innocui** (limiti di Windows).
 
 Dettagli aggiuntivi (avvio Caddy come servizio, backup, alternativa IIS+ARR) in
 [`DEPLOY.md`](DEPLOY.md) §7-9.
+
+## Sito vetrina (`frontend-vetrina/`)
+
+**Stato attuale: solo intranet** → `http://<ip-server>:3002`. Caddy e il portale
+B2B non vengono toccati.
+
+Prima installazione (Administrator, dalla root, backend già attivo):
+
+```bat
+git pull
+setup-vetrina.cmd
+```
+
+Crea il servizio `LuisVetrina` (`next start -p 3002`, `BACKEND_INTERNAL_URL=http://localhost:3001`)
+e apre la porta 3002 **solo** sui profili firewall Dominio/Privato.
+Da lì in poi `deploy-prod.cmd` aggiorna anche la vetrina (se il servizio esiste).
+
+La vetrina legge dal backend solo gli endpoint pubblici `/api/catalogo/pubblico/*`
+(senza prezzi) e proxa solo `/api/img`: dettagli in `specifica-sito-vetrina.md` §9.
+
+**Go-live su `www.luisbg.it` (futuro):** DNS `www`/apex → IP server, porte 80/443,
+blocco aggiuntivo nel Caddyfile e `nssm restart LuisCaddy`:
+
+```
+www.luisbg.it {
+    reverse_proxy localhost:3002
+}
+luisbg.it {
+    redir https://www.luisbg.it{uri} permanent
+}
+```
+
+A quel punto la regola firewall sulla 3002 si può rimuovere
+(`netsh advfirewall firewall delete rule name="Luis Vetrina 3002"`).

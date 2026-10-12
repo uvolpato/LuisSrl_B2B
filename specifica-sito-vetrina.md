@@ -280,7 +280,7 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 - [x] Tutte le immagini locali o via backend, nessun hotlink
 - [ ] Form accesso collegato al backend
 - [x] i18n next-intl (it/en): testi sito tradotti; dati catalogo dal backend restano in italiano
-- [ ] Build Next.js di produzione verificata
+- [x] Build Next.js di produzione verificata (`next build` + `next start -p 3002`)
 
 ---
 
@@ -317,3 +317,9 @@ le funzioni esistenti del service.
 | Variabile | Dove | Default |
 |-----------|------|---------|
 | `BACKEND_INTERNAL_URL` | `frontend-vetrina/.env` | `http://localhost:3001` |
+
+### 9.4 Produzione
+
+- Per ora **solo intranet**: servizio Windows `LuisVetrina` su `http://<ip-server>:3002` (`setup-vetrina.cmd`).
+- Aggiornamenti: `deploy-prod.cmd` (build + restart vetrina se il servizio esiste).
+- Dominio finale `www.luisbg.it` via Caddy: istruzioni in `SETUP-PRODUZIONE.md` § Sito vetrina.
