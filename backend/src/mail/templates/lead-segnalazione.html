@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuova richiesta accesso B2B</title>
+<!--
+  Template attivo (Fase 1 qualifica lead). Prototipo completo: constlead.html.
+  Segnaposti (valori gia' con escape HTML lato backend):
+  {{LEAD_ID}} {{DATA}} {{RAGIONE_SOCIALE}} {{PARTITA_IVA}} {{CODICE_FISCALE}} {{REFERENTE}}
+  {{TIPO_ATTIVITA}} {{EMAIL}} {{TELEFONO}} {{CITTA}} {{MESSAGGIO}} {{LINGUA}} {{PRIVACY}} {{IP}}
+  Fasi successive: report AI, verdetto e pulsanti Approva/Verifica/Scarta (vedi prototipo).
+-->
+</head>
+<body style="background:#f3f1ec;margin:0;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#221811;">
+
+<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e7e2db;border-radius:14px;overflow:hidden;">
+
+  <!-- Header -->
+  <div style="padding:22px 28px 0;">
+    <img src="cid:logo" alt="Luis S.r.l." style="height:44px;">
+  </div>
+
+  <!-- Intestazione -->
+  <div style="padding:18px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b2511e;margin:0 0 8px;">Richiesta accesso · sito vetrina</p>
+    <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;margin:0 0 10px;">Nuova richiesta accesso B2B — {{RAGIONE_SOCIALE}}</h1>
+    <p style="font-size:13.5px;color:#706760;margin:0;">Ricevuta dal sito vetrina · richiesta #{{LEAD_ID}} · {{DATA}} · lingua {{LINGUA}}</p>
+  </div>
+
+  <!-- Dati lead -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;border-bottom:1px solid #efeae5;padding-bottom:8px;">Dati del lead</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+      <tr><td style="padding:6px 0;color:#706760;width:150px;">Ragione sociale</td><td style="padding:6px 0;"><strong>{{RAGIONE_SOCIALE}}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Partita IVA</td><td style="padding:6px 0;font-family:'Courier New',monospace;">{{PARTITA_IVA}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Codice Fiscale</td><td style="padding:6px 0;font-family:'Courier New',monospace;">{{CODICE_FISCALE}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Referente</td><td style="padding:6px 0;">{{REFERENTE}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Email</td><td style="padding:6px 0;">{{EMAIL}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Telefono</td><td style="padding:6px 0;">{{TELEFONO}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Comune / Provincia</td><td style="padding:6px 0;">{{CITTA}}</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Tipo attività</td><td style="padding:6px 0;">{{TIPO_ATTIVITA}}</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px;">
+      <tr>
+        <td style="padding:12px 14px;background:#f8f5f1;border:1px solid #efeae5;border-radius:10px;">
+          <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#706760;">Messaggio del lead</span>
+          <p style="margin:6px 0 0;font-style:italic;">{{MESSAGGIO}}</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Consenso -->
+  <div style="padding:16px 28px 0;">
+    <div style="background:#f8f5f1;border:1px solid #efeae5;border-radius:12px;padding:14px 16px;">
+      <p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 8px;">Consenso privacy</p>
+      <p style="font-size:12.5px;color:#706760;margin:0;">Accettato il {{PRIVACY}} · IP {{IP}}</p>
+    </div>
+  </div>
+
+  <!-- Prossimo passo -->
+  <div style="padding:14px 28px 24px;">
+    <p style="font-size:12.5px;color:#706760;margin:0;">Rispondendo a questa mail scrivi direttamente al referente. Per attivare l'accesso: crea il cliente in Integra e invitalo dal portale.</p>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#efeae5;border-top:1px solid #e7e2db;padding:14px 28px;font-size:11.5px;color:#706760;text-align:center;">
+    Mail automatica dal Portale B2B Luis S.r.l. · richiesta #{{LEAD_ID}} registrata nel portale
+  </div>
+
+</div>
+
+</body>
+</html>

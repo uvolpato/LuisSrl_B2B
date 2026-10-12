@@ -206,9 +206,11 @@ Componente `Reveal.tsx` (client component):
 
 ### 5.2 Form accesso
 
-- Validazione HTML5 (`required`, `checkValidity`/`reportValidity`)
-- Submit → mostra feedback di conferma, disabilita bottone
-- **Attualmente dimostrativo**: nessuna chiamata server (POST al backend B2B da fare quando esiste l'endpoint)
+- Validazione HTML5 (`required`, `pattern` P.IVA/CF/telefono, `maxLength`) + validazione server (DTO backend)
+- Submit → server action `lib/richiedi-accesso.ts` → `POST /api/leads` (il browser non chiama l'API)
+- Feedback: conferma e bottone disabilitato; errori distinti (dati non validi, troppe richieste, invio fallito)
+- Honeypot `sito` nascosto; IP visitatore inoltrato in `X-Forwarded-For`
+- Dettagli backend: `specifica-qualifica-lead.md` (Fase 1)
 
 ### 5.3 Filtro catalogo
 
@@ -278,7 +280,7 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 - [x] Filtro catalogo funzionante (chip + ricerca, via URL)
 - [x] Responsive 980px e 720px
 - [x] Tutte le immagini locali o via backend, nessun hotlink
-- [ ] Form accesso collegato al backend
+- [x] Form accesso collegato al backend (lead salvato + mail a shop@)
 - [x] i18n next-intl (it/en): testi sito tradotti; dati catalogo dal backend restano in italiano
 - [x] Build Next.js di produzione verificata (`next build` + `next start -p 3002`)
 

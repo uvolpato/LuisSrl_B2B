@@ -92,7 +92,12 @@
     "privacy": "Ho letto e accetto la <link>Privacy Policy</link> e autorizzo il trattamento dei dati per la gestione della richiesta di accesso.",
     "ok": "Grazie! La tua richiesta è stata registrata. Ti contatteremo al più presto con le credenziali di accesso.",
     "invia": "Invia richiesta",
-    "nota": "Risposta entro 1–2 giorni lavorativi."
+    "nota": "Risposta entro 1–2 giorni lavorativi.",
+    "pivaFormato": "11 cifre (es. 01234567890) o partita IVA estera con prefisso paese",
+    "invio": "Invio in corso…",
+    "err_troppe": "Troppe richieste in poco tempo. Riprova tra un minuto.",
+    "err_invalida": "Alcuni dati non sono validi: controlla partita IVA, email e telefono.",
+    "err_errore": "Invio non riuscito. Riprova più tardi o scrivi a contatti@luisbg.it."
   },
   "contatti": {
     "eyebrow": "Contatti",

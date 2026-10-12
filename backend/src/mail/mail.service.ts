@@ -417,6 +417,64 @@ export class MailService {
       this.logger.warn(`Invio mail notifica ordine interna fallito per ${dati.numeroOrdine}: ${error?.message || error}`);
     }
   }
+
+  /** Segnala a shop@luisbg.it una richiesta di accesso B2B dal sito vetrina. Lancia in caso di errore. */
+  async sendSegnalazioneLead(d: DatiLeadMail): Promise<void> {
+    const to = this.config.get<string>('MAIL_LEAD_TO') || this.config.get<string>('MAIL_ORDINI_TO') || 'shop@luisbg.it';
+    const from = this.config.get<string>('MAIL_ORDINI_FROM') || '"Portale B2B Luis" <noreply@luissrl.it>';
+    const tpl = this.leggiTemplate('lead-segnalazione.html');
+    if (!tpl) throw new Error('Template lead-segnalazione.html non trovato');
+
+    const quando = d.createdAt.toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+    const consenso = d.privacyAccettataIl.toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+    // Tutti i valori arrivano da un form pubblico: escape obbligatorio.
+    const valori: Record<string, string> = {
+      LEAD_ID: String(d.id),
+      DATA: esc(quando),
+      RAGIONE_SOCIALE: esc(d.ragioneSociale),
+      PARTITA_IVA: esc(d.partitaIva),
+      CODICE_FISCALE: esc(d.codiceFiscale) || '—',
+      REFERENTE: esc(d.referente),
+      TIPO_ATTIVITA: esc(d.tipoAttivita) || '—',
+      EMAIL: esc(d.email),
+      TELEFONO: esc(d.telefono) || '—',
+      CITTA: esc(d.citta) || '—',
+      MESSAGGIO: d.messaggio ? esc(d.messaggio).replace(/\r?\n/g, '<br>') : '<span style="color:#706760">Nessun messaggio</span>',
+      LINGUA: d.lingua.toUpperCase(),
+      PRIVACY: esc(`${consenso} · versione ${d.privacyVersione}`),
+      IP: esc(d.ip) || 'non disponibile',
+    };
+    const html = tpl.replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, (m, k: string) => valori[k] ?? m);
+
+    await this.transporter.sendMail({
+      from,
+      to: this.resolveRecipient(to),
+      // Oggetto: niente HTML ma niente a capo (header injection gestita da nodemailer).
+      subject: `Nuova richiesta accesso B2B — ${d.ragioneSociale.replace(/[\r\n]+/g, ' ')}`,
+      replyTo: d.email,
+      html,
+      attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
+    });
+    this.logger.log(`Mail segnalazione lead #${d.id} inviata a ${to}`);
+  }
+}
+
+export interface DatiLeadMail {
+  id: number;
+  createdAt: Date;
+  ragioneSociale: string;
+  partitaIva: string;
+  codiceFiscale: string | null;
+  referente: string;
+  tipoAttivita: string | null;
+  email: string;
+  telefono: string | null;
+  citta: string | null;
+  messaggio: string | null;
+  lingua: string;
+  privacyAccettataIl: Date;
+  privacyVersione: string;
+  ip: string | null;
 }
 
 export interface RigaConfermaOrdine {
@@ -487,7 +545,13 @@ export interface DatiOrdineMail {
 
 /** I dati arrivano dal DB e finiscono in HTML: vanno neutralizzati. */
 function esc(s: string | null | undefined): string {
-  return (s ?? '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+  // Prima le sostituzioni erano no-op ('&' -> '&'): nessun escape effettivo.
+  return (s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function euro(n: number): string {

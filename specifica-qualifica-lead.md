@@ -165,6 +165,16 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 
 ## 9. Piano a fasi
 
+> **Fase 1 completata (2026-10-12).** Implementazione:
+> - `POST /api/leads` (`backend/src/leads/`): pubblico, DTO whitelist, rate limit 3/min/IP, honeypot `sito`.
+> - Tabelle `leads` / `lead_events` (migration additiva `20261012000000_add_leads`); per ora solo i campi
+>   della Fase 1 (verdetto, report, token arrivano con le fasi 2–3).
+> - Consenso privacy: `privacy_accettata_il` (ora server), `privacy_versione` (`PRIVACY_VERSIONE`), `ip`, `user_agent`, `lingua`.
+> - IP reale: la vetrina inoltra l'IP del visitatore in `X-Forwarded-For`, Express lo risolve (`trust proxy 1`).
+>   Affidabile dietro Caddy; con accesso diretto in intranet è falsificabile da un client interno.
+> - Mail `lead-segnalazione.html` a `MAIL_LEAD_TO` (default shop@), best-effort: esito in `lead_events`.
+> - Test: `backend/src/leads/leads.spec.ts`.
+
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|
 | **1 — Fondamenta** | modelli `Lead`/`LeadEvent` + migration; `POST /leads` pubblico + rate limit; DTO; template `lead-segnalazione.html`; registrazione eventi | lead salvato + mail grezza a shop@ | 2 gg |

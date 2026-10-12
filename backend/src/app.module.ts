@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { CustomersModule } from './customers/customers.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
+import { LeadsModule } from './leads/leads.module';
 import { IntegrazioneModule } from './integrazione/integrazione.module';
 import { CarrelloModule } from './carrello/carrello.module';
 import { CheckoutModule } from './checkout/checkout.module';
@@ -42,6 +43,7 @@ import { HttpErrorFilter } from './common/http-error.filter';
     CustomersModule,
     AdminModule,
     MailModule,
+    LeadsModule,
     IntegrazioneModule,
     CarrelloModule,
     CheckoutModule,

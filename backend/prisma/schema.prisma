@@ -656,3 +656,44 @@ model CampaignUsage {
   @@unique([campaignId, orderId])
   @@map("campaign_usage")
 }
+
+/// Richiesta di accesso B2B dal sito vetrina (specifica-qualifica-lead.md, Fase 1).
+model Lead {
+  id                 Int         @id @default(autoincrement())
+  createdAt          DateTime    @default(now()) @map("created_at")
+  ragioneSociale     String      @map("ragione_sociale")
+  partitaIva         String      @map("partita_iva")
+  codiceFiscale      String?     @map("codice_fiscale")
+  referente          String
+  tipoAttivita       String?     @map("tipo_attivita")
+  email              String
+  telefono           String?
+  citta              String?
+  messaggio          String?
+  lingua             String      @default("it")
+  /// Consenso privacy (GDPR art. 7: prova del consenso)
+  privacyAccettataIl DateTime    @map("privacy_accettata_il")
+  privacyVersione    String      @map("privacy_versione")
+  ip                 String?
+  userAgent          String?     @map("user_agent")
+  /// NUOVO | IN_VALUTAZIONE | APPROVATO | SCARTATO | SOSPESO
+  stato              String      @default("NUOVO")
+  eventi             LeadEvent[]
+
+  @@index([createdAt])
+  @@index([stato, createdAt])
+  @@map("leads")
+}
+
+/// Eventi append-only del lead (creazione, invio mail, poi indagine/azioni).
+model LeadEvent {
+  id        Int      @id @default(autoincrement())
+  leadId    Int      @map("lead_id")
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tipo      String
+  dettagli  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadId, createdAt])
+  @@map("lead_events")
+}
