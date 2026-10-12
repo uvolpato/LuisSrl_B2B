@@ -17,6 +17,9 @@ echo Portale B2B Luis S.r.l. - modalita' HTTP
 echo   Frontend: http://localhost:3000
 echo   Backend:  http://localhost:3001  (interno, non aprire nel browser)
 echo.
-pause
+start "Luis Vetrina HTTP" cmd /c "cd /d frontend-vetrina && npx serve@14 out -l 3002"
 
 echo   Vetrina: http://localhost:3002
+echo.
+pause
+

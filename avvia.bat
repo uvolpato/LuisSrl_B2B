@@ -13,6 +13,9 @@ echo Portale B2B Luis S.r.l.
 echo   Frontend: http://localhost:3000
 echo   Backend:  http://localhost:3001
 echo.
-pause
+start "Luis Vetrina" cmd /c "cd /d frontend-vetrina && npx serve@14 out -l 3002"
 
 echo   Vetrina: http://localhost:3002
+echo.
+pause
+
