@@ -9,7 +9,8 @@
   Segnaposti (valori gia' con escape HTML lato backend):
   {{LEAD_ID}} {{DATA}} {{RAGIONE_SOCIALE}} {{PARTITA_IVA}} {{CODICE_FISCALE}} {{REFERENTE}}
   {{TIPO_ATTIVITA}} {{EMAIL}} {{TELEFONO}} {{CITTA}} {{MESSAGGIO}} {{LINGUA}} {{PRIVACY}} {{IP}}
-  Fasi successive: report AI, verdetto e pulsanti Approva/Verifica/Scarta (vedi prototipo).
+  Fase 2: {{SEGNALI_ROWS}} {{SINTESI}} {{FONTI}} {{VERDETTO}} {{VERDETTO_COLORE}} {{VERDETTO_NOTA}} {{CHECKLIST_ROWS}}
+  Fase 3 (da fare): pulsanti Approva/Verifica/Scarta (vedi prototipo).
 -->
 </head>
 <body style="background:#f3f1ec;margin:0;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#221811;">
@@ -23,7 +24,7 @@
 
   <!-- Intestazione -->
   <div style="padding:18px 28px 0;">
-    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b2511e;margin:0 0 8px;">Richiesta accesso · sito vetrina</p>
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b2511e;margin:0 0 8px;">Qualifica lead AI · automatica</p>
     <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;margin:0 0 10px;">Nuova richiesta accesso B2B — {{RAGIONE_SOCIALE}}</h1>
     <p style="font-size:13.5px;color:#706760;margin:0;">Ricevuta dal sito vetrina · richiesta #{{LEAD_ID}} · {{DATA}} · lingua {{LINGUA}}</p>
   </div>
@@ -49,6 +50,31 @@
         </td>
       </tr>
     </table>
+  </div>
+
+  <!-- Report di sintesi -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;border-bottom:1px solid #efeae5;padding-bottom:8px;">Report di sintesi — indagine AI</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      {{SEGNALI_ROWS}}
+    </table>
+    {{SINTESI}}
+    <p style="font-size:12px;color:#706760;margin:10px 0 0;">{{FONTI}}</p>
+  </div>
+
+  <!-- Verdetto -->
+  <div style="padding:16px 28px 0;">
+    <div style="background:#fdf3ee;border:1px solid #f3d5c2;border-radius:12px;padding:16px 18px;">
+      <span style="background:#b2511e;color:#fff;font-family:'Courier New',monospace;font-size:11px;letter-spacing:.14em;border-radius:8px;padding:6px 12px;text-transform:uppercase;">Verdetto AI</span>
+      <strong style="font-size:16px;color:{{VERDETTO_COLORE}};margin-left:10px;">{{VERDETTO}}</strong>
+      <span style="font-size:12.5px;color:#706760;">— {{VERDETTO_NOTA}}</span>
+      <p style="font-size:11.5px;color:#706760;margin:8px 0 0;">L'AI propone, la decisione è sempre umana.</p>
+    </div>
+  </div>
+
+  <!-- Checklist (solo se VERIFICARE) -->
+  <div style="padding:14px 28px 0;">
+    {{CHECKLIST_ROWS}}
   </div>
 
   <!-- Consenso -->

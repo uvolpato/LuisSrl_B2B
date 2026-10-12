@@ -174,6 +174,22 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 >   Affidabile dietro Caddy; con accesso diretto in intranet è falsificabile da un client interno.
 > - Mail `lead-segnalazione.html` a `MAIL_LEAD_TO` (default shop@), best-effort: esito in `lead_events`.
 > - Test: `backend/src/leads/leads.spec.ts`.
+>
+> **Fase 2 completata (2026-10-12)** — `backend/src/leads/indagine*.ts`:
+> - P.IVA **deterministica**: checksum IT → **VIES** (REST ufficiale UE, gratuito) → registro imprese
+>   (`DatiImpresaService`, se `DATI_IMPRESA_API_URL` è configurato). `NEGATIVO` solo con esito ufficiale certo.
+> - Web/email/coerenza: una chiamata `generaSintesiAIConRicerca()` (Gemini + Google Search, riuso),
+>   costo tracciato come `lead_indagine`; timeout `LEAD_INDAGINE_TIMEOUT_MS` (default 45s).
+> - Prompt: solo dati aziendali (ragione sociale, P.IVA, dominio email, comune, tipo attività), delimitati
+>   come dati non fidati; **anti prompt-injection**: la P.IVA la confermano solo fonti ufficiali, l'AI
+>   arriva al massimo a NEUTRO → un testo malevolo non può produrre BUONO.
+> - Verdetto calcolato **dal codice** (`calcolaVerdetto`, fail closed), non dall'AI. Colonne
+>   `verdetto`, `report` (jsonb), `indagine_il` (migration `20261012010000_add_lead_indagine`).
+> - Mail: report segnali con badge, sintesi, verdetto, checklist (se VERIFICARE). URL fonti solo http(s), escape.
+> - Limite noto: le fonti URL sono quelle citate dal modello (spesso poche); i link di grounding di
+>   Google non sono ancora estratti (servirebbe esporli da `callGeminiText`).
+> - Collaudo reale: Luis S.r.l. → BUONO; P.IVA inventata + mailinator → SCARTARE; P.IVA con checksum
+>   valido ma non registrata → SCARTARE (VIES). Test: `indagine.spec.ts`.
 
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|

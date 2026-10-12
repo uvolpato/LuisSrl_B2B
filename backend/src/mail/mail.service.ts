@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { ASSETS_BASE_DIR } from '../common/env';
+import type { ReportIndagine, StatoSegnale } from '../leads/indagine';
 
 @Injectable()
 export class MailService {
@@ -443,6 +444,7 @@ export class MailService {
       LINGUA: d.lingua.toUpperCase(),
       PRIVACY: esc(`${consenso} · versione ${d.privacyVersione}`),
       IP: esc(d.ip) || 'non disponibile',
+      ...reportLeadHtml(d.report),
     };
     const html = tpl.replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, (m, k: string) => valori[k] ?? m);
 
@@ -475,6 +477,53 @@ export interface DatiLeadMail {
   privacyAccettataIl: Date;
   privacyVersione: string;
   ip: string | null;
+  report: ReportIndagine | null;
+}
+
+const BADGE: Record<StatoSegnale, [string, string]> = {
+  CONFERMATO: ['#e5f2ea', '#1b7a45'],
+  NEUTRO: ['#f8f5f1', '#706760'],
+  NON_VERIFICATO: ['#fdf3e2', '#8a5a00'],
+  NEGATIVO: ['#fbe9e6', '#a33b2e'],
+};
+
+/** Sezioni report/verdetto della mail lead. Testi e URL vengono dall'AI: escape anche qui. */
+function reportLeadHtml(r: ReportIndagine | null): Record<string, string> {
+  if (!r) {
+    return {
+      SEGNALI_ROWS: '<tr><td style="padding:10px 0;color:#706760;">Indagine non eseguita: valutazione manuale.</td></tr>',
+      VERDETTO: 'VERIFICARE',
+      VERDETTO_COLORE: '#8a5a00',
+      VERDETTO_NOTA: 'indagine non disponibile',
+      CHECKLIST_ROWS: '',
+      SINTESI: '',
+      FONTI: '',
+    };
+  }
+  const td = 'padding:10px 0;border-bottom:1px solid #efeae5;';
+  const righe = r.segnali
+    .map((x) => {
+      const [bg, fg] = BADGE[x.stato] ?? BADGE.NON_VERIFICATO;
+      const link = x.fonti
+        .map((u, i) => `<a href="${esc(u)}" style="color:#b2511e;">[${i + 1}]</a>`)
+        .join(' ');
+      return `<tr><td style="${td}width:30%;color:#706760;vertical-align:top;">${esc(x.etichetta)}</td><td style="${td}">${esc(x.nota)} ${link}</td><td style="${td}text-align:right;vertical-align:top;"><span style="background:${bg};color:${fg};border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;">${x.stato.replace('_', ' ')}</span></td></tr>`;
+    })
+    .join('');
+  const checklist = r.checklist.length
+    ? `<div style="background:#f8f5f1;border:1px solid #efeae5;border-radius:12px;padding:14px 16px;"><p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 8px;">Checklist di verifica</p><ul style="font-size:12.5px;color:#221811;margin:0;padding-left:18px;">${r.checklist.map((c) => `<li style="margin:3px 0;">${esc(c)}</li>`).join('')}</ul></div>`
+    : '';
+  return {
+    SEGNALI_ROWS: righe,
+    VERDETTO: r.verdetto,
+    VERDETTO_COLORE: { BUONO: '#1b7a45', VERIFICARE: '#8a5a00', SCARTARE: '#a33b2e' }[r.verdetto],
+    VERDETTO_NOTA: esc(r.motivazione),
+    CHECKLIST_ROWS: checklist,
+    SINTESI: r.sintesi ? `<p style="font-size:13px;margin:12px 0 0;">${esc(r.sintesi)}</p>` : '',
+    FONTI: esc(
+      `Verifica P.IVA: checksum + VIES (UE) · ricerca web Gemini con Google Search · ${(r.durataMs / 1000).toFixed(0)}s${r.errore ? ` · ${r.errore}` : ''}`,
+    ),
+  };
 }
 
 export interface RigaConfermaOrdine {

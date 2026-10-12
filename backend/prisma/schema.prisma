@@ -678,6 +678,11 @@ model Lead {
   userAgent          String?     @map("user_agent")
   /// NUOVO | IN_VALUTAZIONE | APPROVATO | SCARTATO | SOSPESO
   stato              String      @default("NUOVO")
+  /// Giudizio AI: BUONO | VERIFICARE | SCARTARE (null finche' l'indagine non e' fatta)
+  verdetto           String?
+  /// Segnali, fonti (URL), checklist e sintesi dell'indagine
+  report             Json?
+  indagineIl         DateTime?   @map("indagine_il")
   eventi             LeadEvent[]
 
   @@index([createdAt])

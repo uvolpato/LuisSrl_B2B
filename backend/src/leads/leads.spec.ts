@@ -37,10 +37,10 @@ describe('Lead pubblico (vetrina)', () => {
     const ctrl = new LeadsController({ crea } as unknown as LeadsService);
     const req = { ip: '1.2.3.4', get: () => 'bot' } as never;
     await expect(
-      ctrl.crea({ ...valido, sito: 'http://spam' } as CreateLeadDto, req),
+      ctrl.crea({ ...valido, sito: 'http://spam' }, req),
     ).resolves.toEqual({ ok: true });
     expect(crea).not.toHaveBeenCalled();
-    await ctrl.crea(valido as CreateLeadDto, req);
+    await ctrl.crea(valido, req);
     expect(crea).toHaveBeenCalledWith(
       expect.objectContaining({ partitaIva: '01234567890' }),
       '1.2.3.4',

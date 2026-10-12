@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { DatiImpresaService, type DatiImpresa } from '../dati-impresa/dati-impresa.service';
+import { estraiJson } from '../common/ai-json';
 
 interface CustomerProfileData {
   datiImpresa: DatiImpresa | null;
@@ -87,7 +88,7 @@ export class CustomerProfileService {
     const raw = await this.integrazione.generaSintesiAIConRicerca(prompt);
     if (!raw) return null;
 
-    const json = this.estraiJson(raw);
+    const json = estraiJson<CustomerProfileResult>(raw);
     if (!json) {
       this.log.warn(`Profilo cliente #${customerId}: LLM non ha restituito JSON valido`);
       return null;
@@ -362,17 +363,5 @@ export class CustomerProfileService {
         sintesiBreve: '2-3 frasi per un commerciale: chi è, cosa cerca, cosa proporre',
       }, null, 2),
     ].join('\n');
-  }
-
-  private estraiJson(raw: string): CustomerProfileResult | null {
-    try {
-      const trimmed = raw.trim();
-      const start = trimmed.indexOf('{');
-      const end = trimmed.lastIndexOf('}');
-      if (start === -1 || end === -1 || end <= start) return null;
-      return JSON.parse(trimmed.slice(start, end + 1)) as CustomerProfileResult;
-    } catch {
-      return null;
-    }
   }
 }
