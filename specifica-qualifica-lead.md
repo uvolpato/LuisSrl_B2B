@@ -225,6 +225,12 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 > evento `anonimizzato`. Restano i dati aziendali (ragione sociale, P.IVA, sede, verdetto, date).
 > Gli `APPROVATO` restano (prova del consenso). Da riportare nell'informativa privacy del sito.
 > Nota: per le ditte individuali la ragione sociale può contenere il nome del titolare.
+>
+> **Promemoria (2026-10-13)** — job ogni mattina alle 08:00 (`LEAD_PROMEMORIA_CRON`): le richieste
+> `NUOVO` / `IN_VALUTAZIONE` senza mail a shop@ da `LEAD_PROMEMORIA_GIORNI` (default 6) ricevono un
+> promemoria (stesso template, banner + oggetto "Promemoria: …") con **pulsanti nuovi** validi 7 giorni;
+> si ripete ogni 6 giorni finché non c'è una decisione. Evento `promemoria_inviato` / `promemoria_errore`.
+> Pagina admin "Richieste accesso": prototipo da `specifica-admin-richieste-accesso.md`.
 
 | Fase | Contenuto | Deliverable | Stima |
 |---|---|---|---|

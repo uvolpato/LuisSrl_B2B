@@ -1,10 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { IndagineService } from './indagine.service';
 import { AzioniLeadService } from './azioni.service';
 import type { ReportIndagine } from './indagine';
+import {
+  STATI_IN_ATTESA,
+  giorniDa,
+  giorniPromemoria,
+  servePromemoria,
+} from './promemoria';
 import type { Lead, Prisma } from '@prisma/client';
 
 /** Versione del testo privacy accettato nel form vetrina: aggiornarla quando cambia l'informativa. */
@@ -129,6 +136,47 @@ export class LeadsService {
       this.logger.warn(`Mail lead #${lead.id} non inviata: ${msg}`);
       await this.evento(lead.id, 'mail_errore', { errore: msg });
     }
+  }
+
+  /**
+   * Ogni mattina: richieste ancora Nuove / In verifica da almeno N giorni (LEAD_PROMEMORIA_GIORNI,
+   * default 6) dall'ultima mail → promemoria a shop@ con pulsanti nuovi. Si ripete ogni N giorni.
+   */
+  @Cron(process.env.LEAD_PROMEMORIA_CRON || '0 8 * * *')
+  async inviaPromemoria(): Promise<number> {
+    const giorni = giorniPromemoria();
+    const ora = new Date();
+    const leads = await this.prisma.lead.findMany({
+      where: { stato: { in: STATI_IN_ATTESA }, anonimizzatoIl: null },
+      include: {
+        eventi: {
+          where: { tipo: { in: ['mail_inviata', 'promemoria_inviato'] } },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+    let inviati = 0;
+    for (const { eventi, ...lead } of leads) {
+      const ultimoInvio = eventi[0]?.createdAt ?? lead.createdAt;
+      if (!servePromemoria(ultimoInvio, ora, giorni)) continue;
+      try {
+        await this.mail.sendSegnalazioneLead({
+          ...lead,
+          report: lead.report as unknown as ReportIndagine | null,
+          azioni: this.azioni.link(lead.id),
+          promemoriaGiorni: giorniDa(lead.createdAt, ora),
+        });
+        await this.evento(lead.id, 'promemoria_inviato');
+        inviati++;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.logger.warn(`Promemoria lead #${lead.id} non inviato: ${msg}`);
+        await this.evento(lead.id, 'promemoria_errore', { errore: msg });
+      }
+    }
+    if (inviati) this.logger.log(`Promemoria inviati: ${inviati}`);
+    return inviati;
   }
 
   private evento(leadId: number, tipo: string, dettagli?: object) {

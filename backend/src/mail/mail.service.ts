@@ -458,6 +458,9 @@ export class MailService {
     // Tutti i valori arrivano da un form pubblico: escape obbligatorio.
     const valori: Record<string, string> = {
       LEAD_ID: String(d.id),
+      PROMEMORIA: d.promemoriaGiorni
+        ? `<div style="margin:18px 28px 0;background:#fdf3e2;border:1px solid #f0d9a8;border-radius:12px;padding:12px 16px;font-size:13.5px;color:#8a5a00;"><strong>Promemoria:</strong> richiesta in attesa di decisione da ${d.promemoriaGiorni} giorni. I pulsanti qui sotto sono nuovi e validi 7 giorni.</div>`
+        : '',
       DATA: esc(quando),
       RAGIONE_SOCIALE: esc(d.ragioneSociale),
       PARTITA_IVA: esc(d.partitaIva),
@@ -488,7 +491,7 @@ export class MailService {
       from,
       to: this.resolveRecipient(to),
       // Oggetto: niente HTML ma niente a capo (header injection gestita da nodemailer).
-      subject: `Nuova richiesta accesso B2B — ${d.ragioneSociale.replace(/[\r\n]+/g, ' ')}`,
+      subject: `${d.promemoriaGiorni ? 'Promemoria: richiesta in attesa' : 'Nuova richiesta accesso B2B'} — ${d.ragioneSociale.replace(/[\r\n]+/g, ' ')}`,
       replyTo: d.email,
       html,
       attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
@@ -515,6 +518,8 @@ export interface DatiLeadMail {
   ip: string | null;
   report: ReportIndagine | null;
   azioni: { approva: string; verifica: string; scarta: string };
+  /** Se valorizzato: mail di promemoria (giorni di attesa) invece della prima segnalazione. */
+  promemoriaGiorni?: number;
 }
 
 const BADGE: Record<StatoSegnale, [string, string]> = {
