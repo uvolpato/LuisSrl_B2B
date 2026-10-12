@@ -21,3 +21,5 @@ echo Nota: certificato self-signed. Alla prima apertura il browser
 echo       mostra un avviso di sicurezza: procedi/accetta per continuare.
 echo.
 pause
+
+echo   Vetrina: http://localhost:3002
