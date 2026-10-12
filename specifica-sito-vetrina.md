@@ -1,235 +1,311 @@
-# Specifica — Sito Vetrina Pubblico (www.luisbg.it)
+# Specifica — Sito Vetrina Luis S.r.l.
 
-**Versione:** bozza 1.0
-**Obiettivo:** sostituire l'attuale www.luisbg.it con un sito statico performante, SEO-first,
-che condivide il backend API col B2B ma ha ciclo di vita, build e deploy indipendenti.
-
----
-
-## 1. Decisione architetturale
-
-**Due app Next.js separate sullo stesso server**, reverse proxy nginx per hostname:
-
-| App | Cartella | Porta dev | Host produzione | Output |
-|---|---|---|---|---|
-| B2B | `frontend/` | 3000 | `shop.luisbg.it` | `next start` (SSR + WS) |
-| Vetrina | `frontend-vetrina/` | 3002 | `www.luisbg.it` | `output: 'export'` → file statici |
-
-**Perché separare:**
-- Vetrina = **zero Node in produzione** (solo nginx serve file statici + CDN)
-- B2B = SSR autenticato, WebSocket, carrello, checkout
-- Deploy indipendenti: `nginx -s reload` vs `pm2 restart b2b`
-- SEO critico solo su vetrina (sitemap, meta, JSON-LD, Core Web Vitals)
-- Nessun rischio che bug B2B rompano il sito pubblico
+Sito vetrina pubblico (B2B ingrosso) da sviluppare in **identica coerenza** col prototipo
+`Prototipo Sito Vetrina/`. Due pagine + un CSS condiviso. Nessuna libreria esterna:
+HTML, CSS e JS vanilla.
 
 ---
 
-## 2. Prototipo di riferimento
-
-La vetrina ha un **prototipo dedicato** nella cartella `Prototipo Sito Vetrina/`:
-
-| File | Contenuto | Note |
-|---|---|---|
-| `Prototipo Sito Vetrina/index.html` | Home marketing (hero, value props, CTA "Richiedi accesso B2B", link catalogo) | **Riferimento visivo 1:1** per la home |
-| `Prototipo Sito Vetrina/catalogo.html` | Lista famiglie/linee → griglia prodotti (read-only) | **Riferimento visivo 1:1** per il catalogo |
-| `Prototipo Sito Vetrina/styles.css` | Design system: colori, tipografia, bottoni, griglie | **Riferimento stile** per tutta la vetrina |
-
-**Regola:** in caso di dubbio su layout, colori, tipografia o componenti, aprire il
-prototipo corrispondente e riprodurre **esattamente** ciò che mostra. Il prototipo è
-la fonte di verità visiva, non il codice.
-
-Per i design tokens condivisi con il B2B (colori OKLch, spacing, bottoni) si continua a
-usare `brand-spec.md` + `frontend/components/ui/` come riferimento.
-
----
-
-## 3. Cartella e struttura
+## 1. Struttura del progetto
 
 ```
-frontend-vetrina/
-├── package.json
-├── next.config.js
-├── tsconfig.json
-├── .eslintrc.js
-├── public/
-│   ├── images/          # asset locali (logo, hero)
-│   └── robots.txt
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx           # root layout, font, SEO defaults
-│   │   ├── page.tsx             # home marketing
-│   │   ├── catalogo/
-│   │   │   ├── page.tsx         # lista famiglie/linee
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx     # scheda prodotto (read-only)
-│   │   ├── azienda/
-│   │   │   └── page.tsx
-│   │   ├── contatti/
-│   │   │   └── page.tsx
-│   │   ├── richiedi-accesso/
-│   │   │   └── page.tsx         # form → POST /api/auth/richiedi-accesso
-│   │   ├── sitemap.ts           # next-sitemap o generate static
-│   │   └── robots.ts
-│   ├── components/
-│   │   ├── ui/                  # copiati da frontend/components/ui/
-│   │   │   ├── Button.tsx
-│   │   │   ├── PositionedImage.tsx
-│   │   │   ├── Card.tsx
-│   │   │   └── ...
-│   │   ├── layout/
-│   │   │   ├── Header.tsx
-│   │   │   └── Footer.tsx
-│   │   └── catalogo/
-│   │       ├── ProductGrid.tsx
-│   │       └── ProductCard.tsx
-│   ├── lib/
-│   │   ├── api.ts               # fetch verso backend (public endpoints)
-│   │   ├── seo.ts               # helper meta, JSON-LD
-│   │   └── utils.ts
-│   └── styles/
-│       └── globals.css          # design tokens OKLch (copiati da brand-spec)
-├── next-sitemap.config.js       # genera sitemap.xml + robots.txt
-└── .github/workflows/deploy.yml # opzionale: build statico su push
+sito-vetrina/
+├── index.html          ← home page
+├── catalogo.html       ← catalogo vetrina (varianti, senza prezzi)
+└── styles.css          ← unico foglio di stile condiviso
 ```
+
+- **Nessun framework** (no React/Vue/Next). HTML statico + JS vanilla.
+- **Nessuna dipendenza CSS/JS esterna**. Tutto inline o nel file condiviso.
+- Il sito funziona senza build: apri `index.html` direttamente.
 
 ---
 
-## 3. Cosa condivide col B2B (copia, non link)
+## 2. Design system
 
-| Cosa | Da `frontend/` | Note |
-|---|---|---|
-| Design tokens (colori OKLch, tipografia, spacing) | `src/styles/globals.css` + `brand-spec.md` | copia identica |
-| `PositionedImage` | `components/ui/PositionedImage.tsx` | **unico componente immagini** — copia obbligatorio |
-| `Button`, `Card`, `Badge`, `Input` base | `components/ui/` | copia i file che servono |
-| Type `Articolo`, `Variante`, `Famiglia` | `src/types/` o API response | riusa tipi dal backend o genera da OpenAPI |
-| Logica prezzo/immagini | `lib/api.ts` | chiama endpoint **pubblici** del backend |
+### 2.1 Colori (OKLch)
 
-> **Non condividere:** carrello, checkout, dashboard, auth context, SWR hooks con auth,
-> componenti admin, `next.config` del B2B (proxy, rewrites, headers auth).
+```css
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(95% 0.03 45);
+  --ok: oklch(55% 0.12 150);
+}
+```
+
+### 2.2 Font
+
+```css
+--font-display: 'Iowan Old Style', 'Charter', Georgia, 'Times New Roman', serif;
+--font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+--font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+```
+
+- **Display** (h1, h2, h3): serif, weight 600, `text-wrap: balance`
+- **Body**: system sans, 16px, line-height 1.55
+- **Mono** (eyebrow, label, codici): monospace, 10.5–12px, uppercase, letter-spacing 0.06–0.12em
+
+### 2.3 Spacing e forme
+
+```css
+--radius: 12px;
+--radius-lg: 16px;
+--container: 1120px;
+--gutter: 32px;
+```
+
+- `.container` max-width 1120px, padding inline 32px
+- `.section` padding vertical `clamp(56px, 8vw, 104px)`
+- Bordi: 1px solid `var(--border)`
+- Card: radius 16px, bordo, sfondo bianco
+
+### 2.4 Bottoni
+
+| Classe | Uso | Stile |
+|--------|-----|-------|
+| `.btn-primary` | CTA principali | sfondo accent, testo bianco, radius 10px |
+| `.btn-light` | CTA su hero scuro | sfondo rgba(255,255,255,.14), testo bianco, bordo rgba(255,255,255,.4) |
+| `.btn-arrow::after` | Freccia animata | `→` con hover translateX(3px) |
+
+Hover: `background: oklch(50% 0.14 45)` (accent più scuro).
 
 ---
 
-## 4. Endpoint backend usati (sola lettura, pubblici)
+## 3. Navbar (condivisa)
 
-Il backend **già espone** o può esporre senza auth:
+```html
+<header class="site-nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html"><img src="logo.webp" alt="Luis S.r.l."></a>
+      <nav class="nav-links">
+        <a href="#azienda">Azienda</a>
+        <a href="#collezioni">Collezioni</a>
+        <a href="catalogo.html">Catalogo</a>
+        <a href="https://shop.luisbg.it" target="_blank" rel="noopener">B2B</a>
+        <a href="#contatti">Contatti</a>
+        <a class="btn btn-primary btn-arrow nav-cta" href="#accesso">Richiedi accesso B2B</a>
+      </nav>
+    </div>
+  </div>
+</header>
+```
 
-| Endpoint | Uso vetrina |
-|---|---|
-| `GET /api/catalogo` | lista famiglie/linee con conteggio varianti |
-| `GET /api/catalogo/[slug]` | dettaglio articolo + varianti + immagini |
-| `GET /api/articoli/[codice]/immagini` | galleria (già c'è) |
-| `GET /api/articoli/[codice]/descrizione-ai` | descrizione generata |
-| `POST /api/auth/richiedi-accesso` | form "Diventa rivenditore" → email admin + lead in DB |
-
-> Se mancano, aggiungere controller `public-` (es. `PublicCatalogoController`) con `AllowAnonymous` guard, **senza** sessione/CSRF.
+- Sticky top, blur backdrop, bordo inferiore
+- Logo 34px altezza
+- Link nav: 14px, colore muted → hover fg
+- CTA: bottone primario con scritta **bianca** (regola specifica: `.nav-links a.nav-cta { color: #fff }`)
 
 ---
 
-## 5. Build e deploy
+## 4. Home page (index.html)
 
-**Dev:**
-```bash
-cd frontend-vetrina && npm run dev   # http://localhost:3002
+### 4.1 Hero
+
+```html
+<section class="hero">
+  <img class="hero-img" src="img-tre-vasi.png" alt="">
+  <div class="hero-veil"></div>
+  <div class="hero-body">
+    <div class="container">
+      <div class="hero-inner">
+        <span class="hero-badge">Divisione ingrosso · dal 1995</span>
+        <p class="eyebrow">Vasi e articoli per garden e fioristi</p>
+        <h1 class="h1">Vasi da esterno e interno all'ingrosso</h1>
+        <p class="lead">Importiamo e distribuiamo ceramica, cotto e fiberstone...</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-arrow" href="#accesso">Richiedi l'accesso B2B</a>
+          <a class="btn btn-light" href="catalogo.html">Sfoglia il catalogo</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 ```
 
-**Produzione (static export):**
-```bash
-cd frontend-vetrina && npm run build   # genera ./out/
-# nginx serve /var/www/vetrina/out/
+- Sfondo: immagine full-bleed con veil gradiente scuro
+- Badge: pill con bordo bianco, uppercase mono
+- h1: clamp(40px, 6vw, 68px), bianco
+- Lead: 19-20px, bianco opaco
+- 2 CTA: primaria (accent) + light (trasparente bianca)
+
+### 4.2 Sezione Azienda (`#azienda`)
+
+Layout a due colonne (`.split`):
+- Sinistra: immagine `vasi-bianchi.webp`, aspect-ratio 4/3, radius 16px
+- Destra: eyebrow "Chi siamo", h2 "Specialisti nella fornitura di vasi professionali", 2 paragrafi, lista `.facts` con 3 item (bullet quadrato accent)
+
+### 4.3 Sezione Valori
+
+Grid 4 colonne `.values` con 4 card:
+- Ampio assortimento / Qualità garantita / Consegna veloce / Supporto dedicato
+- Ogni card: icona SVG (20px, bordo, radius 10px), h3, p
+
+### 4.4 Banda Numeri (`.stats-band`)
+
+Sfondo scuro `oklch(25% 0.02 60)`, testo chiaro:
+- 1995 / 2000+ / 40+
+- Numero grande serif (clamp 48–84px), label sotto
+
+### 4.5 Collezioni (`#collezioni`)
+
+Grid 3 colonne `.grid-3` con 6 card `.linea-card`:
+- Cesti e Intrecci, Cotto da interno, Cotto da esterno, Metallo, Fiberstone, Marchi rivenduti
+- Ogni card: immagine 16/10, tipo (mono uppercase accent), h3, p
+
+### 4.6 Marchi rivenduti
+
+Layout orizzontale `.brands` con 2 card:
+- Pottery Pots, Capi Europe
+- Immagine 56px + testo con bordo sinistro
+
+### 4.7 Accesso B2B (`#accesso`)
+
+Card grande `.access` con griglia 2 colonne:
+- Sinistra: eyebrow "Area riservata", h2 "Richiedi l'accesso al portale B2B", paragrafo, 3 step numerati (counter CSS)
+- Destra: form `.access-form` con campi: Ragione sociale*, P.IVA*, Codice fiscale, Referente*, Tipo attività (select), Email*, Telefono, Comune/Provincia, Messaggio (textarea), checkbox privacy*, bottone "Invia richiesta"
+- Form dimostrativo: al submit mostra `.form-ok` ("Grazie! La tua richiesta è stata registrata...")
+
+### 4.8 Contatti (`#contatti`)
+
+Griglia 2 colonne:
+- Sinistra: eyebrow "Contatti", h2 "Come possiamo aiutarti?", lead
+- Destra: lista con 5 item (Sede, Telefono, Cellulare, Email, Social) con label mono a sinistra
+
+### 4.9 Footer
+
+```html
+<footer class="site-foot">
+  <!-- 4 colonli: brand, navigazione, documenti, contatti -->
+  <!-- bottom: copyright + credit -->
+</footer>
 ```
 
-`next.config.js` chiavi:
+- Brand: logo + descrizione
+- Navigazione: Home, Azienda, Catalogo, **Shop B2B** (link esterno), Contatti
+- Documenti: Privacy Policy, Cookie Policy (placeholder)
+- Contatti: telefono, email, link accesso
+- Bottom: © 2026 Luis S.r.l. · Via F. Bellafino 28/30, Bergamo · C.F. e P. IVA 04253020160 | Realizzato da Ugo Volpato AI Consultant
+
+---
+
+## 5. Pagina Catalogo (catalogo.html)
+
+### 5.1 Banner vetrina
+
+Banda chiara `accent-soft`: "Vetrina pubblica: prezzi, disponibilità e ordini sono riservati ai rivenditori registrati." + link "Richiedi l'accesso →"
+
+### 5.2 Toolbar
+
+- Input ricerca (`#cerca`): filtra per nome, codice, linea (match su `textContent` lowercase)
+- Chip filtro (`#chips`): Tutti, Cesti e Intrecci, Cotto da interno, Cotto da esterno, Metallo, Fiberstone, Marchi rivenduti
+- Conteggio (`#conta`): "N prodotti"
+
+### 5.3 Griglia prodotti
+
+Grid 3 colonne `.product-grid` con 9 card `.product-card`. Ogni card:
+- Immagine prodotto (4/3)
+- Tipo (mono uppercase accent)
+- Nome prodotto
+- Descrizione breve
+- Lista varianti: codice mono + descrizione + dimensioni
+- Footer: "N varianti" + link "Prezzi riservati →"
+
+**Nessun prezzo, nessun carrello, nessuna disponibilità.**
+
+### 5.4 Empty state
+
+`#vuoto`: "Nessun prodotto trovato. Prova con un altro termine o cambia categoria."
+
+### 5.5 CTA finale
+
+Banda scura: "Vuoi vedere i tuoi prezzi e ordinare online?" + bottone "Richiedi l'accesso B2B"
+
+---
+
+## 6. Interazioni JS
+
+### 6.1 Scroll reveal
+
 ```js
-const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
-  images: {
-    unoptimized: true,           // nginx serve le immagini
-    remotePatterns: [{ hostname: 'api.luisbg.it' }], // se immagini da backend
-  },
-  // niente rewrites, niente middleware auth
-};
-module.exports = nextConfig;
+// Aggiungi classe 'has-js' a <html> subito
+// Tutti gli elementi .reveal e .reveal-img sono hidden (opacity 0, translateY 26px)
+// IntersectionObserver li osserva e aggiunge .is-in quando entrano nel viewport
+// Con prefers-reduced-motion: tutti visibili subito, nessuna animazione
 ```
 
-**Nginx snippet (aggiungere a config esistente):**
-```nginx
-server {
-  listen 443 ssl http2;
-  server_name www.luisbg.it;
-  root /var/www/vetrina/out;
-  index index.html;
+- `.reveal`: fade + slide up 26px, durata 0.7s, stagger con `--d` delay
+- `.reveal-img`: fade + slide up + scale(0.97→1), durata 0.9s
+- Hero: zoom lento immagine (scale 1.09→1, 16s), testo a cascata (delay 0.1–0.58s)
 
-  # static assets long cache
-  location ~* \.(js|css|png|jpg|jpeg|webp|avif|woff2)$ {
-    expires 1y; add_header Cache-Control "public, immutable";
-  }
+### 6.2 Form accesso
 
-  # HTML no-cache (ISR non c'è, ma per sicurezza)
-  location / { try_files $uri $uri/ /index.html; }
-}
+- Submit prevenuto, validazione HTML5 (`required`)
+- Se valido: mostra `.form-ok`, disabilita bottone
+- Nessuna chiamata server (dimostrativo)
 
-server {
-  listen 443 ssl http2;
-  server_name shop.luisbg.it;
-  location / { proxy_pass http://127.0.0.1:3000; ... }  # B2B esistente
-}
-```
+### 6.3 Filtro catalogo
+
+- Click su chip: imposta categoria, aggiorna `.active`, filtra card per `data-k`
+- Input ricerca: filtra per `textContent` lowercase match
+- Entrambi insieme (AND)
+- Aggiorna conteggio e empty state
 
 ---
 
-## 6. SEO (non negoziabile)
+## 7. Asset immagini
 
-- **Meta tag** per pagina: `title`, `description`, `og:*`, `twitter:*`, `canonical`
-- **JSON-LD**: `Organization`, `WebSite`, `Product` (su schede), `BreadcrumbList`
-- **Sitemap.xml** + `robots.txt` generati al build (`next-sitemap`)
-- **Core Web Vitals target**: LCP ≤ 2.5s, INP ≤ 200ms, CLS < 0.1 (budget JS ≈ 150KB gz)
-- **Immagini**: `PositionedImage` con `width`/`height` dichiarati, `loading="lazy"` sotto piega, formati moderni (webp/avif via backend o `next/image` `unoptimized`)
-- **Niente JS blocking** above-the-fold; font `font-display: swap`
+Tutte in `frontend/public/images/b2b/` (o copiate nel progetto):
 
----
+| File | Uso |
+|------|-----|
+| `logo.webp` | Navbar + footer |
+| `img-tre-vasi.png` | Hero home (sfondo full-bleed) |
+| `vasi-bianchi.webp` | Sezione Azienda |
+| `catalogo-cotto-esterni.webp` | Card Cotto esterno + catalogo |
+| `catalogo-cotto-interni.webp` | Card Cotto interno + catalogo |
+| `catalogo-cesti.webp` | Card Cesti + catalogo |
+| `catalogo-metallo.webp` | Card Metallo + catalogo |
+| `catalogo-fiberstone.webp` | Card Fiberstone + catalogo |
+| `catalogo-pottery-pots.webp` | Card Marchi + brand Pottery Pots + catalogo |
+| `catalogo-capi-europe.webp` | Brand Capi Europe + catalogo |
 
-## 7. Piano a fasi
-
-| Fase | Contenuto | Stima |
-|---|---|---|
-| **1 — Scaffold** | `frontend-vetrina/` con config, layout, globals.css, componenti UI copiati | 1–2 gg |
-| **2 — Home + Azienda + Contatti** | pagine statiche marketing, form contatti (emailjs o API) | 1–2 gg |
-| **3 — Catalogo read-only** | lista famiglie → scheda articolo → varianti con immagini, prezzo "da" | 2–3 gg |
-| **4 — Richiedi accesso B2B** | form validato → `POST /api/auth/richiedi-accesso` → email admin + lead DB | 1 gg |
-| **5 — SEO + performance** | sitemap, JSON-LD, meta, CWV audit, compressione, cache headers | 1–2 gg |
-| **6 — Deploy** | nginx config, build statico, DNS, test mobile/desktop | 1 gg |
+**Vincolo**: copiare tutte le immagini nel progetto e referenziare con path relativi. Nessun hotlink.
 
 ---
 
-## 8. Riferimenti
+## 8. Responsive
 
-**Prototipi vetrina (riferimento visivo 1:1):**
-- `Prototipo Sito Vetrina/index.html` — home marketing (hero, CTA accesso, link catalogo)
-- `Prototipo Sito Vetrina/catalogo.html` — catalogo read-only (lista famiglie → griglia)
-- `Prototipo Sito Vetrina/styles.css` — design system vetrina (colori, tipografia, bottoni)
-
-**Prototipi B2B (design tokens e componenti condivisi):**
-- `01-landing.html` … `06-admin.html` — prototipi portale B2B (design tokens, componenti UI)
-- `brand-spec.md` — design system (colori OKLch terracotta, tipografia, spacing)
-
-**Codice esistente:**
-- `specifiche-b2b-luis.md` § catalogo — gerarchia Famiglia → Articolo → Variante
-- `backend/src/integrazione/integrazione.service.ts` — endpoint catalogo riutilizzabili
-- `frontend/components/ui/PositionedImage.tsx` — **copiare identico**
+| Breakpoint | Cambiamenti |
+|------------|-------------|
+| ≤ 980px | split/access/contatti → 1 colonna; values/grid-3/product-grid → 2 colonne; stats → 1 colonna; footer → 2 colonne |
+| ≤ 720px | nav-links nascosti; values/grid-3/product-grid/form-grid → 1 colonna; footer → 1 colonna; split-media sopra il testo |
 
 ---
 
-## 9. Decisioni aperte
+## 9. Checklist di parità (pre-consegna)
 
-| # | Punto | Default proposto |
-|---|---|---|
-| 1 | Immagini: servite da backend (`/api/img/...`) o CDN/locale? | **CDN/locale** (copiare asset in `public/images/` al deploy) |
-| 2 | Prezzi: mostrare "da € X" (min listino) o nascondere? | **mostrare min listino pubblico** (`LISTINO_BASE` o simile) |
-| 3 | Form "richiedi accesso": campi obbligatori? | azienda, email, telefono, messaggio → lead in `customer_event` + email |
-| 4 | Blog/News: serve? | **no v1**, solo pagine statiche |
-| 5 | Multilingua (EN/DE)? | **no v1**, solo italiano |
-
----
-
-> **Nota ponytail**: la vetrina è un *sito statico*, non un'app. Meno codice = meno bug, deploy più veloce, SEO migliore. Tutto ciò che non serve a vendere (carrello, auth, dashboard) **non esiste** in questa cartella.
+- [ ] 2 pagine HTML (index + catalogo) + 1 CSS condiviso
+- [ ] Navbar sticky con logo, link, CTA bianca, link B2B esterno
+- [ ] Hero full-bleed con img-tre-vasi.png, veil scuro, 2 CTA
+- [ ] Azienda: split 2-col con immagine e facts
+- [ ] Valori: 4 card con icone SVG
+- [ ] Stats band scura con 3 numeri grandi
+- [ ] Collezioni: 6 card con immagini
+- [ ] Marchi: 2 card orizzontali
+- [ ] Accesso: form con tutti i campi, validazione, feedback
+- [ ] Contatti: lista 5 item con label mono
+- [ ] Footer: 4 colonne + bottom bar
+- [ ] Catalogo: banner, toolbar (ricerca+chip), 9 card prodotto con varianti, empty state, CTA
+- [ ] Scroll reveal con IntersectionObserver + prefers-reduced-motion
+- [ ] Form dimostrativo con feedback
+- [ ] Filtro catalogo funzionante (chip + ricerca)
+- [ ] Responsive 980px e 720px
+- [ ] Nessuna dipendenza esterna
+- [ ] Tutte le immagini locali, nessun hotlink
+- [ ] UTF-8, nessun carattere corrotto
