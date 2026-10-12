@@ -107,6 +107,20 @@ Google premia la velocità; su mobile è decisivo.
 - **Google Search Console**: query, impression, click, posizione, errori
   indicizzazione, Core Web Vitals. È lo strumento primario.
 - Analytics (GA4 o alternativa privacy-friendly) per il traffico organico.
+
+> **⚠ Decisione aperta (2026-10-13): strumento di analytics → banner cookie.**
+> Oggi il sito vetrina usa solo il cookie tecnico `lang`: **nessun banner** necessario (Linee guida
+> Garante 10/06/2021). La scelta dell'analytics cambia l'obbligo:
+>
+> | Scelta | Banner consenso | Note |
+> |---|---|---|
+> | Solo Search Console / Bing Webmaster | no | nessun cookie sul sito; basta per la SEO |
+> | Matomo self-hosted **senza cookie**, IP anonimizzati | no | equiparato ai cookie tecnici; dati in casa |
+> | Google Analytics 4 | **sì**, con "Accetta" e "Rifiuta" equivalenti; GA4 caricato **solo dopo** il consenso | dati USA, perdita dei visitatori che rifiutano |
+>
+> Quando si sceglie: implementare banner (se serve), aggiornare `/cookie` e `/privacy` della vetrina
+> (`frontend-vetrina/src/app/cookie|privacy`) e la sezione cookie dell'informativa B2B. Lo stesso vale
+> per YouTube/Maps/Google Fonts incorporati o pixel pubblicitari.
 - KPI: pagine indicizzate, keyword in top-10, richieste "accesso B2B" da
   organico.
 
