@@ -1,5 +1,5 @@
 @echo off
-title Luis B2B — Portale
+title Luis B2B ??? Portale
 cd /d "%~dp0"
 
 echo [1/2] Avvio backend (NestJS)...
