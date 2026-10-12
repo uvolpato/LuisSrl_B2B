@@ -17,7 +17,7 @@ Il prototipo `Prototipo Sito Vetrina/` è il **riferimento visivo e comportament
 | i18n | next-intl ^4.14.9 | Come il B2B (it/en) |
 | Backend | NestJS (monorepo `backend/`) | Condiviso col B2B |
 | Database | PostgreSQL + Prisma | Stesso DB del B2B |
-| Font | Geist Sans + Geist Mono (next/font) | Già configurati in `layout.tsx` |
+| Font | Font di sistema (stack del prototipo) | Geist rimosso: non usato dal design |
 
 **Dove vive il codice**: `frontend-vetrina/` (già esistente nel repo).
 
@@ -29,44 +29,42 @@ Il prototipo `Prototipo Sito Vetrina/` è il **riferimento visivo e comportament
 frontend-vetrina/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx              ← Root layout (font, metadata)
+│   │   ├── layout.tsx              ← Root layout: Header, Footer, Reveal, script has-js
 │   │   ├── page.tsx                ← Home page
-│   │   ├── catalogo/page.tsx       ← Catalogo vetrina
-│   │   ├── azienda/page.tsx        ← Azienda
-│   │   ├── contatti/page.tsx       ← Contatti
-│   │   └── richiedi-accesso/page.tsx ← Form accesso B2B
+│   │   ├── catalogo/page.tsx       ← Catalogo (server component, dati dal backend)
+│   │   ├── azienda/page.tsx        ← Riusa <Azienda />
+│   │   ├── contatti/page.tsx       ← Riusa <Contatti />
+│   │   └── richiedi-accesso/page.tsx ← Riusa <AccessoB2B />
 │   ├── components/
 │   │   ├── layout/
-│   │   │   ├── Header.tsx          ← Navbar (già esistente)
-│   │   │   └── Footer.tsx          ← Footer (già esistente)
+│   │   │   ├── Header.tsx          ← Navbar + hamburger ≤720px (client)
+│   │   │   └── Footer.tsx
 │   │   ├── home/
 │   │   │   ├── Hero.tsx
 │   │   │   ├── Azienda.tsx
 │   │   │   ├── Valori.tsx
 │   │   │   ├── StatsBand.tsx
-│   │   │   ├── Collezioni.tsx
+│   │   │   ├── Collezioni.tsx      ← Famiglie dal backend (server component)
 │   │   │   ├── Marchi.tsx
-│   │   │   ├── AccessoB2B.tsx
+│   │   │   ├── AccessoB2B.tsx      ← Form (client)
 │   │   │   └── Contatti.tsx
-│   │   ├── catalogo/
-│   │   │   ├── CatalogoGrid.tsx
-│   │   │   ├── ProductCard.tsx
-│   │   │   └── CatalogoFilter.tsx
 │   │   └── ui/
-│   │       ├── Button.tsx
-│   │       ├── Section.tsx
-│   │       └── Reveal.tsx          ← Wrapper animazione scroll
+│   │       └── Reveal.tsx          ← Observer scroll reveal globale (client)
 │   ├── styles/
-│   │   └── globals.css             ← Design token + classi base
+│   │   └── globals.css             ← = styles.css del prototipo + aggiunte marcate
 │   └── lib/
-│       ├── data.ts                 ← Dati prodotti/categorie (mock)
-│       └── constants.ts            ← Categorie, link, contatti
+│       └── api.ts                  ← Unico punto di accesso al backend (solo server)
 ├── public/
-│   └── images/                     ← Immagini sito vetrina
+│   └── images/vetrina/             ← Immagini statiche del sito
+├── next.config.mjs                 ← Security header + proxy solo /api/img
+├── .env.example                    ← BACKEND_INTERNAL_URL
 ├── package.json
 ├── tailwind.config.mjs
 └── tsconfig.json
 ```
+
+**Navigazione**: one-page come il prototipo (`/#azienda`, `/#collezioni`, `/#contatti`, `/#accesso`);
+le pagine `/azienda`, `/contatti`, `/richiedi-accesso` esistono e riusano gli stessi componenti.
 
 ---
 
@@ -95,7 +93,7 @@ frontend-vetrina/
 --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 ```
 
-In `layout.tsx` usare `next/font/google` con Geist per il body e un serif per il display.
+Nessun webfont: si usano gli stack di sistema del prototipo (identici al riferimento visivo).
 
 ### 3.3 Spacing e forme
 
@@ -142,8 +140,12 @@ In `layout.tsx` usare `next/font/google` con Geist per il body e un serif per il
 - 3 numeri grandi: 1995, 2000+, 40+
 
 #### Collezioni
-- Grid 3 colonne con 6 card: Cesti e Intrecci, Cotto da interno, Cotto da esterno, Metallo, Fiberstone, Marchi rivenduti
-- Ogni card: immagine 16/10, tipo mono uppercase, h3, p
+- **Dati reali**: le famiglie della pagina Famiglie del B2B (`GET /api/catalogo/pubblico/famiglie`, vedi §9)
+- Layout invariato: grid 3 colonne di `linea-card` (immagine 16/10, tipo mono uppercase "Collezione Luis", h3 = nome famiglia, p = descrizione se presente)
+- Immagine via `/api/img` (ridimensionamento backend, w=800); senza immagine → placeholder `--accent-soft`
+- Badge "AI" sulle immagini generate con AI (trasparenza AI Act, come nel B2B)
+- Click → `/catalogo?famiglia=<codice>`
+- Backend non raggiungibile → messaggio "Collezioni momentaneamente non disponibili."
 
 #### Marchi rivenduti
 - 2 card orizzontali: Pottery Pots, Capi Europe
@@ -160,19 +162,27 @@ In `layout.tsx` usare `next/font/google` con Geist per il body e un serif per il
 
 ### 4.2 Catalogo (`/catalogo`)
 
+Server component, dati da `GET /api/catalogo/pubblico/articoli` (vedi §9).
+
 - Banner vetrina: "Vetrina pubblica: prezzi, disponibilità e ordini sono riservati ai rivenditori registrati."
-- Toolbar: input ricerca + chip filtro (Tutti, Cesti, Cotto interno, Cotto esterno, Metallo, Fiberstone, Marchi)
-- Grid 3 colonne con 9 card prodotto
-- Ogni card: immagine, tipo, nome, descrizione, lista varianti (codice + descrizione + dimensioni), "N varianti" + "Prezzi riservati →"
-- **Nessun prezzo, nessun carrello**
-- Empty state: "Nessun prodotto trovato..."
+- Toolbar:
+  - ricerca = form GET (`?q=`, max 100 caratteri), mantiene la famiglia selezionata
+  - chip = "Tutti" + famiglie reali (`?famiglia=<codice>`), mantengono la ricerca
+- Conteggio "N prodotti" (totale lato server)
+- Grid 3 colonne, 24 articoli per pagina; paginazione "← Precedenti / Successivi →" (`?page=`)
+- Card: immagine copertina (+ badge AI), famiglia, nome, descrizione (max 3 righe), lista varianti attive (codice + descrizione + dimensioni "Ø.. H.."), "N varianti" + "Prezzi riservati →" (`/#accesso`)
+- **Nessun prezzo, sconto, disponibilità o carrello**
+- Empty state: "Nessun prodotto trovato. Prova con un altro termine o cambia categoria."
+- Backend non raggiungibile: "Catalogo momentaneamente non disponibile. Riprova tra qualche minuto."
 - CTA finale: "Vuoi vedere i tuoi prezzi e ordinare online?" + bottone
+- Filtri e ricerca funzionano senza JavaScript e sono condivisibili via URL
 
 ### 4.3 Navbar (Header)
 
 - Sticky top, blur backdrop, bordo inferiore
 - Logo 34px + link: Azienda, Collezioni, Catalogo, **B2B** (link esterno `https://shop.luisbg.it`), Contatti
 - CTA: "Richiedi accesso B2B" (bottone primario, scritta **bianca**)
+- ≤ 720px: link nascosti, bottone hamburger che apre il menu a tendina (aggiunta rispetto al prototipo)
 
 ### 4.4 Footer
 
@@ -194,38 +204,35 @@ Componente `Reveal.tsx` (client component):
 
 ### 5.2 Form accesso
 
-- Validazione HTML5 (`required`)
+- Validazione HTML5 (`required`, `checkValidity`/`reportValidity`)
 - Submit → mostra feedback di conferma, disabilita bottone
-- Nessuna chiamata server (dimostrativo) oppure POST al backend B2B
+- **Attualmente dimostrativo**: nessuna chiamata server (POST al backend B2B da fare quando esiste l'endpoint)
 
 ### 5.3 Filtro catalogo
 
-- Stato React: `filtro` (categoria) + `query` (ricerca)
-- Click chip → aggiorna categoria
-- Input ricerca → filtra per textContent
-- Aggiorna conteggio e empty state
+- Lato server, via query string: `famiglia`, `q`, `page`
+- Click chip → link con nuova famiglia (ricerca preservata)
+- Invio ricerca → form GET (famiglia preservata)
+- Ricerca del backend B2B: nome articolo, codice linea, codice variante, nome famiglia/raccolta
+  (non cerca nelle descrizioni: "vaso" non trova nulla, "LAKOTA" o "LU3161" sì)
 
 ---
 
 ## 6. Dati
 
-### 6.1 Prodotti catalogo (mock in `lib/data.ts`)
+### 6.1 Origine
 
-9 prodotti con varianti:
+| Dato | Fonte |
+|------|-------|
+| Famiglie (Collezioni, chip catalogo) | `GET /api/catalogo/pubblico/famiglie` |
+| Articoli e varianti (catalogo) | `GET /api/catalogo/pubblico/articoli` |
+| Immagini famiglie/articoli | `/api/img?p=...&w=800` (backend, proxato dalla vetrina) |
+| Testi home, contatti, marchi | statici nei componenti |
 
-| Prodotto | Categoria | Varianti |
-|----------|-----------|----------|
-| Vaso Rogers | Cotto da esterno | LU3161, LU3162, LU3163 |
-| Vaso Cotto Portoghese | Cotto da esterno | LU3050, LU3051, LU3052 |
-| Fioriera Colton | Cotto da interno | LU2789, LU2790, LU2791, LU2792 |
-| Vaso Lakota | Cotto da interno | LU2904, LU2905, LU2906 |
-| Cesto Pecos | Cesti e Intrecci | LU1520, LU1521, LU1522 |
-| Portavaso Missouri | Metallo | LU4402, LU4403, LU4404 |
-| Fioriera Argo | Fiberstone | LU5010, LU5011, LU5012 |
-| Urban Smooth | Marchi · Pottery Pots | PP-URB-01, PP-URB-02, PP-URB-03 |
-| Ball Smooth | Marchi · Capi Europe | CE-BAL-01, CE-BAL-02, CE-BAL-03 |
+Stessi criteri di visibilità del B2B: famiglie ATTIVE con almeno un articolo; articoli configurati,
+ATTIVI, famiglia ATTIVA; varianti non NASCOSTE. Cache 5 minuti (backend + `revalidate` Next).
 
-### 6.2 Immagini
+### 6.2 Immagini statiche
 
 Tutte in `frontend-vetrina/public/images/vetrina/`:
 
@@ -234,15 +241,9 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 | `logo.webp` | Header + footer |
 | `img-tre-vasi.png` | Hero home |
 | `vasi-bianchi.webp` | Sezione Azienda |
-| `catalogo-cotto-esterni.webp` | Card + catalogo |
-| `catalogo-cotto-interni.webp` | Card + catalogo |
-| `catalogo-cesti.webp` | Card + catalogo |
-| `catalogo-metallo.webp` | Card + catalogo |
-| `catalogo-fiberstone.webp` | Card + catalogo |
-| `catalogo-pottery-pots.webp` | Card + brand + catalogo |
-| `catalogo-capi-europe.webp` | Brand + catalogo |
-
-**Vincolo**: copiare tutte le immagini dal prototipo (`Prototipo Sito Vetrina/`) in `frontend-vetrina/public/images/vetrina/`.
+| `catalogo-pottery-pots.webp` | Card brand Pottery Pots |
+| `catalogo-capi-europe.webp` | Card brand Capi Europe |
+| `catalogo-*.webp` (altri) | Non più usati dopo il collegamento al backend; rimuovibili |
 
 ---
 
@@ -257,23 +258,60 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 
 ## 8. Checklist di parità (pre-consegna)
 
-- [ ] Next.js App Router + TypeScript + Tailwind CSS
-- [ ] Design token OKLch in globals.css
-- [ ] Navbar sticky con logo, link, CTA bianca, link B2B esterno
-- [ ] Hero full-bleed con img-tre-vasi.png, veil scuro, 2 CTA
-- [ ] Azienda: split 2-col con immagine e facts
-- [ ] Valori: 4 card con icone SVG
-- [ ] Stats band scura con 3 numeri grandi
-- [ ] Collezioni: 6 card con immagini
-- [ ] Marchi: 2 card orizzontali
-- [ ] Accesso: form con tutti i campi, validazione, feedback
-- [ ] Contatti: lista 5 item con label mono
-- [ ] Footer: 4 colonne + bottom bar
-- [ ] Catalogo: banner, toolbar (ricerca+chip), 9 card prodotto con varianti, empty state, CTA
-- [ ] Scroll reveal con IntersectionObserver + prefers-reduced-motion
-- [ ] Form dimostrativo con feedback
-- [ ] Filtro catalogo funzionante (chip + ricerca)
-- [ ] Responsive 980px e 720px
-- [ ] Tutte le immagini locali, nessun hotlink
+- [x] Next.js App Router + TypeScript + Tailwind CSS
+- [x] Design token OKLch in globals.css
+- [x] Navbar sticky con logo, link, CTA bianca, link B2B esterno, hamburger mobile
+- [x] Hero full-bleed con img-tre-vasi.png, veil scuro, 2 CTA
+- [x] Azienda: split 2-col con immagine e facts
+- [x] Valori: 4 card con icone SVG
+- [x] Stats band scura con 3 numeri grandi
+- [x] Collezioni: famiglie reali dal backend, layout card invariato, badge AI
+- [x] Marchi: 2 card orizzontali
+- [x] Accesso: form con tutti i campi, validazione, feedback
+- [x] Contatti: lista 5 item con label mono
+- [x] Footer: 4 colonne + bottom bar
+- [x] Catalogo: banner, toolbar (ricerca + chip famiglie), card con varianti dal backend, paginazione, empty state, CTA
+- [x] Scroll reveal con IntersectionObserver + prefers-reduced-motion
+- [x] Form dimostrativo con feedback
+- [x] Filtro catalogo funzionante (chip + ricerca, via URL)
+- [x] Responsive 980px e 720px
+- [x] Tutte le immagini locali o via backend, nessun hotlink
+- [ ] Form accesso collegato al backend
 - [ ] i18n next-intl (it/en)
-- [ ] Build Next.js senza errori
+- [ ] Build Next.js di produzione verificata
+
+---
+
+## 9. Backend e sicurezza
+
+### 9.1 Endpoint pubblici (in `backend/src/integrazione/catalogo-public.controller.ts`)
+
+Nessuna API del portale B2B è modificata: si aggiungono rotte di sola lettura che **riusano**
+le funzioni esistenti del service.
+
+| Endpoint | Riusa | Parametri accettati | Risposta |
+|----------|-------|---------------------|----------|
+| `GET /api/catalogo/pubblico/famiglie` | `getFamiglieCliente()` | — | codice, nome, descrizione, immagine, immagineAI |
+| `GET /api/catalogo/pubblico/articoli` | `getCatalogoPaginato()` | **solo** `page` (1–100), `famiglia` (max 50 car.), `q` (max 100 car.) | total, hasMore, articoli: codiceLinea, nome, descrizione, famiglia, img, imgAI, varianti (codice, descrizione, dimensioni) |
+
+- Mai esposti: prezzi, sconti, listini, giacenze/disponibilità, stato, campi interni.
+- `prezzoMin/Max`, `sort`, `codiceListino` e gli altri filtri del catalogo cliente **non** sono
+  raggiungibili (darebbero un oracolo sui prezzi riservati).
+- `Cache-Control: public, max-age=300`; rate limit globale del backend (100 req/min per IP).
+- Rotte dichiarate prima di `:codiceLinea` (anteprima `/p/`), che altrimenti le catturerebbe.
+
+### 9.2 Vetrina
+
+- Il browser **non** chiama l'API dati: fetch solo lato server (`lib/api.ts`), timeout 3s.
+- Validazione al confine delle risposte (tipi, campi whitelist); immagini accettate solo se
+  `/images/...` senza `..`.
+- Proxy (`next.config.mjs`) limitato a **`/api/img`**: login, carrello, ordini ecc. non sono
+  raggiungibili dal dominio vetrina (404).
+- Security header come il portale B2B (HSTS, X-Frame-Options, nosniff, Referrer-Policy, frame-ancestors).
+- Testi dal backend renderizzati da React (escape automatico).
+
+### 9.3 Configurazione
+
+| Variabile | Dove | Default |
+|-----------|------|---------|
+| `BACKEND_INTERNAL_URL` | `frontend-vetrina/.env` | `http://localhost:3001` |
