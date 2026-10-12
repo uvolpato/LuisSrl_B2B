@@ -28,8 +28,8 @@ export default async function Footer() {
           <div className='foot-col'>
             <h4>{t('documenti')}</h4>
             <ul>
-              <li><a href='#'>{t('privacy')}</a></li>
-              <li><a href='#'>{t('cookie')}</a></li>
+              <li><Link href='/privacy'>{t('privacy')}</Link></li>
+              <li><Link href='/cookie'>{t('cookie')}</Link></li>
             </ul>
           </div>
           <div className='foot-col'>

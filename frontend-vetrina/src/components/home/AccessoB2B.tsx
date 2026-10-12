@@ -82,7 +82,7 @@ export default function AccessoB2B() {
                 </div>
                 <label className='check' htmlFor='privacy'>
                   <input id='privacy' name='privacy' type='checkbox' required />
-                  <span>{t.rich('privacy', { link: (c) => <a href='#'>{c}</a> })} {req}</span>
+                  <span>{t.rich('privacy', { link: (c) => <a href='/privacy' target='_blank' rel='noopener'>{c}</a> })} {req}</span>
                 </label>
                 {/* Honeypot anti-spam: invisibile agli umani, i bot lo compilano. */}
                 <div className='hp' aria-hidden='true'>

@@ -283,6 +283,7 @@ Tutte in `frontend-vetrina/public/images/vetrina/`:
 - [x] Form accesso collegato al backend (lead salvato + mail a shop@)
 - [x] i18n next-intl (it/en): testi sito tradotti; dati catalogo dal backend restano in italiano
 - [x] Build Next.js di produzione verificata (`next build` + `next start -p 3002`)
+- [ ] Privacy Policy (`/privacy`) e Cookie Policy (`/cookie`): **bozze** it/en con punti `[DA CONFERMARE]` evidenziati, da validare (solo cookie tecnico `lang` → nessun banner)
 
 ---
 

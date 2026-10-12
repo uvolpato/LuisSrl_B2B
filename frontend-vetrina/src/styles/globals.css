@@ -380,3 +380,18 @@ a.chip { text-decoration: none; display: inline-block; }
   background: oklch(95% 0.04 30); border: 1px solid oklch(60% 0.15 30); color: oklch(42% 0.14 30);
   border-radius: 10px; padding: 12px 16px; font-size: 14px;
 }
+
+/* ── Pagine legali (Privacy / Cookie) ── */
+.legal .container { max-width: 820px; }
+.legal-meta { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
+.legal-body { margin-top: 36px; font-size: 15.5px; line-height: 1.65; }
+.legal-body h2 { font-size: 22px; margin: 36px 0 10px; }
+.legal-body h3 { font-size: 17px; margin: 18px 0 6px; }
+.legal-body ul { padding-left: 20px; }
+.legal-body li { margin: 6px 0; }
+.legal-note { font-style: italic; color: var(--muted); }
+.legal-todo { background: oklch(93% 0.08 85); color: inherit; padding: 0 3px; border-radius: 3px; }
+.legal-table-wrap { overflow-x: auto; }
+.legal-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+.legal-table th, .legal-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.legal-table th { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
