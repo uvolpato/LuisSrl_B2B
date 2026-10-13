@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { cartellaOrdiniIntegra, scriviXlsxAtomico } from '../common/xlsx';
 import {
   COLONNE_CLIENTI,
-  ETICHETTE_CLIENTI,
+  anagraficaDaLead,
   rigaCliente,
 } from './export-cliente';
 
@@ -44,8 +44,7 @@ export class ExportClienteService {
     try {
       await scriviXlsxAtomico(this.dir, file, [
         [...COLONNE_CLIENTI],
-        [...ETICHETTE_CLIENTI],
-        rigaCliente(lead),
+        rigaCliente(anagraficaDaLead(lead)),
       ]);
       await this.prisma.lead.update({
         where: { id: lead.id },

@@ -218,6 +218,15 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 > - Scrittura xlsx e cartella condivise con l'export ordini (`common/xlsx.ts`, nessuna duplicazione).
 > - Test: `export-cliente.spec.ts` (riga identica al modello). E2E: lead reale → BUONO → approva → file.
 >
+> **Tracciato aggiornato (2026-10-13)** — AGOMIR ha fornito il modello **Soggetti.xls** (sostituisce `cli.xlsx`):
+> 43 colonne `CLA_*`/`ILE_*`/`STA_*`, una riga di intestazione, file `.xlsx`. Nuove colonne usate:
+> `CLA_CLIEMAIL` (email referente), `CLA_CLIPECDEST` (PEC) e `CLA_CLICODDEST` (codice SDI), vuote
+> all'approvazione e compilate alla riesportazione dopo la conferma dei dati di fatturazione.
+> Valori fissi in `VALORI_FISSI` (`export-cliente.ts`) presi dall'esempio, con `CLA_CACCOD = CC01`:
+> **da confermare con AGOMIR** dopo un import di prova. `CLA_CODSTR` vuoto: Integra assegna il codice e
+> aggancia per P.IVA (anche alla riesportazione). `rigaCliente()` lavora su `AnagraficaIntegra`, riusabile
+> per la riesportazione dal cliente.
+>
 > **Conservazione (GDPR) (2026-10-13)** — `backend/src/leads/conservazione*.ts`: job notturno (03:30,
 > `LEAD_RETENTION_CRON`) che **anonimizza** i lead `SCARTATO` / `NUOVO` / `IN_VALUTAZIONE` più vecchi di
 > `LEAD_RETENTION_MESI` (default 12, da ultima decisione o creazione): azzera referente, email, telefono,
