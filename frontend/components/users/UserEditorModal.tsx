@@ -73,6 +73,22 @@ function Field({ label, full, children }: { label: string; full?: boolean; child
 
 
 
+/** Clienti nati dal sito vetrina: stato della conferma dei dati di fatturazione (SDI/PEC). */
+function BadgeFatturazione({ cliente }: { cliente: { datiFatturazioneConfermatiIl?: string | null } }) {
+  const il = cliente.datiFatturazioneConfermatiIl;
+  return il ? (
+    <Tooltip text={`Dati di fatturazione (SDI/PEC) confermati dal cliente il ${new Date(il).toLocaleString("it-IT")} e riesportati verso Integra.`}>
+      <span className="pill" style={{ cursor: "help", color: "var(--green)", borderColor: "var(--green)" }}>
+        Fatturazione confermata il {new Date(il).toLocaleDateString("it-IT")}
+      </span>
+    </Tooltip>
+  ) : (
+    <Tooltip text="Cliente arrivato dal sito vetrina: deve confermare i dati di fatturazione (SDI o PEC) prima del primo ordine.">
+      <span className="pill" style={{ cursor: "help", color: "var(--amber)", borderColor: "var(--amber)" }}>Fatturazione da confermare</span>
+    </Tooltip>
+  );
+}
+
 function RoField({ label, value, mono, full }: { label: string; value?: string | null; mono?: boolean; full?: boolean }) {
   return (
     <div className={`field${full ? " full" : ""}`}>
@@ -442,6 +458,7 @@ export default function UserEditorModal({
                 <span>P.IVA <span className="mono">{editing.partitaIva || "—"}</span></span>
               </div>
               <div className="badges">
+                {editing.daSitoVetrina && <BadgeFatturazione cliente={editing} />}
                 {dossier ? (
                   <>
                     <span className="pill solid" style={{ background: "var(--accent)" }}>{dossier.segmento}</span>
@@ -507,6 +524,20 @@ export default function UserEditorModal({
                   <RoField label="Email" value={editing.email} />
                   <RoField label="Telefono" value={editing.telefono} mono />
                   <RoField label="Lingua preferita" value={editing.preferredLanguage === "it" ? "Italiano" : "English"} />
+                  <div className="fsec-h">Fatturazione elettronica</div>
+                  <RoField label="Codice fiscale" value={editing.codiceFiscale} mono />
+                  <RoField label="Codice SDI" value={editing.codiceSdi} mono />
+                  <RoField label="PEC" value={editing.pec} />
+                  <RoField
+                    label="Dati di fatturazione"
+                    value={
+                      editing.datiFatturazioneConfermatiIl
+                        ? `Confermati dal cliente il ${new Date(editing.datiFatturazioneConfermatiIl).toLocaleDateString("it-IT")}`
+                        : editing.daSitoVetrina
+                          ? "Da confermare al primo ordine"
+                          : "Da gestionale"
+                    }
+                  />
                   <div className="fsec-h">Condizioni commerciali</div>
                   <RoField label="Pagamento" value={editing.codicePagamentoDescrizione || editing.codicePagamento} />
                   <RoField label="Fido" value={editing.fido != null ? `€ ${Number(editing.fido).toLocaleString("it-IT")}` : null} mono />

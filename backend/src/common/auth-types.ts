@@ -53,6 +53,12 @@ export interface CustomerProfile {
   codicePagamento?: string | null;
   codicePagamentoDescrizione?: string | null;
   invitatoAt?: Date | null;
+  /** Cliente nato da una richiesta d'accesso del sito vetrina */
+  daSitoVetrina?: boolean;
+  codiceFiscale?: string | null;
+  codiceSdi?: string | null;
+  pec?: string | null;
+  datiFatturazioneConfermatiIl?: Date | null;
   fido?: number | null;
   numOrdini?: number;
   numOrdiniAnno?: number;
@@ -80,6 +86,8 @@ export function toCustomerProfile(u: {
   codiceCliente?: string | null; codiceListino?: string | null;
   indirizzo?: string | null; cap?: string | null; citta?: string | null; provincia?: string | null;
   codicePagamento?: string | null; fido?: unknown; invitatoAt?: Date | null;
+  leadId?: number | null; codiceFiscale?: string | null; codiceSdi?: string | null; pec?: string | null;
+  datiFatturazioneConfermatiIl?: Date | null;
   createdAt: Date;
 }): CustomerProfile {
   return {
@@ -97,5 +105,11 @@ export function toCustomerProfile(u: {
     codicePagamento: u.codicePagamento ?? null,
     fido: u.fido != null ? Number(u.fido) : null,
     invitatoAt: u.invitatoAt ?? null,
+    // Fatturazione elettronica e provenienza dalla richiesta d'accesso del sito vetrina
+    daSitoVetrina: u.leadId != null,
+    codiceFiscale: u.codiceFiscale ?? null,
+    codiceSdi: u.codiceSdi ?? null,
+    pec: u.pec ?? null,
+    datiFatturazioneConfermatiIl: u.datiFatturazioneConfermatiIl ?? null,
   };
 }

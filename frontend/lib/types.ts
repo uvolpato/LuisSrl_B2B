@@ -45,6 +45,12 @@ export interface CustomerProfile {
   numOrdiniAnno?: number;
   invitatoAt?: string | null;
   ultimoAccesso?: string | null;
+  /** Cliente nato da una richiesta d'accesso del sito vetrina */
+  daSitoVetrina?: boolean;
+  codiceFiscale?: string | null;
+  codiceSdi?: string | null;
+  pec?: string | null;
+  datiFatturazioneConfermatiIl?: string | null;
 }
 
 export interface CustomerIntelligenceProfile {
