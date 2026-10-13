@@ -192,8 +192,8 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 >   valido ma non registrata → SCARTARE (VIES). Test: `indagine.spec.ts`.
 >
 > **Mail di conferma al richiedente (2026-10-12)** — subito dopo l'invio del form: "richiesta ricevuta,
-> risposta in 1–2 giorni lavorativi". Template **provvisori** `lead-conferma.html` / `lead-conferma-en.html`
-> (lingua del form), da sostituire col prototipo definitivo. Anti-abuso: max 1 conferma/24h per indirizzo
+> risposta in 1–2 giorni lavorativi". Template `lead-conferma.html` / `lead-conferma-en.html` (lingua del form)
+> dal prototipo `constlead-conferma.html`; oggetto "Richiesta accesso B2B ricevuta — <ragione sociale>". Anti-abuso: max 1 conferma/24h per indirizzo
 > (evento `conferma_saltata`), nessun testo libero del visitatore tranne il referente (escape).
 >
 > **Fase 3 completata (2026-10-12)** — `backend/src/leads/azioni*.ts`, `pagina-azione.ts`:

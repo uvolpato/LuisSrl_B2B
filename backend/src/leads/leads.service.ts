@@ -79,12 +79,7 @@ export class LeadsService {
       return;
     }
     try {
-      await this.mail.sendConfermaLead(
-        lead.email,
-        lead.referente,
-        lead.lingua,
-        lead.id,
-      );
+      await this.mail.sendConfermaLead(lead);
       await this.evento(lead.id, 'conferma_inviata');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

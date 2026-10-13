@@ -426,24 +426,46 @@ export class MailService {
    * L'indirizzo lo scrive chiunque nel form pubblico: niente testo libero del visitatore oltre al
    * nome del referente (con escape), cosi' il form non diventa un canale per spam verso terzi.
    */
-  async sendConfermaLead(to: string, referente: string, lingua: string, leadId: number): Promise<void> {
-    const en = lingua === 'en';
+  async sendConfermaLead(d: {
+    id: number;
+    createdAt: Date;
+    email: string;
+    referente: string;
+    ragioneSociale: string;
+    lingua: string;
+  }): Promise<void> {
+    const en = d.lingua === 'en';
     const tpl = (en && this.leggiTemplate('lead-conferma-en.html')) || this.leggiTemplate('lead-conferma.html');
     if (!tpl) throw new Error('Template lead-conferma.html non trovato');
+    // Testi scritti dal visitatore e spediti all'indirizzo che ha indicato: troncati e con escape.
+    const ragione = d.ragioneSociale.replace(/[\r\n]+/g, ' ').trim().slice(0, 80);
     const valori: Record<string, string> = {
-      REFERENTE: esc(referente.slice(0, 120)),
-      LEAD_ID: String(leadId),
+      REFERENTE: esc(d.referente.slice(0, 120)),
+      RAGIONE_SOCIALE: esc(ragione),
+      LEAD_ID: String(d.id),
+      DATA: esc(
+        d.createdAt
+          .toLocaleString('it-IT', {
+            timeZone: 'Europe/Rome',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+          .replace(',', ''),
+      ),
       DOMAIN: esc(this.domain),
     };
     const html = riempi(tpl, valori);
     await this.transporter.sendMail({
       from: this.config.get<string>('MAIL_ORDINI_FROM') || '"Luis S.r.l." <noreply@luissrl.it>',
-      to: this.resolveRecipient(to),
-      subject: en ? 'We have received your B2B access request — Luis S.r.l.' : 'Abbiamo ricevuto la tua richiesta di accesso B2B — Luis S.r.l.',
+      to: this.resolveRecipient(d.email),
+      subject: `${en ? 'B2B access request received' : 'Richiesta accesso B2B ricevuta'} — ${ragione}`,
       html,
       attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
     });
-    this.logger.log(`Mail conferma lead #${leadId} inviata`);
+    this.logger.log(`Mail conferma lead #${d.id} inviata`);
   }
 
   /** Segnala a shop@luisbg.it una richiesta di accesso B2B dal sito vetrina. Lancia in caso di errore. */
