@@ -141,7 +141,23 @@ Basata su riutilizzo **massimo** dell'esistente (backend + componenti UI).
 
 ---
 
-## 8. Prossimo passo
+## 8. Consuntivo al 14 ottobre 2026
+
+Misurato sulla cronologia git, con lo stesso metodo del consuntivo in `roadmap-b2b-luis.md`
+(sessioni con soglia di 2 h, 30 min per lato). È un minimo: non comprende riunioni, prove e
+attese.
+
+| Voce | Stimato (sopra) | Misurato | Stato |
+|---|---|---|---|
+| Sito vetrina | 10–11,5 gg | ~12 h | Fatto in intranet (`:3002`); messa online su `www.luisbg.it` da pianificare (~3 h) |
+| Qualifica lead (fasi 1–5) + area admin + fatturazione elettronica | 9–13 gg | ~9 h | Fatto; in attesa del collaudo AGOMIR sull'import (~2 h) |
+
+Il divario rispetto alla stima nasce dal fatto che la stima era scritta per uno sviluppo
+tradizionale (vedi il cash flow "se team esterno"). Con lo sviluppo assistito e il riuso di
+backend e componenti del B2B, le ore effettive sono state una frazione di quella stima.
+Fatturazione a ore effettive: l'importo è già compreso nel consuntivo della roadmap.
+
+## 9. Prossimo passo
 
 1. Approvi la stima?
 2. Creo lo scaffold `frontend-vetrina/` (Fase 1) → commit + push

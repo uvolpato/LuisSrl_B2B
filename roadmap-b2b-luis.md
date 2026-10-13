@@ -555,8 +555,9 @@ conferma; può esportarlo o condividerlo.
 | | **Totale perimetro** | | **~262 h** |
 
 Le ore indicative servono a **dimensionare il perimetro** in fase di pianificazione. La
-fatturazione è a ore effettive sulle due tariffe: a oggi il consuntivo reale è di 215 h e
-il residuo stimato di 96 h, per un totale di ~311 h: il dimensionamento iniziale era ottimistico.
+fatturazione è a ore effettive sulle due tariffe: al 14 ottobre il consuntivo reale è di 258 h e
+il residuo stimato di ~124 h, per un totale di ~382 h. Il dimensionamento iniziale era ottimistico,
+e nel frattempo il perimetro si è allargato (sito vetrina, qualifica lead, fatturazione elettronica).
 
 ### Consuntivo ore (al 9 settembre 2026)
 
@@ -596,6 +597,37 @@ risultante, **22/78**, è applicato alle ore misurate.
 > finisce in un commit: restano fuori analisi e progettazione, prove in produzione,
 > deploy, scambi con AGOMIR, ricerca sui tracciati e tutto ciò che non produce codice.
 
+#### Aggiornamento al 14 ottobre 2026
+
+Stesso metodo, applicato al periodo 10 settembre → 14 ottobre. Il consuntivo al 9 settembre resta
+quello sopra; si somma solo il periodo nuovo. Sono inclusi anche i 16 commit della vetrina fatti
+nel suo repository di partenza, prima che fosse spostata in questo.
+
+| Misura (10/09 → 14/10) | Valore |
+|------------------------|--------|
+| Commit | 115 (99 in questo repo + 16 nel repo iniziale della vetrina) |
+| Giornate con attività | 10 |
+| Sessioni di lavoro | 22 |
+| Ore misurate | ~46,5 h |
+| di cui **B2C Kappa Design** (esclusa: progetto separato, vedi `SEO-ROADMAP.md`) | −3,6 h |
+| **Ore Luis B2B del periodo** | **~43 h** (analisi ~13 h · sviluppo ~30 h) |
+
+Ripartizione per area (tempo di ogni sessione diviso tra i commit; il metodo "parti uguali tra le
+aree toccate" dà valori entro un'ora):
+
+| Area | Ore | Note |
+|------|-----|------|
+| Perimetro B2B: email transazionali restyling e notifica ordine a shop@, checkout, coupon, sync, box | ~22 h | Rifiniture e richieste in corso d'opera sui blocchi esistenti |
+| Sito vetrina `www.luisbg.it` | ~12 h | Fuori perimetro |
+| Qualifica lead AI, area admin "Richieste accesso", fatturazione elettronica | ~8–9 h | Fuori perimetro |
+| Specifica API dropshipping | ~1 h | Fuori perimetro (solo analisi) |
+
+| **Consuntivo complessivo al 14 ottobre** | Ore |
+|------------------------------------------|-----|
+| Fino al 9 settembre | 215 h |
+| 10 settembre → 14 ottobre | 43 h |
+| **Totale** | **~258 h** (analisi ~60 h · sviluppo ~198 h) |
+
 ### Avanzamento economico
 
 | Stato | Blocchi | Peso sul perimetro |
@@ -617,6 +649,10 @@ per voce è di **38 ore**.
 | 13 Box | CRUD promozioni · tracciamento click per box | 14 |
 | | **Totale residuo** | **38 h** |
 
+Al 14 ottobre il residuo è **invariato**: tra il 10 settembre e il 14 ottobre il lavoro è andato su
+vetrina, qualifica lead e rifiniture. Due bug dei box (slider dei pesi, vincolo "solo articoli già
+acquistati") sono stati chiusi il 14/10, ma non facevano parte di questo residuo.
+
 ### Lavoro fuori perimetro (non previsto nel preventivo)
 
 Sviluppato su richiesta in corso d'opera e non riconducibile a nessun blocco. Il preventivo
@@ -633,6 +669,11 @@ a 15 blocchi non contiene nulla di tutto questo:
 | **Log eventi unificato** | `event_log` e `anomalia_log` unificati in `audit_log`, intercettore di accesso, `requestId` di correlazione, sezione "Log eventi" in amministrazione |
 | **Pagina di manutenzione** | Pagina di cortesia con logo mostrata durante i deploy, con rientro automatico al termine |
 | **Analisi sistema agentico** | `SISTEMA-AGENTICO-LUIS.md`: analisi e piano per un sistema multi-agente che elabori clienti, ordini, carrelli, mercato e prezzi in continuo |
+| **Sito vetrina** *(ott. 2026)* | `frontend-vetrina`: home, azienda, contatti, collezioni dalle famiglie del B2B, catalogo pubblico senza prezzi collegato al backend, zoom immagini, italiano/inglese, pagina di manutenzione, servizio Windows e Caddy (`:3002` in intranet). Privacy e cookie policy |
+| **Qualifica lead con AI** *(ott. 2026)* | Form "Richiedi accesso" con consenso privacy e IP reale, mail di conferma al cliente (it/en), indagine AI (VIES + ricerca web, verdetto calcolato nel codice), mail a shop@ con pulsanti Approva/Verifica/Scarta firmati, promemoria dopo 6 giorni, anonimizzazione a 12 mesi, export anagrafica `.xlsx` sul tracciato AGOMIR Soggetti, aggancio automatico dopo l'import e invito al portale |
+| **Fatturazione elettronica** *(ott. 2026)* | Conferma obbligatoria di SDI/PEC/C.F. al primo ordine per i clienti dalla vetrina, riesportazione verso Integra, campi e badge nella scheda cliente admin |
+| **Area admin "Richieste accesso"** *(ott. 2026)* | Elenco con KPI, filtri, ricerca e ordinamento lato server, pannello di dettaglio con report AI e storico, decisioni dall'area admin, contatore nel menu |
+| **Specifica API dropshipping** *(ott. 2026)* | Solo analisi: API per partner terzi allineata a OpenDrop v1 |
 
 ### Quotazione del fuori perimetro
 
@@ -659,9 +700,14 @@ complessità di quanto effettivamente consegnato.
 | Uso e costi AI | 1 – 6 h | **5 h** | €295 |
 | Log eventi unificato | 1 – 3 h | **5 h** | €295 |
 | Pagina manutenzione | 1 – 1,5 h | **2 h** | €118 |
-| **Totale fuori perimetro** | 13 – 44 h | **~56 h** | **~€3.300** |
+| Sito vetrina *(ott.)* | 12 – 12,5 h | **12 h** | €708 |
+| Qualifica lead, richieste accesso, fatturazione elettronica *(ott.)* | 8 – 9 h | **9 h** | €531 |
+| Specifica API dropshipping *(ott.)* | 0,6 – 1 h | **1 h** | €59 |
+| **Totale fuori perimetro** | 34 – 67 h | **~78 h** | **~€4.600** |
 
-Intervalli e stime riportati alla base di 215 h.
+Intervalli e stime delle prime sette voci riportati alla base di 215 h. Le tre voci di ottobre
+riportano la misura senza correzioni: sono un minimo, perché la vetrina e la qualifica lead sono
+state sviluppate in sessioni condivise tra loro e con le rifiniture del B2B.
 
 Importi alla media effettiva di €59/h (ripartizione 22/78 tra analisi e sviluppo).
 
@@ -674,7 +720,7 @@ traccia nei file. Per le spese di spedizione, invece, la misura alta è attendib
 isolata, con prototipo e specifica propri.
 
 Con la stima corretta il perimetro base scende a ~159 h: il **26% del consuntivo** è lavoro
-che il preventivo non prevedeva.
+che il preventivo non prevedeva. Al 14 ottobre il fuori perimetro sale a ~78 h su 258 h: il **30%**.
 
 > **Non si sommano al consuntivo: ne fanno parte.** Con la fatturazione a ore effettive queste
 > 56 h sono già dentro le 215 h e quindi già dentro i €12.630. La tabella serve a rendere
@@ -707,9 +753,12 @@ l'analisi pesa il 22% delle ore.
 
 | Voce | Ore | Tariffa | Importo |
 |------|-----|---------|---------|
-| Analisi | 47 h | €90 | €4.230 |
-| Sviluppo | 168 h | €50 | €8.400 |
-| **Totale maturato** | **215 h** | | **€12.630** |
+| Analisi | 60 h | €90 | €5.400 |
+| Sviluppo | 198 h | €50 | €9.900 |
+| **Totale maturato al 14 ottobre** | **258 h** | | **€15.300** |
+
+Al 9 settembre il maturato era di €12.630 (215 h: 47 h di analisi, 168 h di sviluppo). Il periodo
+dal 10 settembre al 14 ottobre aggiunge 43 h (13 di analisi, 30 di sviluppo), pari a €2.670.
 
 A cui vanno aggiunte le ore fuori da git (riunioni, analisi con il cliente, prove in
 produzione): da quantificare su dichiarazione, non sono stimabili dal codice.
@@ -724,18 +773,35 @@ ancora avviati (collaudo/formazione e assistente commerciale), stimati al ritmo 
 |------|-------------|
 | Residuo blocchi 7, 8, 10, 12, 13 | 38 h |
 | Blocchi 11 e 14 (8 giornate preventivate) | ~58 h |
-| **Totale** | **~96 h** |
+| Nuove attività aperte (dettaglio sotto) | ~28 h |
+| **Totale** | **~124 h** |
 
-Con la stessa ripartizione 22/78 tra analisi e sviluppo:
+Nuove attività aperte al 14 ottobre, emerse dopo il preventivo (stime al ritmo osservato):
+
+| Attività | Ore | Stato |
+|----------|-----|-------|
+| Collaudo dell'import AGOMIR del file anagrafica e correzioni al tracciato | 2 h | In attesa di AGOMIR |
+| Informativa privacy B2B al primo accesso | 3 h | In attesa della validazione del testo |
+| Modifica dei dati di fatturazione dal profilo cliente, con riesportazione | 3 h | Da fare |
+| Messa online della vetrina su `www.luisbg.it` (DNS, certificato, redirect, verifiche SEO) | 3 h | Da pianificare |
+| Finestra di configurazione articolo usabile da telefono | 4 h | Rimandata |
+| Inglese come seconda lingua di tutto il portale B2B | 12 h | Da fare |
+| Verifica in produzione dei box casuali | 1 h | Da fare |
+| *Statistiche visite vetrina con banner cookie (solo se deciso)* | *+4 h* | *Decisione aperta, non inclusa* |
+| **Totale** | **~28 h** | |
+
+Con la ripartizione 22/78 tra analisi e sviluppo:
 
 | Voce | Ore stimate | Tariffa | Importo |
 |------|-------------|---------|---------|
-| Analisi | ~21 h | €90 | €1.890 |
-| Sviluppo | ~75 h | €50 | €3.750 |
-| **Totale da completare** | **~96 h** | | **~€5.640** |
+| Analisi | ~27 h | €90 | €2.430 |
+| Sviluppo | ~97 h | €50 | €4.850 |
+| **Totale da completare** | **~124 h** | | **~€7.280** |
 
-**Totale progetto stimato: ~€18.300** (215 h maturate + ~96 h da completare), al netto delle
-ore non tracciate da git.
+**Totale progetto stimato: ~€22.600** (258 h maturate + ~124 h da completare), al netto delle
+ore non tracciate da git. Al 9 settembre la stima era di ~€18.300: la differenza viene quasi tutta
+dal lavoro fuori perimetro richiesto dopo (vetrina, qualifica lead, fatturazione elettronica,
+inglese).
 
 > I giorni indicati nei blocchi restano il riferimento per **dimensionare il perimetro**, non
 > per fatturare: la fatturazione è a ore effettive sulle due tariffe.
@@ -753,17 +819,18 @@ A titolo informativo, il benchmark di mercato Italia 2026 per un profilo full-st
 
 | Figura | Tariffa oraria | Su questo progetto |
 |--------|---------------|--------------------|
-| **Consulente senior diretto** | €56–69/h | €20.600–25.400 |
-| **Agenzia di sviluppo** | €75–100/h | €27.600–36.800 |
-| **Tariffe applicate** | **€90/h analisi · €50/h sviluppo** | **~€15.000** |
+| **Consulente senior diretto** | €56–69/h | €25.300–31.200 |
+| **Agenzia di sviluppo** | €75–100/h | €33.900–45.200 |
+| **Tariffe applicate** | **€90/h analisi · €50/h sviluppo** | **~€22.600** |
 
-Il confronto assume che senza assistenza AI lo stesso perimetro richieda le ~368 ore che la
-pianificazione iniziale stimava, contro le ~311 ore di questo progetto. È
-l'assunzione che regge il paragone: a parità di ore le tariffe sarebbero simili a quelle di
-un consulente senior: il vantaggio non sta nel prezzo orario, sta nel numero di ore.
+Il confronto assume che senza assistenza AI servano circa il 18% di ore in più: è il rapporto tra
+le ~368 ore che la pianificazione iniziale stimava e le ~311 ore previste a settembre. Applicato
+alle ~382 ore del perimetro attuale, dà ~452 ore. È l'assunzione che regge il paragone: a parità
+di ore le tariffe sarebbero simili a quelle di un consulente senior. Il vantaggio non sta nel
+prezzo orario, sta nel numero di ore.
 
-Sul consuntivo a oggi la **media effettiva è €59/h** (€12.630 su 215 h), perché l'analisi
-pesa il 22% delle ore. È dentro la fascia di un consulente senior diretto e ben sotto quella
+Sul consuntivo al 14 ottobre la **media effettiva è €59/h** (€15.300 su 258 h), perché l'analisi
+pesa il 23% delle ore. È dentro la fascia di un consulente senior diretto e ben sotto quella
 di un'agenzia, ma il confronto onesto non è sulla tariffa: è sul **totale**. Il vantaggio non
 viene dal prezzo orario, viene dalle ore — lo sviluppo assistito consuma 7,2 h per giornata
 preventivata invece di 8.
@@ -782,4 +849,9 @@ parte dove l'assistenza AI incide di più. Pagare meno l'ora dove la produttivit
 | Dominio + DNS | ~€2 |
 | API immagini DALL·E / SD (~25 foto/mese) | ~€9 |
 | Backup esterno (opzionale) | ~€5 |
+| Indagine AI sulle richieste di accesso (Gemini + ricerca web) | trascurabile (pochi centesimi a richiesta, con il volume di richieste previsto) |
+| Sito vetrina | €0 (stesso server; dominio `luisbg.it` già esistente) |
 | **Totale/mese** | **~€38-43** |
+
+I costi AI reali di produzione si leggono in Amministrazione → **Costi AI**: ogni chiamata è
+registrata con token e costo stimato. Il database di sviluppo non è indicativo.
