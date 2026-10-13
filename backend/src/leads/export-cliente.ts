@@ -107,6 +107,11 @@ export interface AnagraficaIntegra {
 const up = (s: string | null | undefined) =>
   (s ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
 const t = (s: string | null | undefined) => (s ?? '').trim();
+/** Solo clienti italiani: P.IVA sempre come 11 cifre (Integra puo' averla con prefisso IT). */
+const piva = (s: string | null | undefined) => {
+  const cifre = (s ?? '').replace(/\D/g, '');
+  return cifre.length === 11 ? cifre : t(s);
+};
 
 /** "VIA STATALE 47" → "VIA STATALE, 47" (come le anagrafiche esistenti in Integra). */
 export function formattaIndirizzo(s: string | null | undefined): string {
@@ -124,8 +129,8 @@ export function rigaCliente(a: AnagraficaIntegra): string[] {
     CLA_CLICAP: t(a.cap),
     CLA_CLICITTA: up(a.citta),
     CLA_CLIPROV: up(a.provincia),
-    CLA_CLIPIVA: t(a.partitaIva),
-    CLA_CLICFISC: up(a.codiceFiscale) || t(a.partitaIva),
+    CLA_CLIPIVA: piva(a.partitaIva),
+    CLA_CLICFISC: up(a.codiceFiscale) || piva(a.partitaIva),
     CLA_CLITEL: t(a.telefono),
     CLA_CLIEMAIL: t(a.email).toLowerCase(),
     CLA_CLIPECDEST: t(a.pec).toLowerCase(),
@@ -146,5 +151,37 @@ export function anagraficaDaLead(lead: Lead): AnagraficaIntegra {
     provincia: lead.sedeProvincia,
     telefono: lead.telefono,
     email: lead.email,
+  };
+}
+
+/** Anagrafica di un cliente gia' in Integra (riesportazione dopo la conferma dei dati di fatturazione). */
+export function anagraficaDaCliente(c: {
+  codiceCliente: string | null;
+  ragioneSociale: string | null;
+  nome: string;
+  partitaIva: string | null;
+  codiceFiscale: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  telefono: string | null;
+  email: string;
+  pec: string | null;
+  codiceSdi: string | null;
+}): AnagraficaIntegra {
+  return {
+    codiceCliente: c.codiceCliente,
+    ragioneSociale: c.ragioneSociale || c.nome,
+    partitaIva: c.partitaIva ?? '',
+    codiceFiscale: c.codiceFiscale,
+    indirizzo: c.indirizzo,
+    cap: c.cap,
+    citta: c.citta,
+    provincia: c.provincia,
+    telefono: c.telefono,
+    email: c.email,
+    pec: c.pec,
+    sdi: c.codiceSdi,
   };
 }

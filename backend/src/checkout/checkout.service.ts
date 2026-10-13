@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { confermaRichiesta } from './fatturazione';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { EventsService } from '../events/events.service';
@@ -283,6 +284,8 @@ export class CheckoutService {
     if (items.length === 0) throw new BadRequestException('Nessun articolo nel carrello');
 
     const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
+    // Clienti nati da una richiesta vetrina: dati di fatturazione (SDI/PEC) confermati prima del primo ordine.
+    if (customer && confermaRichiesta(customer)) throw new ConflictException('fatturazione.da_confermare');
     const allowNewAddress = (await this.getConfigFlag('checkout_allow_new_address')) === true;
     const modalita = dto.modalitaConsegna ?? 'SPEDIZIONE';
 

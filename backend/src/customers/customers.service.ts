@@ -251,7 +251,8 @@ export class CustomersService {
   /** Invia (o reinvia) l'invito B2B: genera password temporanea, la invia via email
    *  e marca invitatoAt. La password compare SOLO nell'email, mai nella risposta API. */
   async invita(
-    actorId: number,
+    /** null = sistema (es. invito automatico dei clienti nati da una richiesta vetrina) */
+    actorId: number | null,
     customerId: number,
     ip: string | undefined,
   ): Promise<CustomerProfile> {

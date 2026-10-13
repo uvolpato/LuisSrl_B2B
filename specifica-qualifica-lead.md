@@ -227,6 +227,26 @@ v1 = report HTML inline + JSON scaricabile, PDF solo se richiesto).
 > aggancia per P.IVA (anche alla riesportazione). `rigaCliente()` lavora su `AnagraficaIntegra`, riusabile
 > per la riesportazione dal cliente.
 >
+> **Fase 5 + dati di fatturazione (2026-10-13)**
+> - `backend/src/leads/aggancio.service.ts` — job ogni 15 min (`LEAD_AGGANCIO_CRON`): lead `APPROVATO` senza
+>   cliente → cerca la P.IVA (solo cifre) in `integra_clienti` → `importaClienti()` (riuso) → `customers.lead_id`
+>   → `CustomersService.invita(null, …)` (riuso, attore di sistema) solo se non ancora invitato. Eventi
+>   `cliente_collegato`, `invito_inviato` / `invito_errore`, `aggancio_senza_email` (una volta), `aggancio_conflitto`.
+> - Cliente: nuove colonne `lead_id` (unica), `codice_fiscale`, `codice_sdi`, `pec`, `dati_fatturazione_confermati_il`
+>   (migration additiva `20261013010000_add_customer_lead_fatturazione`).
+> - `GET/PUT /api/checkout/fatturazione` (`checkout/fatturazione*.ts`): DTO validato; SDI 7 caratteri **o** PEC,
+>   SDI `0000000` solo con PEC; **P.IVA non modificabile** (aggancio Integra). Alla conferma/modifica:
+>   **riesportazione** `cliente-<codice>-<data>.xlsx` con `CLA_CODSTR`, SDI, PEC (stesso tracciato Soggetti).
+> - Blocco server: `POST /checkout/conferma` → 409 `fatturazione.da_confermare` per i clienti con `lead_id` non
+>   ancora confermati; i clienti importati con il processo esistente non sono toccati.
+> - Frontend B2B: sezione "Dati di fatturazione" in testa al checkout (`components/area/FatturazioneCheckout.tsx`),
+>   pulsante "Conferma ordine" disabilitato finché non confermata.
+> - P.IVA nei file sempre a 11 cifre (Integra può averla con prefisso IT).
+> - E2E locale: lead → approva → riga simulata in `integra_clienti` → aggancio + invito → checkout bloccato (409)
+>   → conferma SDI → riesportazione con codice e SDI. Test: `fatturazione.spec.ts`.
+> - Da fare: informativa privacy B2B al primo accesso (dopo validazione del testo); modifica dati di fatturazione
+>   anche dal profilo; pagina admin "Richieste accesso".
+>
 > **Conservazione (GDPR) (2026-10-13)** — `backend/src/leads/conservazione*.ts`: job notturno (03:30,
 > `LEAD_RETENTION_CRON`) che **anonimizza** i lead `SCARTATO` / `NUOVO` / `IN_VALUTAZIONE` più vecchi di
 > `LEAD_RETENTION_MESI` (default 12, da ultima decisione o creazione): azzera referente, email, telefono,

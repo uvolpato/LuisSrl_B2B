@@ -1,5 +1,7 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Req, UseGuards, Query, Param, ParseIntPipe } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
+import { FatturazioneService } from './fatturazione.service';
+import { FatturazioneDto } from './dto/fatturazione.dto';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { Roles, RolesGuard } from '../auth/guards/roles.guard';
@@ -8,7 +10,21 @@ import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 @UseGuards(AuthenticatedGuard, RolesGuard)
 @Roles('customer', 'admin')
 export class CheckoutController {
-  constructor(private readonly checkout: CheckoutService) {}
+  constructor(
+    private readonly checkout: CheckoutService,
+    private readonly fatturazione: FatturazioneService,
+  ) {}
+
+  /** Dati di fatturazione elettronica; `richiesta` = conferma obbligatoria prima dell'ordine. */
+  @Get('fatturazione')
+  getFatturazione(@Req() req: AuthenticatedRequest) {
+    return this.fatturazione.get(req.user.id);
+  }
+
+  @Put('fatturazione')
+  salvaFatturazione(@Req() req: AuthenticatedRequest, @Body() dto: FatturazioneDto) {
+    return this.fatturazione.salva(req.user.id, dto, req.ip);
+  }
 
   @Get('soglia')
   getSoglia(@Req() req: AuthenticatedRequest) {

@@ -10,6 +10,7 @@ import { thumbUrl } from "../../../lib/thumb";
 import { useConfirm } from "../../../components/common/ConfirmProvider";
 import LoadingScreen from "../../../components/common/LoadingScreen";
 import Modal from "../../../components/common/Modal";
+import FatturazioneCheckout from "../../../components/area/FatturazioneCheckout";
 import ComboboxField from "../../../components/admin/ComboboxField";
 import type { ComboboxOption } from "../../../components/admin/ComboboxField";
 import IndirizzoEditorModal from "../../../components/area/IndirizzoEditorModal";
@@ -179,6 +180,8 @@ export default function CheckoutPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Clienti nati da una richiesta vetrina: dati di fatturazione da confermare prima del primo ordine.
+  const [fatturazioneDaConfermare, setFatturazioneDaConfermare] = useState(false);
   const [confermato, setConfermato] = useState<OrdineConfermato | null>(null);
   type Step = "checkout" | "recap" | "confermato";
   const [step, setStep] = useState<Step>("checkout");
@@ -434,6 +437,8 @@ export default function CheckoutPage() {
         <div className="checkout-layout">
           <div className="checkout-form">
 
+            <FatturazioneCheckout onRichiesta={setFatturazioneDaConfermare} />
+
             {/* Condizioni di pagamento */}
             <section className="checkout-section">
               <h2 className="checkout-section-title">Condizioni di pagamento</h2>
@@ -649,13 +654,16 @@ export default function CheckoutPage() {
               </tbody>
             </table>
 
-            {submitError && <div className="checkout-error">{submitError}</div>}
+            {submitError && <div className="checkout-error">{submitError === "fatturazione.da_confermare" ? "Conferma i dati di fatturazione prima di inviare l'ordine." : submitError}</div>}
+            {fatturazioneDaConfermare && (
+              <div className="checkout-error" style={{ marginTop: 10 }}>Conferma i dati di fatturazione (in alto) per procedere con l&apos;ordine.</div>
+            )}
             {!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine && (
               <div style={{ fontSize: 13, color: "var(--amber)", background: "var(--amber-soft)", padding: "10px 14px", borderRadius: 8, marginTop: 10, lineHeight: 1.5 }}>
                 L&apos;importo minimo per questa destinazione è di <strong>{fmtEur(spedizione.minimoOrdine)}</strong>. Aggiungi altri articoli per procedere.
               </div>
             )}
-            <button className="btn btn-primary checkout-btn" disabled={submitting || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
+            <button className="btn btn-primary checkout-btn" disabled={submitting || fatturazioneDaConfermare || (!isRitiro && spedizione?.minimoOrdine != null && spedizione.minimoOrdine > 0 && subScontato < spedizione.minimoOrdine)} onClick={() => setStep("recap")}>
               Conferma ordine
             </button>
             <Link href="/area/carrello" className="btn btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>Torna al carrello</Link>

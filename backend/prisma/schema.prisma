@@ -79,6 +79,15 @@ model Customer {
   sessionToken       String?      @map("session_token")
   /// Data invio invito B2B (null = da invitare)
   invitatoAt         DateTime?    @map("invitato_at")
+  /// Richiesta di accesso dalla vetrina da cui e' nato il cliente (Fase 5 qualifica lead)
+  leadId             Int?         @unique @map("lead_id")
+  lead               Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  codiceFiscale      String?      @map("codice_fiscale")
+  /// Fatturazione elettronica: codice destinatario SDI e/o PEC
+  codiceSdi          String?      @map("codice_sdi")
+  pec                String?
+  /// Conferma dati di fatturazione (obbligatoria al primo ordine per i clienti nati da lead)
+  datiFatturazioneConfermatiIl DateTime? @map("dati_fatturazione_confermati_il")
   carrello           Carrello?
   indirizzi          IndirizzoCliente[]
   contatti           ContattoCliente[]
@@ -697,6 +706,8 @@ model Lead {
   esportatoFile      String?     @map("esportato_file")
   /// Dati personali azzerati dal job di conservazione (GDPR, LEAD_RETENTION_MESI)
   anonimizzatoIl     DateTime?   @map("anonimizzato_il")
+  /// Cliente B2B creato da questa richiesta (dopo l'import in Integra)
+  cliente            Customer?
   eventi             LeadEvent[]
 
   @@index([createdAt])
