@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Richieste accesso — Admin · Luis</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(96% 0.004 80);
+  --green: oklch(55% 0.15 145);
+  --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
+  --red: oklch(55% 0.18 25);
+  --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+  --blue: oklch(55% 0.15 250);
+  --blue-soft: color-mix(in oklch, var(--blue) 14%, transparent);
+  --amber: oklch(60% 0.13 65);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --accent-line: color-mix(in oklch, var(--accent) 30%, transparent);
+  --accent-tint: color-mix(in oklch, var(--accent) 8%, transparent);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --sidebar-w: 260px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; }
+p { text-wrap: pretty; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+img, svg { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ── Sidebar ── */
+.sidebar {
+  position: fixed; top: 0; left: 0; z-index: 30;
+  width: var(--sidebar-w); height: 100vh;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.sidebar-logo .mark {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: var(--surface);
+  display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 18px;
+}
+.sidebar-logo .name { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.sidebar-logo .sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.back-link { display: block; padding: 9px 20px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.back-link:hover { color: var(--accent); }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-section { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; border: none; background: none; border-radius: var(--radius);
+  font-size: 13.5px; color: var(--muted); text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-link:hover { background: var(--fg-soft); color: var(--fg); }
+.sidebar-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.sidebar-link.disabled { opacity: 0.6; cursor: default; }
+.nav-badge {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  background: var(--accent); color: var(--surface); min-width: 20px; height: 20px;
+  border-radius: 999px; display: grid; place-items: center; padding: 0 6px;
+}
+.sidebar-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.sidebar-footer .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 12.5px; }
+
+/* ── Main ── */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+.admin-top {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border); padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.admin-top h1 { font-size: 20px; letter-spacing: -0.01em; margin: 0; }
+.top-sub { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.admin-search { position: relative; width: 320px; max-width: 100%; }
+.admin-search input {
+  width: 100%; padding: 9px 14px 9px 36px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); font: inherit; font-size: 14px; color: var(--fg); outline: none;
+  transition: border-color 0.15s ease;
+}
+.admin-search input:focus { border-color: var(--accent); }
+.admin-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.admin-search .search-icon svg { width: 16px; height: 16px; }
+
+.admin-content { flex: 1; min-height: 0; padding: 18px 32px 26px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── KPI ── */
+.dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .dash-grid { grid-template-columns: 1fr; } }
+.dash-card {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg); padding: 16px 18px; text-align: left; cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.05s ease;
+}
+.dash-card:hover { box-shadow: 0 6px 18px var(--fg-soft); }
+.dash-card:active { transform: translateY(1px); }
+.dash-card.is-active { background: var(--accent-tint); }
+.dash-card .label { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.dash-card .value { font-family: var(--font-mono); font-size: 27px; font-weight: 700; line-height: 1; }
+.dash-card .value.blue { color: var(--blue); }
+.dash-card .value.green { color: var(--green); }
+.dash-card .value.amber { color: var(--amber); }
+.dash-card .sub { font-size: 12px; color: var(--muted); margin-top: 7px; }
+.dash-card .sub.warn { color: var(--amber); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.dash-card .sub.warn svg { width: 13px; height: 13px; }
+
+/* ── Filters ── */
+.filter-bar {
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.filter-field { display: flex; flex-direction: column; gap: 5px; }
+.filter-field label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.select {
+  padding: 8px 30px 8px 12px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--surface); font: inherit; font-size: 13.5px; color: var(--fg); cursor: pointer;
+  appearance: none; min-width: 168px; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23706660' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+}
+.select:focus { border-color: var(--accent); }
+.filter-count { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 9px;
+  border: 1px solid transparent; font-size: 14px; font-weight: 500; white-space: nowrap;
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--fg); }
+.btn-secondary.danger { color: var(--red); border-color: color-mix(in oklch, var(--red) 40%, transparent); }
+.btn-secondary.danger:hover { border-color: var(--red); background: var(--red-soft); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+.btn-ghost:hover { color: var(--accent); }
+.btn-sm { padding: 7px 13px; font-size: 13px; }
+
+/* ── Pills ── */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.pv-ok { background: var(--green-soft); color: var(--green); }
+.pv-amber { background: var(--amber-soft); color: var(--amber); }
+.pv-red { background: var(--red-soft); color: var(--red); }
+.pv-neutral { background: var(--fg-soft); color: var(--muted); }
+.ps-blue { background: var(--blue-soft); color: var(--blue); }
+.ps-amber { background: var(--amber-soft); color: var(--amber); }
+.ps-green { background: var(--green-soft); color: var(--green); }
+.ps-grey { background: var(--fg-soft); color: var(--muted); }
+
+/* ── DataTable ── */
+.data-table {
+  position: relative; flex: 1; min-height: 320px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--table-head-bg); border-radius: var(--radius-lg); overflow: hidden;
+}
+.data-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead th {
+  position: sticky; top: 0; z-index: 4; background: var(--table-head-bg); color: var(--muted);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase;
+  text-align: left; padding: 11px 16px; white-space: nowrap; border-bottom: 1px solid var(--border);
+}
+.data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tbody tr { cursor: pointer; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.data-table .id { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+.cell-entity-title { font-weight: 600; font-size: 14px; }
+.cell-entity-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+.attesa { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.attesa.warn { color: var(--amber); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.attesa.warn svg { width: 13px; height: 13px; }
+.data-table .col-actions { text-align: right; }
+.row-action {
+  width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; position: relative;
+  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.row-action:hover { background: var(--fg-soft); color: var(--fg); }
+.row-action svg { width: 16px; height: 16px; }
+.data-table-empty { text-align: center; padding: 56px 20px; color: var(--muted); }
+.data-table-empty strong { display: block; font-family: var(--font-display); font-size: 18px; color: var(--fg); margin-bottom: 4px; }
+.data-table-footer {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+.pager { display: flex; align-items: center; gap: 8px; }
+.pager-current { min-width: 54px; text-align: center; }
+.pager button {
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--fg);
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager button svg { width: 16px; height: 16px; }
+
+/* ── Drawer ── */
+.drawer-overlay {
+  position: fixed; inset: 0; z-index: 60; background: color-mix(in oklch, var(--fg) 34%, transparent);
+  opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.drawer-overlay.open { opacity: 1; visibility: visible; }
+.drawer {
+  position: fixed; top: 0; right: 0; z-index: 70; height: 100vh; width: 560px; max-width: 100%;
+  background: var(--surface); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; transform: translateX(100%);
+  transition: transform 0.2s ease; box-shadow: -12px 0 34px color-mix(in oklch, var(--fg) 12%, transparent);
+}
+.drawer.open { transform: translateX(0); }
+@media (prefers-reduced-motion: reduce) { .drawer { transition: none; } .drawer-overlay { transition: none; } }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
+.drawer-head .rid { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.drawer-head h2 { font-size: 19px; line-height: 1.25; margin: 0; }
+.drawer-head .meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.drawer-head .meta-text { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.icon-btn {
+  width: 32px; height: 32px; padding: 0; display: grid; place-items: center; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted);
+}
+.icon-btn:hover { background: var(--fg-soft); color: var(--fg); }
+.icon-btn svg { width: 16px; height: 16px; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px 24px; }
+.drawer-foot { flex-shrink: 0; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding: 14px 24px; border-top: 1px solid var(--border); background: var(--surface); }
+
+.section-label {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 10px; padding-bottom: 7px; border-bottom: 1px solid var(--border);
+}
+.drawer-section { margin-bottom: 22px; }
+.kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 3px 0; font-size: 13px; }
+.kv-row .k { color: var(--muted); }
+.kv-row .v { font-weight: 500; font-family: var(--font-mono); text-align: right; }
+.kv-row .v.body { font-family: var(--font-body); }
+.msg-box { background: var(--accent-tint); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; }
+.msg-box .msg-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.msg-box p { margin: 6px 0 0; font-style: italic; }
+
+/* signal rows */
+.signal-row { display: grid; grid-template-columns: 122px 1fr auto; gap: 14px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.signal-row:last-of-type { border-bottom: none; }
+.signal-row .sig-label { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.signal-row .sig-note { color: var(--fg); }
+.src {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  border: 1px solid var(--accent-line); border-radius: 5px; padding: 0 4px; margin-left: 4px;
+}
+.src:hover { background: var(--accent-soft); }
+.badge {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+}
+.bd-ok { background: var(--green-soft); color: var(--green); }
+.bd-neutral { background: var(--fg-soft); color: var(--muted); }
+.bd-amber { background: var(--amber-soft); color: var(--amber); }
+.bd-red { background: var(--red-soft); color: var(--red); }
+.sintesi { font-size: 13px; color: var(--fg); margin: 12px 0 0; }
+.fonti { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin: 12px 0 0; }
+.fonti a { color: var(--accent); }
+
+/* verdict box */
+.verdict-box { background: var(--accent-tint); border: 1px solid var(--accent-line); border-radius: var(--radius); padding: 14px 16px; margin-top: 16px; }
+.verdict-box .vchip { display: inline-block; background: var(--accent); color: var(--surface); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 9px; border-radius: 7px; }
+.verdict-box .vval { font-weight: 700; font-size: 15px; margin-left: 10px; }
+.verdict-box .vval.ok { color: var(--green); }
+.verdict-box .vval.amber { color: var(--amber); }
+.verdict-box .vval.red { color: var(--red); }
+.verdict-box .vnote { font-size: 12.5px; color: var(--muted); }
+.verdict-box .vfoot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+
+/* checklist */
+.checklist { margin-top: 16px; background: color-mix(in oklch, var(--amber) 8%, transparent); border: 1px solid color-mix(in oklch, var(--amber) 30%, transparent); border-radius: var(--radius); padding: 14px 16px; }
+.checklist .cl-title { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin: 0 0 8px; font-weight: 600; }
+.checklist ul { margin: 0; padding-left: 18px; }
+.checklist li { font-size: 13px; margin-bottom: 5px; }
+
+/* timeline */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ''; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 1px; background: var(--border); }
+.tl-item { position: relative; padding: 0 0 14px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item::before {
+  content: ''; position: absolute; left: -20px; top: 5px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--muted);
+}
+.tl-item.accent::before { border-color: var(--accent); }
+.tl-item .tl-when { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.tl-item .tl-what { font-size: 13px; }
+.tl-item .tl-det { font-size: 12px; color: var(--muted); }
+
+/* consent */
+.consent-box { background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
+.consent-box .ok-dot { color: var(--green); font-weight: 700; }
+.final-note { font-size: 13px; color: var(--muted); background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; }
+.final-note strong { color: var(--fg); }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 90; background: color-mix(in oklch, var(--fg) 44%, transparent);
+  opacity: 0; visibility: hidden; transition: opacity 0.15s ease, visibility 0.15s ease;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 480px; max-height: 90vh;
+  display: flex; flex-direction: column; box-shadow: 0 20px 50px color-mix(in oklch, var(--fg) 30%, transparent);
+}
+.modal-head { padding: 20px 24px 12px; }
+.modal-head h2 { font-size: 19px; margin: 0; }
+.modal-body { padding: 0 24px; overflow-y: auto; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 24px; }
+.recap { background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; margin: 14px 0 0; }
+.recap .kv-row { padding: 2px 0; }
+.warn-red {
+  margin-top: 14px; background: var(--red-soft); border: 1px solid color-mix(in oklch, var(--red) 34%, transparent);
+  border-radius: var(--radius); padding: 12px 14px; color: var(--red); font-size: 13px; display: flex; gap: 9px;
+}
+.warn-red svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; }
+.note-quiet { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+
+/* ── Toast ── */
+.toast-wrap { position: fixed; right: 24px; bottom: 52px; z-index: 120; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  display: flex; align-items: flex-start; gap: 10px; min-width: 260px; max-width: 380px;
+  background: var(--fg); color: var(--surface); border-radius: var(--radius); padding: 12px 14px;
+  font-size: 13px; box-shadow: 0 12px 30px color-mix(in oklch, var(--fg) 30%, transparent);
+  animation: toastIn 0.2s ease-out;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.toast svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; }
+.toast.ok svg { color: var(--green); }
+.toast.warn svg { color: var(--amber); }
+
+/* disclaimer */
+.disclaimer {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: oklch(30% 0.02 60); color: oklch(92% 0.01 80); text-align: center;
+  padding: 6px 16px; font-size: 12px; letter-spacing: 0.02em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) { .admin-content { padding: 16px 20px 24px; } .admin-top { padding: 14px 20px; } }
+@media (max-width: 780px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+}
+@media (max-width: 720px) {
+  .admin-search { width: 100%; }
+  .drawer { width: 100%; }
+  .kv-grid { grid-template-columns: 1fr; }
+  .data-table .col-id, .data-table .col-piva, .data-table .col-ricevuta, .data-table .col-attesa { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" data-od-id="sidebar">
+  <div class="sidebar-logo">
+    <span class="mark">L</span>
+    <div>
+      <div class="name">Luis S.r.l.</div>
+      <div class="sub">Area admin</div>
+    </div>
+  </div>
+  <a class="back-link" href="index.html">← Ritorna al menu del prototipo</a>
+  <nav class="sidebar-nav">
+    <span class="sidebar-section">Gestione</span>
+    <button class="sidebar-link disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Articoli</button>
+    <button class="sidebar-link disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Famiglie</button>
+    <span class="sidebar-section">Vendite</span>
+    <button class="sidebar-link disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clienti</button>
+    <button class="sidebar-link active" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
+      Richieste accesso
+      <span class="nav-badge" id="side-badge">0</span>
+    </button>
+    <button class="sidebar-link disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11H5a2 2 0 0 0-2 2v7h6v-9zM15 3H9v17h6V3zM21 8h-6v14h6V8z"/></svg>Listini</button>
+    <button class="sidebar-link disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Ordini</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">UC</div>
+    <span>Ufficio commerciale</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="admin-top" data-od-id="topbar">
+    <div>
+      <h1>Richieste accesso</h1>
+      <div class="top-sub">Richieste B2B dal sito vetrina · indagine AI · decisione umana</div>
+    </div>
+    <div class="admin-search">
+      <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <input type="text" id="search-input" placeholder="Cerca ragione sociale, P.IVA, email, referente…" aria-label="Cerca richieste">
+    </div>
+  </header>
+
+  <div class="admin-content">
+    <!-- KPI -->
+    <div class="dash-grid" data-od-id="kpi">
+      <button class="dash-card is-active" id="kpi-decidere" data-stato="da-decidere">
+        <div class="label">Da decidere</div>
+        <div class="value amber" id="kpi-decidere-val">0</div>
+        <div class="sub" id="kpi-decidere-sub">Nuove + in verifica</div>
+      </button>
+      <button class="dash-card" id="kpi-verifica" data-stato="in-verifica">
+        <div class="label">In verifica</div>
+        <div class="value blue" id="kpi-verifica-val">0</div>
+        <div class="sub">In attesa di riscontro</div>
+      </button>
+      <button class="dash-card" id="kpi-approvate" data-stato="approvato">
+        <div class="label">Approvate · 30 gg</div>
+        <div class="value green" id="kpi-approvate-val">0</div>
+        <div class="sub">Decisione negli ultimi 30 giorni</div>
+      </button>
+      <button class="dash-card" id="kpi-scartate" data-stato="scartato">
+        <div class="label">Scartate · 30 gg</div>
+        <div class="value" id="kpi-scartate-val">0</div>
+        <div class="sub">Decisione negli ultimi 30 giorni</div>
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" data-od-id="filters">
+      <div class="filter-field">
+        <label for="filtro-stato">Stato</label>
+        <select class="select" id="filtro-stato">
+          <option value="da-decidere">Da decidere</option>
+          <option value="nuovo">Nuove</option>
+          <option value="in-verifica">In verifica</option>
+          <option value="approvato">Approvate</option>
+          <option value="scartato">Scartate</option>
+          <option value="tutti">Tutte</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="filtro-verdetto">Verdetto</label>
+        <select class="select" id="filtro-verdetto">
+          <option value="tutti">Tutti</option>
+          <option value="BUONO">Buono</option>
+          <option value="VERIFICARE">Verificare</option>
+          <option value="SCARTARE">Scartare</option>
+        </select>
+      </div>
+      <div class="filter-count" id="filter-count">—</div>
+    </div>
+
+    <!-- Table -->
+    <div class="data-table" data-od-id="table">
+      <div class="data-table-scroll">
+        <table>
+          <colgroup>
+            <col class="col-id" style="width:64px">
+            <col>
+            <col class="col-piva" style="width:140px">
+            <col class="col-ricevuta" style="width:132px">
+            <col style="width:132px">
+            <col style="width:132px">
+            <col class="col-attesa" style="width:96px">
+            <col style="width:64px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col-id">#</th>
+              <th>Richiedente</th>
+              <th class="col-piva">P.IVA</th>
+              <th class="col-ricevuta">Ricevuta</th>
+              <th>Verdetto</th>
+              <th>Stato</th>
+              <th class="col-attesa">Attesa</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lead-tbody"></tbody>
+        </table>
+        <div class="data-table-empty" id="lead-empty" hidden>
+          <strong>Nessuna richiesta</strong>
+          Nessuna richiesta da decidere con i filtri selezionati.
+        </div>
+      </div>
+      <div class="data-table-footer">
+        <span id="footer-range">—</span>
+        <div class="pager">
+          <button id="pager-prev" aria-label="Pagina precedente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="pager-current" id="pager-info">1 / 1</span>
+          <button id="pager-next" aria-label="Pagina successiva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer dettaglio -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+  <div class="drawer-head">
+    <div>
+      <div class="rid" id="drawer-rid">Richiesta</div>
+      <h2 id="drawer-title">—</h2>
+      <div class="meta-row" id="drawer-meta"></div>
+    </div>
+    <button class="icon-btn" id="drawer-close" aria-label="Chiudi dettaglio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot" id="drawer-foot"></div>
+</aside>
+
+<!-- Modal conferma -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head"><h2 id="modal-title">Conferma</h2></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="modal-cancel">Annulla</button>
+      <button class="btn btn-primary" id="modal-confirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+<div class="disclaimer">⚠ Prototipo dimostrativo — non è un'applicazione reale. I dati sono fittizi e le azioni sono simulate.</div>
+
+<script>
+/* ── Dati demo (specifica §8 · dati fittizi) ── */
+var NOW = new Date('2026-10-13T12:00:00');
+
+var TIPO_LABEL = { garden: 'Garden center', vivaio: 'Vivaio', fiorista: 'Fiorista', architetto: 'Architetto', altro: 'Altro' };
+var STATO_META = {
+  NUOVO:          { label: 'Nuova',      cls: 'ps-blue' },
+  IN_VALUTAZIONE: { label: 'In verifica', cls: 'ps-amber' },
+  APPROVATO:      { label: 'Approvata',  cls: 'ps-green' },
+  SCARTATO:       { label: 'Scartata',   cls: 'ps-grey' }
+};
+var VERDETTO_META = {
+  BUONO:     { label: 'Buono',      cls: 'pv-ok' },
+  VERIFICARE:{ label: 'Verificare', cls: 'pv-amber' },
+  SCARTARE:  { label: 'Scartare',   cls: 'pv-red' }
+};
+var SIG_BADGE = { CONFERMATO: 'bd-ok', NEUTRO: 'bd-neutral', NON_VERIFICATO: 'bd-amber', NEGATIVO: 'bd-red' };
+var SIG_LABEL = { CONFERMATO: 'Confermato', NEUTRO: 'Neutro', NON_VERIFICATO: 'Non verificato', NEGATIVO: 'Negativo' };
+var EVENTO_LABEL = {
+  creato: 'Richiesta ricevuta dal sito',
+  conferma_inviata: 'Conferma inviata al cliente',
+  conferma_saltata: 'Conferma non inviata (già inviata nelle 24 h)',
+  indagine: 'Indagine AI completata',
+  indagine_errore: 'Indagine AI non riuscita',
+  mail_inviata: 'Mail inviata a shop@',
+  mail_errore: 'Errore invio mail',
+  promemoria_inviato: 'Promemoria inviato a shop@',
+  azione_verifica: 'Messa in verifica',
+  azione_approva: 'Approvata',
+  azione_scarta: 'Scartata',
+  export_integra: 'File per Integra generato',
+  export_errore: 'Errore export',
+  anonimizzato: 'Dati personali anonimizzati (conservazione 12 mesi)'
+};
+
+function sig(chiave, etichetta, stato, nota, fonti) { return { chiave: chiave, etichetta: etichetta, stato: stato, nota: nota, fonti: fonti || [] }; }
+
+var LEADS = [
+  { id: 12, createdAt: '2026-10-09T14:35', ragioneSociale: 'FIORERIA DEL CENTRO S.R.L.', partitaIva: '01234567890', codiceFiscale: '01234567890',
+    referente: 'Marco Rossi', tipoAttivita: 'fiorista', email: 'commerciale@fioreriadelcentro.it', telefono: '02 1234567', citta: 'Sesto San Giovanni', provincia: 'MI',
+    lingua: 'it', stato: 'NUOVO', verdetto: 'BUONO',
+    messaggio: 'Siamo un fiorista del centro di Milano, cerchiamo vasi in cotto e ceramica per la nuova stagione. Ordiniamo regolarmente da altri fornitori, vogliamo valutare un cambio.',
+    sede: { indirizzo: 'Via Milano, 15', cap: '20099', citta: 'Sesto San Giovanni', provincia: 'MI', fonte: 'VIES' },
+    privacyAccettataIl: '2026-10-09T14:35', privacyVersione: '2026-10', ip: '151.24.88.10',
+    report: { durataMs: 14000, sintesi: 'Impresa attiva e coerente con il settore florovivaistico. Partita IVA confermata su VIES, sito e presenza web coerenti con l’attività dichiarata. Nessun segnale di rischio rilevante.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES — «FIORERIA DEL CENTRO S.R.L.»', ['https://example.com/vies']),
+      sig('sito', 'Sito web', 'CONFERMATO', 'fioreriadelcentro.it, coerente con attività fiorista, catalogo online presente', ['https://example.com/sito', 'https://example.com/registro']),
+      sig('web', 'Presenza web', 'CONFERMATO', 'Google Business, 12 recensioni', ['https://example.com/google']),
+      sig('email', 'Email', 'CONFERMATO', 'Dominio aziendale coerente (non usa-e-getta)', []),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Fiorista: coerente con le referenze rivendute', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-09T14:35', dettagli: 'Richiesta #12 dal sito vetrina' },
+      { tipo: 'conferma_inviata', createdAt: '2026-10-09T14:35', dettagli: 'Email di conferma al cliente' },
+      { tipo: 'indagine', createdAt: '2026-10-09T14:35', dettagli: 'Completata in 14 s · 14 chiamate · €0,02' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-09T14:35', dettagli: 'Segnalazione a shop@luisbg.it' },
+      { tipo: 'promemoria_inviato', createdAt: '2026-10-13T03:00', dettagli: 'Promemoria a shop@ (richiesta ferma)' }
+    ] },
+
+  { id: 11, createdAt: '2026-10-02T09:12', ragioneSociale: 'VERDE CASA SNC', partitaIva: '02345678901', codiceFiscale: '02345678901',
+    referente: 'Giulia Ferrari', tipoAttivita: 'garden', email: 'info@verdecasa.it', telefono: '0341 998877', citta: 'Lecco', provincia: 'LC',
+    lingua: 'it', stato: 'IN_VALUTAZIONE', verdetto: 'VERIFICARE',
+    messaggio: 'Garden center con due punti vendita. Ci interessa il cotto da esterno e i cesti. Vorremmo capire condizioni e scontistica per volumi.',
+    sede: { indirizzo: 'Via Resegone, 4', cap: '23900', citta: 'Lecco', provincia: 'LC', fonte: 'WEB' },
+    privacyAccettataIl: '2026-10-02T09:12', privacyVersione: '2026-10', ip: '93.40.12.77',
+    report: { durataMs: 21000, sintesi: 'Impresa reale e attiva, ma alcuni dati non sono confermabili automaticamente. Sede non presente su VIES, reperita via web: da validare con il referente prima dell’approvazione.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES — «VERDE CASA SNC»', ['https://example.com/vies']),
+      sig('sede', 'Sede legale', 'NON_VERIFICATO', 'Non presente su VIES, indirizzo dedotto dal sito', ['https://example.com/sito']),
+      sig('web', 'Presenza web', 'CONFERMATO', 'Sito attivo con due punti vendita elencati', ['https://example.com/sito']),
+      sig('email', 'Email', 'CONFERMATO', 'Dominio aziendale verdecasa.it', []),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Attività coerente, volumi dichiarati non verificabili', [])
+    ], checklist: [
+      'Cellulare 333 4455667: richiamare per confermare la sede legale',
+      'Email: chiedere conferma dell’indirizzo di fatturazione',
+      'Verificare su Registro Imprese la forma societaria (SNC)'
+    ] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-02T09:12', dettagli: 'Richiesta #11 dal sito vetrina' },
+      { tipo: 'conferma_inviata', createdAt: '2026-10-02T09:12', dettagli: 'Email di conferma al cliente' },
+      { tipo: 'indagine', createdAt: '2026-10-02T09:12', dettagli: 'Completata in 21 s · 19 chiamate · €0,03' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-02T09:12', dettagli: 'Segnalazione a shop@luisbg.it' },
+      { tipo: 'promemoria_inviato', createdAt: '2026-10-10T03:00', dettagli: 'Promemoria a shop@ (ferma da 8 giorni)' }
+    ] },
+
+  { id: 10, createdAt: '2026-10-08T17:40', ragioneSociale: 'VIVAI COLLI BERGAMASCHI', partitaIva: '03456789012', codiceFiscale: '03456789012',
+    referente: 'Andrea Colombo', tipoAttivita: 'vivaio', email: 'ordini@vivaicolli.it', telefono: '035 443322', citta: 'Almè', provincia: 'BG',
+    lingua: 'it', stato: 'NUOVO', verdetto: 'BUONO',
+    messaggio: 'Vivaio storico. Cerchiamo fioriere in fiberstone per arredo giardini e terrazzi.',
+    sede: { indirizzo: 'Via dei Colli, 22', cap: '24011', citta: 'Almè', provincia: 'BG', fonte: 'VIES' },
+    privacyAccettataIl: '2026-10-08T17:40', privacyVersione: '2026-10', ip: '82.55.101.4',
+    report: { durataMs: 12000, sintesi: 'Impresa consolidata e coerente. Tutti i dati essenziali confermati automaticamente.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES — «VIVAI COLLI BERGAMASCHI»', ['https://example.com/vies']),
+      sig('sito', 'Sito web', 'CONFERMATO', 'vivaicolli.it, coerente con attività vivaistica', ['https://example.com/sito']),
+      sig('web', 'Presenza web', 'CONFERMATO', 'Presenza su directory locali, recensioni positive', ['https://example.com/google']),
+      sig('email', 'Email', 'CONFERMATO', 'Dominio aziendale', []),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Vivaio: coerente con le referenze rivendute', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-08T17:40', dettagli: 'Richiesta #10 dal sito vetrina' },
+      { tipo: 'conferma_inviata', createdAt: '2026-10-08T17:40', dettagli: 'Email di conferma al cliente' },
+      { tipo: 'indagine', createdAt: '2026-10-08T17:40', dettagli: 'Completata in 12 s · 12 chiamate · €0,02' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-08T17:40', dettagli: 'Segnalazione a shop@luisbg.it' }
+    ] },
+
+  { id: 9, createdAt: '2026-10-01T10:05', ragioneSociale: 'GARDEN DEMO S.R.L.', partitaIva: '09012345678', codiceFiscale: '09012345678',
+    referente: 'Luca Bianchi', tipoAttivita: 'garden', email: 'acquisti@gardendemo.it', telefono: '039 887766', citta: 'Merate', provincia: 'LC',
+    lingua: 'it', stato: 'APPROVATO', verdetto: 'BUONO', decisioneIl: '2026-10-02T09:20', esportatoFile: 'lead-9.xlsx',
+    messaggio: 'Garden center, rifornimento continuo. Interessati al catalogo completo.',
+    sede: { indirizzo: 'Via Verdi, 8', cap: '23807', citta: 'Merate', provincia: 'LC', fonte: 'VIES' },
+    privacyAccettataIl: '2026-10-01T10:05', privacyVersione: '2026-10', ip: '79.22.60.13',
+    report: { durataMs: 13000, sintesi: 'Dati essenziali tutti confermati. Approvata dall’ufficio commerciale.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES', ['https://example.com/vies']),
+      sig('sito', 'Sito web', 'CONFERMATO', 'gardendemo.it attivo', ['https://example.com/sito']),
+      sig('web', 'Presenza web', 'CONFERMATO', 'Google Business presente', ['https://example.com/google']),
+      sig('email', 'Email', 'CONFERMATO', 'Dominio aziendale', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-01T10:05', dettagli: 'Richiesta #9 dal sito vetrina' },
+      { tipo: 'indagine', createdAt: '2026-10-01T10:05', dettagli: 'Completata in 13 s' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-01T10:05', dettagli: 'Segnalazione a shop@luisbg.it' },
+      { tipo: 'azione_approva', createdAt: '2026-10-02T09:20', dettagli: 'Approvata da admin (ufficio commerciale)' },
+      { tipo: 'export_integra', createdAt: '2026-10-02T09:20', dettagli: 'File lead-9.xlsx pronto per Integra' }
+    ] },
+
+  { id: 8, createdAt: '2026-09-30T12:20', ragioneSociale: 'STUDIO PAESAGGIO ROSSI', partitaIva: '04567890123', codiceFiscale: '04567890123',
+    referente: 'Chiara Rossi', tipoAttivita: 'architetto', email: 'chiara@studiopaesaggiorossi.it', telefono: '035 112233', citta: 'Bergamo', provincia: 'BG',
+    lingua: 'it', stato: 'APPROVATO', verdetto: 'VERIFICARE', decisioneIl: '2026-10-03T11:40', esportatoFile: 'lead-8.xlsx',
+    messaggio: 'Studio di progettazione del paesaggio. Acquisto per cantieri, con partita IVA.',
+    sede: { indirizzo: 'Via San Tomaso, 12', cap: '24121', citta: 'Bergamo', provincia: 'BG', fonte: 'WEB' },
+    privacyAccettataIl: '2026-09-30T12:20', privacyVersione: '2026-10', ip: '88.10.44.51',
+    report: { durataMs: 18000, sintesi: 'Sito e presenza professionale coerenti, sede reperita via web. Approvata dopo verifica telefonica diretta.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES (professionista)', ['https://example.com/vies']),
+      sig('sede', 'Sede legale', 'NON_VERIFICATO', 'Non su VIES, indirizzo dal sito', ['https://example.com/sito']),
+      sig('web', 'Presenza web', 'CONFERMATO', 'Sito studio con portfolio cantieri', ['https://example.com/sito']),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Architetto: coerente con acquisto per committenza', [])
+    ], checklist: [ 'Confermare sede di fatturazione con la referente' ] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-09-30T12:20', dettagli: 'Richiesta #8 dal sito vetrina' },
+      { tipo: 'indagine', createdAt: '2026-09-30T12:20', dettagli: 'Completata in 18 s' },
+      { tipo: 'mail_inviata', createdAt: '2026-09-30T12:20', dettagli: 'Segnalazione a shop@luisbg.it' },
+      { tipo: 'azione_approva', createdAt: '2026-10-03T11:40', dettagli: 'Approvata da admin dopo verifica telefonica' },
+      { tipo: 'export_integra', createdAt: '2026-10-03T11:40', dettagli: 'File lead-8.xlsx pronto per Integra' }
+    ] },
+
+  { id: 7, createdAt: '2026-09-29T22:51', ragioneSociale: 'VASI LOW COST SRL', partitaIva: '12345678901', codiceFiscale: '12345678901',
+    referente: '—', tipoAttivita: 'altro', email: 'vendas@gmail.com', telefono: '342 0001122', citta: '', provincia: '',
+    lingua: 'it', stato: 'SCARTATO', verdetto: 'SCARTARE', decisioneIl: '2026-09-30T08:10',
+    messaggio: 'Vendita al dettaglio vasi. Prezzi più bassi possibili.',
+    sede: null,
+    privacyAccettataIl: '2026-09-29T22:51', privacyVersione: '2026-10', ip: '45.120.9.3',
+    report: { durataMs: 15000, sintesi: 'Diversi segnali negativi: checksum della partita IVA errato e indirizzo email su dominio gratuito. Scartata dall’ufficio commerciale.', segnali: [
+      sig('piva', 'Partita IVA', 'NEGATIVO', 'Checksum non valido — P.IVA inesistente', ['https://example.com/vies']),
+      sig('email', 'Email', 'NEGATIVO', 'Email usa-e-getta (dominio gratuito), nessun dominio aziendale', []),
+      sig('web', 'Presenza web', 'NON_VERIFICATO', 'Nessuna traccia aziendale trovata', []),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Attività dichiarata non verificabile', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-09-29T22:51', dettagli: 'Richiesta #7 dal sito vetrina' },
+      { tipo: 'indagine', createdAt: '2026-09-29T22:51', dettagli: 'Completata in 15 s' },
+      { tipo: 'mail_inviata', createdAt: '2026-09-29T22:51', dettagli: 'Segnalazione a shop@luisbg.it' },
+      { tipo: 'azione_scarta', createdAt: '2026-09-30T08:10', dettagli: 'Scartata da admin' }
+    ] },
+
+  { id: 6, createdAt: '2026-10-07T08:30', ragioneSociale: 'FIORI E FOGLIE DI BIANCHI ANNA', partitaIva: '05678901234', codiceFiscale: 'BNNNNA70A41C933X',
+    referente: 'Anna Bianchi', tipoAttivita: 'fiorista', email: 'fioriefoglie.bianchi@gmail.com', telefono: '031 556677', citta: 'Como', provincia: 'CO',
+    lingua: 'it', stato: 'NUOVO', verdetto: 'VERIFICARE',
+    messaggio: 'Fioreria a conduzione familiare, vorremmo ampliare l’assortimento con vasi in ceramica.',
+    sede: { indirizzo: 'Via Vittorio Emanuele, 30', cap: '22100', citta: 'Como', provincia: 'CO', fonte: 'WEB' },
+    privacyAccettataIl: '2026-10-07T08:30', privacyVersione: '2026-10', ip: '95.44.120.8',
+    report: { durataMs: 17000, sintesi: 'Ditta individuale plausibile ma con dati parziali. Email su dominio gratuito e sito non trovato: chiedere conferma della ragione sociale e della sede prima di decidere.', segnali: [
+      sig('piva', 'Partita IVA', 'CONFERMATO', 'Attiva su VIES — ditta individuale', ['https://example.com/vies']),
+      sig('email', 'Email', 'NON_VERIFICATO', 'Email su dominio gratuito (gmail), non aziendale', []),
+      sig('sito', 'Sito web', 'NON_VERIFICATO', 'Nessun sito aziendale trovato', []),
+      sig('web', 'Presenza web', 'NEUTRO', 'Poche tracce, pagine social locali', ['https://example.com/google']),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Fiorista: coerente col settore', [])
+    ], checklist: [
+      'Email gmail: chiedere un indirizzo aziendale o confermare quello personale',
+      'Telefono 031 556677: verificare ragione sociale e sede legale',
+      'Chiedere come intende acquistare (partita IVA attiva?)'
+    ] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-07T08:30', dettagli: 'Richiesta #6 dal sito vetrina' },
+      { tipo: 'indagine', createdAt: '2026-10-07T08:30', dettagli: 'Completata in 17 s' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-07T08:30', dettagli: 'Segnalazione a shop@luisbg.it' }
+    ] },
+
+  { id: 5, createdAt: '2026-10-05T16:10', ragioneSociale: 'GREEN DESIGN STUDIO', partitaIva: '06789012345', codiceFiscale: '06789012345',
+    referente: 'Paolo Verdi', tipoAttivita: 'architetto', email: 'info@greendesignstudio.it', telefono: '02 778899', citta: 'Milano', provincia: 'MI',
+    lingua: 'it', stato: 'NUOVO', verdetto: null,
+    messaggio: 'Studio di design del verde, cerchiamo complementi d’arredo per terrazzi.',
+    sede: null,
+    privacyAccettataIl: '2026-10-05T16:10', privacyVersione: '2026-10', ip: '151.10.30.66',
+    report: { errore: 'Indagine non disponibile: timeout del provider dopo 3 tentativi.', durataMs: 0, sintesi: 'Indagine AI non riuscita. Verificare manualmente i dati prima di decidere.', segnali: [], checklist: [
+      'Rilanciare l’indagine AI o verificare manualmente P.IVA e referente',
+      'Verificare la presenza di un sito aziendale'
+    ] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-10-05T16:10', dettagli: 'Richiesta #5 dal sito vetrina' },
+      { tipo: 'indagine_errore', createdAt: '2026-10-05T16:10', dettagli: 'Timeout del provider dopo 3 tentativi' },
+      { tipo: 'mail_inviata', createdAt: '2026-10-05T16:10', dettagli: 'Segnalazione a shop@luisbg.it' }
+    ] },
+
+  { id: 4, createdAt: '2026-09-20T11:00', ragioneSociale: 'AGRI SERVICE SRL', partitaIva: '07890123456', codiceFiscale: '07890123456',
+    referente: 'Sergio Marini', tipoAttivita: 'altro', email: 'amministrazione@agriservice.it', telefono: '031 445566', citta: 'Brescia', provincia: 'BS',
+    lingua: 'it', stato: 'SCARTATO', verdetto: 'SCARTARE', decisioneIl: '2026-09-21T09:00',
+    messaggio: 'Società di servizi agricoli, possibile rivendita di accessori.',
+    sede: { indirizzo: 'Via Industriale, 100', cap: '25124', citta: 'Brescia', provincia: 'BS', fonte: 'WEB' },
+    privacyAccettataIl: '2026-09-20T11:00', privacyVersione: '2026-10', ip: '46.20.55.91',
+    report: { durataMs: 16000, sintesi: 'Partita IVA non attiva su VIES. Scartata dall’ufficio commerciale.', segnali: [
+      sig('piva', 'Partita IVA', 'NEGATIVO', 'Non attiva su VIES (cessata o non presente)', ['https://example.com/vies']),
+      sig('sito', 'Sito web', 'NEUTRO', 'Sito non raggiungibile al momento della verifica', ['https://example.com/sito']),
+      sig('coerenza', 'Coerenza settore', 'NEUTRO', 'Attività diversa dal florovivaismo', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2026-09-20T11:00', dettagli: 'Richiesta #4 dal sito vetrina' },
+      { tipo: 'indagine', createdAt: '2026-09-20T11:00', dettagli: 'Completata in 16 s' },
+      { tipo: 'azione_scarta', createdAt: '2026-09-21T09:00', dettagli: 'Scartata da admin (P.IVA non attiva)' }
+    ] },
+
+  { id: 3, createdAt: '2025-09-10T09:00', ragioneSociale: 'RAGIONE SOCIALE TEST', partitaIva: '08901234567', codiceFiscale: '08901234567',
+    referente: 'anonimizzato', tipoAttivita: null, email: null, telefono: null, citta: '', provincia: '',
+    lingua: 'it', stato: 'SCARTATO', verdetto: 'SCARTARE', decisioneIl: '2025-09-12T10:00', anonimizzatoIl: '2026-09-10T00:00',
+    messaggio: null, sede: null,
+    privacyAccettataIl: '2025-09-10T09:00', privacyVersione: '2025-06', ip: 'anonimizzato',
+    report: { durataMs: 14000, sintesi: 'Richiesta scartata e, dopo 12 mesi di conservazione, dati personali anonimizzati.', segnali: [
+      sig('piva', 'Partita IVA', 'NEGATIVO', 'Non attiva su VIES', ['https://example.com/vies']),
+      sig('email', 'Email', 'NEUTRO', 'Dato anonimizzato', [])
+    ], checklist: [] },
+    eventi: [
+      { tipo: 'creato', createdAt: '2025-09-10T09:00', dettagli: 'Richiesta ricevuta dal sito' },
+      { tipo: 'indagine', createdAt: '2025-09-10T09:00', dettagli: 'Completata in 14 s' },
+      { tipo: 'azione_scarta', createdAt: '2025-09-12T10:00', dettagli: 'Scartata da admin' },
+      { tipo: 'anonimizzato', createdAt: '2026-09-10T00:00', dettagli: 'Conservazione 12 mesi scaduta' }
+    ] }
+];
+
+/* ── Stato UI ── */
+var PAGE_SIZE = 10;
+var currentPage = 1;
+var filtroStato = 'da-decidere';
+var filtroVerdetto = 'tutti';
+var searchQuery = '';
+var openLeadId = null;
+
+/* ── Utils ── */
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function fmtDT(iso) { var d = iso.slice(0, 10).split('-'); return d[2] + '/' + d[1] + '/' + d[0] + ' ' + iso.slice(11, 16); }
+function fmtD(iso) { var d = iso.slice(0, 10).split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
+function waitDays(iso) { return Math.max(0, Math.floor((NOW - new Date(iso)) / 86400000)); }
+function isPending(l) { return l.stato === 'NUOVO' || l.stato === 'IN_VALUTAZIONE'; }
+function tipoLabel(l) { return l.tipoAttivita ? TIPO_LABEL[l.tipoAttivita] : null; }
+function luogoShort(l) { return l.citta ? l.citta + (l.provincia ? ' (' + l.provincia + ')' : '') : null; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+/* ── Filtro + ordinamento ── */
+function matchStato(l, f) {
+  if (f === 'tutti') return true;
+  if (f === 'da-decidere') return isPending(l);
+  if (f === 'nuovo') return l.stato === 'NUOVO';
+  if (f === 'in-verifica') return l.stato === 'IN_VALUTAZIONE';
+  if (f === 'approvato') return l.stato === 'APPROVATO';
+  if (f === 'scartato') return l.stato === 'SCARTATO';
+  return true;
+}
+function filtered() {
+  var q = searchQuery.toLowerCase();
+  var list = LEADS.filter(function (l) {
+    if (!matchStato(l, filtroStato)) return false;
+    if (filtroVerdetto !== 'tutti' && l.verdetto !== filtroVerdetto) return false;
+    if (q) {
+      var hay = [l.ragioneSociale, l.partitaIva, l.email || '', l.referente || ''].join(' ').toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  if (filtroStato === 'da-decidere') list.sort(function (a, b) { return waitDays(b.createdAt) - waitDays(a.createdAt); });
+  else list.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  return list;
+}
+
+/* ── KPI ── */
+function renderKpi() {
+  var dec = LEADS.filter(isPending).length;
+  var ver = LEADS.filter(function (l) { return l.stato === 'IN_VALUTAZIONE'; }).length;
+  var stale = LEADS.filter(function (l) { return isPending(l) && waitDays(l.createdAt) > 6; }).length;
+  var recent = function (l, st) { return l.stato === st && l.decisioneIl && (NOW - new Date(l.decisioneIl)) <= 30 * 86400000; };
+  var appr = LEADS.filter(function (l) { return recent(l, 'APPROVATO'); }).length;
+  var scar = LEADS.filter(function (l) { return recent(l, 'SCARTATO'); }).length;
+
+  document.getElementById('kpi-decidere-val').textContent = dec;
+  document.getElementById('kpi-verifica-val').textContent = ver;
+  document.getElementById('kpi-approvate-val').textContent = appr;
+  document.getElementById('kpi-scartate-val').textContent = scar;
+
+  var sub = document.getElementById('kpi-decidere-sub');
+  if (stale > 0) {
+    sub.className = 'sub warn';
+    sub.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' + stale + ' ferma da oltre 6 giorni';
+  } else {
+    sub.className = 'sub';
+    sub.textContent = 'Nuove + in verifica';
+  }
+  document.getElementById('side-badge').textContent = dec;
+}
+
+/* ── Tabella ── */
+function verdettoPill(v) {
+  if (!v) return '<span class="pill pv-neutral"><span class="dot"></span>Non disp.</span>';
+  var m = VERDETTO_META[v];
+  return '<span class="pill ' + m.cls + '"><span class="dot"></span>' + m.label + '</span>';
+}
+function statoPill(stato) {
+  var m = STATO_META[stato];
+  return '<span class="pill ' + m.cls + '">' + m.label + '</span>';
+}
+function renderTable() {
+  var list = filtered();
+  var totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  var start = (currentPage - 1) * PAGE_SIZE;
+  var page = list.slice(start, start + PAGE_SIZE);
+  var html = '';
+  for (var i = 0; i < page.length; i++) {
+    var l = page[i];
+    var sub = [];
+    var luogo = luogoShort(l);
+    if (luogo) sub.push(luogo);
+    var t = l.anonimizzatoIl ? null : tipoLabel(l);
+    if (t) sub.push(t);
+    var attesa = '';
+    if (isPending(l)) {
+      var d = waitDays(l.createdAt);
+      attesa = d > 6
+        ? '<span class="attesa warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' + d + ' gg</span>'
+        : '<span class="attesa">' + d + ' gg</span>';
+    } else attesa = '<span class="attesa">—</span>';
+
+    html += '<tr data-id="' + l.id + '">'
+      + '<td class="mono id col-id">' + l.id + '</td>'
+      + '<td><div class="cell-entity-title">' + esc(l.ragioneSociale) + '</div>'
+      + (sub.length ? '<div class="cell-entity-sub">' + esc(sub.join(' · ')) + '</div>' : '') + '</td>'
+      + '<td class="mono col-piva" style="font-size:12.5px">' + esc(l.partitaIva) + '</td>'
+      + '<td class="mono col-ricevuta" style="font-size:12.5px">' + fmtDT(l.createdAt) + '</td>'
+      + '<td>' + verdettoPill(l.verdetto) + '</td>'
+      + '<td>' + statoPill(l.stato) + '</td>'
+      + '<td class="col-attesa">' + attesa + '</td>'
+      + '<td class="col-actions"><button class="row-action" data-open="' + l.id + '" aria-label="Dettaglio richiesta #' + l.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>'
+      + '</tr>';
+  }
+  document.getElementById('lead-tbody').innerHTML = html;
+  document.getElementById('lead-empty').hidden = list.length > 0;
+
+  var end = Math.min(start + PAGE_SIZE, list.length);
+  document.getElementById('footer-range').textContent = list.length ? (start + 1) + '–' + end + ' di ' + list.length : 'Nessuna richiesta';
+  document.getElementById('pager-info').textContent = currentPage + ' / ' + totalPages;
+  document.getElementById('pager-prev').disabled = currentPage <= 1;
+  document.getElementById('pager-next').disabled = currentPage >= totalPages;
+  document.getElementById('filter-count').textContent = list.length + (list.length === 1 ? ' richiesta' : ' richieste');
+}
+
+/* ── Drawer ── */
+function canApprove(l) { return !l.anonimizzatoIl && (l.stato === 'NUOVO' || l.stato === 'IN_VALUTAZIONE'); }
+function canVerify(l) { return !l.anonimizzatoIl && l.stato === 'NUOVO'; }
+function canScarta(l) { return !l.anonimizzatoIl && (l.stato === 'NUOVO' || l.stato === 'IN_VALUTAZIONE'); }
+
+function sigRow(s) {
+  var fonti = s.fonti.map(function (u, i) { return '<a class="src" href="' + u + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + ']</a>'; }).join('');
+  return '<div class="signal-row"><span class="sig-label">' + esc(s.etichetta) + '</span>'
+    + '<span class="sig-note">' + esc(s.nota) + (fonti ? ' ' + fonti : '') + '</span>'
+    + '<span class="badge ' + (SIG_BADGE[s.stato] || 'bd-neutral') + '">' + (SIG_LABEL[s.stato] || s.stato) + '</span></div>';
+}
+function verdictBox(l) {
+  var v = l.verdetto;
+  var cls = v === 'BUONO' ? 'ok' : v === 'VERIFICARE' ? 'amber' : v === 'SCARTARE' ? 'red' : '';
+  var note = v === 'BUONO' ? 'dati essenziali confermati' : v === 'VERIFICARE' ? 'verifica manuale consigliata' : v === 'SCARTARE' ? 'segnali negativi rilevati' : '';
+  var val = v ? VERDETTO_META[v].label : 'Non disponibile';
+  return '<div class="verdict-box"><span class="vchip">Verdetto AI</span>'
+    + '<span class="vval ' + cls + '">' + val + '</span> '
+    + '<span class="vnote">— ' + note + '</span>'
+    + '<p class="vfoot">L’AI propone, la decisione è sempre umana.</p></div>';
+}
+function checklistBox(l) {
+  if (!l.report || !l.report.checklist || !l.report.checklist.length) return '';
+  return '<div class="checklist"><p class="cl-title">Checklist di verifica</p><ul>'
+    + l.report.checklist.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>';
+}
+function timeline(l) {
+  return l.eventi.map(function (e) {
+    var cls = (e.tipo === 'azione_approva' || e.tipo === 'azione_scarta' || e.tipo === 'azione_verifica' || e.tipo === 'anonimizzato') ? ' accent' : '';
+    return '<div class="tl-item' + cls + '"><div class="tl-when">' + fmtDT(e.createdAt) + '</div>'
+      + '<div class="tl-what">' + esc(EVENTO_LABEL[e.tipo] || e.tipo) + '</div>'
+      + (e.dettagli ? '<div class="tl-det">' + esc(e.dettagli) + '</div>' : '') + '</div>';
+  }).join('');
+}
+function renderDrawer(l) {
+  openLeadId = l.id;
+  document.getElementById('drawer-rid').textContent = 'Richiesta #' + l.id;
+  document.getElementById('drawer-title').textContent = l.anonimizzatoIl ? 'Dati anonimizzati' : l.ragioneSociale;
+
+  var meta = verdettoPill(l.verdetto) + statoPill(l.stato)
+    + '<span class="meta-text">· ricevuta ' + fmtDT(l.createdAt) + ' · lingua ' + l.lingua.toUpperCase() + '</span>';
+  document.getElementById('drawer-meta').innerHTML = meta;
+
+  var anon = !!l.anonimizzatoIl;
+  var body = '';
+
+  /* Dati richiesta + sede */
+  body += '<div class="drawer-section"><p class="section-label">Dati richiesta</p><div class="kv-grid">';
+  body += '<div><div class="kv-row"><span class="k">P.IVA</span><span class="v">' + esc(l.partitaIva) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Cod. fiscale</span><span class="v">' + (anon ? 'anonimizzato' : esc(l.codiceFiscale || '—')) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Referente</span><span class="v body">' + (anon ? 'anonimizzato' : esc(l.referente || '—')) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Tipo attività</span><span class="v body">' + (anon ? 'anonimizzato' : (tipoLabel(l) || '—')) + '</span></div></div>';
+  body += '<div><div class="kv-row"><span class="k">Email</span><span class="v">' + (anon ? 'anonimizzato' : esc(l.email || '—')) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Telefono</span><span class="v">' + (anon ? 'anonimizzato' : esc(l.telefono || '—')) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Comune</span><span class="v body">' + (luogoShort(l) || '—') + '</span></div></div>';
+  body += '</div>';
+  if (!anon) {
+    body += '<div class="section-label" style="margin-top:16px">Sede legale' + (l.sede ? ' · fonte ' + l.sede.fonte : '') + '</div>';
+    if (l.sede) {
+      body += '<div class="kv-row"><span class="k">Indirizzo</span><span class="v body">' + esc(l.sede.indirizzo) + '</span></div>'
+        + '<div class="kv-row"><span class="k">CAP / Città</span><span class="v body">' + esc(l.sede.cap + ' ' + l.sede.citta + ' (' + l.sede.provincia + ')') + '</span></div>';
+      if (l.sede.fonte === 'WEB') body += '<p class="note-quiet">Sede non presente su VIES: reperita via web, da confermare.</p>';
+    } else {
+      body += '<p class="note-quiet">Sede legale non disponibile. Va completata manualmente.</p>';
+    }
+  }
+  if (!anon && l.messaggio) {
+    body += '<div class="msg-box"><span class="msg-label">Messaggio del richiedente</span><p>«' + esc(l.messaggio) + '»</p></div>';
+  }
+  body += '</div>';
+
+  /* Report AI */
+  if (!anon) {
+    body += '<div class="drawer-section"><p class="section-label">Report AI — indagine</p>';
+    if (l.report) {
+      if (l.report.segnali && l.report.segnali.length) body += l.report.segnali.map(sigRow).join('');
+      if (l.report.sintesi) body += '<p class="sintesi">' + esc(l.report.sintesi) + '</p>';
+      if (l.report.errore) body += '<div class="warn-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>' + esc(l.report.errore) + '</span></div>';
+      var urls = [];
+      (l.report.segnali || []).forEach(function (s) { s.fonti.forEach(function (u) { if (urls.indexOf(u) === -1) urls.push(u); }); });
+      if (urls.length) body += '<p class="fonti">Fonti: ' + urls.map(function (u, i) { return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">[' + (i + 1) + '] ' + u.replace('https://', '') + '</a>'; }).join(' · ') + '</p>';
+      body += verdictBox(l);
+      body += checklistBox(l);
+    } else {
+      body += '<p class="note-quiet">Nessun report disponibile.</p>' + verdictBox(l);
+    }
+    body += '</div>';
+  }
+
+  /* Storico */
+  body += '<div class="drawer-section"><p class="section-label">Storico</p><div class="timeline">' + timeline(l) + '</div></div>';
+
+  /* Consenso */
+  body += '<div class="drawer-section"><p class="section-label">Consenso privacy</p><div class="consent-box">'
+    + '<span class="ok-dot">✓</span> Accettato il ' + fmtDT(l.privacyAccettataIl) + ' · versione ' + esc(l.privacyVersione) + ' · IP ' + esc(l.ip)
+    + (anon ? '<br>Dati personali anonimizzati dopo 12 mesi di conservazione.' : '')
+    + '</div></div>';
+
+  document.getElementById('drawer-body').innerHTML = body;
+
+  /* Footer azioni */
+  var foot = '';
+  if (anon) {
+    foot = '<div class="final-note" style="margin-right:auto">Richiesta #' + l.id + ' anonimizzata il ' + fmtD(l.anonimizzatoIl) + '. <strong>Sola consultazione.</strong></div>';
+  } else if (l.stato === 'APPROVATO' || l.stato === 'SCARTATO') {
+    foot = '<div class="final-note" style="margin-right:auto"><strong>' + (l.stato === 'APPROVATO' ? 'Approvata' : 'Scartata') + '</strong> il ' + fmtDT(l.decisioneIl)
+      + (l.esportatoFile ? ' · file per Integra: <strong>' + esc(l.esportatoFile) + '</strong>' : '') + '. Decisione finale: sola consultazione.</div>';
+  } else {
+    if (canScarta(l)) foot += '<button class="btn btn-secondary danger" data-action="scarta">Scarta</button>';
+    if (canVerify(l)) foot += '<button class="btn btn-secondary" data-action="verifica">Metti in verifica</button>';
+    if (canApprove(l)) foot += '<button class="btn btn-primary" data-action="approva"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>Approva</button>';
+  }
+  document.getElementById('drawer-foot').innerHTML = foot;
+}
+
+function openDrawer(id) {
+  var l = LEADS.filter(function (x) { return x.id === id; })[0];
+  if (!l) return;
+  renderDrawer(l);
+  var drawer = document.getElementById('drawer');
+  drawer.hidden = false;
+  document.getElementById('drawer-overlay').classList.add('open');
+  requestAnimationFrame(function () { drawer.classList.add('open'); });
+  trapFocus(drawer);
+}
+function closeDrawer() {
+  var drawer = document.getElementById('drawer');
+  drawer.classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  openLeadId = null;
+  releaseFocus();
+  setTimeout(function () { drawer.hidden = true; }, 200);
+}
+
+/* ── Modal conferma ── */
+var modalAction = null, modalConfirmCb = null;
+function openModal(opts) {
+  document.getElementById('modal-title').textContent = opts.title;
+  document.getElementById('modal-body').innerHTML = opts.body;
+  var confirmBtn = document.getElementById('modal-confirm');
+  confirmBtn.textContent = opts.confirmLabel;
+  confirmBtn.className = 'btn ' + (opts.danger ? 'btn-secondary danger' : 'btn-primary');
+  modalConfirmCb = opts.onConfirm;
+  var overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('open');
+  trapFocus(overlay);
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  modalConfirmCb = null;
+  releaseFocus();
+}
+
+/* ── Focus trap ── */
+var lastFocused = null, focusContainer = null;
+function focusables(container) {
+  return Array.prototype.slice.call(container.querySelectorAll('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(function (el) { return el.offsetParent !== null; });
+}
+function trapFocus(container) {
+  lastFocused = document.activeElement;
+  focusContainer = container;
+  var f = focusables(container);
+  if (f.length) f[0].focus();
+}
+function releaseFocus() {
+  if (lastFocused && lastFocused.focus) try { lastFocused.focus(); } catch (e) {}
+  focusContainer = null;
+  lastFocused = null;
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('modal-overlay').classList.contains('open')) { closeModal(); return; }
+    if (document.getElementById('drawer').classList.contains('open')) { closeDrawer(); return; }
+  }
+  if (e.key === 'Tab' && focusContainer) {
+    var f = focusables(focusContainer);
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ── Azioni ── */
+function recapHtml(l) {
+  return '<div class="recap">'
+    + '<div class="kv-row"><span class="k">Ragione sociale</span><span class="v body">' + esc(l.ragioneSociale) + '</span></div>'
+    + '<div class="kv-row"><span class="k">P.IVA</span><span class="v">' + esc(l.partitaIva) + '</span></div>'
+    + '<div class="kv-row"><span class="k">Verdetto AI</span><span class="v body">' + verdettoPill(l.verdetto) + '</span></div>'
+    + '</div>';
+}
+function doAction(l, action) {
+  var nowIso = '2026-10-13T' + pad2(9 + action.length % 8) + ':' + pad2(20 + l.id % 30);
+  if (action === 'approva') {
+    l.stato = 'APPROVATO'; l.decisioneIl = nowIso; l.esportatoFile = 'lead-' + l.id + '.xlsx';
+    l.eventi.push({ tipo: 'azione_approva', createdAt: nowIso, dettagli: 'Approvata da admin (ufficio commerciale)' });
+    l.eventi.push({ tipo: 'export_integra', createdAt: nowIso, dettagli: 'File lead-' + l.id + '.xlsx pronto per Integra' });
+    var toastMsg = 'Approvata · lead-' + l.id + '.xlsx pronto per Integra';
+    var warn = !l.sede;
+    if (warn) toastMsg += ' · Completare indirizzo in Integra';
+    toast(toastMsg, warn ? 'warn' : 'ok');
+  } else if (action === 'verifica') {
+    l.stato = 'IN_VALUTAZIONE';
+    l.eventi.push({ tipo: 'azione_verifica', createdAt: nowIso, dettagli: 'Messa in verifica da admin' });
+    toast('Richiesta #' + l.id + ' messa in verifica', 'ok');
+  } else if (action === 'scarta') {
+    l.stato = 'SCARTATO'; l.decisioneIl = nowIso;
+    l.eventi.push({ tipo: 'azione_scarta', createdAt: nowIso, dettagli: 'Scartata da admin' });
+    toast('Richiesta #' + l.id + ' scartata', 'ok');
+  }
+}
+function askApprove(l) {
+  var warnScart = l.verdetto === 'SCARTARE';
+  openModal({
+    title: 'Approvare la richiesta?',
+    body: '<p style="margin:0">Confermi l’approvazione di questa richiesta di accesso?</p>' + recapHtml(l)
+      + (warnScart ? '<div class="warn-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>L’indagine AI suggerisce di <strong>scartare</strong>: approvare solo dopo una verifica diretta.</span></div>' : '')
+      + '<p class="note-quiet">Dopo l’approvazione viene generato il file per Integra e avviato l’invito del rivenditore.</p>',
+    confirmLabel: 'Approva',
+    onConfirm: function () { doAction(l, 'approva'); }
+  });
+}
+function askVerify(l) {
+  openModal({
+    title: 'Mettere in verifica la richiesta?',
+    body: '<p style="margin:0">La richiesta resta nella coda “Da decidere” come <strong>in verifica</strong>, in attesa di un riscontro.</p>' + recapHtml(l),
+    confirmLabel: 'Metti in verifica',
+    onConfirm: function () { doAction(l, 'verifica'); }
+  });
+}
+function askScarta(l) {
+  openModal({
+    title: 'Scartare la richiesta?',
+    body: '<p style="margin:0">Confermi lo scarto di questa richiesta?</p>' + recapHtml(l)
+      + '<p class="note-quiet">Lo scarto è definitivo. <strong>Nessuna comunicazione</strong> verrà inviata al richiedente.</p>',
+    confirmLabel: 'Scarta', danger: true,
+    onConfirm: function () { doAction(l, 'scarta'); }
+  });
+}
+
+/* ── Toast ── */
+function toast(msg, kind) {
+  var wrap = document.getElementById('toast-wrap');
+  var el = document.createElement('div');
+  el.className = 'toast ' + (kind || 'ok');
+  var icon = kind === 'warn'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>';
+  el.innerHTML = icon + '<span>' + esc(msg) + '</span>';
+  wrap.appendChild(el);
+  setTimeout(function () { el.remove(); }, 4200);
+}
+
+/* ── Init ── */
+(function init() {
+  renderKpi();
+  renderTable();
+
+  // KPI → filtro stato
+  Array.prototype.forEach.call(document.querySelectorAll('.dash-card'), function (card) {
+    card.addEventListener('click', function () {
+      filtroStato = card.dataset.stato;
+      document.getElementById('filtro-stato').value = filtroStato;
+      Array.prototype.forEach.call(document.querySelectorAll('.dash-card'), function (c) { c.classList.remove('is-active'); });
+      card.classList.add('is-active');
+      currentPage = 1;
+      renderKpi(); renderTable();
+    });
+  });
+
+  document.getElementById('filtro-stato').addEventListener('change', function () {
+    filtroStato = this.value; currentPage = 1;
+    Array.prototype.forEach.call(document.querySelectorAll('.dash-card'), function (c) { c.classList.toggle('is-active', c.dataset.stato === filtroStato); });
+    renderTable();
+  });
+  document.getElementById('filtro-verdetto').addEventListener('change', function () {
+    filtroVerdetto = this.value; currentPage = 1; renderTable();
+  });
+
+  // Search (debounce 250ms)
+  var timer;
+  document.getElementById('search-input').addEventListener('input', function () {
+    var v = this.value;
+    clearTimeout(timer);
+    timer = setTimeout(function () { searchQuery = v.trim(); currentPage = 1; renderTable(); }, 250);
+  });
+
+  // Pager
+  document.getElementById('pager-prev').addEventListener('click', function () { if (currentPage > 1) { currentPage--; renderTable(); } });
+  document.getElementById('pager-next').addEventListener('click', function () { currentPage++; renderTable(); });
+
+  // Row / eye → drawer
+  document.getElementById('lead-tbody').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr');
+    if (!tr) return;
+    openDrawer(Number(tr.dataset.id));
+  });
+
+  // Drawer close
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+  document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+
+  // Drawer actions
+  document.getElementById('drawer-foot').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn || !openLeadId) return;
+    var l = LEADS.filter(function (x) { return x.id === openLeadId; })[0];
+    if (!l) return;
+    if (btn.dataset.action === 'approva') askApprove(l);
+    else if (btn.dataset.action === 'verifica') askVerify(l);
+    else if (btn.dataset.action === 'scarta') askScarta(l);
+  });
+
+  // Modal
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-confirm').addEventListener('click', function () {
+    if (modalConfirmCb) modalConfirmCb();
+    closeModal();
+    if (openLeadId) { closeDrawer(); }
+    renderKpi(); renderTable();
+  });
+  document.getElementById('modal-overlay').addEventListener('click', function (e) { if (e.target === this) closeModal(); });
+})();
+</script>
+
+</body>
+</html>
