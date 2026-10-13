@@ -11,6 +11,18 @@ export const FILTRI_STATO: Record<string, string[] | null> = {
   tutti: null,
 };
 
+/** Colonne ordinabili della tabella → campo DB (whitelist). "attesa" = data di ricezione invertita. */
+export const ORDINAMENTI: Record<string, { campo: string; inverti?: boolean }> =
+  {
+    id: { campo: 'id' },
+    richiedente: { campo: 'ragioneSociale' },
+    piva: { campo: 'partitaIva' },
+    ricevuta: { campo: 'createdAt' },
+    verdetto: { campo: 'verdetto' },
+    stato: { campo: 'stato' },
+    attesa: { campo: 'createdAt', inverti: true },
+  };
+
 export const VERDETTI = ['BUONO', 'VERIFICARE', 'SCARTARE'];
 
 /** Giorni di attesa: solo per le richieste ancora da decidere. */

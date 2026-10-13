@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   FILTRI_STATO,
   GIORNI_ALLARME,
+  ORDINAMENTI,
   STATI_IN_ATTESA,
   VERDETTI,
   giorniAttesa,
@@ -22,6 +23,8 @@ export class AdminLeadsService {
     verdetto?: string;
     q?: string;
     page?: number;
+    sort?: string;
+    dir?: string;
   }) {
     const statoKey =
       p.stato && p.stato in FILTRI_STATO ? p.stato : 'da-decidere';
@@ -44,12 +47,19 @@ export class AdminLeadsService {
         : {}),
     };
     const page = Math.max(1, p.page || 1);
+    // Default: "Da decidere" le piu' vecchie in alto (attesa decrescente), altrimenti le piu' recenti.
+    const ord = p.sort ? ORDINAMENTI[p.sort] : undefined;
+    let verso: Prisma.SortOrder = statoKey === 'da-decidere' ? 'asc' : 'desc';
+    if (ord) verso = (p.dir === 'desc') !== !!ord.inverti ? 'desc' : 'asc';
+    const ordine: Prisma.LeadOrderByWithRelationInput = {
+      [ord?.campo ?? 'createdAt']:
+        ord?.campo === 'verdetto' ? { sort: verso, nulls: 'last' } : verso,
+    };
     const [total, righe, kpi] = await Promise.all([
       this.prisma.lead.count({ where }),
       this.prisma.lead.findMany({
         where,
-        // "Da decidere": le piu' vecchie in alto (attesa decrescente); altrimenti le piu' recenti.
-        orderBy: { createdAt: statoKey === 'da-decidere' ? 'asc' : 'desc' },
+        orderBy: [ordine, { id: 'asc' }],
         skip: (page - 1) * PAGINA,
         take: PAGINA,
         select: {

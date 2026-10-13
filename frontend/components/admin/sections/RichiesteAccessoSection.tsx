@@ -103,6 +103,7 @@ export default function RichiesteAccessoSection() {
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
   const [dati, setDati] = useState<Pagina | null>(null);
   const [loading, setLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
@@ -122,13 +123,14 @@ export default function RichiesteAccessoSection() {
       const p = new URLSearchParams({ stato, page: String(page) });
       if (verdetto !== "tutti") p.set("verdetto", verdetto);
       if (q) p.set("q", q);
+      if (sort) { p.set("sort", sort.key); p.set("dir", sort.dir); }
       setDati(await api.get<Pagina>(`/api/admin/leads?${p}`));
       setErrore(null);
     } catch (e) {
       setErrore(e instanceof ApiError ? e.code : "errors.generic");
     }
     setLoading(false);
-  }, [stato, verdetto, q, page]);
+  }, [stato, verdetto, q, page, sort]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- stesso schema di AdminOrdiniSection (fetch al cambio filtri)
   useEffect(() => { void carica(); }, [carica]);
@@ -179,21 +181,21 @@ export default function RichiesteAccessoSection() {
   }
 
   const colonne: Column<Riga>[] = useMemo(() => [
-    { key: "id", header: "#", width: "64px", mono: true, cell: (r) => <span style={{ fontWeight: 600, color: "var(--accent)" }}>{r.id}</span> },
+    { key: "id", header: "#", width: "64px", mono: true, sortable: true, sortValue: (r) => r.id, cell: (r) => <span style={{ fontWeight: 600, color: "var(--accent)" }}>{r.id}</span> },
     {
-      key: "richiedente", header: "Richiedente", grow: true, cell: (r) => (
+      key: "richiedente", header: "Richiedente", grow: true, sortable: true, sortValue: (r) => r.ragioneSociale.toLowerCase(), cell: (r) => (
         <div className="cell-entity"><div className="cell-entity-text">
           <div className="cell-entity-title">{r.ragioneSociale}</div>
           <div className="cell-entity-sub">{[r.citta, r.tipoAttivita ? TIPI[r.tipoAttivita] : null].filter(Boolean).join(" · ") || "—"}</div>
         </div></div>
       ),
     },
-    { key: "piva", header: "P.IVA", width: "130px", mono: true, cell: (r) => r.partitaIva },
-    { key: "ricevuta", header: "Ricevuta", width: "140px", mono: true, cell: (r) => dataOra(r.createdAt) },
-    { key: "verdetto", header: "Verdetto", width: "130px", cell: (r) => (r.verdetto ? pill(VERDETTO_PILL[r.verdetto]) : <span style={{ color: "var(--muted)" }}>—</span>) },
-    { key: "stato", header: "Stato", width: "130px", cell: (r) => pill(STATO_PILL[r.stato]) },
+    { key: "piva", header: "P.IVA", width: "130px", mono: true, sortable: true, sortValue: (r) => r.partitaIva, cell: (r) => r.partitaIva },
+    { key: "ricevuta", header: "Ricevuta", width: "140px", mono: true, sortable: true, sortValue: (r) => r.createdAt, cell: (r) => dataOra(r.createdAt) },
+    { key: "verdetto", header: "Verdetto", width: "130px", sortable: true, sortValue: (r) => r.verdetto ?? "~", cell: (r) => (r.verdetto ? pill(VERDETTO_PILL[r.verdetto]) : <span style={{ color: "var(--muted)" }}>—</span>) },
+    { key: "stato", header: "Stato", width: "130px", sortable: true, sortValue: (r) => r.stato, cell: (r) => pill(STATO_PILL[r.stato]) },
     {
-      key: "attesa", header: "Attesa", width: "96px", cell: (r) => r.giorniAttesa == null ? "" : (
+      key: "attesa", header: "Attesa", width: "96px", sortable: true, sortValue: (r) => r.giorniAttesa ?? -1, cell: (r) => r.giorniAttesa == null ? "" : (
         <span className={`attesa${r.giorniAttesa > 6 ? " warn" : ""}`}>{r.giorniAttesa > 6 ? "⚠ " : ""}{r.giorniAttesa} gg</span>
       ),
     },
@@ -267,6 +269,9 @@ export default function RichiesteAccessoSection() {
             pageSize={10}
             total={dati.total}
             onPageChange={setPage}
+            sortKey={sort?.key}
+            sortDir={sort?.dir}
+            onSort={(key, dir) => { setSort({ key, dir }); setPage(1); }}
           />
         )}
       </div>

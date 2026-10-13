@@ -39,8 +39,17 @@ export class AdminLeadsController {
     @Query('verdetto') verdetto?: string,
     @Query('q') q?: string,
     @Query('page') page?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
   ) {
-    return this.leads.elenco({ stato, verdetto, q, page: Number(page) || 1 });
+    return this.leads.elenco({
+      stato,
+      verdetto,
+      q,
+      page: Number(page) || 1,
+      sort,
+      dir,
+    });
   }
 
   /** Contatore per il badge del menu. */

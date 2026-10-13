@@ -8,6 +8,9 @@
   border-radius: 999px; display: grid; place-items: center; padding: 0 6px;
 }
 
+/* Il wrapper della sezione prosegue la catena flex di .admin-main: la tabella riempie l'altezza e scrolla il corpo */
+.ra:not(.ra-drawer) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
 .ra button.dash-card { font: inherit; text-align: left; cursor: pointer; width: 100%; color: inherit; transition: box-shadow .15s ease; }
 .ra button.dash-card:hover { box-shadow: 0 6px 18px var(--fg-soft); }
 .ra .dash-card.is-active { background: color-mix(in oklch, var(--accent) 8%, var(--surface)); }
