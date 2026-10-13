@@ -203,7 +203,29 @@ export default function RichiesteAccessoSection() {
   const k = dati?.kpi;
   return (
     <div className="ra">
-      <AdminTopBar title="Richieste accesso" searchValue={search} onSearchChange={setSearch} searchPlaceholder="Cerca ragione sociale, P.IVA, email, referente…" />
+      <AdminTopBar
+        title="Richieste accesso"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Cerca ragione sociale, P.IVA, email, referente…"
+        filter={stato}
+        onFilterChange={filtra}
+        filterOptions={[
+          { value: "da-decidere", label: "Da decidere" },
+          { value: "nuovo", label: "Nuove" },
+          { value: "in-verifica", label: "In verifica" },
+          { value: "approvato", label: "Approvate" },
+          { value: "scartato", label: "Scartate" },
+          { value: "tutti", label: "Tutte" },
+        ]}
+      >
+        <select className="input filter-select" style={{ width: "auto", minWidth: 170 }} value={verdetto} onChange={(e) => { setVerdetto(e.target.value); setPage(1); }} aria-label="Filtra per verdetto">
+          <option value="tutti">Tutti i verdetti</option>
+          <option value="BUONO">Buono</option>
+          <option value="VERIFICARE">Verificare</option>
+          <option value="SCARTARE">Scartare</option>
+        </select>
+      </AdminTopBar>
       <div className="admin-content">
         {errore && <Notice variant="error" onClose={() => setErrore(null)}>Errore: {errore}</Notice>}
         {esito && <Notice variant={esito.variant} onClose={() => setEsito(null)}>{esito.testo}</Notice>}
@@ -232,30 +254,6 @@ export default function RichiesteAccessoSection() {
             </button>
           </div>
         )}
-
-        <div className="filter-bar">
-          <div className="filter-field">
-            <label htmlFor="ra-stato">Stato</label>
-            <select id="ra-stato" value={stato} onChange={(e) => filtra(e.target.value)}>
-              <option value="da-decidere">Da decidere</option>
-              <option value="nuovo">Nuove</option>
-              <option value="in-verifica">In verifica</option>
-              <option value="approvato">Approvate</option>
-              <option value="scartato">Scartate</option>
-              <option value="tutti">Tutte</option>
-            </select>
-          </div>
-          <div className="filter-field">
-            <label htmlFor="ra-verdetto">Verdetto</label>
-            <select id="ra-verdetto" value={verdetto} onChange={(e) => { setVerdetto(e.target.value); setPage(1); }}>
-              <option value="tutti">Tutti</option>
-              <option value="BUONO">Buono</option>
-              <option value="VERIFICARE">Verificare</option>
-              <option value="SCARTARE">Scartare</option>
-            </select>
-          </div>
-          <div className="filter-count">{dati ? `${dati.total} richiest${dati.total === 1 ? "a" : "e"}` : "—"}</div>
-        </div>
 
         {dati && (
           <DataTable
