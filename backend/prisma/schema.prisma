@@ -555,6 +555,8 @@ model SuggestionBox {
   pesi              Json     @default("{\"acquisti\":0.40,\"tracking\":0.25,\"progetti\":0.20,\"affinita\":0.15}")
   soloInOfferta     Boolean  @default(false) @map("solo_in_offerta")
   escludiAcquistati Boolean  @default(true) @map("escludi_acquistati")
+  /// Opposto di escludiAcquistati: solo articoli gia' ordinati dal cliente (box "riordina"). Ha la precedenza.
+  soloAcquistati    Boolean  @default(false) @map("solo_acquistati")
   scopeFamiglia     String   @default("") @map("scope_famiglia")
   scopeRaccolta     String   @default("") @map("scope_raccolta")
   attiva            Boolean  @default(true)

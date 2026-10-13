@@ -38,6 +38,10 @@ export class CreateSuggestionBoxDto {
   escludiAcquistati?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  soloAcquistati?: boolean;
+
+  @IsOptional()
   @IsString()
   scopeFamiglia?: string;
 

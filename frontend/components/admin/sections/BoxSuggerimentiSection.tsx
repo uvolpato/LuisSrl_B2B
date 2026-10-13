@@ -22,6 +22,7 @@ interface Box {
   pesi: Pesi | null;
   soloInOfferta: boolean;
   escludiAcquistati: boolean;
+  soloAcquistati: boolean;
   scopeFamiglia: string;
   scopeRaccolta: string;
   attiva: boolean;
@@ -32,6 +33,16 @@ interface Famiglia { codice: string; nome: string; nomePortale?: string | null }
 interface Raccolta { slug: string; nome: string }
 
 const DEFAULT_PESI: Pesi = { acquisti: 0.4, tracking: 0.25, progetti: 0.2, affinita: 0.15 };
+/** Gli slider sono la quota di ciascun segnale: spostandone uno gli altri si riscalano
+ *  in proporzione, cosi' il totale resta 100% e cursori ed etichette restano allineati. */
+function ribilancia(pesi: Pesi, k: keyof Pesi, v: number): Pesi {
+  const altri = (Object.keys(pesi) as (keyof Pesi)[]).filter((x) => x !== k);
+  const resto = altri.reduce((s, x) => s + pesi[x], 0);
+  const out = { ...pesi, [k]: v };
+  for (const x of altri) out[x] = Math.round((resto > 0 ? (pesi[x] / resto) * (1 - v) : (1 - v) / altri.length) * 1e4) / 1e4;
+  return out;
+}
+
 const PESI_LABEL: Record<keyof Pesi, string> = {
   acquisti: "Acquisti", tracking: "Interesse recente", progetti: "Progetti", affinita: "Clienti simili",
 };
@@ -243,6 +254,7 @@ function BoxEditModal({
   const [attiva, setAttiva] = useState(true);
   const [soloInOfferta, setSoloInOfferta] = useState(false);
   const [escludiAcquistati, setEscludiAcquistati] = useState(true);
+  const [soloAcquistati, setSoloAcquistati] = useState(false);
   const [scopeFamiglia, setScopeFamiglia] = useState("");
   const [scopeRaccolta, setScopeRaccolta] = useState("");
   const [pesi, setPesi] = useState<Pesi>(DEFAULT_PESI);
@@ -260,29 +272,32 @@ function BoxEditModal({
       setTitolo(box.titolo); setPrompt(box.prompt); setRicercaTesto(box.ricercaTesto ?? "");
       setAmbito(box.ambito || "cliente");
       setNArticoli(String(box.nArticoli)); setOrdinamento(String(box.ordinamento));
-      setAttiva(box.attiva); setSoloInOfferta(box.soloInOfferta); setEscludiAcquistati(box.escludiAcquistati);
+      setAttiva(box.attiva); setSoloInOfferta(box.soloInOfferta); setEscludiAcquistati(box.escludiAcquistati); setSoloAcquistati(box.soloAcquistati);
       setScopeFamiglia(box.scopeFamiglia ?? ""); setScopeRaccolta(box.scopeRaccolta ?? "");
       setPesi({ ...DEFAULT_PESI, ...(box.pesi ?? {}) });
     } else {
       setTitolo(""); setPrompt(""); setRicercaTesto(""); setAmbito("cliente"); setNArticoli("8"); setOrdinamento("0");
-      setAttiva(true); setSoloInOfferta(false); setEscludiAcquistati(true);
+      setAttiva(true); setSoloInOfferta(false); setEscludiAcquistati(true); setSoloAcquistati(false);
       setScopeFamiglia(""); setScopeRaccolta(""); setPesi(DEFAULT_PESI);
     }
     setSaveError(null); setPlanNote(null); setTestResult(null); setTestError(null);
   }, [open, box]);
 
   const pesiTot = pesi.acquisti + pesi.tracking + pesi.progetti + pesi.affinita;
+  // "Solo gia' acquistati" vale solo per i box per cliente (i generali non hanno un cliente).
+  const soloAcquistatiEff = ambito === "cliente" && soloAcquistati;
 
   async function interpretaPrompt() {
     if (!prompt.trim()) { setSaveError("Scrivi prima un prompt da interpretare"); return; }
     setPlanning(true); setSaveError(null); setPlanNote(null);
     try {
-      const res = await api.post<{ piano: { ricercaTesto: string; escludiAcquistati: boolean; soloInOfferta: boolean; nArticoli: number; pesi: Pesi; note: string } }>(
+      const res = await api.post<{ piano: { ricercaTesto: string; escludiAcquistati: boolean; soloAcquistati: boolean; soloInOfferta: boolean; nArticoli: number; pesi: Pesi; note: string } }>(
         "/api/dashboard/suggerimenti/pianifica", { prompt },
       );
       const p = res.piano;
       setRicercaTesto(p.ricercaTesto ?? "");
       setEscludiAcquistati(p.escludiAcquistati);
+      setSoloAcquistati(!!p.soloAcquistati);
       setSoloInOfferta(p.soloInOfferta);
       setNArticoli(String(p.nArticoli));
       setPesi({ ...DEFAULT_PESI, ...(p.pesi ?? {}) });
@@ -298,7 +313,7 @@ function BoxEditModal({
       const body = {
         titolo: titolo.trim() || "Anteprima", prompt: prompt.trim(), ricercaTesto: ricercaTesto.trim() || null,
         ambito, nArticoli: Math.min(24, Math.max(1, parseInt(nArticoli, 10) || 8)), pesi,
-        soloInOfferta, escludiAcquistati, scopeFamiglia, scopeRaccolta,
+        soloInOfferta, escludiAcquistati, soloAcquistati: soloAcquistatiEff, scopeFamiglia, scopeRaccolta,
       };
       const res = await api.post<{ articoli: any[]; rationale: string | null }>("/api/dashboard/suggerimenti/test", body);
       setTestResult(res);
@@ -319,7 +334,7 @@ function BoxEditModal({
       ambito,
       nArticoli: Math.min(24, Math.max(1, parseInt(nArticoli, 10) || 8)),
       ordinamento: parseInt(ordinamento, 10) || 0,
-      attiva, soloInOfferta, escludiAcquistati,
+      attiva, soloInOfferta, escludiAcquistati, soloAcquistati: soloAcquistatiEff,
       scopeFamiglia, scopeRaccolta,
       pesi,
     };
@@ -425,19 +440,26 @@ function BoxEditModal({
               <input type="checkbox" checked={soloInOfferta} onChange={(e) => setSoloInOfferta(e.target.checked)} style={{ width: 16, height: 16 }} />
               Solo articoli in offerta (richiede promozioni attive)
             </label>
-            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 18, fontSize: 14, whiteSpace: "nowrap" }}>
-              <input type="checkbox" checked={escludiAcquistati} onChange={(e) => setEscludiAcquistati(e.target.checked)} style={{ width: 16, height: 16 }} />
+            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, fontSize: 14, whiteSpace: "nowrap" }}>
+              <input type="checkbox" checked={escludiAcquistati && !soloAcquistatiEff}
+                onChange={(e) => { setEscludiAcquistati(e.target.checked); if (e.target.checked) setSoloAcquistati(false); }} style={{ width: 16, height: 16 }} />
               Escludi articoli già acquistati
+            </label>
+            <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 18, fontSize: 14, whiteSpace: "nowrap", opacity: ambito === "cliente" ? 1 : 0.5 }}
+              title={ambito === "cliente" ? undefined : "Disponibile solo per i box per cliente"}>
+              <input type="checkbox" checked={soloAcquistatiEff} disabled={ambito !== "cliente"}
+                onChange={(e) => { setSoloAcquistati(e.target.checked); if (e.target.checked) setEscludiAcquistati(false); }} style={{ width: 16, height: 16 }} />
+              Solo articoli già acquistati (es. &quot;Riordina&quot;)
             </label>
 
             <label className="label" style={{ marginBottom: 8 }}>
-              Pesi dei segnali {pesiTot > 0 && <span style={{ color: "var(--muted)", fontWeight: 400 }}>(normalizzati, tot. {pesiTot.toFixed(2)})</span>}
+              Pesi dei segnali <span style={{ color: "var(--muted)", fontWeight: 400 }}>(totale 100%)</span>
             </label>
             {(Object.keys(PESI_LABEL) as (keyof Pesi)[]).map((k) => (
               <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                 <span style={{ flex: 1, fontSize: 13 }}>{PESI_LABEL[k]}</span>
-                <input type="range" min="0" max="1" step="0.05" value={pesi[k]}
-                  onChange={(e) => setPesi((p) => ({ ...p, [k]: parseFloat(e.target.value) }))} style={{ flex: 2 }} />
+                <input type="range" min="0" max="1" step="0.01" value={pesiTot > 0 ? pesi[k] / pesiTot : 0}
+                  onChange={(e) => setPesi((p) => ribilancia(p, k, parseFloat(e.target.value)))} style={{ flex: 2 }} aria-label={PESI_LABEL[k]} />
                 <span style={{ width: 34, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 12 }}>
                   {pesiTot > 0 ? `${Math.round((pesi[k] / pesiTot) * 100)}%` : "0%"}
                 </span>

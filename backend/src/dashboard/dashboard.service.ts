@@ -333,6 +333,7 @@ export class DashboardService {
       this.poolVincoli(box, customerId, esclusi),
       this.segnaliCliente(customerId),
     ]);
+    if (!pool.length && box.soloAcquistati) return { articoli: [], rationale: null };
     if (!pool.length) {
       const articoli = await this.randomFallback(box, codiceListino, esclusi);
       return { articoli, rationale: articoli.length ? await this.generaRationale(box, articoli) : null };
@@ -350,6 +351,8 @@ export class DashboardService {
     codiceListino?: string | null,
     esclusi?: Set<string>,
   ): Promise<{ articoli: any[]; rationale: string | null }> {
+    // Box generale: "solo acquistati" non ha senso (nessun cliente) → vuoto, non casuale.
+    if (box.soloAcquistati) return { articoli: [], rationale: null };
     const pool = await this.poolVincoli(box, GENERALE_ID, esclusi);
     if (!pool.length) {
       const articoli = await this.randomFallback(box, codiceListino, esclusi);
@@ -419,8 +422,8 @@ export class DashboardService {
       `Dato il prompt del box qui sotto, estrai un PIANO di configurazione deterministico.\n` +
       `Prompt: "${prompt.trim()}"\n\n` +
       `Rispondi SOLO con JSON valido, senza markdown, con questi campi:\n` +
-      `{"ricercaTesto":"stringa di ricerca distillata dal prompt","escludiAcquistati":bool,"soloInOfferta":bool,"nArticoli":int,"pesi":{"acquisti":num,"tracking":num,"progetti":num,"affinita":num},"note":"una riga che spiega il piano"}\n` +
-      `Regole: nArticoli tra 4 e 24; i pesi sono proporzioni relative (non devono sommare 1); soloInOfferta=true solo se il prompt parla di offerte/promo; escludiAcquistati=true solo se il prompt implica novità/mai comprati.`;
+      `{"ricercaTesto":"stringa di ricerca distillata dal prompt","escludiAcquistati":bool,"soloAcquistati":bool,"soloInOfferta":bool,"nArticoli":int,"pesi":{"acquisti":num,"tracking":num,"progetti":num,"affinita":num},"note":"una riga che spiega il piano"}\n` +
+      `Regole: nArticoli tra 4 e 24; i pesi sono proporzioni relative (non devono sommare 1); soloInOfferta=true solo se il prompt parla di offerte/promo; escludiAcquistati=true solo se il prompt implica novità/mai comprati; soloAcquistati=true solo se il prompt parla di riordino/articoli già comprati (mai entrambi true).`;
     const parsed = await this.chiamaJson(p, 'piano box');
     if (!parsed) return null;
     const n = Math.min(24, Math.max(4, Number(parsed.nArticoli) || 8));
@@ -433,7 +436,8 @@ export class DashboardService {
     }
     return {
       ricercaTesto: typeof parsed.ricercaTesto === 'string' ? parsed.ricercaTesto.trim() : '',
-      escludiAcquistati: !!parsed.escludiAcquistati,
+      escludiAcquistati: !parsed.soloAcquistati && !!parsed.escludiAcquistati,
+      soloAcquistati: !!parsed.soloAcquistati,
       soloInOfferta: !!parsed.soloInOfferta,
       nArticoli: n,
       pesi,
@@ -449,7 +453,7 @@ export class DashboardService {
     input: {
       titolo?: string; prompt?: string; ricercaTesto?: string | null; ambito?: string;
       nArticoli?: number; pesi?: Record<string, number>; soloInOfferta?: boolean;
-      escludiAcquistati?: boolean; scopeFamiglia?: string; scopeRaccolta?: string;
+      escludiAcquistati?: boolean; soloAcquistati?: boolean; scopeFamiglia?: string; scopeRaccolta?: string;
     },
     clienteId?: number,
   ) {
@@ -463,6 +467,7 @@ export class DashboardService {
       nArticoli: input.nArticoli ?? 8,
       pesi: (input.pesi ?? { ...DEFAULT_PESI }) as never,
       soloInOfferta: !!input.soloInOfferta, escludiAcquistati: input.escludiAcquistati !== false,
+      soloAcquistati: !!input.soloAcquistati,
       scopeFamiglia: input.scopeFamiglia ?? '', scopeRaccolta: input.scopeRaccolta ?? '',
       attiva: true, ordinamento: 0,
       createdAt: new Date(), updatedAt: new Date(),
@@ -616,7 +621,7 @@ export class DashboardService {
   // ── Vincoli (SQL) ──────────────────────────────────────────────────────────
 
   private async poolVincoli(
-    box: Pick<Prisma.SuggestionBoxGetPayload<Record<string, never>>, 'soloInOfferta' | 'escludiAcquistati' | 'scopeFamiglia' | 'scopeRaccolta'>,
+    box: Pick<Prisma.SuggestionBoxGetPayload<Record<string, never>>, 'soloInOfferta' | 'escludiAcquistati' | 'soloAcquistati' | 'scopeFamiglia' | 'scopeRaccolta'>,
     customerId: number,
     esclusi?: Set<string>,
   ): Promise<Candidato[]> {
@@ -641,7 +646,18 @@ export class DashboardService {
       params.push(box.scopeRaccolta.trim());
       idx++;
     }
-    if (box.escludiAcquistati) {
+    if (box.soloAcquistati) {
+      // Solo gia' ordinati dal cliente (variante o codice linea). Ha la precedenza su escludiAcquistati.
+      conds.push(`(EXISTS (
+        SELECT 1 FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+        JOIN varianti v ON v.codice = ro.codice_prodotto
+        WHERE v.articolo_id = a.id AND o.customer_id = $${idx})
+       OR EXISTS (
+        SELECT 1 FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
+        WHERE ro.codice_prodotto = a.codice_linea AND o.customer_id = $${idx}))`);
+      params.push(customerId);
+      idx++;
+    } else if (box.escludiAcquistati) {
       // codice_prodotto può essere codice variante oppure codice linea: copre entrambi.
       conds.push(`NOT EXISTS (
         SELECT 1 FROM righe_ordini ro JOIN ordini_clienti o ON o.id = ro.ordine_id
