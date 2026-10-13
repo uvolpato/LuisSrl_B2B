@@ -1,0 +1,84 @@
+/* Sezione admin "Richieste accesso" — dal prototipo admin-richieste-accesso.html.
+   Tutto sotto .ra per non interferire con il resto dell'admin (che ha gia' .pill/.badge ecc.). */
+
+/* Badge contatore nel menu laterale (fuori da .ra) */
+.nav-badge {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  background: var(--accent); color: var(--surface); min-width: 20px; height: 20px;
+  border-radius: 999px; display: grid; place-items: center; padding: 0 6px;
+}
+
+.ra button.dash-card { font: inherit; text-align: left; cursor: pointer; width: 100%; color: inherit; transition: box-shadow .15s ease; }
+.ra button.dash-card:hover { box-shadow: 0 6px 18px var(--fg-soft); }
+.ra .dash-card.is-active { background: color-mix(in oklch, var(--accent) 8%, var(--surface)); }
+.ra .dash-card .value.amber { color: var(--amber); }
+.ra .dash-card .value.blue { color: var(--blue); }
+.ra .dash-card .sub.warn { color: var(--amber); font-weight: 600; }
+
+.ra .filter-bar {
+  display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.ra .filter-field { display: flex; flex-direction: column; gap: 5px; }
+.ra .filter-field label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ra .filter-field select { min-width: 168px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); font: inherit; font-size: 13.5px; color: var(--fg); }
+.ra .filter-count { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+.ra .cell-entity-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+.ra .attesa { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.ra .attesa.warn { color: var(--amber); font-weight: 600; }
+
+/* Pannello di dettaglio */
+.ra-drawer-overlay { position: fixed; inset: 0; z-index: 60; background: color-mix(in oklch, var(--fg) 34%, transparent); }
+.ra-drawer {
+  position: fixed; top: 0; right: 0; z-index: 70; height: 100vh; width: 560px; max-width: 100%;
+  background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column;
+  box-shadow: -12px 0 34px color-mix(in oklch, var(--fg) 12%, transparent);
+  animation: raSlide .2s ease;
+}
+@keyframes raSlide { from { transform: translateX(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ra-drawer { animation: none; } }
+@media (max-width: 720px) { .ra-drawer { width: 100%; } .ra .kv-grid { grid-template-columns: 1fr; } }
+.ra-drawer .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
+.ra-drawer .rid { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.ra-drawer h2 { font-size: 19px; line-height: 1.25; margin: 0; font-family: var(--font-display); }
+.ra-drawer .meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ra-drawer .meta-text { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.ra-drawer .icon-btn { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.ra-drawer .icon-btn:hover { background: var(--fg-soft); color: var(--fg); }
+.ra-drawer .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px 24px; }
+.ra-drawer .drawer-foot { flex-shrink: 0; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding: 14px 24px; border-top: 1px solid var(--border); }
+.ra-drawer .section-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+.ra-drawer .drawer-section { margin-bottom: 22px; }
+.ra-drawer .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ra-drawer .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 3px 0; font-size: 13px; }
+.ra-drawer .kv-row .k { color: var(--muted); }
+.ra-drawer .kv-row .v { font-weight: 500; font-family: var(--font-mono); text-align: right; overflow-wrap: anywhere; }
+.ra-drawer .msg-box { background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; }
+.ra-drawer .msg-box p { margin: 6px 0 0; font-style: italic; white-space: pre-wrap; }
+.ra-drawer .signal-row { display: grid; grid-template-columns: 122px 1fr auto; gap: 14px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ra-drawer .signal-row .sig-label { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.ra-drawer .src { font-family: var(--font-mono); font-size: 11px; color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); border-radius: 5px; padding: 0 4px; margin-left: 4px; }
+.ra-drawer .bd { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.ra-drawer .bd-ok { background: color-mix(in oklch, var(--green) 14%, transparent); color: var(--green); }
+.ra-drawer .bd-neutral { background: var(--fg-soft); color: var(--muted); }
+.ra-drawer .bd-amber { background: color-mix(in oklch, var(--amber) 16%, transparent); color: var(--amber); }
+.ra-drawer .bd-red { background: color-mix(in oklch, var(--red) 14%, transparent); color: var(--red); }
+.ra-drawer .sintesi { font-size: 13px; margin: 12px 0 0; }
+.ra-drawer .verdict-box { background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent); border-radius: var(--radius); padding: 14px 16px; margin-top: 16px; }
+.ra-drawer .vchip { display: inline-block; background: var(--accent); color: var(--surface); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 7px; }
+.ra-drawer .vval { font-weight: 700; font-size: 15px; margin-left: 10px; }
+.ra-drawer .vval.ok { color: var(--green); } .ra-drawer .vval.amber { color: var(--amber); } .ra-drawer .vval.red { color: var(--red); }
+.ra-drawer .vnote { font-size: 12.5px; color: var(--muted); }
+.ra-drawer .checklist { margin-top: 16px; background: color-mix(in oklch, var(--amber) 8%, transparent); border: 1px solid color-mix(in oklch, var(--amber) 30%, transparent); border-radius: var(--radius); padding: 14px 16px; }
+.ra-drawer .checklist ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.ra-drawer .timeline { position: relative; padding-left: 20px; }
+.ra-drawer .timeline::before { content: ''; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 1px; background: var(--border); }
+.ra-drawer .tl-item { position: relative; padding: 0 0 14px; }
+.ra-drawer .tl-item::before { content: ''; position: absolute; left: -20px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.ra-drawer .tl-item.accent::before { border-color: var(--accent); }
+.ra-drawer .tl-when { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.ra-drawer .tl-what { font-size: 13px; }
+.ra-drawer .consent-box, .ra-drawer .final-note { background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
+.ra-warn-red { margin-top: 12px; background: color-mix(in oklch, var(--red) 14%, transparent); border: 1px solid color-mix(in oklch, var(--red) 34%, transparent); border-radius: var(--radius); padding: 10px 12px; color: var(--red); font-size: 13px; }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Lead } from '@prisma/client';
+import type { Lead, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ExportClienteService,
@@ -62,7 +62,7 @@ export class AzioniLeadService {
     return { tipo: ammessa ? 'conferma' : 'gia_fatta', lead, azione: t.azione };
   }
 
-  /** POST: esegue la transizione in modo atomico (doppio click o link riusato → gia_fatta). */
+  /** POST dal link della mail: verifica la firma, poi applica la transizione. */
   async esegui(
     p: Parametri,
     ip: string | null,
@@ -70,27 +70,40 @@ export class AzioniLeadService {
   ): Promise<EsitoAzione> {
     const t = verificaToken(p, segretoAzioni());
     if (!t.ok) return { tipo: 'errore', motivo: t.motivo };
-    const { da, a } = TRANSIZIONI[t.azione];
-    const finale = t.azione !== 'verifica';
+    return this.applica(t.leadId, t.azione, {
+      ip,
+      userAgent: userAgent?.slice(0, 300) ?? null,
+    });
+  }
+
+  /**
+   * Transizione atomica condivisa da link mail e area admin (doppio click o decisione gia' presa →
+   * gia_fatta). Le richieste anonimizzate non si modificano.
+   */
+  async applica(
+    leadId: number,
+    azione: Azione,
+    dettagli: Prisma.InputJsonObject,
+  ): Promise<EsitoAzione> {
+    const { da, a } = TRANSIZIONI[azione];
+    const finale = azione !== 'verifica';
     const res = await this.prisma.lead.updateMany({
-      where: { id: t.leadId, stato: { in: da } },
+      where: { id: leadId, stato: { in: da }, anonimizzatoIl: null },
       data: { stato: a, ...(finale ? { decisioneIl: new Date() } : {}) },
     });
-    const lead = await this.prisma.lead.findUnique({ where: { id: t.leadId } });
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) return { tipo: 'errore', motivo: 'inesistente' };
-    if (res.count === 0) return { tipo: 'gia_fatta', lead, azione: t.azione };
+    if (res.count === 0) return { tipo: 'gia_fatta', lead, azione };
     await this.prisma.leadEvent.create({
       data: {
         leadId: lead.id,
-        tipo: `azione_${t.azione}`,
-        dettagli: { ip, userAgent: userAgent?.slice(0, 300) ?? null },
+        tipo: `azione_${azione}`,
+        dettagli: dettagli,
       },
     });
     // Approvato → anagrafica per Integra (best-effort: l'approvazione resta valida anche se il file fallisce).
     const exp =
-      t.azione === 'approva'
-        ? await this.exportCliente.esporta(lead)
-        : undefined;
-    return { tipo: 'eseguita', lead, azione: t.azione, export: exp };
+      azione === 'approva' ? await this.exportCliente.esporta(lead) : undefined;
+    return { tipo: 'eseguita', lead, azione, export: exp };
   }
 }

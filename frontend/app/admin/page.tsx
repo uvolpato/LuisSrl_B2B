@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import "./admin.css";
+import "./richieste-accesso.css";
 import { useAuth } from "../../lib/use-auth";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -16,9 +17,11 @@ import ListiniSection from "../../components/admin/sections/ListiniSection";
 import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizioneSection";
 import AdminOrdiniSection from "../../components/admin/sections/AdminOrdiniSection";
 import CouponSection from "../../components/admin/sections/CouponSection";
+import RichiesteAccessoSection from "../../components/admin/sections/RichiesteAccessoSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
+  "richieste-accesso": "Richieste accesso",
   articoli: "Gestione Articoli",
   famiglie: "Famiglie (da Integra)",
   raccolte: "Raccolte di portale",
@@ -57,6 +60,7 @@ export default function AdminPage() {
       {section === "listini" && <ListiniSection />}
       {section === "ordini" && <AdminOrdiniSection />}
       {section === "coupon" && <CouponSection />}
+      {section === "richieste-accesso" && <RichiesteAccessoSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
     </AdminLayout>
   );

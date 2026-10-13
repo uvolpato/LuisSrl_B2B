@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { LeadsController } from './leads.controller';
+import { AdminLeadsController } from './admin-leads.controller';
+import { AdminLeadsService } from './admin-leads.service';
 import { LeadsService } from './leads.service';
 import { IndagineService } from './indagine.service';
 import { AzioniLeadService } from './azioni.service';
@@ -12,7 +14,7 @@ import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
 
 @Module({
   imports: [IntegrazioneModule, CustomersModule],
-  controllers: [LeadsController],
+  controllers: [LeadsController, AdminLeadsController],
   providers: [
     LeadsService,
     IndagineService,
@@ -20,6 +22,7 @@ import { DatiImpresaService } from '../dati-impresa/dati-impresa.service';
     ExportClienteService,
     ConservazioneLeadService,
     AggancioLeadService,
+    AdminLeadsService,
     DatiImpresaService,
   ],
   exports: [ExportClienteService],

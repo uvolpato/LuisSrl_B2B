@@ -22,6 +22,7 @@ const NAV_ITEMS = [
     section: "Vendite",
     items: [
       { id: "clienti", label: "Clienti", icon: "users" },
+      { id: "richieste-accesso", label: "Richieste accesso", icon: "clipboard" },
       { id: "listini", label: "Listini", icon: "dollar" },
       { id: "ordini", label: "Ordini", icon: "bag" },
       { id: "coupon", label: "Coupon e campagne", icon: "tag" },
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
 
 // Icone identiche al prototipo 06-admin.html
 const ICONS: Record<string, React.ReactNode> = {
+  clipboard: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>,
   grid: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   list: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>,
   folder: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
@@ -90,6 +92,16 @@ export default function AdminSidebar({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [demoSize, setDemoSize] = useState<"sm" | "md" | "lg" | null>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const [richieste, setRichieste] = useState(0);
+
+  // Badge "Richieste accesso": aggiornato all'avvio e dopo ogni decisione (evento dalla sezione)
+  useEffect(() => {
+    const aggiorna = () =>
+      api.get<{ daDecidere: number }>("/api/admin/leads/conteggio").then((r) => setRichieste(r.daDecidere), () => setRichieste(0));
+    void aggiorna();
+    window.addEventListener("leads-updated", aggiorna);
+    return () => window.removeEventListener("leads-updated", aggiorna);
+  }, []);
 
   // Chiude il menu utente al click fuori
   useEffect(() => {
@@ -136,6 +148,7 @@ export default function AdminSidebar({
               >
                 {ICONS[item.icon]}
                 {item.label}
+                {item.id === "richieste-accesso" && richieste > 0 && <span className="nav-badge">{richieste}</span>}
               </button>
             ))}
           </div>
