@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo — Mail presentazione Luis S.r.l. (contatti fiera)</title>
+<!--
+  PROTOTIPO con dati di esempio.
+  Mappa segnaposti (per l'eventuale template attivo):
+  {{REFERENTE}} (facoltativo: per invio batch senza nome usare "Gentile struttura,")
+  {{RAGIONE_SOCIALE}} {{FIERA}} {{DATA}}
+  {{LINK_CATALOGO_POTTERY}} (catalogo Luis Pottery) {{LINK_CATALOGO_CAPI}} (catalogo Luis Capi)
+  Nel template attivo il logo va servito come cid:logo (vedi lead-conferma.html).
+
+  Note per il template attivo (consegnabilità e legge):
+  - Reply-To: shop@luisbg.it (casella presidiata)
+  - Header List-Unsubscribe: <mailto:shop@luisbg.it?subject=cancella>
+  - Header List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  - Una email per destinatario, mai in CCN; esclusione permanente in tabella dedicata.
+-->
+<style>
+  body { background:#f3f1ec; margin:0; padding:24px 12px; font-family:Arial,Helvetica,sans-serif; color:#221811; }
+  .email { max-width:640px; margin:0 auto; background:#fff; border:1px solid #e7e2db; border-radius:14px; overflow:hidden; }
+  .preview-bar { background:#221811; color:#fff; font-size:11px; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:8px; font-family:'Courier New',monospace; }
+  @media (max-width:660px){ .email{ border-radius:0; border-left:0; border-right:0; } }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">Anteprima prototipo — non inviare</div>
+
+<div class="email">
+
+  <!-- OGGETTO (solo anteprima) -->
+  <div style="background:#efeae5;padding:12px 28px;font-size:13px;border-bottom:1px solid #e7e2db;">
+    <strong>OGGETTO:</strong> Un tocco di design per la tua struttura – Post Fiera LUIS S.r.l.
+  </div>
+
+  <!-- Header -->
+  <div style="padding:22px 28px 0;">
+    <img src="../frontend/public/images/b2b/logo-email.png" alt="Luis S.r.l." style="height:44px;">
+  </div>
+
+  <!-- Intestazione -->
+  <div style="padding:18px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b2511e;margin:0 0 8px;">Vasi da esterno e interno all'ingrosso · dal 1995</p>
+    <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;margin:0 0 10px;">Design e verde per il comfort della tua struttura</h1>
+    <p style="font-size:13.5px;color:#706760;margin:0;">InOut | The Hospitality Community · stand 42 · 12/09/2026</p>
+  </div>
+
+  <!-- Lettera -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">Gentile <strong>Marco Rossi</strong>,</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">È stato un piacere conoscerci e confrontarci durante i giorni della fiera.</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">Il comfort di una struttura dedicata all'ospitalità <strong>si esprime attraverso i dettagli</strong>. Un ambiente memorabile nasce anche dalla <em>cura millimetrica del verde</em>, essenziale per valorizzare terrazzi, aree relax, bordo piscina e interni, trasformandoli in <em>spazi di puro benessere</em>.</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">Con la nostra <strong>Collezione LUIS</strong>, aiutiamo i professionisti dell'ospitalità a dare forma a questi progetti d'arredo. Offriamo una <strong>selezione esclusiva</strong> di vasi all'ingrosso pensati per resistere all'esterno e valorizzare gli interni. Troverai soluzioni ricercate in materiali d'eccellenza: <em>dal moderno e leggero fiberstone al metallo, fino all'autentica terracotta e ai cesti intrecciati</em>.</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0;">Abbiamo racchiuso tutte le nostre proposte dedicate al settore turistico e ricettivo nei nostri <strong>cataloghi ufficiali</strong>.</p>
+  </div>
+
+  <!-- CTA cataloghi -->
+  <div style="padding:22px 28px 0;text-align:center;">
+    <p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 12px;">Scarica i cataloghi</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+      <tr>
+        <td style="padding:0 5px;">
+          <table role="presentation" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#fdf3ee;border:1px solid #e3b59a;border-radius:8px;">
+                <a href="{{LINK_CATALOGO_POTTERY}}" style="display:inline-block;padding:12px 20px;font-size:13.5px;font-weight:700;color:#b2511e;text-decoration:none;">Luis Pottery</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="padding:0 5px;">
+          <table role="presentation" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#fdf3ee;border:1px solid #e3b59a;border-radius:8px;">
+                <a href="{{LINK_CATALOGO_CAPI}}" style="display:inline-block;padding:12px 20px;font-size:13.5px;font-weight:700;color:#b2511e;text-decoration:none;">Luis Capi</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Chiusura -->
+  <div style="padding:22px 28px 0;">
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">Se hai in mente un progetto di restyling per la tua struttura o desideri rinnovare i tuoi spazi per la prossima stagione, il nostro team è <strong>a tua disposizione</strong> per supportarti nella scelta di <em>formati, finiture e schede tecniche</em>.</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0 0 14px;">Grazie ancora per la visita al nostro stand.</p>
+    <p style="font-size:14.5px;line-height:1.6;margin:0;">Un cordiale saluto,</p>
+  </div>
+
+  <!-- Firma -->
+  <div style="padding:8px 28px 24px;">
+    <p style="font-family:Georgia,'Times New Roman',serif;font-size:16px;margin:0 0 4px;">Il team di LUIS S.r.l.</p>
+    <p style="font-size:12.5px;color:#706760;margin:0 0 8px;">Qualità e design al servizio dei professionisti del verde</p>
+    <p style="font-size:12.5px;color:#706760;margin:0 0 4px;">Via F. Bellafino n. 28/30, Bergamo · Tel. <a href="tel:+390350521957" style="color:#b2511e;text-decoration:none;">+39 035 052 1957</a></p>
+    <p style="font-size:12.5px;color:#706760;margin:0;"><a href="https://www.luisbg.it" style="color:#b2511e;text-decoration:none;">www.luisbg.it</a><span style="color:#c9c1b8;">&nbsp;|&nbsp;</span><a href="mailto:shop@luisbg.it" style="color:#b2511e;text-decoration:none;">shop@luisbg.it</a></p>
+  </div>
+
+  <!-- Note legali e privacy -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 8px;border-bottom:1px solid #efeae5;padding-bottom:8px;">Note legali e privacy</p>
+    <p style="font-size:11.5px;line-height:1.55;color:#706760;margin:0 0 8px;">Comunicazione commerciale inviata da <strong>Luis S.r.l.</strong> a un contatto aziendale raccolto in occasione della fiera InOut | The Hospitality Community. I dati personali (nome del referente, ragione sociale, recapiti aziendali) sono trattati per la sola finalità di proporre i nostri prodotti e servizi, sulla base del legittimo interesse del titolare (art. 6, par. 1, lett. f, Reg. UE 2016/679) e nel rispetto dell'art. 130 del D.Lgs. 196/2003. Non è svolta alcuna attività di profilazione e i dati non sono comunicati a terzi per finalità di marketing.</p>
+    <p style="font-size:11.5px;line-height:1.55;color:#706760;margin:0 0 8px;">Titolare del trattamento: Luis S.r.l., Via F. Bellafino 28/30, Bergamo — <a href="mailto:shop@luisbg.it" style="color:#b2511e;text-decoration:none;">shop@luisbg.it</a>. Può esercitare in ogni momento i diritti di accesso, rettifica, cancellazione, limitazione, opposizione e portabilità (artt. 15–22 GDPR) scrivendo allo stesso indirizzo, dove può richiedere anche l'informativa completa. Se ritiene che il trattamento violi la normativa, può proporre reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" style="color:#b2511e;text-decoration:none;">www.garanteprivacy.it</a>).</p>
+    <p style="font-size:11.5px;line-height:1.55;color:#706760;margin:0;">Per non ricevere più comunicazioni commerciali risponda a questa email con la parola "cancella" o scriva a <a href="mailto:shop@luisbg.it?subject=cancella" style="color:#b2511e;text-decoration:none;">shop@luisbg.it</a>: l'indirizzo viene inserito in una lista di esclusione e non riceverà ulteriori invii.</p>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#efeae5;border-top:1px solid #e7e2db;padding:14px 28px;font-size:11.5px;color:#706760;text-align:center;">
+    <strong>Luis S.r.l.</strong> · Via F. Bellafino 28/30, Bergamo · C.F. e P. IVA 04253020160<br>
+    Assistenza e informazioni: <a href="mailto:shop@luisbg.it" style="color:#b2511e;text-decoration:none;">shop@luisbg.it</a><br>
+    Messaggio inviato a un indirizzo aziendale per finalità commerciali.
+  </div>
+
+</div>
+
+</body>
+</html>

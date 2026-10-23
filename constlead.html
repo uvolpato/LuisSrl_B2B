@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo — Mail Qualifica Lead AI</title>
+<!--
+  PROTOTIPO con dati di esempio.
+  Mappa segnaposti (template attivo lead-segnalazione.html):
+  {{RAGIONE_SOCIALE}} {{PARITA_IVA}} {{CODICE_FISCALE}} {{EMAIL}} {{TELEFONO}} {{CELLULARE}}
+  {{SITO_WEB}} {{INDIRIZZO}} {{CAP}} {{CITTA}} {{PROVINCIA}} {{MESSAGGIO}}
+  {{SEGNALI_ROWS}} {{VERDETTO}} {{VERDETTO_CLASSE}} {{CHECKLIST_ROWS}}
+  {{LINK_APPROVA}} {{LINK_VERIFICA}} {{LINK_SCARTA}} {{LINK_ADMIN}} {{LEAD_ID}}
+-->
+<style>
+  body { background:#f3f1ec; margin:0; padding:24px 12px; font-family:Arial,Helvetica,sans-serif; color:#221811; }
+  .email { max-width:640px; margin:0 auto; background:#fff; border:1px solid #e7e2db; border-radius:14px; overflow:hidden; }
+  .preview-bar { background:#221811; color:#fff; font-size:11px; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:8px; font-family:'Courier New',monospace; }
+  @media (max-width:660px){ .email{ border-radius:0; border-left:0; border-right:0; } }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">Anteprima prototipo — non inviare</div>
+
+<div class="email">
+
+  <!-- OGGETTO (solo anteprima) -->
+  <div style="background:#efeae5;padding:12px 28px;font-size:13px;border-bottom:1px solid #e7e2db;">
+    <strong>OGGETTO:</strong> Nuova richiesta accesso B2B — FIORERIA DEL CENTRO S.R.L.
+  </div>
+
+  <!-- Header -->
+  <div style="padding:22px 28px 0;">
+    <img src="../frontend/public/images/b2b/logo-email.png" alt="Luis S.r.l." style="height:44px;">
+  </div>
+
+  <!-- Intestazione -->
+  <div style="padding:18px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#b2511e;margin:0 0 8px;">Qualifica lead AI · automatica</p>
+    <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;margin:0 0 10px;">Nuova richiesta accesso B2B — FIORERIA DEL CENTRO S.R.L.</h1>
+    <p style="font-size:13.5px;color:#706760;margin:0;">Ricevuta dal sito vetrina · richiesta #4827 · 09/10/2026 14:35 · indagine AI completata in 14s</p>
+  </div>
+
+  <!-- Dati lead -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;border-bottom:1px solid #efeae5;padding-bottom:8px;">Dati del lead</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+      <tr><td style="padding:6px 0;color:#706760;width:150px;">Ragione sociale</td><td style="padding:6px 0;"><strong>FIORERIA DEL CENTRO S.R.L.</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Partita IVA</td><td style="padding:6px 0;font-family:'Courier New',monospace;">IT01234567890</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Codice Fiscale</td><td style="padding:6px 0;font-family:'Courier New',monospace;">01234567890</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Email</td><td style="padding:6px 0;">commerciale@fioreriadelcentro.it</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Telefono</td><td style="padding:6px 0;">02 1234567</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Cellulare</td><td style="padding:6px 0;">333 1234567</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Sito web</td><td style="padding:6px 0;">www.fioreriadelcentro.it</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Indirizzo</td><td style="padding:6px 0;">Via Milano 15, 20099 Sesto San Giovanni (MI)</td></tr>
+      <tr><td style="padding:6px 0;color:#706760;">Tipo attività</td><td style="padding:6px 0;">Fiorista</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px;">
+      <tr>
+        <td style="padding:12px 14px;background:#f8f5f1;border:1px solid #efeae5;border-radius:10px;">
+          <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#706760;">Messaggio del lead</span>
+          <p style="margin:6px 0 0;font-style: italic;">«Siamo un fiorista del centro di Milano, cerciamo vasi in cotto e ceramica per la nuova stagione. Ordiniamo regolarmente da altri fornitori, vogliamo valutare un cambio.»</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Report di sintesi -->
+  <div style="padding:20px 28px 0;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;border-bottom:1px solid #efeae5;padding-bottom:8px;">Report di sintesi — indagine AI</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;width:34%;color:#706760;">Partita IVA</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;width:46%;">Trovata su Registro Imprese, coerente con ragione sociale</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;text-align:right;"><span style="background:#e5f2ea;color:#1b7a45;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;">CONFERMATO</span></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;color:#706760;">Sito web</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;">Attivo, coerente con attività fiorista, catalogo online presente</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;text-align:right;"><span style="background:#e5f2ea;color:#1b7a45;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;">CONFERMATO</span></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;color:#706760;">Email</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;">Dominio aziendale coerente (non usa-e-getta)</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;text-align:right;"><span style="background:#e5f2ea;color:#1b7a45;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;">CONFERMATO</span></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;color:#706760;">Presenza web</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;">Suole social e directory locali: 12 risultati, recensioni positive</td>
+        <td style="padding:10px 0;border-bottom:1px solid #efeae5;text-align:right;"><span style="background:#e5f2ea;color:#1b7a45;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;">CONFERMATO</span></td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#706760;">Telefono / indirizzo</td>
+        <td style="padding:10px 0;">Formato corretto, CAP coerente con città</td>
+        <td style="padding:10px 0;text-align:right;"><span style="background:#f8f5f1;color:#706760;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;">NEUTRO</span></td>
+      </tr>
+    </table>
+    <p style="font-size:12px;color:#706760;margin:10px 0 0;">Fonti: registroimprese.it, sito aziende, Google Business · indagine Gemini 2.5 Flash con Google Search grounding · 14 chiamate · costo €0,02</p>
+  </div>
+
+  <!-- Verdetto -->
+  <div style="padding:16px 28px 0;">
+    <div style="background:#fdf3ee;border:1px solid #f3d5c2;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;">
+      <span style="background:#b2511e;color:#fff;font-family:'Courier New',monospace;font-size:11px;letter-spacing:.14em;border-radius:8px;padding:6px 12px;text-transform:uppercase;">Verdetto AI</span>
+      <div>
+        <strong style="font-size:16px;color:#8a3c12;">BUONO</strong>
+        <span style="font-size:12.5px;color:#706760;">— tutti i dati essenziali confermati, lead idoneo all'approvazione</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pulsanti azione -->
+  <div style="padding:20px 28px 8px;">
+    <p style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#706760;margin:0 0 10px;">Azioni richieste</p>
+    <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
+      <tr>
+        <td style="padding:0 6px 0 0;width:34%;">
+          <a href="#" style="display:block;background:#b2511e;color:#fff;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">✓ Approva</a>
+        </td>
+        <td style="padding:0 6px;">
+          <a href="#" style="display:block;background:#fff;color:#221811;border:1px solid #d8d2c8;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">Verifica</a>
+        </td>
+        <td style="padding:0 0 0 6px;">
+          <a href="#" style="display:block;background:#fff;color:#a33b2e;border:1px solid #e8c4ba;text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 10px;border-radius:10px;">Scarta</a>
+        </td>
+      </tr>
+    </table>
+    <p style="font-size:11.5px;color:#706760;margin:2px 0 0;">Link firmati (HMAC-SHA256), single-use, validi 7 giorni. L'approvazione è sempre decisione umana: crea il cliente in Integra, avvia il sync e invita il rivenditore.</p>
+  </div>
+
+  <!-- Note verifica -->
+  <div style="padding:14px 28px 0;">
+    <div style="background:#f8f5f1;border:1px solid #efeae5;border-radius:12px;padding:14px 16px;">
+      <p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 8px;">Checklist di verifica (se VERIFICARE)</p>
+      <p style="font-size:12.5px;color:#706760;margin:0;">In questo esempio il verdetto è BUONO: la checklist comparirebbe solo con verdetto VERIFICARE, con i canali suggeriti (cellulare, email, telefono) e i punti da approfondire.</p>
+    </div>
+  </div>
+
+  <!-- Link admin -->
+  <div style="padding:14px 28px 24px;text-align:center;">
+    <a href="#" style="font-size:12.5px;color:#b2511e;text-decoration:none;border-bottom:1px solid #e3b59a;">Apri la scheda lead nell'area admin →</a>
+    <p style="font-size:11.5px;color:#706760;margin:8px 0 0;">Richiesta #4827 · approvazione tracciata in audit log · domande: scrivere a shop@luisbg.it</p>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#efeae5;border-top:1px solid #e7e2db;padding:14px 28px;font-size:11.5px;color:#706760;text-align:center;">
+    Mail automatica dal Portale B2B Luis S.r.l. · non rispondere a questo indirizzo
+  </div>
+
+</div>
+
+</body>
+</html>
