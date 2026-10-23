@@ -3,9 +3,19 @@
 import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
-// Click sull'immagine → vista ingrandita come nel dettaglio articolo del B2B.
-// <dialog> nativo: Esc, focus e livello sopra la pagina gestiti dal browser.
-export default function ZoomImage({ src, full, alt, ai }: { src: string; full: string; alt: string; ai: boolean }) {
+type Variante = { codice: string; dimensioni: string };
+
+// Click sull'immagine → vista ingrandita: varianti a sinistra, immagine al centro,
+// descrizione a destra. <dialog> nativo: Esc, focus e livello gestiti dal browser.
+export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varianti }: {
+  src: string;
+  full: string;
+  alt: string;
+  ai: boolean;
+  nome: string;
+  descrizione: string | null;
+  varianti: Variante[];
+}) {
   const t = useTranslations('catalogo');
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -18,8 +28,27 @@ export default function ZoomImage({ src, full, alt, ai }: { src: string; full: s
         <button type='button' className='lightbox-close' aria-label={t('chiudi')}>
           <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' width='22' height='22'><line x1='18' y1='6' x2='6' y2='18' /><line x1='6' y1='6' x2='18' y2='18' /></svg>
         </button>
-        <img src={full} alt={alt} loading='lazy' onClick={(e) => e.stopPropagation()} />
-        {ai && <span className='ai-badge ai-badge-lg' title={t('aiBadge')}>AI</span>}
+        <div className='lightbox-inner' onClick={(e) => e.stopPropagation()}>
+          <div className='lightbox-varianti'>
+            <h3>{t('varianti', { n: varianti.length })}</h3>
+            <ul className='variant-list'>
+              {varianti.map((v) => (
+                <li key={v.codice}>
+                  <span className='v-code'>{v.codice}</span>
+                  <span className='v-dim'>{v.dimensioni}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className='lightbox-figure'>
+            <img src={full} alt={alt} loading='lazy' />
+            {ai && <span className='ai-badge ai-badge-lg' title={t('aiBadge')}>AI</span>}
+          </div>
+          <div className='lightbox-desc'>
+            <h2>{nome}</h2>
+            {descrizione && <p>{descrizione}</p>}
+          </div>
+        </div>
       </dialog>
     </>
   );

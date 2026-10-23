@@ -76,7 +76,7 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
             {pagina.articoli.map((a) => (
               <article key={a.codiceLinea} className='product-card'>
                 <div className='linea-media'>
-                  {a.img ? <ZoomImage src={imgUrl(a.img)} full={imgUrl(a.img, 1600)} alt={a.nome} ai={a.imgAI} /> : <div className='product-img' />}
+                  {a.img ? <ZoomImage src={imgUrl(a.img)} full={imgUrl(a.img, 1600)} alt={a.nome} ai={a.imgAI} nome={a.nome} descrizione={a.descrizione} varianti={a.varianti} /> : <div className='product-img' />}
                   {a.imgAI && <span className='ai-badge' title={t('aiBadge')}>AI</span>}
                 </div>
                 <div className='product-body'>
