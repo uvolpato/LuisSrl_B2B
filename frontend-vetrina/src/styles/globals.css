@@ -417,6 +417,15 @@ a.chip { text-decoration: none; display: inline-block; }
 .lightbox-close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; cursor: pointer; z-index: 2; }
 .ai-badge-lg { bottom: 16px; right: 20px; font-size: 12px; padding: 4px 8px; }
 
+/* Testi (varianti + descrizione) e badge AI in dissolvenza solo a immagine caricata */
+.lightbox-varianti, .lightbox-desc, .ai-badge-lg {
+  opacity: 0;
+  transition: opacity .5s ease .1s;
+}
+.lightbox-varianti.is-loaded, .lightbox-desc.is-loaded, .ai-badge-lg.is-loaded {
+  opacity: 1;
+}
+
 @media (max-width: 820px) {
   .lightbox-inner { flex-direction: column; align-items: center; gap: 20px; max-height: 92vh; overflow-y: auto; }
   .lightbox-figure img { max-width: 90vw; max-height: 50vh; }
