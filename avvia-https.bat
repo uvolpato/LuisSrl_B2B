@@ -20,7 +20,7 @@ echo.
 echo Nota: certificato self-signed. Alla prima apertura il browser
 echo       mostra un avviso di sicurezza: procedi/accetta per continuare.
 echo.
-start "Luis Vetrina" cmd /c "cd /d frontend-vetrina && npx serve@14 out -l 3002"
+start "Luis Vetrina" cmd /c "cd /d frontend-vetrina && npm run dev"
 
 echo   Vetrina: http://localhost:3002
 echo.

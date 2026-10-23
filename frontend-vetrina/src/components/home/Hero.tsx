@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import HeroImages from './HeroImages';
 
 export default async function Hero() {
   const t = await getTranslations('hero');
 
   return (
     <section className='hero'>
-      <img className='hero-img' src='/images/vetrina/img-tre-vasi.png' alt={t('alt')} />
+      <HeroImages />
       <div className='hero-veil' />
       <div className='hero-body'>
         <div className='container'>

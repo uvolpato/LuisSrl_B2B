@@ -4,6 +4,7 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Reveal from '@/components/ui/Reveal';
+import HasJs from '@/components/ui/HasJs';
 import '../styles/globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,10 +20,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Come il prototipo: le animazioni si attivano solo con JS, senza JS tutto resta visibile. */}
-        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('has-js');" }} />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <HasJs />
           <Header />
           {children}
           <Footer />

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { SITE } from '@/lib/siteConfig';
 
 const LINGUE = ['it', 'en'] as const;
 
@@ -29,7 +30,7 @@ export default function Header() {
       <div className='container'>
         <div className='nav-inner'>
           <Link className='nav-logo' href='/' onClick={close}>
-            <img src='/images/vetrina/logo.webp' alt='Luis S.r.l.' />
+            <img src={SITE.logo} alt={SITE.logoAlt} />
           </Link>
           <nav className={open ? 'nav-links open' : 'nav-links'} onClick={close}>
             <Link href='/#azienda'>{t('azienda')}</Link>

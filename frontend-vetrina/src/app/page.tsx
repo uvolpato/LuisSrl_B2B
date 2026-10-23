@@ -3,9 +3,10 @@ import Azienda from '@/components/home/Azienda';
 import Valori from '@/components/home/Valori';
 import StatsBand from '@/components/home/StatsBand';
 import Collezioni from '@/components/home/Collezioni';
-import Marchi from '@/components/home/Marchi';
 import AccessoB2B from '@/components/home/AccessoB2B';
 import Contatti from '@/components/home/Contatti';
+import PopupAperture from '@/components/home/PopupAperture';
+
 
 export default function Home() {
   return (
@@ -15,9 +16,9 @@ export default function Home() {
       <Valori />
       <StatsBand />
       <Collezioni />
-      <Marchi />
       <AccessoB2B />
       <Contatti />
+      <PopupAperture />
     </main>
   );
 }

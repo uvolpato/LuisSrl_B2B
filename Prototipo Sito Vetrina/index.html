@@ -7,6 +7,7 @@
 <meta name="description" content="Luis S.r.l., Bergamo: distribuzione e importazione di vasi in ceramica, cotto e fiberstone per garden center, vivaisti e architetti paesaggisti. Dal 1995.">
 <script>document.documentElement.classList.add('has-js');</script>
 <link rel="stylesheet" href="styles.css">
+<script src="popup-config.js"></script>
 </head>
 <body>
 
@@ -334,6 +335,7 @@
           <li><a href="tel:+390350521957">+39 035 0521957</a></li>
           <li><a href="mailto:contatti@luisbg.it">contatti@luisbg.it</a></li>
           <li><a href="#accesso">Richiedi accesso B2B</a></li>
+          <li><a href="#" id="popup-reopen">Aperture domenicali</a></li>
         </ul>
       </div>
     </div>
@@ -373,6 +375,107 @@
       document.getElementById('form-ok').classList.add('show');
       form.querySelector('button[type="submit"]').disabled = true;
     });
+  })();
+
+  // Popup aperture domenicali: caricato da popup_main.html se attivo in popup-config.js.
+  (function () {
+    var cfg = window.LUIS_POPUP || {};
+    if (!cfg.attivo) return;
+
+    var KEY = 'luis-popup-seen';
+    var root = null; // elemento .pp-overlay iniettato
+    var lastFocus = null;
+
+    function openPopup() {
+      if (!root) return;
+      lastFocus = document.activeElement;
+      root.hidden = false;
+      requestAnimationFrame(function () { root.classList.add('pp-open'); });
+      var closeBtn = root.querySelector('.pp-close');
+      if (closeBtn) closeBtn.focus();
+      document.addEventListener('keydown', onKeydown);
+    }
+
+    function closePopup() {
+      if (!root) return;
+      root.classList.remove('pp-open');
+      root.hidden = true;
+      document.removeEventListener('keydown', onKeydown);
+      try { localStorage.setItem(KEY, '1'); } catch (e) {}
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') closePopup();
+    }
+
+    fetch('popup_main.html', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var style = doc.querySelector('style');
+        if (style) {
+          var s = document.createElement('style');
+          s.textContent = style.textContent;
+          document.head.appendChild(s);
+        }
+        var ov = doc.querySelector('.pp-overlay');
+        if (!ov) return;
+        document.body.appendChild(ov);
+        root = ov;
+
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+        Array.prototype.forEach.call(ov.querySelectorAll('.pp-dates li[data-date]'), function (li) {
+          if (new Date(li.getAttribute('data-date') + 'T00:00:00') < today) li.classList.add('is-past');
+        });
+
+        var snow = ov.querySelector('.pp-snow');
+        function fillSnow() {
+          if (!snow) return;
+          var n = Math.max(24, Math.min(120, Math.round(window.innerWidth * window.innerHeight / 8000)));
+          if (snow.getAttribute('data-n') === String(n)) return;
+          snow.setAttribute('data-n', n);
+          snow.textContent = '';
+          for (var i = 0; i < n; i++) {
+            var f = document.createElement('i');
+            var s = 6 + Math.random() * 16;
+            f.textContent = '\u2744\uFE0E';
+            f.style.setProperty('--x', (Math.random() * 98).toFixed(2) + '%');
+            f.style.setProperty('--s', s.toFixed(0) + 'px');
+            var d = 5 + s / 2 + Math.random() * 4;
+            f.style.setProperty('--d', d.toFixed(2) + 's');
+            f.style.setProperty('--dl', (Math.random() * d).toFixed(2) + 's');
+            f.style.setProperty('--amp', (4 + Math.random() * 12).toFixed(0) + 'px');
+            f.style.setProperty('--o', (0.45 + Math.random() * 0.4).toFixed(2));
+            snow.appendChild(f);
+          }
+        }
+        fillSnow();
+        var snowT;
+        window.addEventListener('resize', function () {
+          clearTimeout(snowT);
+          snowT = setTimeout(fillSnow, 250);
+        });
+
+        ov.addEventListener('click', function (e) {
+          if (e.target === ov) closePopup();
+        });
+        var closeBtn = ov.querySelector('.pp-close');
+        if (closeBtn) closeBtn.addEventListener('click', closePopup);
+
+        var reopen = document.getElementById('popup-reopen');
+        if (reopen) {
+          reopen.addEventListener('click', function (e) {
+            e.preventDefault();
+            openPopup();
+          });
+        }
+
+        var seen = false;
+        try { seen = !!localStorage.getItem(KEY); } catch (e) {}
+        if (!seen) setTimeout(openPopup, 1500);
+      })
+      .catch(function () { /* popup non disponibile: la pagina funziona comunque */ });
   })();
 </script>
 

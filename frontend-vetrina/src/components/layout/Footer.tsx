@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import PopupApertureLink from './PopupApertureLink';
+import { SITE } from '@/lib/siteConfig';
 
 const b = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
 
@@ -12,7 +14,7 @@ export default async function Footer() {
       <div className='container'>
         <div className='foot-grid'>
           <div className='foot-brand'>
-            <img src='/images/vetrina/logo.webp' alt='Luis S.r.l.' />
+            <img src={SITE.logo} alt={SITE.logoAlt} />
             <p>{t.rich('brand', { b })}</p>
           </div>
           <div className='foot-col'>
@@ -23,6 +25,7 @@ export default async function Footer() {
               <li><Link href='/catalogo'>{tn('catalogo')}</Link></li>
               <li><a href='https://shop.luisbg.it' target='_blank' rel='noopener'>{t('shop')}</a></li>
               <li><Link href='/#contatti'>{t('contatti')}</Link></li>
+              <PopupApertureLink />
             </ul>
           </div>
           <div className='foot-col'>
