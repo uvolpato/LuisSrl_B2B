@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const ATTIVO = true;
-const KEY = 'luis-popup-seen';
+// Flag di modulo: si azzera a ogni caricamento completo (arrivo da fuori o refresh),
+// persiste nella navigazione interna (es. catalogo → home).
+let autoOpened = false;
 const DATES: [string, string, string][] = [
   ['2026-10-25', '25', 'Ottobre'],
   ['2026-11-08', '8', 'Novembre'],
@@ -82,7 +84,9 @@ export default function PopupAperture() {
     const onOpen = () => openPopup();
     window.addEventListener('resize', onResize);
     window.addEventListener('luis-popup-open', onOpen);
-    const auto = hasFuture ? setTimeout(openPopup, 1500) : undefined;
+    const shouldAutoOpen = hasFuture && !autoOpened;
+    if (shouldAutoOpen) autoOpened = true;
+    const auto = shouldAutoOpen ? setTimeout(openPopup, 1500) : undefined;
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('luis-popup-open', onOpen);
