@@ -370,6 +370,7 @@ a { color: var(--accent); }
   font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: .04em;
   padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); color: #fff; cursor: help;
 }
+.ai-badge-hero { bottom: 14px; right: 14px; z-index: 2; }
 
 /* ── Catalogo da backend: chip come link, descrizioni lunghe, paginazione ── */
 a.chip { text-decoration: none; display: inline-block; }

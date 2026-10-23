@@ -4,11 +4,13 @@ import HeroImages from './HeroImages';
 
 export default async function Hero() {
   const t = await getTranslations('hero');
+  const tc = await getTranslations('catalogo');
 
   return (
     <section className='hero'>
       <HeroImages />
       <div className='hero-veil' />
+      <span className='ai-badge ai-badge-hero' title={tc('aiBadge')}>AI</span>
       <div className='hero-body'>
         <div className='container'>
           <div className='hero-inner'>
