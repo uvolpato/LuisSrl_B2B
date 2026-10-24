@@ -12,7 +12,7 @@ export default async function StatsBand() {
         </div>
         <div className='stats'>
           <div className='stat reveal'>
-            <div className='stat-num'>1995</div>
+            <div className='stat-num'>30</div>
             <div className='stat-label'>{t('anno')}</div>
           </div>
           <div className='stat reveal' style={{ '--d': '120ms' } as React.CSSProperties}>

@@ -122,7 +122,7 @@ export default function PopupAperture() {
         <img className='pp-band' src='/images/vetrina/splah_natale.jpg' alt='Allestimento natalizio Luis' />
         <button ref={closeRef} className='pp-close' type='button' aria-label='Chiudi il popup' onClick={closePopup}>✕</button>
         <div className='pp-body'>
-          <p className='pp-eyebrow'>Luis S.r.l. · Bergamo · dal 1995</p>
+          <p className='pp-eyebrow'>Luis S.r.l. · Bergamo</p>
           <h2 className='pp-title' id='pp-title'>Aperture domenicali Natale 2026</h2>
           <p className='pp-lead'>Nelle prossime domeniche apriamo lo showroom di Bergamo:<br /><strong style={{ display: 'block', textAlign: 'center' }}>Via F. Bellafino 28/30 (c/o Centro Galassia)</strong> Vi aspettiamo per scoprire dal vivo le nostre collezioni di vasi da esterno e interno.</p>
           <p className='pp-badge'>Domenica · 10:00 – 19:00</p>
