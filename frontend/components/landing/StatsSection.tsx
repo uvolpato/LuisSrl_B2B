@@ -6,7 +6,7 @@ export default function StatsSection() {
         <div className="grid-3">
           <div className="stat">
             <div className="stat-num">
-              500<span className="stat-unit">+</span>
+              2000<span className="stat-unit">+</span>
             </div>
             <p className="stat-label">Articoli disponibili tra vasi, fioriere e accessori garden.</p>
           </div>

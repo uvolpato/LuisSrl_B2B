@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -83,5 +84,13 @@ export class AdminLeadsController {
       stato: esito.lead.stato,
       export: esito.tipo === 'eseguita' ? (esito.export ?? null) : null,
     };
+  }
+
+  /** Eliminazione definitiva della richiesta (solo superuser o admin con permesso edit). */
+  @Delete(':id')
+  @RequirePermission('vendite.clienti.edit')
+  async elimina(@Param('id', ParseIntPipe) id: number) {
+    await this.leads.elimina(id);
+    return { esito: 'eliminata' };
   }
 }

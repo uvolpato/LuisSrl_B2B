@@ -180,6 +180,30 @@ export default function RichiesteAccessoSection() {
     }
   }
 
+  async function elimina(d: Dettaglio) {
+    const ok = await confirm({
+      title: `Eliminare la richiesta #${d.id}?`,
+      tone: "danger",
+      confirmLabel: "Elimina",
+      message: (
+        <>
+          <div><strong>{d.ragioneSociale}</strong> · P.IVA {d.partitaIva}</div>
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>La richiesta e tutti i suoi eventi verranno eliminati definitivamente. Azione irreversibile.</p>
+        </>
+      ),
+    });
+    if (!ok) return;
+    try {
+      await api.del(`/api/admin/leads/${d.id}`);
+      setEsito({ variant: "success", testo: "Richiesta eliminata." });
+      window.dispatchEvent(new CustomEvent("leads-updated"));
+      setDettaglio(null);
+      await carica();
+    } catch (e) {
+      setErrore(e instanceof ApiError ? e.code : "errors.generic");
+    }
+  }
+
   const colonne: Column<Riga>[] = useMemo(() => [
     { key: "id", header: "#", width: "64px", mono: true, sortable: true, sortValue: (r) => r.id, cell: (r) => <span style={{ fontWeight: 600, color: "var(--accent)" }}>{r.id}</span> },
     {
@@ -276,12 +300,12 @@ export default function RichiesteAccessoSection() {
         )}
       </div>
 
-      {dettaglio && <PannelloDettaglio d={dettaglio} onClose={() => setDettaglio(null)} onAzione={(a) => void esegui(dettaglio, a)} />}
+      {dettaglio && <PannelloDettaglio d={dettaglio} onClose={() => setDettaglio(null)} onAzione={(a) => void esegui(dettaglio, a)} onElimina={() => void elimina(dettaglio)} />}
     </div>
   );
 }
 
-function PannelloDettaglio({ d, onClose, onAzione }: { d: Dettaglio; onClose: () => void; onAzione: (a: Azione) => void }) {
+function PannelloDettaglio({ d, onClose, onAzione, onElimina }: { d: Dettaglio; onClose: () => void; onAzione: (a: Azione) => void; onElimina: () => void }) {
   const r = d.report;
   const vcls = r ? { BUONO: "ok", VERIFICARE: "amber", SCARTARE: "red" }[r.verdetto] : "amber";
   const azioni = d.anonimizzato ? [] : AZIONI_PER_STATO[d.stato];
@@ -391,6 +415,12 @@ function PannelloDettaglio({ d, onClose, onAzione }: { d: Dettaglio; onClose: ()
                   {a === "approva" ? "✓ " : ""}{ETICHETTA_AZIONE[a]}
                 </button>
               ))}
+              <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
+            </div>
+          )}
+          {azioni.length === 0 && (
+            <div className="drawer-foot">
+              <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
             </div>
           )}
         </aside>

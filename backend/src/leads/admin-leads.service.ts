@@ -138,4 +138,14 @@ export class AdminLeadsService {
       })),
     };
   }
+
+  /** Eliminazione definitiva (eventi in cascade, cliente scollegato con SetNull). */
+  async elimina(id: number) {
+    const esiste = await this.prisma.lead.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!esiste) throw new NotFoundException('leads.non_trovata');
+    await this.prisma.lead.delete({ where: { id } });
+  }
 }
