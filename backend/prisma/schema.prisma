@@ -729,3 +729,73 @@ model LeadEvent {
   @@index([leadId, createdAt])
   @@map("lead_events")
 }
+
+/// Catalogo PDF scaricabile via link tracciato (sistema cataloghi via Brevo).
+model Catalogo {
+  id              Int               @id @default(autoincrement())
+  nome            String
+  pdfFile         String            @map("pdf_file")
+  copertina       String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  mailingCatalogo MailingCatalogo[]
+  eventi          DownloadEvent[]
+
+  @@map("cataloghi")
+}
+
+/// Campagna di invio via Brevo: raggruppa uno o piu' cataloghi.
+model Mailing {
+  id              Int               @id @default(autoincrement())
+  nome            String
+  stato           String            @default("bozza")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  mailingCatalogo MailingCatalogo[]
+  links           DownloadLink[]
+
+  @@map("mailing")
+}
+
+/// Catalogo ⇄ Mailing (molti-a-molti).
+model MailingCatalogo {
+  mailingId   Int      @map("mailing_id")
+  catalogoId  Int      @map("catalogo_id")
+  ordinamento Int      @default(0)
+  mailing     Mailing  @relation(fields: [mailingId], references: [id], onDelete: Cascade)
+  catalogo    Catalogo @relation(fields: [catalogoId], references: [id], onDelete: Cascade)
+
+  @@id([mailingId, catalogoId])
+  @@map("mailing_catalogo")
+}
+
+/// Link unico per destinatario: il token opaco identifica chi scarica.
+model DownloadLink {
+  id        Int             @id @default(autoincrement())
+  mailingId Int             @map("mailing_id")
+  email     String
+  nome      String?
+  token     String          @unique
+  createdAt DateTime        @default(now()) @map("created_at")
+  expiresAt DateTime?       @map("expires_at")
+  revokedAt DateTime?       @map("revoked_at")
+  mailing   Mailing         @relation(fields: [mailingId], references: [id], onDelete: Cascade)
+  eventi    DownloadEvent[]
+
+  @@index([mailingId, createdAt])
+  @@map("download_links")
+}
+
+/// Evento di tracciamento: VIEW (landing aperta) o DOWNLOAD (catalogo scaricato).
+model DownloadEvent {
+  id         Int           @id @default(autoincrement())
+  linkId     Int           @map("link_id")
+  catalogoId Int?          @map("catalogo_id")
+  tipo       String
+  at         DateTime      @default(now())
+  ipHash     String?       @map("ip_hash")
+  userAgent  String?       @map("user_agent")
+  link       DownloadLink  @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  catalogo   Catalogo?     @relation(fields: [catalogoId], references: [id], onDelete: SetNull)
+
+  @@index([linkId, at])
+  @@map("download_events")
+}

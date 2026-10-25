@@ -94,5 +94,9 @@ ordini/*
 # --- Anteprima mail generata da scripts/anteprima-mail-ordine.ts ---
 backend/anteprima-ordine.html
 
+# --- Cataloghi PDF caricati dall'admin (serviti solo a token valido) ---
+backend/storage/cataloghi/*
+!backend/storage/cataloghi/.gitkeep
+
 # Segreti solo locali: mai in git
 SEGRETI-LOCALI.md
