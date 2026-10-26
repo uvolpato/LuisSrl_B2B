@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import "./admin.css";
 import "./richieste-accesso.css";
+import "./cataloghi.css";
 import { useAuth } from "../../lib/use-auth";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -18,6 +19,7 @@ import SpeseSpedizioneSection from "../../components/admin/sections/SpeseSpedizi
 import AdminOrdiniSection from "../../components/admin/sections/AdminOrdiniSection";
 import CouponSection from "../../components/admin/sections/CouponSection";
 import RichiesteAccessoSection from "../../components/admin/sections/RichiesteAccessoSection";
+import CataloghiSection from "../../components/admin/sections/CataloghiSection";
 
 const SECTION_TITLES: Record<string, string> = {
   clienti: "Gestione Clienti",
@@ -31,6 +33,7 @@ const SECTION_TITLES: Record<string, string> = {
   coupon: "Coupon e campagne",
   "admin-panel": "Pannello di Amministrazione",
   "spese-spedizione": "Spese di spedizione",
+  "cataloghi": "Cataloghi",
 };
 
 export default function AdminPage() {
@@ -62,6 +65,7 @@ export default function AdminPage() {
       {section === "coupon" && <CouponSection />}
       {section === "richieste-accesso" && <RichiesteAccessoSection />}
       {section === "spese-spedizione" && <SpeseSpedizioneSection />}
+      {section === "cataloghi" && <CataloghiSection />}
     </AdminLayout>
   );
 }
