@@ -9,7 +9,7 @@
   Mappa segnaposti (per l'eventuale template attivo):
   {{REFERENTE}} (facoltativo: per invio batch senza nome usare "Gentile struttura,")
   {{RAGIONE_SOCIALE}} {{FIERA}} {{DATA}}
-  {{LINK_CATALOGO_POTTERY}} (catalogo Luis Pottery) {{LINK_CATALOGO_CAPI}} (catalogo Luis Capi)
+  {{LINK_CATALOGHI}} (link unico alla pagina di download dei cataloghi in PDF)
   Nel template attivo il logo va servito come cid:logo (vedi lead-conferma.html).
 
   Note per il template attivo (consegnabilità e legge):
@@ -62,23 +62,8 @@
     <p style="font-family:'Courier New',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#706760;margin:0 0 12px;">Scarica i cataloghi</p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
       <tr>
-        <td style="padding:0 5px;">
-          <table role="presentation" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="background:#fdf3ee;border:1px solid #e3b59a;border-radius:8px;">
-                <a href="{{LINK_CATALOGO_POTTERY}}" style="display:inline-block;padding:12px 20px;font-size:13.5px;font-weight:700;color:#b2511e;text-decoration:none;">Luis Pottery</a>
-              </td>
-            </tr>
-          </table>
-        </td>
-        <td style="padding:0 5px;">
-          <table role="presentation" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="background:#fdf3ee;border:1px solid #e3b59a;border-radius:8px;">
-                <a href="{{LINK_CATALOGO_CAPI}}" style="display:inline-block;padding:12px 20px;font-size:13.5px;font-weight:700;color:#b2511e;text-decoration:none;">Luis Capi</a>
-              </td>
-            </tr>
-          </table>
+        <td style="background:#b2511e;border-radius:8px;">
+          <a href="{{LINK_CATALOGHI}}" style="display:inline-block;padding:14px 26px;font-size:14px;font-weight:700;color:#fff;text-decoration:none;">Vai al Download dei Cataloghi in PDF</a>
         </td>
       </tr>
     </table>
