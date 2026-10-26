@@ -30,6 +30,8 @@ const PERMISSION_KEYS = [
   'strumenti.import.view',
   'strumenti.import.execute',
   'strumenti.ai.view',
+  'marketing.cataloghi.view',
+  'marketing.cataloghi.edit',
 ];
 
 const READ_ONLY_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith('.view'));

@@ -736,6 +736,7 @@ model Catalogo {
   nome            String
   pdfFile         String            @map("pdf_file")
   copertina       String?
+  archiviato      Boolean           @default(false)
   createdAt       DateTime          @default(now()) @map("created_at")
   mailingCatalogo MailingCatalogo[]
   eventi          DownloadEvent[]
@@ -748,6 +749,7 @@ model Mailing {
   id              Int               @id @default(autoincrement())
   nome            String
   stato           String            @default("bozza")
+  canale          String            @default("email")
   createdAt       DateTime          @default(now()) @map("created_at")
   mailingCatalogo MailingCatalogo[]
   links           DownloadLink[]

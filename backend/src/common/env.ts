@@ -10,5 +10,10 @@ export const ASSETS_BASE_DIR = resolve(
 /** URL pubblico delle immagini (ASSETS_PUBLIC_URL o /images). */
 export const ASSETS_PUBLIC_URL = process.env.ASSETS_PUBLIC_URL || '/images';
 
+/** Cartella dei cataloghi PDF caricati dall'admin (fuori da public/, serviti solo a token valido). */
+export const CATALOGHI_DIR = resolve(
+  process.env.CATALOGHI_DIR || join(process.cwd(), 'storage', 'cataloghi'),
+);
+
 /** Origini frontend ammesse da CORS e WebSocket (separate da virgola). */
 export const FRONTEND_ORIGINS = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000').split(',');
