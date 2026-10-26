@@ -90,8 +90,8 @@ export default function CataloghiSection() {
     <div className="cat" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <header className="admin-top">
         <div className="top-title">
-          <h1>Cataloghi</h1>
-          <div className="top-sub">Marketing · {mailing.length} campagne</div>
+          <h1>{view === "dettaglio" && dettaglio ? dettaglio.nome : "Cataloghi"}</h1>
+          <div className="top-sub">{view === "dettaglio" && dettaglio ? "Marketing · Dettaglio campagna" : `Marketing · ${mailing.length} campagne`}</div>
         </div>
         {view === "elenco" && (
           <div className="top-actions">

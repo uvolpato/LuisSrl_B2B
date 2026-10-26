@@ -262,7 +262,7 @@ export class CataloghiAdminService {
 
   /** Invia i contatti del mailing a Brevo (attributo CATALOGO_LINK per il segnaposto della mail). */
   async inviaABrevo(mailingId: number) {
-    const m = await this.prisma.mailing.findUnique({ where: { id: mailingId }, select: { id: true, canale: true } });
+    const m = await this.prisma.mailing.findUnique({ where: { id: mailingId }, select: { id: true, canale: true, nome: true } });
     if (!m) throw new NotFoundException('cataloghi.mailing_non_trovata');
     if (m.canale === 'link') return { inviati: 0, soloLink: true };
     if (!this.brevo.attivo) throw new BadRequestException('Brevo non configurato (BREVO_API_KEY mancante)');
@@ -271,7 +271,7 @@ export class CataloghiAdminService {
       select: { email: true, nome: true, token: true },
     });
     if (links.length === 0) throw new BadRequestException('Nessun destinatario da inviare');
-    const inviati = await this.brevo.importaContatti(links);
+    const inviati = await this.brevo.importaContatti(links, m.nome);
     await this.prisma.mailing.update({ where: { id: mailingId }, data: { stato: 'inviata' } });
     return { inviati };
   }
