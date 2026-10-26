@@ -1,0 +1,2357 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cataloghi — Admin · Luis</title>
+<style>
+:root {
+  --bg: oklch(97% 0.005 80);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(22% 0.02 60);
+  --muted: oklch(52% 0.015 60);
+  --border: oklch(88% 0.01 70);
+  --accent: oklch(55% 0.14 45);
+  --accent-soft: oklch(96% 0.004 80);
+  --green: oklch(55% 0.15 145);
+  --green-soft: color-mix(in oklch, var(--green) 14%, transparent);
+  --red: oklch(55% 0.18 25);
+  --red-soft: color-mix(in oklch, var(--red) 14%, transparent);
+  --amber: oklch(60% 0.13 65);
+  --amber-soft: color-mix(in oklch, var(--amber) 16%, transparent);
+  --table-head-bg: oklch(92.5% 0.006 79);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --accent-line: color-mix(in oklch, var(--accent) 30%, transparent);
+  --accent-tint: color-mix(in oklch, var(--accent) 8%, transparent);
+  --stage-bg: oklch(92.5% 0.008 80);
+  --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --sidebar-w: 260px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--stage-bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; }
+p { text-wrap: pretty; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; color: inherit; }
+img, svg { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Barra prototipo ── */
+.proto-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--surface) 88%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px color-mix(in oklch, var(--fg) 18%, transparent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.proto-title { font-size: 11px; letter-spacing: 0.02em; color: var(--fg); }
+.proto-divider { width: 1px; height: 22px; background: var(--border); }
+.proto-group { display: flex; align-items: center; gap: 8px; }
+.proto-label {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+.proto-seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+}
+.proto-seg button {
+  border: none;
+  background: none;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.proto-seg button:hover { color: var(--fg); }
+.proto-seg button[aria-pressed="true"] { background: var(--fg); color: var(--surface); }
+.select-wrap { position: relative; display: inline-flex; align-items: center; }
+.select-wrap select {
+  appearance: none;
+  padding: 6px 26px 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  font: inherit;
+  font-size: 11px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.select-wrap svg {
+  position: absolute;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ── Stage / device ── */
+.stage {
+  min-height: 100vh;
+  padding: 40px 24px 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slot { position: relative; }
+.device-tag {
+  position: absolute;
+  top: -20px;
+  left: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.device {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1440px;
+  height: 900px;
+  transform-origin: top left;
+  transform: scale(var(--scale, 1));
+  container-type: inline-size;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid color-mix(in oklch, var(--fg) 22%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 30px 70px color-mix(in oklch, var(--fg) 22%, transparent);
+}
+.device[data-device="mobile"] { width: 375px; height: 812px; border-radius: 34px; }
+.app { position: relative; display: flex; height: 100%; background: var(--bg); }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-logo {
+  flex-shrink: 0;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-logo .mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--surface);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+}
+.sidebar-logo .name { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.sidebar-logo .sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-section {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 14px 12px 6px;
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--radius);
+  font-size: 13.5px;
+  color: var(--muted);
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sidebar-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-link:hover { background: var(--fg-soft); color: var(--fg); }
+.sidebar-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.sidebar-user {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-user .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.sidebar-user .who { min-width: 0; display: flex; flex-direction: column; }
+.sidebar-user .who strong {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user .who span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sidebar-user .who .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: color-mix(in oklch, var(--fg) 40%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* ── Main ── */
+.main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.admin-top {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+.admin-top h1 {
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top-title { min-width: 0; flex: 1; }
+.top-sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.top-actions .btn { white-space: nowrap; }
+.nav-toggle {
+  display: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--fg);
+  flex-shrink: 0;
+}
+.nav-toggle svg { width: 18px; height: 18px; }
+.content-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 32px 28px;
+}
+
+/* ── Layout a tutta altezza ── */
+.screen .content-scroll { display: flex; flex-direction: column; }
+.screen[data-screen="elenco"] .content-scroll,
+.screen[data-screen="dettaglio"] .content-scroll,
+.screen[data-screen="nuova"] .content-scroll { overflow: hidden; }
+.screen .content-scroll > .view { flex: 1; min-height: 0; }
+.data-table { flex: 1; min-height: 0; }
+.data-table > .state { flex: 1; justify-content: center; }
+.data-table > .skeleton { flex: 1; overflow-y: auto; }
+.detail-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* ── Bottoni ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn-primary:hover:not(:disabled) { background: color-mix(in oklch, var(--accent) 88%, black); }
+.btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--fg); }
+.btn-secondary.danger { color: var(--red); border-color: color-mix(in oklch, var(--red) 40%, transparent); }
+.btn-secondary.danger:hover:not(:disabled) { border-color: var(--red); background: var(--red-soft); }
+.btn-sm { padding: 7px 13px; font-size: 13px; }
+.btn-xs { padding: 5px 10px; font-size: 12px; border-radius: var(--radius-sm); }
+
+/* ── Pill ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pv-ok { background: var(--green-soft); color: var(--green); }
+.pv-amber { background: var(--amber-soft); color: var(--amber); }
+.pv-neutral { background: var(--fg-soft); color: var(--muted); }
+
+/* ── Data table ── */
+.data-table {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--table-head-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.view { display: flex; flex-direction: column; }
+.data-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.data-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--table-head-bg);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 11px 16px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.data-table thead th.num { text-align: right; }
+.data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr[data-nome] { cursor: pointer; }
+.data-table tbody tr:hover { background: var(--fg-soft); }
+.data-table td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.data-table td.mono { font-family: var(--font-mono); }
+.data-table .col-actions { text-align: right; white-space: nowrap; }
+.t-campagne .c-nome { width: 34%; }
+.name-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--fg);
+}
+.name-btn:hover { color: var(--accent); }
+.cell-entity-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); margin-top: 1px; }
+.data-table-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.pager { display: flex; align-items: center; gap: 8px; }
+.pager-current { min-width: 54px; text-align: center; }
+.pager button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager button svg { width: 16px; height: 16px; }
+/* ── Stati elenco ── */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 5px;
+  padding: 54px 24px;
+}
+.state > svg { width: 28px; height: 28px; color: var(--muted); margin-bottom: 6px; }
+.state strong { font-family: var(--font-display); font-size: 17px; }
+.state p { margin: 0; font-size: 13px; color: var(--muted); max-width: 46ch; }
+.state .btn { margin-top: 12px; }
+.state-sm { padding: 26px 18px; }
+.state-sm > svg { width: 22px; height: 22px; }
+.state-sm strong { font-size: 15px; }
+.state-sm p { font-size: 12.5px; }
+
+/* ── Skeleton ── */
+.skeleton { padding: 2px 0; }
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.skeleton-row:last-child { border-bottom: none; }
+.sk {
+  height: 10px;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--fg) 12%, transparent);
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+.sk-name { flex: 0 0 28%; }
+.sk-num { flex: 0 0 6%; min-width: 28px; }
+.sk-pill { flex: 0 0 70px; height: 20px; border-radius: 999px; }
+.sk-action { flex: 0 0 68px; height: 28px; border-radius: 8px; margin-left: auto; }
+.sk-block {
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sk-block:last-child { margin-bottom: 0; }
+@keyframes sk-pulse { 50% { opacity: 0.4; } }
+
+/* ── Wizard ── */
+.wizard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.stepper {
+  flex-shrink: 0;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--border);
+}
+.stepper li { flex: 1; min-width: 0; border-right: 1px solid var(--border); }
+.stepper li:last-child { border-right: none; }
+.step-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: left;
+}
+.step-btn.is-active { background: var(--accent-tint); color: var(--fg); }
+.step-btn.is-done { color: var(--fg); }
+.step-btn:disabled { cursor: default; }
+.step-num {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--border);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+.step-btn.is-active .step-num { background: var(--accent); color: var(--surface); }
+.step-btn.is-done .step-num { background: var(--accent-tint); color: var(--accent); }
+.step-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.step-btn.is-active .step-label { font-weight: 600; }
+.wizard-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 24px;
+}
+.wiz-step { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.wiz-step[data-wiz-step="2"] { display: block; overflow-y: auto; }
+.wizard-q { font-size: 17px; margin: 0 0 14px; flex-shrink: 0; }
+.inline-upload {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.inline-upload .input { flex: 1 1 200px; width: auto; }
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+}
+.file-chip svg { width: 16px; height: 16px; flex-shrink: 0; }
+.file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-chip.is-set { color: var(--fg); border-color: var(--accent-line); }
+.file-clear {
+  display: none;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+}
+.file-clear svg { width: 14px; height: 14px; }
+.file-clear:hover { color: var(--red); background: var(--red-soft); }
+.inline-upload.has-file .file-clear { display: inline-flex; }
+.check-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding-right: 2px;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.check-item:hover { border-color: color-mix(in oklch, var(--fg) 25%, transparent); }
+.check-item:has(input:checked) { border-color: var(--accent); background: var(--accent-tint); }
+.check-item input { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--accent); }
+.check-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--fg-soft);
+  color: var(--muted);
+}
+.check-icon svg { width: 16px; height: 16px; }
+.check-item:has(input:checked) .check-icon { background: var(--surface); color: var(--accent); }
+.check-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.check-text strong { font-weight: 600; }
+.check-text span { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.check-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0;
+}
+.check-item:has(input:checked) .check-tag { opacity: 1; }
+.cat-row { display: flex; align-items: stretch; gap: 8px; }
+.cat-row .check-item { flex: 1; min-width: 0; }
+.is-archived .check-item input { display: none; }
+.is-archived .check-tag { display: none; }
+.check-item.is-static { cursor: default; opacity: 0.7; }
+.check-item.is-static:hover { border-color: var(--border); }
+.cat-action { flex-shrink: 0; align-self: center; }
+.archive {
+  flex-shrink: 0;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.archive summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.archive summary::-webkit-details-marker { display: none; }
+.archive summary svg { width: 14px; height: 14px; transition: transform 0.15s ease; }
+.archive[open] summary svg { transform: rotate(180deg); }
+.archive-list {
+  display: grid;
+  gap: 6px;
+  max-height: 132px;
+  overflow-y: auto;
+  margin-top: 6px;
+  padding-right: 2px;
+}
+.archive-empty { margin: 4px 2px; font-size: 12.5px; color: var(--muted); }
+.source-grid { flex-shrink: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.source-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  font: inherit;
+}
+.source-card:hover { border-color: color-mix(in oklch, var(--fg) 25%, transparent); }
+.source-card.is-on { border-color: var(--accent); background: var(--accent-tint); }
+.source-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--fg-soft);
+  color: var(--muted);
+}
+.source-icon svg { width: 18px; height: 18px; }
+.source-card.is-on .source-icon { background: var(--surface); color: var(--accent); }
+.source-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.source-text strong { font-size: 14px; font-weight: 600; }
+.source-text span { font-size: 12px; color: var(--muted); }
+.coming-soon {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.coming-soon > svg { width: 30px; height: 30px; color: var(--muted); margin-bottom: 4px; }
+.coming-soon strong { font-family: var(--font-display); font-size: 18px; }
+.coming-soon p { margin: 0; max-width: 44ch; font-size: 13px; color: var(--muted); }
+.coming-soon .pill { margin-top: 6px; }
+.coming-soon .btn { margin-top: 10px; }
+.segmented {
+  display: inline-flex;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.segmented button {
+  padding: 9px 20px;
+  border: none;
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--fg);
+}
+.segmented button + button { border-left: 1px solid var(--border); }
+.segmented button.is-on { background: var(--accent); color: var(--surface); }
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 26px 18px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--muted);
+  text-align: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.dropzone:hover { border-color: var(--accent); color: var(--accent); }
+.dropzone svg { width: 24px; height: 24px; }
+.dropzone-title { font-size: 13.5px; color: var(--fg); overflow-wrap: anywhere; }
+.dropzone-hint { font-family: var(--font-mono); font-size: 11px; }
+.dropzone.is-set { border-color: var(--accent); border-style: solid; }
+.client-tools { flex-shrink: 0; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.import-note {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.import-note svg { width: 15px; height: 15px; color: var(--green); flex-shrink: 0; }
+.excel-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.excel-panel .dropzone { flex-shrink: 0; }
+.excel-panel .dropzone.is-set { align-items: flex-start; text-align: left; padding: 14px 16px; }
+.import-body { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 14px; }
+.search { position: relative; flex: 1; min-width: 0; }
+.search input {
+  width: 100%;
+  padding: 9px 14px 9px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.search input:focus { border-color: var(--accent); }
+.search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.check-all { display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; }
+.check-all input { width: 15px; height: 15px; accent-color: var(--accent); }
+.client-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.client-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  cursor: pointer;
+}
+.client-row:last-child { border-bottom: none; }
+.client-row:hover { background: var(--fg-soft); }
+.client-row:has(input:checked) { background: var(--accent-tint); }
+.client-row input { width: 15px; height: 15px; flex-shrink: 0; accent-color: var(--accent); }
+.client-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.client-mail {
+  max-width: 240px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.client-empty { margin: 0; padding: 18px 14px; font-size: 13px; color: var(--muted); }
+.summary { display: grid; gap: 8px; max-width: 560px; margin-bottom: 18px; }
+.summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+.summary-row span { color: var(--muted); }
+.summary-row strong { font-weight: 600; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.field { display: flex; flex-direction: column; gap: 5px; max-width: 420px; }
+.field > span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.wizard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklch, var(--bg) 55%, var(--surface));
+}
+.wizard-foot-right { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-wrap: wrap; }
+.wiz-hint { font-size: 12.5px; color: var(--muted); }
+
+/* ── Dettaglio ── */
+.detail-meta { margin: 0; font-size: 13px; color: var(--muted); }
+.stat-strip { flex-shrink: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat {
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.stat .label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat .value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.stat .sub { font-size: 12px; color: var(--muted); }
+.name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.revoked-pill { margin-left: 2px; }
+.is-revocato { opacity: 0.55; }
+.t-dest .d-mail { color: var(--muted); font-size: 13px; }
+
+/* ── Toast ── */
+.toast {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  max-width: 320px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--fg);
+  color: var(--surface);
+  font-size: 13px;
+  box-shadow: 0 10px 26px color-mix(in oklch, var(--fg) 30%, transparent);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.toast.is-on { opacity: 1; transform: none; }
+
+/* ── Conferma modale ── */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in oklch, var(--fg) 44%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+.modal-overlay.is-open { opacity: 1; visibility: visible; }
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px color-mix(in oklch, var(--fg) 30%, transparent);
+}
+.modal-head { padding: 20px 22px 8px; }
+.modal-head h2 { margin: 0; font-size: 19px; }
+.modal-body { padding: 0 22px; overflow-y: auto; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.modal-body p { margin: 0; }
+.modal-body strong { color: var(--fg); font-weight: 600; }
+.modal-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--red-soft);
+  color: color-mix(in oklch, var(--red) 65%, var(--fg));
+  font-size: 12.5px;
+}
+.modal-note svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 18px 22px 20px; }
+/* ── Mobile nel device ── */
+@container (max-width: 900px) {
+  .sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 35;
+    width: min(82%, 280px);
+    flex-basis: auto;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 20px 50px color-mix(in oklch, var(--fg) 25%, transparent);
+  }
+  .device.nav-open .sidebar { transform: none; }
+  .device.nav-open .scrim { opacity: 1; pointer-events: auto; }
+  .nav-toggle { display: grid; }
+  .main { width: 100%; }
+  .admin-top { padding: 12px 16px; flex-wrap: wrap; row-gap: 10px; }
+  .admin-top h1 { font-size: 18px; }
+  .top-sub { display: none; }
+  .top-actions { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .top-actions .btn { width: 100%; padding: 8px 10px; font-size: 12.5px; }
+  .top-actions[data-actions-for="elenco"],
+  .top-actions[data-actions-for="nuova"] { grid-template-columns: 1fr; }
+  .top-actions[data-actions-for="elenco"] .btn,
+  .top-actions[data-actions-for="nuova"] .btn { justify-self: stretch; }
+  .content-scroll { padding: 14px 16px 18px; }
+  .stat-strip { gap: 8px; margin-bottom: 12px; }
+  .stat { padding: 10px 12px; }
+  .stat .value { font-size: 19px; }
+  .stat .sub { font-size: 11px; }
+  .step-btn { padding: 10px 10px; gap: 7px; font-size: 12px; }
+  .step-num { width: 24px; height: 24px; font-size: 12px; }
+  .wizard-body { padding: 16px 14px 18px; }
+  .wizard-foot { padding: 14px; }
+  .wizard-foot .btn { flex: 1; }
+  .wizard-foot-right { margin-left: 0; width: 100%; }
+  .segmented { display: flex; width: 100%; }
+  .segmented button { flex: 1; padding: 9px 10px; }
+  .client-tools { flex-wrap: wrap; }
+  .check-all { margin-left: auto; }
+  .archive-list { max-height: 104px; }
+  .toast { left: 14px; right: 14px; bottom: 14px; max-width: none; }
+}
+@container (max-width: 760px) {
+  .data-table thead { display: none; }
+  .data-table table, .data-table tbody { display: block; }
+  .data-table tbody td { border: none; padding: 0; }
+  .data-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .data-table tbody tr:hover { background: transparent; }
+  .data-table .col-actions { text-align: right; }
+  .t-campagne tbody tr {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas:
+      "nome nome nome stato"
+      "cat inv app sca"
+      "azioni azioni azioni azioni";
+    gap: 10px 8px;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .t-campagne tbody tr:last-child { border-bottom: none; }
+  .t-campagne .c-nome { grid-area: nome; align-self: center; }
+  .t-campagne .c-cat { grid-area: cat; }
+  .t-campagne .c-inv { grid-area: inv; }
+  .t-campagne .c-app { grid-area: app; }
+  .t-campagne .c-sca { grid-area: sca; }
+  .t-campagne .c-stato { grid-area: stato; align-self: start; text-align: right; }
+  .t-campagne .c-stato::before { display: none; }
+  .t-campagne .c-azioni {
+    grid-area: azioni;
+    margin-top: 2px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .t-campagne td.num { text-align: left; }
+  .t-dest tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "nome nome"
+      "mail mail"
+      "ape sca"
+      "az az";
+    gap: 10px 12px;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .t-dest tbody tr:last-child { border-bottom: none; }
+  .t-dest .d-nome { grid-area: nome; }
+  .t-dest .d-mail { grid-area: mail; }
+  .t-dest .d-ape { grid-area: ape; }
+  .t-dest .d-sca { grid-area: sca; }
+  .t-dest .d-az {
+    grid-area: az;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .data-table-footer { padding: 10px 14px; }
+  .sk-name { flex: 1 0 55%; }
+  .sk-num { flex: 0 0 10%; }
+  .sk-action { display: none; }
+  .pager-current { min-width: 42px; }
+}
+@container (max-width: 520px) {
+  .client-mail { display: none; }
+  .step-btn { font-size: 11px; padding: 10px 8px; gap: 6px; }
+  .check-tag { display: none; }
+  .inline-upload .file-chip { flex: 1 1 100%; justify-content: center; }
+  .file-chip span { max-width: 100%; }
+  .check-text span { font-size: 11px; }
+  .source-grid { grid-template-columns: 1fr; gap: 8px; }
+  .source-text span { font-size: 11.5px; }
+  .source-card { padding: 10px 12px; }
+  .cat-action { padding: 6px 8px; }
+  .wiz-hint { width: 100%; }
+}
+@media (max-width: 720px) {
+  .proto-title, .proto-divider { display: none; }
+  .proto-bar { border-radius: 18px; gap: 10px; padding: 8px 10px; }
+}
+.screens { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .sk, .toast, .sidebar, .scrim { animation: none; transition: none; }
+}
+</style>
+</head>
+<body>
+<svg hidden aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v5h-5"/><path d="M4 19v-5h5"/><path d="M19 10a8 8 0 0 0-13.7-4.4L4 7"/><path d="M5 14a8 8 0 0 0 13.7 4.4L20 17"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3l9-16z"/><path d="M12 9v5M12 17h.01"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 5h14l2 7v7H3v-7l2-7z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 9l9-5 9 5"/><path d="M5 9v9M9 9v9M15 9v9M19 9v9M3 20h18"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M4 18l5-5 4 4 3-3 4 4"/></symbol>
+  <symbol id="i-articoli" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+  <symbol id="i-famiglie" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-raccolte" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-clienti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M17 8a3 3 0 0 1 0 6M21 20c0-2.5-2-4.3-4-4.8"/></symbol>
+  <symbol id="i-richieste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 5h14l2 7v7H3v-7l2-7z"/></symbol>
+  <symbol id="i-listini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M20 13l-7 7-9-9V4h7l9 9z"/><circle cx="8" cy="8" r="1.4"/></symbol>
+  <symbol id="i-ordini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-coupon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M12 8v8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+</svg>
+<div class="proto-bar" role="toolbar" aria-label="Controlli prototipo">
+  <span class="proto-title">Prototipo · Admin Cataloghi</span>
+  <span class="proto-divider" aria-hidden="true"></span>
+  <div class="proto-group">
+    <span class="proto-label">Schermata</span>
+    <div class="proto-seg" data-screen-seg>
+      <button type="button" data-goto-screen="elenco" aria-pressed="true">Elenco</button>
+      <button type="button" data-goto-screen="nuova" aria-pressed="false">Nuova</button>
+      <button type="button" data-goto-screen="dettaglio" aria-pressed="false">Dettaglio</button>
+    </div>
+  </div>
+  <span class="proto-divider" aria-hidden="true"></span>
+  <div class="proto-group">
+    <span class="proto-label">Vista</span>
+    <div class="proto-seg" data-device-seg>
+      <button type="button" data-device="desktop" aria-pressed="true">Desktop · 1440</button>
+      <button type="button" data-device="mobile" aria-pressed="false">Mobile · 375</button>
+    </div>
+  </div>
+  <span class="proto-divider" aria-hidden="true"></span>
+  <div class="proto-group">
+    <span class="proto-label">Stato</span>
+    <label class="select-wrap">
+      <svg aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      <select data-state-select aria-label="Stato dei dati">
+        <option value="dati">Dati</option>
+        <option value="caricamento">Caricamento</option>
+        <option value="vuoto">Vuoto</option>
+        <option value="errore">Errore</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="slot" data-slot>
+    <span class="device-tag" data-device-tag>Desktop · 1440 × 900</span>
+    <div class="device" data-device-frame data-device="desktop">
+      <div class="app">
+        <div class="scrim" data-scrim aria-hidden="true"></div>
+        <aside class="sidebar" data-sidebar aria-label="Menu amministrazione">
+          <div class="sidebar-logo">
+            <span class="mark" aria-hidden="true">L</span>
+            <div>
+              <div class="name">Luis</div>
+              <div class="sub">B2B Admin</div>
+            </div>
+          </div>
+          <nav class="sidebar-nav">
+            <div class="sidebar-section">Gestione</div>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-articoli"/></svg>Articoli</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-famiglie"/></svg>Famiglie</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-raccolte"/></svg>Raccolte</button>
+            <div class="sidebar-section">Vendite</div>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-clienti"/></svg>Clienti</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-richieste"/></svg>Richieste accesso</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-listini"/></svg>Listini</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-ordini"/></svg>Ordini</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-coupon"/></svg>Coupon e campagne</button>
+            <div class="sidebar-section">Strumenti</div>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-box"/></svg>Box dashboard</button>
+            <button type="button" class="sidebar-link"><svg aria-hidden="true"><use href="#i-truck"/></svg>Spese di spedizione</button>
+            <div class="sidebar-section">Marketing</div>
+            <button type="button" class="sidebar-link active" aria-current="page"><svg aria-hidden="true"><use href="#i-book"/></svg>Cataloghi</button>
+          </nav>
+          <div class="sidebar-user">
+            <span class="avatar" aria-hidden="true">MR</span>
+            <div class="who">
+              <strong>Marco Riva</strong>
+              <span><span class="dot" aria-hidden="true"></span>Amministratore</span>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <header class="admin-top">
+            <button type="button" class="nav-toggle" data-nav-toggle aria-label="Apri il menu" aria-expanded="false">
+              <svg aria-hidden="true"><use href="#i-menu"/></svg>
+            </button>
+            <div class="top-title">
+              <h1 data-top-title>Cataloghi</h1>
+              <div class="top-sub" data-top-sub>Marketing · 3 campagne</div>
+            </div>
+            <div class="top-actions" data-actions-for="elenco">
+              <button type="button" class="btn btn-primary btn-sm" data-goto="nuova">
+                <svg aria-hidden="true"><use href="#i-plus"/></svg>Nuova campagna
+              </button>
+            </div>
+            <div class="top-actions" data-actions-for="nuova" hidden>
+              <button type="button" class="btn btn-secondary btn-sm" data-cancel-wizard>
+                <svg aria-hidden="true"><use href="#i-x"/></svg>Annulla
+              </button>
+            </div>
+            <div class="top-actions" data-actions-for="dettaglio" hidden>
+              <button type="button" class="btn btn-secondary btn-sm" data-goto="elenco">
+                <svg aria-hidden="true"><use href="#i-chevron-left"/></svg>Cataloghi
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-export>
+                <svg aria-hidden="true"><use href="#i-download"/></svg>Esporta CSV Brevo
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-copy>
+                <svg aria-hidden="true"><use href="#i-copy"/></svg>Copia link
+              </button>
+              <button type="button" class="btn btn-secondary danger btn-sm" data-revoke>
+                <svg aria-hidden="true"><use href="#i-refresh"/></svg>Revoca
+              </button>
+            </div>
+          </header>
+
+          <div class="screens">
+            <section class="screen" data-screen="elenco">
+              <div class="content-scroll">
+                <div class="view" data-view="dati">
+                  <div class="data-table t-campagne">
+                    <div class="data-table-scroll">
+                      <table>
+                        <caption class="sr-only">Campagne di invio cataloghi</caption>
+                        <thead>
+                          <tr>
+                            <th class="c-nome">Campagna</th>
+                            <th>Cataloghi</th>
+                            <th class="num">Inviate</th>
+                            <th class="num">Aperture</th>
+                            <th class="num">Click</th>
+                            <th>Stato</th>
+                            <th class="col-actions">&nbsp;</th>
+                          </tr>
+                        </thead>
+                        <tbody class="t-campagne-body">
+                          <tr data-nome="Autunno 2026" data-canale="Email" data-cat="1" data-cat-nomi="Catalogo Autunno 2026" data-inv="128" data-app="74" data-sca="31" data-stato="Inviata" data-data="12 ott 2026">
+                            <td class="c-nome" data-label="Campagna">
+                              <button type="button" class="name-btn" data-open>Autunno 2026</button>
+                              <div class="cell-entity-sub">12 ott 2026 · Email</div>
+                            </td>
+                            <td class="c-cat" data-label="Cataloghi">Catalogo Autunno 2026</td>
+                            <td class="c-inv num" data-label="Inviate">128</td>
+                            <td class="c-app num" data-label="Aperture">74</td>
+                            <td class="c-sca num" data-label="Click">31</td>
+                            <td class="c-stato" data-label="Stato"><span class="pill pv-ok">Inviata</span></td>
+                            <td class="col-actions c-azioni">
+                              <button type="button" class="btn btn-secondary btn-xs" data-open>Apri</button>
+                            </td>
+                          </tr>
+                          <tr data-nome="Anteprima Natale" data-canale="Email" data-cat="2" data-cat-nomi="Catalogo Natale 2026, Catalogo Cotto Portoghese" data-inv="46" data-app="22" data-sca="9" data-stato="Bozza" data-data="20 ott 2026">
+                            <td class="c-nome" data-label="Campagna">
+                              <button type="button" class="name-btn" data-open>Anteprima Natale</button>
+                              <div class="cell-entity-sub">20 ott 2026 · Bozza</div>
+                            </td>
+                            <td class="c-cat" data-label="Cataloghi">2 cataloghi</td>
+                            <td class="c-inv num" data-label="Inviate">46</td>
+                            <td class="c-app num" data-label="Aperture">22</td>
+                            <td class="c-sca num" data-label="Click">9</td>
+                            <td class="c-stato" data-label="Stato"><span class="pill pv-amber">Bozza</span></td>
+                            <td class="col-actions c-azioni">
+                              <button type="button" class="btn btn-secondary btn-xs" data-open>Apri</button>
+                            </td>
+                          </tr>
+                          <tr data-nome="Cotto Portoghese · rivenditori nord" data-canale="Email" data-cat="1" data-cat-nomi="Catalogo Cotto Portoghese" data-inv="87" data-app="40" data-sca="12" data-stato="Inviata" data-data="3 ott 2026">
+                            <td class="c-nome" data-label="Campagna">
+                              <button type="button" class="name-btn" data-open>Cotto Portoghese · rivenditori nord</button>
+                              <div class="cell-entity-sub">3 ott 2026 · Email</div>
+                            </td>
+                            <td class="c-cat" data-label="Cataloghi">Catalogo Cotto Portoghese</td>
+                            <td class="c-inv num" data-label="Inviate">87</td>
+                            <td class="c-app num" data-label="Aperture">40</td>
+                            <td class="c-sca num" data-label="Click">12</td>
+                            <td class="c-stato" data-label="Stato"><span class="pill pv-ok">Inviata</span></td>
+                            <td class="col-actions c-azioni">
+                              <button type="button" class="btn btn-secondary btn-xs" data-open>Apri</button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="data-table-footer">
+                      <span data-count-label>3 campagne</span>
+                      <div class="pager">
+                        <button type="button" aria-label="Pagina precedente" disabled><svg aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
+                        <span class="pager-current">1 / 1</span>
+                        <button type="button" aria-label="Pagina successiva" disabled><svg aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="view" data-view="caricamento" hidden>
+                  <div class="data-table" aria-busy="true">
+                    <div class="skeleton">
+                      <div class="skeleton-row"><span class="sk sk-name"></span><span class="sk sk-pill"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-action"></span></div>
+                      <div class="skeleton-row"><span class="sk sk-name"></span><span class="sk sk-pill"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-action"></span></div>
+                      <div class="skeleton-row"><span class="sk sk-name"></span><span class="sk sk-pill"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-action"></span></div>
+                      <div class="skeleton-row"><span class="sk sk-name"></span><span class="sk sk-pill"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-num"></span><span class="sk sk-action"></span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="view" data-view="vuoto" hidden>
+                  <div class="data-table">
+                    <div class="state">
+                      <svg aria-hidden="true"><use href="#i-book"/></svg>
+                      <strong>Nessuna campagna</strong>
+                      <p>Quando invii un catalogo ai clienti lo ritrovi qui, con aperture e click.</p>
+                      <button type="button" class="btn btn-primary btn-sm" data-goto="nuova">
+                        <svg aria-hidden="true"><use href="#i-plus"/></svg>Crea la prima campagna
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="view" data-view="errore" hidden>
+                  <div class="data-table">
+                    <div class="state">
+                      <svg aria-hidden="true"><use href="#i-alert"/></svg>
+                      <strong>Impossibile caricare le campagne</strong>
+                      <p>Il servizio non ha risposto. Controlla la connessione e riprova.</p>
+                      <button type="button" class="btn btn-secondary btn-sm" data-retry>
+                        <svg aria-hidden="true"><use href="#i-refresh"/></svg>Riprova
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="screen" data-screen="nuova" hidden>
+              <div class="content-scroll">
+                <div class="wizard">
+                  <ol class="stepper">
+                    <li>
+                      <button type="button" class="step-btn is-active" data-step-btn="0">
+                        <span class="step-num" data-step-num="0">1</span><span class="step-label">Cataloghi</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" class="step-btn" data-step-btn="1" disabled>
+                        <span class="step-num" data-step-num="1">2</span><span class="step-label">Destinatari</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button type="button" class="step-btn" data-step-btn="2" disabled>
+                        <span class="step-num" data-step-num="2">3</span><span class="step-label">Conferma</span>
+                      </button>
+                    </li>
+                  </ol>
+
+                  <div class="wizard-body">
+                    <div class="wiz-step" data-wiz-step="0">
+                      <h2 class="wizard-q">Quali cataloghi vuoi inviare?</h2>
+                      <div class="inline-upload" data-new-cat>
+                        <input class="input" type="text" data-new-name placeholder="Nome del nuovo catalogo" aria-label="Nome del nuovo catalogo">
+                        <button type="button" class="file-chip" data-fake-file="pdf">
+                          <svg aria-hidden="true"><use href="#i-upload"/></svg><span data-file-label>Carica PDF</span>
+                        </button>
+                        <button type="button" class="file-clear" data-clear-file aria-label="Rimuovi il file">
+                          <svg aria-hidden="true"><use href="#i-x"/></svg>
+                        </button>
+                      </div>
+                      <div class="check-list">
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Natale 2026">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Natale 2026</strong><span>PDF · 4,2 MB · 18 ott 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Natale 2026">Archivia</button>
+                        </div>
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Autunno 2026">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Autunno 2026</strong><span>PDF · 3,8 MB · 9 set 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Autunno 2026">Archivia</button>
+                        </div>
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Cotto Portoghese">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Cotto Portoghese</strong><span>PDF · 6,1 MB · 22 lug 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Cotto Portoghese">Archivia</button>
+                        </div>
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Primavera 2026">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Primavera 2026</strong><span>PDF · 5,0 MB · 14 mar 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Primavera 2026">Archivia</button>
+                        </div>
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Sementi e Bulbi">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Sementi e Bulbi</strong><span>PDF · 2,9 MB · 20 feb 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Sementi e Bulbi">Archivia</button>
+                        </div>
+                        <div class="cat-row">
+                          <label class="check-item">
+                            <input type="checkbox" value="Catalogo Vasellame">
+                            <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                            <span class="check-text"><strong>Catalogo Vasellame</strong><span>PDF · 7,4 MB · 8 gen 2026</span></span>
+                            <span class="check-tag">Selezionato</span>
+                          </label>
+                          <button type="button" class="btn btn-secondary btn-xs cat-action" data-archive="Catalogo Vasellame">Archivia</button>
+                        </div>
+                      </div>
+                      <details class="archive" data-archive-box>
+                        <summary>
+                          <svg aria-hidden="true"><use href="#i-chevron-down"/></svg>Archivio cataloghi (<span data-archive-count>2</span>)
+                        </summary>
+                        <div class="archive-list" data-archive-list>
+                          <div class="cat-row is-archived">
+                            <div class="check-item is-static">
+                              <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                              <span class="check-text"><strong>Catalogo Inverno 2025</strong><span>PDF · 3,2 MB · 2 dic 2025</span></span>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-xs cat-action" data-restore="Catalogo Inverno 2025">Ripristina</button>
+                          </div>
+                          <div class="cat-row is-archived">
+                            <div class="check-item is-static">
+                              <span class="check-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                              <span class="check-text"><strong>Catalogo Autunno 2025</strong><span>PDF · 4,6 MB · 10 set 2025</span></span>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-xs cat-action" data-restore="Catalogo Autunno 2025">Ripristina</button>
+                          </div>
+                          <p class="archive-empty" data-archive-empty hidden>Nessun catalogo archiviato.</p>
+                        </div>
+                      </details>
+                    </div>
+
+                    <div class="wiz-step" data-wiz-step="1" hidden>
+                      <h2 class="wizard-q">Da dove prendi i destinatari?</h2>
+                      <div class="source-grid" role="radiogroup" aria-label="Origine dei destinatari">
+                        <button type="button" class="source-card is-on" data-source="excel" role="radio" aria-checked="true">
+                          <span class="source-icon" aria-hidden="true"><svg><use href="#i-file"/></svg></span>
+                          <span class="source-text"><strong>Da Excel</strong><span>File .xlsx o .csv dei contatti</span></span>
+                        </button>
+                        <button type="button" class="source-card" data-source="b2b" role="radio" aria-checked="false">
+                          <span class="source-icon" aria-hidden="true"><svg><use href="#i-clienti"/></svg></span>
+                          <span class="source-text"><strong>Clienti B2B</strong><span>Segmentazione · prossimamente</span></span>
+                        </button>
+                      </div>
+                      <div class="excel-panel" data-excel-panel>
+                        <div class="dropzone" data-fake-excel role="button" tabindex="0" aria-label="Carica il file Excel dei contatti">
+                          <svg aria-hidden="true"><use href="#i-upload"/></svg>
+                          <span class="dropzone-title" data-excel-label>Scegli il file Excel dei contatti</span>
+                          <span class="dropzone-hint">.xlsx o .csv · max 5 MB</span>
+                        </div>
+                        <p class="import-note" data-import-note hidden>
+                          <svg aria-hidden="true"><use href="#i-check"/></svg><span data-import-text>12 contatti importati</span>
+                        </p>
+                        <div class="import-body" data-import-body hidden>
+                          <div class="client-tools">
+                            <div class="search">
+                              <svg aria-hidden="true"><use href="#i-search"/></svg>
+                              <input type="search" data-client-search placeholder="Cerca per nome o email" aria-label="Cerca contatti">
+                            </div>
+                            <label class="check-all">
+                              <input type="checkbox" data-client-all>Seleziona tutti
+                            </label>
+                          </div>
+                          <div class="client-list" data-client-list>
+                            <label class="client-row">
+                              <input type="checkbox" value="Fioreria Bianchi" checked>
+                              <span class="client-name">Fioreria Bianchi</span>
+                              <span class="client-mail">fioreria.bianchi@example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Verde &amp; Vaso" checked>
+                              <span class="client-name">Verde &amp; Vaso</span>
+                              <span class="client-mail">ordini@verdevaso.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Il Giardino di Anna" checked>
+                              <span class="client-name">Il Giardino di Anna</span>
+                              <span class="client-mail">anna@ilgiardino.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Botanica Cittadina" checked>
+                              <span class="client-name">Botanica Cittadina</span>
+                              <span class="client-mail">info@botanicacittadina.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Serre Lombarde">
+                              <span class="client-name">Serre Lombarde</span>
+                              <span class="client-mail">acquisti@serrelombarde.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Petalo Rosso">
+                              <span class="client-name">Petalo Rosso</span>
+                              <span class="client-mail">petalo.rosso@example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Vivaio Aurora">
+                              <span class="client-name">Vivaio Aurora</span>
+                              <span class="client-mail">vivaio.aurora@example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Casa Verde">
+                              <span class="client-name">Casa Verde</span>
+                              <span class="client-mail">ordini@casaverde.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Fiori di Via Roma">
+                              <span class="client-name">Fiori di Via Roma</span>
+                              <span class="client-mail">info@fioriviaroma.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Giardini del Lago">
+                              <span class="client-name">Giardini del Lago</span>
+                              <span class="client-mail">giardini.del.lago@example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="Ortensia Shop">
+                              <span class="client-name">Ortensia Shop</span>
+                              <span class="client-mail">shop@ortensia.example.it</span>
+                            </label>
+                            <label class="client-row">
+                              <input type="checkbox" value="La Serra di Leo">
+                              <span class="client-name">La Serra di Leo</span>
+                              <span class="client-mail">leo@laserradileo.example.it</span>
+                            </label>
+                            <p class="client-empty" data-client-empty hidden>Nessun contatto trovato.</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="coming-soon" data-b2b-panel hidden>
+                        <svg aria-hidden="true"><use href="#i-clienti"/></svg>
+                        <strong>Clienti B2B: in arrivo</strong>
+                        <p>Stiamo definendo come segmentare i clienti del portale per listino, famiglia e storico ordini. Per ora importa i contatti da Excel.</p>
+                        <span class="pill pv-amber">Prossimamente</span>
+                        <button type="button" class="btn btn-secondary btn-sm" data-source-back>Torna a Excel</button>
+                      </div>
+                    </div>
+
+                    <div class="wiz-step" data-wiz-step="2" hidden>
+                      <h2 class="wizard-q">Controlla e crea la campagna</h2>
+                      <div class="field">
+                        <span>Nome campagna</span>
+                        <input class="input" type="text" data-campaign-name value="Campagna 25 ottobre 2026">
+                      </div>
+                      <div class="summary" data-summary>
+                        <div class="summary-row"><span>Cataloghi</span><strong data-sum-cat>—</strong></div>
+                        <div class="summary-row"><span>Destinatari</span><strong data-sum-dest>—</strong></div>
+                        <div class="summary-row"><span>Canale</span><strong data-sum-canale>—</strong></div>
+                      </div>
+                      <div class="segmented" data-canale-seg>
+                        <button type="button" class="is-on" data-canale="Email">Invia via email</button>
+                        <button type="button" data-canale="Link">Genera solo link</button>
+                      </div>
+                      <p class="wiz-hint">Nessuna email parte finché non confermi. Puoi revocare l'accesso ai singoli destinatari in qualsiasi momento.</p>
+                    </div>
+                  </div>
+
+                  <div class="wizard-foot">
+                    <button type="button" class="btn btn-secondary btn-sm" data-wiz-back hidden>
+                      <svg aria-hidden="true"><use href="#i-arrow-left"/></svg>Indietro
+                    </button>
+                    <div class="wizard-foot-right">
+                      <span class="wiz-hint" data-wiz-hint aria-live="polite"></span>
+                      <button type="button" class="btn btn-primary btn-sm" data-wiz-next>Continua</button>
+                      <button type="button" class="btn btn-primary btn-sm" data-wiz-submit hidden>Crea campagna</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="screen" data-screen="dettaglio" hidden>
+              <div class="content-scroll">
+                <div class="detail-bar">
+                  <span class="pill pv-ok" data-detail-pill>Inviata</span>
+                  <p class="detail-meta" data-detail-meta>Creata il 12 ott 2026 · Email · 1 catalogo</p>
+                </div>
+                <div class="stat-strip">
+                  <div class="stat">
+                    <div class="label">Destinatari</div>
+                    <div class="value" data-detail-dest>128</div>
+                    <div class="sub">email inviate</div>
+                  </div>
+                  <div class="stat">
+                    <div class="label">Aperture</div>
+                    <div class="value" data-detail-app>74</div>
+                    <div class="sub" data-detail-app-sub>58% del totale</div>
+                  </div>
+                  <div class="stat">
+                    <div class="label">Click</div>
+                    <div class="value" data-detail-sca>31</div>
+                    <div class="sub" data-detail-sca-sub>24% del totale</div>
+                  </div>
+                </div>
+                <div class="data-table t-dest">
+                  <div class="data-table-scroll">
+                    <table>
+                      <caption class="sr-only">Destinatari della campagna</caption>
+                      <thead>
+                        <tr>
+                          <th class="d-nome">Destinatario</th>
+                          <th class="d-ape">Aperto il</th>
+                          <th class="num">Click</th>
+                          <th class="col-actions">Azioni</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Fioreria Bianchi</strong><span class="pill pv-neutral revoked-pill" hidden>Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">fioreria.bianchi@example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">21/10 · 09:14</td>
+                          <td class="num" data-label="Click">2</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row>Revoca</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Verde &amp; Vaso</strong><span class="pill pv-neutral revoked-pill" hidden>Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">ordini@verdevaso.example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">21/10 · 11:02</td>
+                          <td class="num" data-label="Click">1</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row>Revoca</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Il Giardino di Anna</strong><span class="pill pv-neutral revoked-pill" hidden>Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">anna@ilgiardino.example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">—</td>
+                          <td class="num" data-label="Click">—</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row>Revoca</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Botanica Cittadina</strong><span class="pill pv-neutral revoked-pill" hidden>Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">info@botanicacittadina.example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">22/10 · 08:31</td>
+                          <td class="num" data-label="Click">3</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row>Revoca</button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Serre Lombarde</strong><span class="pill pv-neutral revoked-pill" hidden>Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">acquisti@serrelombarde.example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">—</td>
+                          <td class="num" data-label="Click">—</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row>Revoca</button>
+                          </td>
+                        </tr>
+                        <tr class="is-revocato">
+                          <td class="d-nome" data-label="Destinatario">
+                            <div class="name-line"><strong>Petalo Rosso</strong><span class="pill pv-neutral revoked-pill">Revocato</span></div>
+                            <div class="cell-entity-sub d-mail">petalo.rosso@example.it</div>
+                          </td>
+                          <td class="d-ape mono" data-label="Aperto il">21/10 · 10:05</td>
+                          <td class="num" data-label="Click">1</td>
+                          <td class="col-actions d-az" data-label="Azioni">
+                            <button type="button" class="btn btn-secondary btn-xs" data-copy>Link</button>
+                            <button type="button" class="btn btn-secondary danger btn-xs" data-revoke-row disabled>Revoca</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="data-table-footer">
+                    <span>6 destinatari · 4 hanno aperto</span>
+                    <div class="pager">
+                      <button type="button" aria-label="Pagina precedente" disabled><svg aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
+                      <span class="pager-current">1 / 1</span>
+                      <button type="button" aria-label="Pagina successiva" disabled><svg aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+
+      <div class="toast" data-toast role="status" aria-live="polite"></div>
+
+      <div class="modal-overlay" data-modal>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+          <div class="modal-head"><h2 id="confirm-title" data-modal-title>Conferma</h2></div>
+          <div class="modal-body" id="confirm-text">
+            <p data-modal-text></p>
+            <p class="modal-note"><svg aria-hidden="true"><use href="#i-alert"/></svg><span>L'operazione è irreversibile.</span></p>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-secondary" data-modal-cancel>Annulla</button>
+            <button type="button" class="btn btn-secondary danger" data-modal-ok>Revoca</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var doc = document;
+  var device = doc.querySelector('[data-device-frame]');
+  var slot = doc.querySelector('[data-slot]');
+  var tag = doc.querySelector('[data-device-tag]');
+  var toastEl = doc.querySelector('[data-toast]');
+  var toastTimer;
+  var stateSelect = doc.querySelector('[data-state-select]');
+  var navToggle = doc.querySelector('[data-nav-toggle]');
+  var dims = { desktop: [1440, 900], mobile: [375, 812] };
+  var currentDevice = 'desktop';
+  var currentScreen = 'elenco';
+  var wizStep = 0;
+  var canale = 'Email';
+  var source = 'excel';
+  var excelSet = false;
+  var detailNome = 'Autunno 2026';
+
+  function $(sel) { return doc.querySelector(sel); }
+  function $$(sel) { return Array.prototype.slice.call(doc.querySelectorAll(sel)); }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2600);
+  }
+
+  var pendingConfirm = null;
+  var lastFocus = null;
+
+  function openConfirm(title, text, onConfirm) {
+    $('[data-modal-title]').textContent = title;
+    $('[data-modal-text]').textContent = text;
+    lastFocus = doc.activeElement;
+    pendingConfirm = onConfirm;
+    $('[data-modal]').classList.add('is-open');
+    $('[data-modal-ok]').focus();
+  }
+
+  function closeConfirm() {
+    $('[data-modal]').classList.remove('is-open');
+    var fn = pendingConfirm;
+    pendingConfirm = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    return fn;
+  }
+
+  function fit() {
+    var d = dims[currentDevice];
+    var availW = Math.max(window.innerWidth - 48, 280);
+    var availH = Math.max(window.innerHeight - 190, 420);
+    var scale = Math.min(1, availW / d[0], availH / d[1]);
+    device.style.setProperty('--scale', scale);
+    slot.style.width = Math.round(d[0] * scale) + 'px';
+    slot.style.height = Math.round(d[1] * scale) + 'px';
+  }
+
+  function closeNav() {
+    device.classList.remove('nav-open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function setDevice(name) {
+    currentDevice = name;
+    device.setAttribute('data-device', name);
+    tag.textContent = (name === 'desktop' ? 'Desktop · 1440 × 900' : 'Mobile · 375 × 812');
+    $$('[data-device][data-device]').forEach(function (b) {
+      if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.getAttribute('data-device') === name));
+    });
+    closeNav();
+    fit();
+  }
+
+  function setScreen(name) {
+    currentScreen = name;
+    $$('[data-screen]').forEach(function (s) { s.hidden = s.getAttribute('data-screen') !== name; });
+    $$('[data-goto-screen]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-goto-screen') === name));
+    });
+    $$('[data-actions-for]').forEach(function (a) {
+      a.hidden = a.getAttribute('data-actions-for') !== name;
+    });
+    var title = $('[data-top-title]');
+    var sub = $('[data-top-sub]');
+    if (name === 'elenco') { title.textContent = 'Cataloghi'; sub.textContent = 'Marketing · 3 campagne'; }
+    if (name === 'nuova') { title.textContent = 'Nuova campagna'; sub.textContent = 'Marketing · Cataloghi'; }
+    if (name === 'dettaglio') { title.textContent = detailNome; sub.textContent = 'Marketing · Dettaglio campagna'; }
+    title.title = name === 'dettaglio' ? detailNome : '';
+    if (name === 'nuova') renderWizard();
+    var scroll = doc.querySelector('[data-screen="' + name + '"] .content-scroll');
+    if (scroll) scroll.scrollTop = 0;
+    closeNav();
+  }
+
+  function setState(name) {
+    stateSelect.value = name;
+    $$('[data-view]').forEach(function (v) {
+      v.hidden = v.getAttribute('data-view') !== name;
+    });
+    setScreen('elenco');
+  }
+
+  function openDetail(tr) {
+    var nome = tr.getAttribute('data-nome');
+    var inv = Number(tr.getAttribute('data-inv'));
+    var app = Number(tr.getAttribute('data-app'));
+    var sca = Number(tr.getAttribute('data-sca'));
+    var stato = tr.getAttribute('data-stato');
+    var data = tr.getAttribute('data-data');
+    var canaleTxt = tr.getAttribute('data-canale');
+    var nCat = Number(tr.getAttribute('data-cat'));
+    detailNome = nome;
+    var pill = $('[data-detail-pill]');
+    pill.textContent = stato;
+    pill.className = 'pill ' + (stato === 'Bozza' ? 'pv-amber' : 'pv-ok');
+    $('[data-detail-meta]').textContent = 'Creata il ' + data + ' · ' + canaleTxt + ' · ' + nCat + (nCat === 1 ? ' catalogo' : ' cataloghi');
+    $('[data-detail-dest]').textContent = inv;
+    $('[data-detail-app]').textContent = app;
+    $('[data-detail-sca]').textContent = sca;
+    $('[data-detail-app-sub]').textContent = Math.round(app / inv * 100) + '% del totale';
+    $('[data-detail-sca-sub]').textContent = Math.round(sca / inv * 100) + '% del totale';
+    setScreen('dettaglio');
+  }
+
+  function cataloghiScelti() {
+    var out = $$('[data-wiz-step="0"] .check-list input:checked').map(function (i) { return i.value; });
+    var chip = $('[data-fake-file]');
+    if (chip.classList.contains('is-set')) {
+      var nome = $('[data-new-name]').value.trim() || 'Nuovo catalogo';
+      out.push(nome + ' (nuovo)');
+    }
+    return out;
+  }
+
+  function destinatariScelti() {
+    return $$('[data-wiz-step="1"] .client-row input:checked').map(function (i) { return i.value; });
+  }
+
+  function setSource(name) {
+    source = name;
+    $$('[data-source]').forEach(function (b) {
+      var on = b.getAttribute('data-source') === name;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-checked', String(on));
+    });
+    $('[data-excel-panel]').hidden = name !== 'excel';
+    $('[data-b2b-panel]').hidden = name !== 'b2b';
+    renderWizard();
+  }
+
+  function setExcelLoaded() {
+    excelSet = true;
+    var dz = $('[data-fake-excel]');
+    dz.classList.add('is-set');
+    $('[data-excel-label]').textContent = 'contatti-ottobre.xlsx · 18 KB';
+    dz.querySelector('.dropzone-hint').textContent = 'Clic per sostituire il file';
+    $('[data-import-note]').hidden = false;
+    $('[data-import-body]').hidden = false;
+    renderWizard();
+  }
+
+  function clearExcel() {
+    excelSet = false;
+    var dz = $('[data-fake-excel]');
+    dz.classList.remove('is-set');
+    $('[data-excel-label]').textContent = 'Scegli il file Excel dei contatti';
+    dz.querySelector('.dropzone-hint').textContent = '.xlsx o .csv · max 5 MB';
+    $('[data-import-note]').hidden = true;
+    $('[data-import-body]').hidden = true;
+    renderWizard();
+  }
+
+  function moveToArchive(name) {
+    var btn = $$('[data-archive]').filter(function (b) { return b.getAttribute('data-archive') === name; })[0];
+    if (!btn) return;
+    var row = btn.closest('.cat-row');
+    var input = row.querySelector('input');
+    if (!input) return;
+    input.checked = false;
+    input.disabled = true;
+    row.querySelector('.check-item').classList.add('is-static');
+    row.classList.add('is-archived');
+    btn.textContent = 'Ripristina';
+    btn.removeAttribute('data-archive');
+    btn.setAttribute('data-restore', name);
+    $('[data-archive-list]').insertBefore(row, $('[data-archive-empty]'));
+    refreshArchive();
+    toast('«' + name + '» archiviato.');
+  }
+
+  function moveToActive(name) {
+    var btn = $$('[data-restore]').filter(function (b) { return b.getAttribute('data-restore') === name; })[0];
+    if (!btn) return;
+    var row = btn.closest('.cat-row');
+    var item = row.querySelector('.check-item');
+    if (!item.querySelector('input')) {
+      var fresh = doc.createElement('input');
+      fresh.type = 'checkbox';
+      fresh.value = name;
+      item.insertBefore(fresh, item.firstChild);
+    }
+    var input = item.querySelector('input');
+    input.disabled = false;
+    input.checked = false;
+    item.classList.remove('is-static');
+    row.classList.remove('is-archived');
+    btn.textContent = 'Archivia';
+    btn.removeAttribute('data-restore');
+    btn.setAttribute('data-archive', name);
+    $('[data-wiz-step="0"] .check-list').appendChild(row);
+    refreshArchive();
+    toast('«' + name + '» ripristinato.');
+  }
+
+  function refreshArchive() {
+    var n = $$('[data-archive-list] .cat-row').length;
+    $('[data-archive-count]').textContent = n;
+    $('[data-archive-empty]').hidden = n > 0;
+    renderWizard();
+  }
+
+  function resetWizard() {
+    wizStep = 0;
+    canale = 'Email';
+    $$('[data-canale-seg] button').forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-canale') === 'Email'); });
+    $$('[data-wiz-step="0"] .check-list input').forEach(function (i) { if (!i.disabled) i.checked = i.defaultChecked; });
+    $$('[data-client-list] .client-row input').forEach(function (i) { i.checked = i.defaultChecked; });
+    var chip = $('[data-fake-file]');
+    chip.classList.remove('is-set');
+    $('[data-file-label]').textContent = 'Carica PDF';
+    $('[data-new-cat]').classList.remove('has-file');
+    $('[data-new-name]').value = '';
+    $('[data-campaign-name]').value = 'Campagna 25 ottobre 2026';
+    $('[data-client-search]').value = '';
+    $$('[data-client-list] .client-row').forEach(function (r) { r.hidden = false; });
+    $('[data-client-empty]').hidden = true;
+    clearExcel();
+    setSource('excel');
+  }
+
+  function renderWizard() {
+    $$('[data-wiz-step]').forEach(function (s) { s.hidden = Number(s.getAttribute('data-wiz-step')) !== wizStep; });
+    $$('[data-step-btn]').forEach(function (b) {
+      var n = Number(b.getAttribute('data-step-btn'));
+      b.classList.toggle('is-active', n === wizStep);
+      b.classList.toggle('is-done', n < wizStep);
+      b.disabled = n > wizStep;
+      var num = $('[data-step-num="' + n + '"]');
+      num.textContent = n < wizStep ? '✓' : String(n + 1);
+    });
+    $('[data-wiz-back]').hidden = wizStep === 0;
+    $('[data-wiz-next]').hidden = wizStep === 2;
+    $('[data-wiz-submit]').hidden = wizStep !== 2;
+    var nextBtn = $('[data-wiz-next]');
+    var hint = $('[data-wiz-hint]');
+    var cats = cataloghiScelti();
+    var dest = destinatariScelti();
+    if (wizStep === 0) hint.textContent = cats.length ? cats.length + (cats.length === 1 ? ' catalogo selezionato' : ' cataloghi selezionati') : '';
+    if (wizStep === 1) {
+      nextBtn.disabled = source === 'b2b' || !excelSet || !dest.length;
+      if (source === 'b2b') hint.textContent = 'Clienti B2B in arrivo: per ora usa un file Excel.';
+      else if (!excelSet) hint.textContent = 'Carica il file Excel dei contatti.';
+      else if (!dest.length) hint.textContent = 'Seleziona almeno un destinatario.';
+      else hint.textContent = dest.length + (dest.length === 1 ? ' destinatario selezionato' : ' destinatari selezionati');
+    }
+    if (wizStep !== 1) nextBtn.disabled = false;
+    if (wizStep === 2) hint.textContent = '';
+    if (wizStep === 2) {
+      $('[data-sum-cat]').textContent = cats.length ? cats.join(', ') : '—';
+      $('[data-sum-dest]').textContent = dest.length ? dest.length + ' contatti · Excel' : '—';
+      $('[data-sum-canale]').textContent = canale === 'Email' ? 'Email con link personale' : 'Solo link da condividere';
+    }
+    var screen = doc.querySelector('[data-screen="nuova"] .content-scroll');
+    if (screen) screen.scrollTop = 0;
+  }
+
+  function nextStep() {
+    var hint = $('[data-wiz-hint]');
+    if (wizStep === 0 && !cataloghiScelti().length) { hint.textContent = 'Seleziona almeno un catalogo per continuare.'; return; }
+    if (wizStep === 1) {
+      if (source === 'b2b') { hint.textContent = 'Clienti B2B in arrivo: per ora usa un file Excel.'; return; }
+      if (!excelSet) { hint.textContent = 'Carica il file Excel dei contatti.'; return; }
+      if (!destinatariScelti().length) { hint.textContent = 'Seleziona almeno un destinatario per continuare.'; return; }
+    }
+    if (wizStep < 2) { wizStep++; renderWizard(); }
+  }
+
+  function prevStep() {
+    if (wizStep > 0) { wizStep--; renderWizard(); }
+  }
+
+  doc.addEventListener('click', function (e) {
+    var t = e.target;
+    var btn;
+
+    btn = t.closest('[data-goto-screen]');
+    if (btn) { setScreen(btn.getAttribute('data-goto-screen')); return; }
+
+    btn = t.closest('[data-device]');
+    if (btn && btn.tagName === 'BUTTON') { setDevice(btn.getAttribute('data-device')); return; }
+
+    btn = t.closest('[data-goto]');
+    if (btn) { setScreen(btn.getAttribute('data-goto')); return; }
+
+    btn = t.closest('[data-open]');
+    if (btn) { openDetail(btn.closest('tr')); return; }
+
+    btn = t.closest('.t-campagne tbody tr');
+    if (btn) { openDetail(btn); return; }
+
+    btn = t.closest('[data-retry]');
+    if (btn) {
+      setState('caricamento');
+      setTimeout(function () { if (currentScreen === 'elenco') setState('dati'); }, 1400);
+      return;
+    }
+
+    btn = t.closest('[data-copy]');
+    if (btn) {
+      var link = 'https://b2b.luis.it/c/' + Math.random().toString(36).slice(2, 9);
+      if (navigator.clipboard) navigator.clipboard.writeText(link).catch(function () {});
+      toast('Link di accesso copiato.');
+      return;
+    }
+
+    btn = t.closest('[data-export]');
+    if (btn) { toast('Export CSV Brevo pronto · 6 contatti.'); return; }
+
+    btn = t.closest('[data-cancel-wizard]');
+    if (btn) { resetWizard(); setScreen('elenco'); toast('Nuova campagna annullata.'); return; }
+
+    btn = t.closest('[data-archive]');
+    if (btn) { moveToArchive(btn.getAttribute('data-archive')); return; }
+
+    btn = t.closest('[data-restore]');
+    if (btn) { moveToActive(btn.getAttribute('data-restore')); return; }
+
+    btn = t.closest('[data-source]');
+    if (btn) { setSource(btn.getAttribute('data-source')); return; }
+
+    btn = t.closest('[data-source-back]');
+    if (btn) { setSource('excel'); return; }
+
+    btn = t.closest('[data-fake-excel]');
+    if (btn) { setExcelLoaded(); return; }
+
+    btn = t.closest('[data-clear-file]');
+    if (btn) {
+      var chipEl = $('[data-fake-file]');
+      chipEl.classList.remove('is-set');
+      $('[data-file-label]').textContent = 'Carica PDF';
+      $('[data-new-cat]').classList.remove('has-file');
+      renderWizard();
+      return;
+    }
+
+    btn = t.closest('[data-modal-ok]');
+    if (btn) {
+      var confirmFn = closeConfirm();
+      if (confirmFn) confirmFn();
+      return;
+    }
+
+    btn = t.closest('[data-modal-cancel]');
+    if (btn) { closeConfirm(); return; }
+
+    if (t.matches('[data-modal]')) { closeConfirm(); return; }
+
+    btn = t.closest('[data-revoke]');
+    if (btn) {
+      var revokeBtn = btn;
+      openConfirm(
+        'Revocare la campagna?',
+        'Tutti i link della campagna «' + detailNome + '» smetteranno di funzionare: i destinatari non potranno più scaricare i cataloghi.',
+        function () {
+          $$('[data-screen="dettaglio"] tbody tr').forEach(function (tr) {
+            tr.classList.add('is-revocato');
+            var p = tr.querySelector('.revoked-pill');
+            if (p) p.hidden = false;
+            var rb = tr.querySelector('[data-revoke-row]');
+            if (rb) rb.disabled = true;
+          });
+          var mainPill = $('[data-detail-pill]');
+          mainPill.textContent = 'Revocata';
+          mainPill.className = 'pill pv-neutral';
+          revokeBtn.disabled = true;
+          toast('Campagna revocata. I link non sono più validi.');
+        }
+      );
+      return;
+    }
+
+    btn = t.closest('[data-revoke-row]');
+    if (btn) {
+      var revokeRow = btn;
+      var revokeNome = revokeRow.closest('tr').querySelector('strong').textContent;
+      openConfirm(
+        'Revocare il link?',
+        'Il link di ' + revokeNome + ' smetterà di funzionare: il destinatario non potrà più scaricare il catalogo.',
+        function () {
+          var row = revokeRow.closest('tr');
+          row.classList.add('is-revocato');
+          var rp = row.querySelector('.revoked-pill');
+          if (rp) rp.hidden = false;
+          revokeRow.disabled = true;
+          toast('Accesso revocato per ' + revokeNome + '.');
+        }
+      );
+      return;
+    }
+
+    btn = t.closest('[data-fake-file]');
+    if (btn) {
+      btn.classList.add('is-set');
+      $('[data-file-label]').textContent = 'catalogo-nuovo.pdf · 2,4 MB';
+      $('[data-new-cat]').classList.add('has-file');
+      var nomeNuovo = $('[data-new-name]').value.trim();
+      if (!nomeNuovo) $('[data-new-name]').focus();
+      renderWizard();
+      return;
+    }
+
+    btn = t.closest('[data-canale]');
+    if (btn) {
+      canale = btn.getAttribute('data-canale');
+      $$('[data-canale-seg] button').forEach(function (b) { b.classList.toggle('is-on', b === btn); });
+      renderWizard();
+      return;
+    }
+
+    btn = t.closest('[data-wiz-next]');
+    if (btn) { nextStep(); return; }
+
+    btn = t.closest('[data-wiz-back]');
+    if (btn) { prevStep(); return; }
+
+    btn = t.closest('[data-wiz-submit]');
+    if (btn) {
+      var nomeCamp = $('[data-campaign-name]').value.trim();
+      if (!nomeCamp) { $('[data-wiz-hint]').textContent = 'Dai un nome alla campagna.'; return; }
+      var n = destinatariScelti().length;
+      toast('Campagna «' + nomeCamp + '» creata · ' + n + (n === 1 ? ' destinatario.' : ' destinatari.'));
+      resetWizard();
+      setScreen('elenco');
+      return;
+    }
+
+    btn = t.closest('[data-step-btn]');
+    if (btn && !btn.disabled) {
+      wizStep = Number(btn.getAttribute('data-step-btn'));
+      renderWizard();
+      return;
+    }
+
+    btn = t.closest('[data-nav-toggle]');
+    if (btn) {
+      var open = !device.classList.contains('nav-open');
+      device.classList.toggle('nav-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      return;
+    }
+
+    if (t.closest('[data-scrim]')) { closeNav(); return; }
+
+    btn = t.closest('.sidebar-link');
+    if (btn && !btn.classList.contains('active')) { toast('Sezione non inclusa in questo prototipo.'); return; }
+  });
+
+  doc.addEventListener('change', function (e) {
+    if (e.target.matches('[data-state-select]')) { setState(e.target.value); return; }
+    if (e.target.matches('[data-client-all]')) {
+      $$('[data-client-list] .client-row').forEach(function (row) {
+        if (row.hidden) return;
+        row.querySelector('input').checked = e.target.checked;
+      });
+      return;
+    }
+    if (e.target.closest('[data-wiz-step="0"]') || e.target.closest('[data-wiz-step="1"]')) {
+      var vis = $$('[data-client-list] .client-row').filter(function (r) { return !r.hidden; });
+      var all = $('[data-client-all]');
+      if (vis.length) all.checked = vis.every(function (r) { return r.querySelector('input').checked; });
+      renderWizard();
+      var nSel = destinatariScelti().length;
+      $('[data-import-text]').textContent = '12 contatti importati · ' + nSel + ' selezionati';
+    }
+  });
+
+  doc.addEventListener('input', function (e) {
+    if (e.target.matches('[data-client-search]')) {
+      var q = e.target.value.trim().toLowerCase();
+      var visibili = 0;
+      $$('[data-client-list] .client-row').forEach(function (row) {
+        var hit = row.textContent.toLowerCase().indexOf(q) !== -1;
+        row.hidden = !hit;
+        if (hit) visibili++;
+      });
+      $('[data-client-empty]').hidden = visibili > 0;
+      var all = $('[data-client-all]');
+      var rows = $$('[data-client-list] .client-row').filter(function (r) { return !r.hidden; });
+      all.checked = rows.length > 0 && rows.every(function (r) { return r.querySelector('input').checked; });
+    }
+    if (e.target.matches('[data-campaign-name]')) { renderWizard(); }
+  });
+
+  doc.addEventListener('keydown', function (e) {
+    var modal = $('[data-modal]');
+    if (e.key === 'Escape') {
+      if (modal.classList.contains('is-open')) closeConfirm();
+      else closeNav();
+    }
+    if (e.key === 'Tab' && modal.classList.contains('is-open')) {
+      var f = $$('[data-modal] button');
+      if (e.shiftKey && doc.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && doc.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-fake-excel]')) {
+      e.preventDefault();
+      setExcelLoaded();
+    }
+  });
+
+  window.addEventListener('resize', fit);
+
+  setState('dati');
+  refreshArchive();
+  setSource('excel');
+  fit();
+})();
+</script>
+
+
+
+</body>
+</html>
