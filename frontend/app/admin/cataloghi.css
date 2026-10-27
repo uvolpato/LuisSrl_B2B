@@ -763,21 +763,19 @@
 .cat .segmented {
   display: inline-flex;
   align-self: flex-start; /* evita che si allarghi a tutta la larghezza della colonna flex */
+  gap: 8px; /* pulsanti staccati, senza wrapper esterno */
   margin-bottom: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
 }
 .cat .segmented button {
   padding: 9px 20px;
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   font: inherit;
   font-size: 14px;
   color: var(--fg);
 }
-.cat .segmented button + button { border-left: 1px solid var(--border); }
-.cat .segmented button.is-on { background: var(--accent); color: var(--surface); }
+.cat .segmented button.is-on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 .cat .dropzone {
   display: flex;
   flex-direction: column;
