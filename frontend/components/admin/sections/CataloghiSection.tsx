@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
+import DataTable, { type Column, type RowAction } from "../DataTable";
 
 interface Catalogo { id: number; nome: string; copertina: string | null; archiviato: boolean; dimensione: number | null; createdAt: string }
 interface MailingRiga { id: number; nome: string; stato: string; canale: string; createdAt: string; nCataloghi: number; generati: number; aperti: number; scaricati: number }
@@ -26,6 +27,8 @@ const iDownload = <Icon d={<path d="M12 4v11M7 10l5 5 5-5M5 20h14" />} />;
 const iSearch = <Icon d={<><circle cx="11" cy="11" r="6" /><path d="M20 20l-4.2-4.2" /></>} />;
 const iFile = <Icon d={<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z" /><path d="M14 3v5h5" /></>} />;
 const iUpload = <Icon d={<path d="M12 20V9M7 14l5-5 5 5M5 4h14" />} />;
+const iTrash = <Icon d={<><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></>} />;
+const iArchive = <Icon d={<><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" /><path d="M10 12h4" /></>} />
 const iBook = <Icon d={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></>} />;
 const iClienti = <Icon d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>} />;
 
@@ -184,6 +187,7 @@ function ElencoScreen({ mailing, loading, onDettaglio, onNuova }: { mailing: Mai
 const STEP = ["Cataloghi", "Destinatari", "Conferma"] as const;
 
 function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; onCarica: () => Promise<void>; onDone: (id: number) => void }) {
+  const confirm = useConfirm();
   const [step, setStep] = useState(0);
 
   const [nomeCatalogo, setNomeCatalogo] = useState("");
@@ -219,6 +223,53 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
 
   async function archivia(id: number) { try { await api.post(`/api/admin/cataloghi/${id}/archivia`); await onCarica(); } catch { setErrore("Operazione non riuscita"); } }
   async function ripristina(id: number) { try { await api.post(`/api/admin/cataloghi/${id}/ripristina`); await onCarica(); } catch { setErrore("Operazione non riuscita"); } }
+
+  async function elimina(c: Catalogo) {
+    const ok = await confirm({
+      title: "Elimina catalogo",
+      message: <>Eliminare <strong>{c.nome}</strong>? Il PDF viene cancellato definitivamente.</>,
+      tone: "danger",
+      confirmLabel: "Elimina",
+    });
+    if (!ok) return;
+    try {
+      await api.del(`/api/admin/cataloghi/${c.id}`);
+      setCatalogoSel((p) => p.filter((x) => x !== c.id));
+      await onCarica();
+    } catch (e) {
+      setErrore(e instanceof ApiError && e.status === 409
+        ? "Il catalogo è incluso in una campagna: archivialo invece di eliminarlo."
+        : "Eliminazione non riuscita");
+    }
+  }
+
+  const colonne: Column<Catalogo>[] = [
+    {
+      key: "nome",
+      header: "Catalogo",
+      grow: true,
+      sortable: true,
+      sortValue: (c) => c.nome.toLowerCase(),
+      cell: (c) => (
+        <label className="cat-pick">
+          <input
+            type="checkbox"
+            checked={catalogoSel.includes(c.id)}
+            onChange={() => setCatalogoSel((p) => (p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id]))}
+          />
+          <span className="cat-file">{iFile}</span>
+          <strong>{c.nome}</strong>
+        </label>
+      ),
+    },
+    { key: "dimensione", header: "Dimensione", align: "right", mono: true, sortable: true, sortValue: (c) => c.dimensione ?? 0, cell: (c) => fmtSize(c.dimensione) },
+    { key: "data", header: "Caricato il", sortable: true, sortValue: (c) => new Date(c.createdAt).getTime(), cell: (c) => fmtData(c.createdAt) },
+  ];
+
+  const azioni: RowAction<Catalogo>[] = [
+    { icon: () => iArchive, tooltip: (c) => `Archivia ${c.nome}`, onClick: (c) => void archivia(c.id) },
+    { icon: () => iTrash, tooltip: (c) => `Elimina ${c.nome}`, variant: "danger", onClick: (c) => void elimina(c) },
+  ];
 
   async function crea() {
     if (catalogoSel.length === 0) { setErrore("Seleziona almeno un catalogo"); return; }
@@ -278,19 +329,18 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                   {pdfFile && <button type="button" className="file-clear" aria-label="Rimuovi il file" onClick={() => setPdfFile(null)}>{iX}</button>}
                   <button type="button" className="btn btn-secondary btn-sm" onClick={caricaCatalogo} disabled={!pdfFile || !nomeCatalogo.trim() || uploadando}>{uploadando ? "…" : "Aggiungi"}</button>
                 </div>
-                <div className="check-list">
-                  {attivi.length === 0 && <p className="wiz-hint">Nessun catalogo caricato: aggiungi il primo PDF qui sopra.</p>}
-                  {attivi.map((c) => (
-                    <div className="cat-row" key={c.id}>
-                      <label className="check-item">
-                        <input type="checkbox" checked={catalogoSel.includes(c.id)} onChange={() => setCatalogoSel((p) => p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id])} />
-                        <span className="check-icon">{iFile}</span>
-                        <span className="check-text"><strong>{c.nome}</strong><span>PDF · {fmtSize(c.dimensione)} · {fmtData(c.createdAt)}</span></span>
-                        <span className="check-tag">Selezionato</span>
-                      </label>
-                      <button type="button" className="btn btn-secondary btn-xs cat-action" onClick={() => archivia(c.id)}>Archivia</button>
-                    </div>
-                  ))}
+                <div className="cat-table">
+                  <DataTable<Catalogo>
+                    rows={attivi}
+                    rowKey={(c) => c.id}
+                    columns={colonne}
+                    actions={azioni}
+                    emptyText="Nessun catalogo caricato: aggiungi il primo PDF qui sopra."
+                    page={1}
+                    pageSize={Math.max(1, attivi.length)}
+                    total={attivi.length}
+                    onPageChange={() => undefined}
+                  />
                 </div>
                 {archiviati.length > 0 && (
                   <details className="archive">
@@ -300,6 +350,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                         <div className="cat-row is-archived" key={c.id}>
                           <div className="check-item is-static"><span className="check-icon">{iFile}</span><span className="check-text"><strong>{c.nome}</strong><span>PDF · {fmtSize(c.dimensione)}</span></span></div>
                           <button type="button" className="btn btn-secondary btn-xs cat-action" onClick={() => ripristina(c.id)}>Ripristina</button>
+                          <button type="button" className="btn btn-danger-outline btn-xs cat-action" onClick={() => elimina(c)}>Elimina</button>
                         </div>
                       ))}
                     </div>
@@ -314,7 +365,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                 <div className="source-grid" role="radiogroup" aria-label="Origine dei destinatari">
                   <button type="button" className={`source-card ${fonte === "file" ? "is-on" : ""}`} role="radio" aria-checked={fonte === "file"} onClick={() => setFonte("file")}>
                     <span className="source-icon">{iFile}</span>
-                    <span className="source-text"><strong>Da Excel</strong><span>File .xlsx dei contatti</span></span>
+                    <span className="source-text"><strong>Da Excel</strong><span>File .xlsx o .csv dei contatti</span></span>
                   </button>
                   <button type="button" className={`source-card ${fonte === "clienti" ? "is-on" : ""}`} role="radio" aria-checked={fonte === "clienti"} onClick={() => setFonte("clienti")}>
                     <span className="source-icon">{iClienti}</span>
@@ -327,12 +378,13 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                     <label className={`dropzone ${xlsxFile ? "is-set" : ""}`} style={{ cursor: "pointer" }}>
                       {iUpload}
                       <span className="dropzone-title">{xlsxFile ? xlsxFile.name : "Scegli il file Excel dei contatti"}</span>
-                      <span className="dropzone-hint">.xlsx · colonne nome, email</span>
-                      <input type="file" accept=".xlsx" style={{ display: "none" }} onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)} />
+                      <span className="dropzone-hint">.xlsx o .csv · colonne nome, email</span>
+                      <input type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)} />
                     </label>
                     <p className="wiz-hint excel-hint">
                       Due colonne: <strong>nome</strong> ed <strong>email</strong> (intestazione facoltativa). Le righe senza email vengono saltate.{" "}
-                      <a href="/esempio-contatti.xlsx" download>Scarica il file di esempio</a>
+                      Scarica un esempio:{" "}
+                      <a href="/esempio-contatti.xlsx" download>Excel (.xlsx)</a> · <a href="/esempio-contatti.csv" download>CSV</a>
                     </p>
                   </div>
                 )}
@@ -473,7 +525,7 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh }:
             {d.canale !== "link" && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onBrevo(d.id)}>Invia a Brevo</button>}
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => importRef.current?.click()}>{iUpload}Aggiungi da file</button>
           </div>
-          <input ref={importRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
+          <input ref={importRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
         </div>
         <div className="stat-strip">
           <div className="stat"><div className="label">Destinatari</div><div className="value">{d.stats.destinatari}</div><div className="sub">email inviate</div></div>

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { promises as fsp, statSync } from 'fs';
@@ -63,6 +63,20 @@ export class CataloghiAdminService {
     if (!c) throw new NotFoundException('cataloghi.catalogo_non_trovato');
     await this.prisma.catalogo.update({ where: { id }, data: { archiviato: false } });
     return { archiviato: false };
+  }
+
+  /** Elimina il PDF e la riga. Bloccato se il catalogo è dentro una campagna (lo storico va conservato). */
+  async eliminaCatalogo(id: number) {
+    const c = await this.prisma.catalogo.findUnique({
+      where: { id },
+      select: { id: true, pdfFile: true, _count: { select: { mailingCatalogo: true } } },
+    });
+    if (!c) throw new NotFoundException('cataloghi.catalogo_non_trovato');
+    if (c._count.mailingCatalogo > 0) throw new ConflictException('cataloghi.catalogo_in_uso');
+
+    await this.prisma.catalogo.delete({ where: { id } });
+    await fsp.unlink(join(CATALOGHI_DIR, c.pdfFile)).catch(() => undefined);
+    return { eliminato: true };
   }
 
   private dimensionePdf(pdfFile: string): number | null {
@@ -278,22 +292,32 @@ export class CataloghiAdminService {
 
   // ── helper ──────────────────────────────────────────────────────
 
-  /** Estrae (email, nome) dall'xlsx: trova l'email (cella con @) e il nome (l'altra cella non vuota). */
+  /** Estrae (email, nome) da xlsx o csv: trova l'email (cella con @) e il nome (l'altra cella non vuota). */
   private async leggiContatti(file: Express.Multer.File): Promise<{ email: string; nome: string | null }[]> {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);
-    const ws = wb.worksheets[0];
     const contatti: { email: string; nome: string | null }[] = [];
-    ws.eachRow({ includeEmpty: false }, (row) => {
-      const celle = (Array.isArray(row.values) ? row.values.slice(1) : [])
-        .map((v) => String(v ?? '').trim())
-        .filter(Boolean);
+    const aggiungi = (celle: string[]) => {
       if (celle.length === 0) return;
       const email = celle.find((c) => /\S+@\S+\.\S+/.test(c))?.toLowerCase();
       if (!email) return; // salta l'eventuale riga d'intestazione
       const nome = celle.find((c) => c.toLowerCase() !== email) ?? null;
       contatti.push({ email, nome });
-    });
+    };
+    const pulisci = (v: unknown) => String(v ?? '').trim().replace(/^"(.*)"$/s, '$1');
+
+    // xlsx = archivio zip (inizia con "PK"), altrimenti testo csv
+    if (file.buffer[0] === 0x50 && file.buffer[1] === 0x4b) {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);
+      wb.worksheets[0].eachRow({ includeEmpty: false }, (row) => {
+        aggiungi((Array.isArray(row.values) ? row.values.slice(1) : []).map(pulisci).filter(Boolean));
+      });
+    } else {
+      const righe = file.buffer.toString('utf8').replace(/^\uFEFF/, '').split(/\r?\n/);
+      // shortcut: nessun parsing delle virgolette, un nome con separatore dentro le virgolette si spezza
+      const conta = (s: string, c: string) => s.split(c).length - 1;
+      const sep = conta(righe[0] ?? '', ';') >= conta(righe[0] ?? '', ',') ? ';' : ',';
+      righe.forEach((riga) => aggiungi(riga.split(sep).map(pulisci).filter(Boolean)));
+    }
     return contatti;
   }
 }

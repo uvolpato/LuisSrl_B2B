@@ -624,15 +624,19 @@
 .cat .file-clear svg { width: 14px; height: 14px; }
 .cat .file-clear:hover { color: var(--red); background: var(--red-soft); }
 .cat .inline-upload.has-file .file-clear { display: inline-flex; }
-.cat .check-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  padding-right: 2px;
+.cat .cat-table { flex: 1; min-height: 0; display: flex; }
+.cat .cat-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0; /* è un label: azzera il margin del reset globale */
+  cursor: pointer;
 }
+.cat .cat-pick input { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--accent); }
+.cat .cat-pick strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat .cat-file { display: inline-flex; flex-shrink: 0; color: var(--muted); }
+.cat .cat-file svg { width: 16px; height: 16px; }
 .cat .check-item {
   display: flex;
   align-items: center;
@@ -664,20 +668,9 @@
 .cat .check-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cat .check-text strong { font-weight: 600; }
 .cat .check-text span { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
-.cat .check-tag {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0;
-}
-.cat .check-item:has(input:checked) .check-tag { opacity: 1; }
 .cat .cat-row { display: flex; align-items: stretch; gap: 8px; }
 .cat .cat-row .check-item { flex: 1; min-width: 0; }
 .cat .is-archived .check-item input { display: none; }
-.cat .is-archived .check-tag { display: none; }
 .cat .check-item.is-static { cursor: default; opacity: 0.7; }
 .cat .check-item.is-static:hover { border-color: var(--border); }
 .cat .cat-action { flex-shrink: 0; align-self: center; }
@@ -1116,7 +1109,6 @@
 @container (max-width: 520px) {
   .cat .client-mail { display: none; }
   .cat .step-btn { font-size: 11px; padding: 10px 8px; gap: 6px; }
-  .cat .check-tag { display: none; }
   .cat .inline-upload .file-chip { flex: 1 1 100%; justify-content: center; }
   .cat .file-chip span { max-width: 100%; }
   .cat .check-text span { font-size: 11px; }

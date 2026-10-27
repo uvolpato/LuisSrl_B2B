@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Param,
@@ -69,6 +70,12 @@ export class CataloghiAdminController {
   @RequirePermission('marketing.cataloghi.edit')
   ripristinaCatalogo(@Param('id', ParseIntPipe) id: number) {
     return this.admin.ripristinaCatalogo(id);
+  }
+
+  @Delete(':id')
+  @RequirePermission('marketing.cataloghi.edit')
+  eliminaCatalogo(@Param('id', ParseIntPipe) id: number) {
+    return this.admin.eliminaCatalogo(id);
   }
 
   // ── Mailing ──
