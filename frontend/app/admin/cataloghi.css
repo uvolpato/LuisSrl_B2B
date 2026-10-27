@@ -534,6 +534,7 @@
   width: 100%;
   padding: 14px 18px;
   border: none;
+  border-radius: 0; /* azzera il radius del reset globale: lo sfondo attivo deve riempire la cella */
   background: none;
   font: inherit;
   font-size: 14px;
@@ -759,6 +760,7 @@
 .cat .coming-soon .btn { margin-top: 10px; }
 .cat .segmented {
   display: inline-flex;
+  align-self: flex-start; /* evita che si allarghi a tutta la larghezza della colonna flex */
   margin-bottom: 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
