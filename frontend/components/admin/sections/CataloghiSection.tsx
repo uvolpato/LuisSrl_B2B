@@ -314,7 +314,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                 <div className="source-grid" role="radiogroup" aria-label="Origine dei destinatari">
                   <button type="button" className={`source-card ${fonte === "file" ? "is-on" : ""}`} role="radio" aria-checked={fonte === "file"} onClick={() => setFonte("file")}>
                     <span className="source-icon">{iFile}</span>
-                    <span className="source-text"><strong>Da Excel</strong><span>File .xlsx o .csv dei contatti</span></span>
+                    <span className="source-text"><strong>Da Excel</strong><span>File .xlsx dei contatti</span></span>
                   </button>
                   <button type="button" className={`source-card ${fonte === "clienti" ? "is-on" : ""}`} role="radio" aria-checked={fonte === "clienti"} onClick={() => setFonte("clienti")}>
                     <span className="source-icon">{iClienti}</span>
@@ -327,9 +327,13 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                     <label className={`dropzone ${xlsxFile ? "is-set" : ""}`} style={{ cursor: "pointer" }}>
                       {iUpload}
                       <span className="dropzone-title">{xlsxFile ? xlsxFile.name : "Scegli il file Excel dei contatti"}</span>
-                      <span className="dropzone-hint">.xlsx o .csv · colonne email, nome</span>
-                      <input type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)} />
+                      <span className="dropzone-hint">.xlsx · colonne nome, email</span>
+                      <input type="file" accept=".xlsx" style={{ display: "none" }} onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)} />
                     </label>
+                    <p className="wiz-hint excel-hint">
+                      Due colonne: <strong>nome</strong> ed <strong>email</strong> (intestazione facoltativa). Le righe senza email vengono saltate.{" "}
+                      <a href="/esempio-contatti.xlsx" download>Scarica il file di esempio</a>
+                    </p>
                   </div>
                 )}
                 {fonte === "clienti" && <SelettoreClienti sel={clientiSel} onSelChange={setClientiSel} onError={setErrore} />}
@@ -469,7 +473,7 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh }:
             {d.canale !== "link" && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onBrevo(d.id)}>Invia a Brevo</button>}
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => importRef.current?.click()}>{iUpload}Aggiungi da file</button>
           </div>
-          <input ref={importRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
+          <input ref={importRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
         </div>
         <div className="stat-strip">
           <div className="stat"><div className="label">Destinatari</div><div className="value">{d.stats.destinatari}</div><div className="sub">email inviate</div></div>
