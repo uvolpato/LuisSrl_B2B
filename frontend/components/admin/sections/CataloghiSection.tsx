@@ -269,7 +269,11 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                   <input className="input" type="text" placeholder="Nome del nuovo catalogo" value={nomeCatalogo} onChange={(e) => setNomeCatalogo(e.target.value)} />
                   <label className="file-chip" style={{ cursor: "pointer" }}>
                     {iUpload}<span>{pdfFile ? pdfFile.name : "Carica PDF"}</span>
-                    <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
+                    <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setPdfFile(f);
+                      if (f && !nomeCatalogo.trim()) setNomeCatalogo(f.name.replace(/\.pdf$/i, ""));
+                    }} />
                   </label>
                   {pdfFile && <button type="button" className="file-clear" aria-label="Rimuovi il file" onClick={() => setPdfFile(null)}>{iX}</button>}
                   <button type="button" className="btn btn-secondary btn-sm" onClick={caricaCatalogo} disabled={!pdfFile || !nomeCatalogo.trim() || uploadando}>{uploadando ? "…" : "Aggiungi"}</button>
