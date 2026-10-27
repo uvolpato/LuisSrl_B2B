@@ -602,6 +602,7 @@
   align-items: center;
   gap: 8px;
   max-width: 100%;
+  margin: 0; /* il reset globale su label impone margin:14px 0 4px: qui è un chip in riga */
   padding: 9px 14px;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -636,6 +637,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0; /* è un label: azzera il margin del reset globale */
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -782,6 +784,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
+  margin: 0; /* è un label: azzera il margin del reset globale */
   padding: 26px 18px;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
