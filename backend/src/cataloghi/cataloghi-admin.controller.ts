@@ -96,6 +96,12 @@ export class CataloghiAdminController {
     return this.admin.dettaglioMailing(id);
   }
 
+  @Delete('mailing/:id')
+  @RequirePermission('marketing.cataloghi.edit')
+  eliminaMailing(@Param('id', ParseIntPipe) id: number) {
+    return this.admin.eliminaMailing(id);
+  }
+
   @Post('mailing/:id/import')
   @RequirePermission('marketing.cataloghi.edit')
   @UseInterceptors(FileInterceptor('file'))

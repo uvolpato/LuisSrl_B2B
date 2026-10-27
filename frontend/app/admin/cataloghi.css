@@ -806,6 +806,7 @@
 .cat .excel-hint { margin: 10px 2px 0; }
 .cat .excel-hint a { color: var(--accent); text-decoration: underline; }
 .cat .excel-hint a:hover { text-decoration: none; }
+.cat .btn-spinner { width: 14px; height: 14px; border-width: 2px; display: inline-block; vertical-align: -2px; margin-right: 6px; flex-shrink: 0; }
 .cat .import-body { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 14px; }
 .cat .search { position: relative; flex: 1; min-width: 0; }
 .cat .search input {

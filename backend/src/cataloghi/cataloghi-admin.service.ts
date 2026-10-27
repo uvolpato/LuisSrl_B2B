@@ -142,6 +142,14 @@ export class CataloghiAdminService {
     });
   }
 
+  /** Elimina la campagna (link e statistiche a cascata; i cataloghi PDF restano). */
+  async eliminaMailing(id: number) {
+    const m = await this.prisma.mailing.findUnique({ where: { id }, select: { id: true } });
+    if (!m) throw new NotFoundException('cataloghi.mailing_non_trovata');
+    await this.prisma.mailing.delete({ where: { id } });
+    return { eliminato: true };
+  }
+
   async dettaglioMailing(id: number) {
     const m = await this.prisma.mailing.findUnique({
       where: { id },

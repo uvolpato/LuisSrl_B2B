@@ -41,6 +41,7 @@ export default function CataloghiSection() {
   const [errore, setErrore] = useState<string | null>(null);
   const [esito, setEsito] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sendingId, setSendingId] = useState<number | null>(null);
 
   const carica = useCallback(async () => {
     setLoading(true);
@@ -81,11 +82,30 @@ export default function CataloghiSection() {
   async function inviaABrevo(id: number) {
     const ok = await confirm({ title: "Inviare i contatti a Brevo?", confirmLabel: "Invia", message: <p style={{ fontSize: 13 }}>I destinatari saranno importati su Brevo con l&apos;attributo CATALOGO_LINK.</p> });
     if (!ok) return;
+    setSendingId(id);
     try {
       const r = await api.post<{ inviati: number; soloLink?: boolean }>(`/api/admin/cataloghi/mailing/${id}/brevo`);
       setEsito(r.soloLink ? "Campagna solo-link: nessun invio a Brevo." : `Inviati ${r.inviati} contatti a Brevo.`);
       await carica();
       await apriDettaglio(id);
+    } catch (e) { setErrore(e instanceof ApiError ? e.code : "errors.generic"); }
+    finally { setSendingId(null); }
+  }
+
+  async function eliminaCampagna(id: number, nome: string) {
+    const ok = await confirm({
+      title: "Elimina campagna",
+      message: <>Eliminare la campagna <strong>{nome}</strong>? Destinatari e statistiche andranno persi. I cataloghi PDF restano.</>,
+      tone: "danger",
+      confirmLabel: "Elimina",
+    });
+    if (!ok) return;
+    try {
+      await api.del(`/api/admin/cataloghi/mailing/${id}`);
+      setEsito("Campagna eliminata.");
+      setDettaglio(null);
+      setView("elenco");
+      await carica();
     } catch (e) { setErrore(e instanceof ApiError ? e.code : "errors.generic"); }
   }
 
@@ -118,9 +138,9 @@ export default function CataloghiSection() {
       {esito && <div style={{ padding: "8px 32px 0" }}><Notice variant="success" onClose={() => setEsito(null)}>{esito}</Notice></div>}
 
       <div className="screens">
-        {view === "elenco" && <ElencoScreen mailing={mailing} loading={loading} onDettaglio={apriDettaglio} onNuova={() => setView("nuova")} />}
+        {view === "elenco" && <ElencoScreen mailing={mailing} loading={loading} onDettaglio={apriDettaglio} onNuova={() => setView("nuova")} onElimina={eliminaCampagna} />}
         {view === "nuova" && <WizardScreen cataloghi={cataloghi} onCarica={carica} onDone={(id) => { void carica(); void apriDettaglio(id); }} />}
-        {view === "dettaglio" && dettaglio && <DettaglioScreen d={dettaglio} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} />}
+        {view === "dettaglio" && dettaglio && <DettaglioScreen d={dettaglio} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} sending={sendingId === dettaglio.id} onElimina={eliminaCampagna} />}
       </div>
     </div>
   );
@@ -128,7 +148,7 @@ export default function CataloghiSection() {
 
 /* ────────────────────────────── Elenco ────────────────────────────── */
 
-function ElencoScreen({ mailing, loading, onDettaglio, onNuova }: { mailing: MailingRiga[]; loading: boolean; onDettaglio: (id: number) => void; onNuova: () => void }) {
+function ElencoScreen({ mailing, loading, onDettaglio, onNuova, onElimina }: { mailing: MailingRiga[]; loading: boolean; onDettaglio: (id: number) => void; onNuova: () => void; onElimina: (id: number, nome: string) => void }) {
   return (
     <section className="screen">
       <div className="content-scroll">
@@ -168,7 +188,7 @@ function ElencoScreen({ mailing, loading, onDettaglio, onNuova }: { mailing: Mai
                       <td className="c-app num">{m.aperti}</td>
                       <td className="c-sca num">{m.scaricati}</td>
                       <td className="c-stato"><span className={`pill ${m.stato === "inviata" ? "pv-ok" : "pv-amber"}`}>{m.stato === "inviata" ? "Inviata" : "Bozza"}</span></td>
-                      <td className="col-actions c-azioni"><button type="button" className="btn btn-secondary btn-xs" onClick={() => onDettaglio(m.id)}>Apri</button></td>
+                      <td className="col-actions c-azioni"><button type="button" className="btn btn-secondary btn-xs" onClick={() => onDettaglio(m.id)}>Apri</button><button type="button" className="btn btn-danger-outline btn-xs" onClick={() => onElimina(m.id, m.nome)}>Elimina</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -483,13 +503,15 @@ function SelettoreClienti({ sel, onSelChange, onError }: { sel: number[]; onSelC
 
 /* ────────────────────────────── Dettaglio ────────────────────────────── */
 
-function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh }: {
+function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, sending, onElimina }: {
   d: MailingDettaglio;
   onRevoca: (id: number) => void;
   onBrevo: (id: number) => void;
   onEsito: (s: string) => void;
   onCarica: () => Promise<void>;
   onRefresh: (id: number) => void;
+  sending: boolean;
+  onElimina: (id: number, nome: string) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -521,9 +543,16 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh }:
         <div className="detail-bar">
           <span className={`pill ${d.stato === "inviata" ? "pv-ok" : "pv-amber"}`}>{d.stato === "inviata" ? "Inviata" : "Bozza"}</span>
           <p className="detail-meta">Creata il {fmtData(d.createdAt)} · {d.canale === "link" ? "Solo link" : "Email"} · {d.cataloghi.length === 1 ? "1 catalogo" : `${d.cataloghi.length} cataloghi`}</p>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            {d.canale !== "link" && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onBrevo(d.id)}>Invia a Brevo</button>}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+            {d.canale !== "link" && (
+              <button type="button" className="btn btn-secondary btn-sm" disabled={sending} onClick={() => onBrevo(d.id)}>
+                {sending && <span className="wizard-spinner btn-spinner" />}
+                {sending ? "Invio…" : "Invia a Brevo"}
+              </button>
+            )}
+            <a className="btn btn-secondary btn-sm" href="https://app.brevo.com" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Brevo ↗</a>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => importRef.current?.click()}>{iUpload}Aggiungi da file</button>
+            <button type="button" className="btn btn-danger-outline btn-sm" onClick={() => onElimina(d.id, d.nome)}>Elimina</button>
           </div>
           <input ref={importRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
         </div>
