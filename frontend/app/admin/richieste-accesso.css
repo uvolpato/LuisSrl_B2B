@@ -73,6 +73,9 @@
 .ra-drawer .tl-item::before { content: ''; position: absolute; left: -20px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
 .ra-drawer .tl-item.accent::before { border-color: var(--accent); }
 .ra-drawer .tl-when { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-.ra-drawer .tl-what { font-size: 13px; }
+.ra-drawer .tl-what { font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ra-drawer .tl-reinvia { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--accent); cursor: pointer; }
+.ra-drawer .tl-reinvia:hover:not(:disabled) { background: var(--fg-soft); }
+.ra-drawer .tl-reinvia:disabled { opacity: .5; cursor: default; }
 .ra-drawer .consent-box, .ra-drawer .final-note { background: var(--fg-soft); border-radius: var(--radius); padding: 12px 14px; font-size: 12.5px; color: var(--muted); }
 .ra-warn-red { margin-top: 12px; background: color-mix(in oklch, var(--red) 14%, transparent); border: 1px solid color-mix(in oklch, var(--red) 34%, transparent); border-radius: var(--radius); padding: 10px 12px; color: var(--red); font-size: 13px; }

@@ -7,6 +7,7 @@ import type { Column, RowAction } from "../DataTable";
 import { api, ApiError } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import FocusTrap from "../../common/FocusTrap";
+import Tooltip from "../../common/Tooltip";
 import { useConfirm } from "../../common/ConfirmProvider";
 
 /* Sezione admin "Richieste accesso" (prototipo admin-richieste-accesso.html, specifica-admin-richieste-accesso.md). */
@@ -95,6 +96,9 @@ const pill = ([cls, label]: [string, string]) => (
   <span className={`status-pill ${cls}`} style={cls ? undefined : { color: "var(--muted)" }}><span className="sd">●</span>{label}</span>
 );
 const IconOcchio = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+const IconReinvia = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4" /><polyline points="3 4 3 9 8 9" /></svg>
+);
 
 export default function RichiesteAccessoSection() {
   const confirm = useConfirm();
@@ -319,6 +323,9 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   const inAttesa = d.stato === "NUOVO" || d.stato === "IN_VALUTAZIONE";
   const reinviaConferma = !d.anonimizzato && inAttesa && ultimo(["conferma_inviata", "conferma_saltata", "conferma_errore"]) === "conferma_errore";
   const reinviaShop = !d.anonimizzato && inAttesa && ["mail_errore", "promemoria_errore"].includes(ultimo(["mail_inviata", "mail_errore", "promemoria_inviato", "promemoria_errore"]) ?? "");
+  // L'icona sta solo sulla riga dell'errore piu' recente di quel tipo.
+  const erroreConfermaId = reinviaConferma ? [...d.eventi].reverse().find((e) => e.tipo === "conferma_errore")?.id : null;
+  const erroreShopId = reinviaShop ? [...d.eventi].reverse().find((e) => e.tipo === "mail_errore" || e.tipo === "promemoria_errore")?.id : null;
 
   async function reinvia(tipo: "conferma" | "shop") {
     const ok = await confirm({
@@ -422,7 +429,23 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                 {d.eventi.map((e) => (
                   <div key={e.id} className={`tl-item${e.tipo.startsWith("azione_") ? " accent" : ""}`}>
                     <div className="tl-when">{dataOra(e.createdAt)}</div>
-                    <div className="tl-what">{EVENTI[e.tipo] ?? e.tipo}{e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}{e.dettagli?.manuale ? " (manuale)" : ""}</div>
+                    <div className="tl-what">
+                      {EVENTI[e.tipo] ?? e.tipo}{e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}{e.dettagli?.manuale ? " (manuale)" : ""}
+                      {e.id === erroreConfermaId && (
+                        <Tooltip text="Reinvia mail">
+                          <button type="button" className="tl-reinvia" aria-label="Reinvia la conferma al richiedente" disabled={inviando !== null} onClick={() => void reinvia("conferma")}>
+                            <IconReinvia />
+                          </button>
+                        </Tooltip>
+                      )}
+                      {e.id === erroreShopId && (
+                        <Tooltip text="Reinvia mail">
+                          <button type="button" className="tl-reinvia" aria-label="Reinvia la segnalazione a shop@" disabled={inviando !== null} onClick={() => void reinvia("shop")}>
+                            <IconReinvia />
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -446,16 +469,6 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                 {a === "approva" ? "✓ " : ""}{ETICHETTA_AZIONE[a]}
               </button>
             ))}
-            {reinviaConferma && (
-              <button type="button" className="btn btn-secondary" disabled={inviando !== null} onClick={() => void reinvia("conferma")}>
-                {inviando === "conferma" ? "Invio…" : "Reinvia conferma"}
-              </button>
-            )}
-            {reinviaShop && (
-              <button type="button" className="btn btn-secondary" disabled={inviando !== null} onClick={() => void reinvia("shop")}>
-                {inviando === "shop" ? "Invio…" : "Reinvia a shop@"}
-              </button>
-            )}
             <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
           </div>
         </aside>
