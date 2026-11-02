@@ -112,9 +112,22 @@ Dalla root, come Administrator:
 deploy-prod.cmd
 ```
 
-Fa: backup DB (opzionale) → stop servizi → git pull (stash se servono) →
-npm ci → prisma generate/migrate → build BE+FE → restart servizi (o finestre se
-i servizi non esistono).
+Chiede prima il **backup del DB**, poi **cosa aggiornare**:
+
+| Scelta | Effetto |
+|---|---|
+| `0` (default) | portale B2B + sito vetrina |
+| `1` | solo portale B2B (backend + frontend) |
+| `2` | solo sito vetrina (il backend non viene ricostruito) |
+
+Poi ferma **solo i servizi coinvolti**, fa `git pull`, `npm ci`, migrate (solo
+B2B), build dei target scelti, riavvio e verifica di salute. La pagina di
+cortesia resta attiva finché i siti aggiornati non rispondono.
+
+> La vetrina usa le API del backend B2B: se cambia un contratto API, aggiornare
+> **prima** il B2B (scelta 1) e **poi** la vetrina (scelta 2).
+> Il flag della pagina di cortesia è condiviso: durante un rilascio parziale
+> anche l'altro sito la mostra per la durata dell'aggiornamento.
 
 ## Script del repo
 
@@ -122,7 +135,7 @@ i servizi non esistono).
 |------|-------|
 | `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + migrate + seed + build + viste) |
 | `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` / `LuisCaddy` (nssm) |
-| `deploy-prod.cmd` | Aggiornamento sicuro (backup + stop servizi + pull + ci + migrate + build + restart) |
+| `deploy-prod.cmd` | Aggiornamento selettivo (backup + scelta 0/1/2 + pull + ci + migrate + build + restart) |
 | `setup-vetrina.cmd` | Sito vetrina: build + servizio `LuisVetrina` (porta 3002) + regola firewall solo rete interna — una volta |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
 | `backend/prisma/manual-fixups.sql` | Oggetti non coperti dalle migration (tabella `site_config`, colonne `raccolte`, chiavi AI) — idempotente |

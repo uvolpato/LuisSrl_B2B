@@ -192,9 +192,11 @@ caricate, descrizioni `.md`, cache `.cache\*.webp` rigenerabile).
 ## 8. Operatività quotidiana
 
 - **Stato**: `nssm status LuisBackend` (e gli altri tre), `https://<dominio>/api/health`.
-- **Aggiornamento**: `deploy-prod.cmd` come Administrator. Attiva la pagina di cortesia,
-  ferma i servizi, `git pull`, `npm ci`, migrate, build, riavvia, verifica `/api/health`
-  e rimuove il flag. Se qualcosa fallisce la cortesia resta attiva.
+- **Aggiornamento**: `deploy-prod.cmd` come Administrator. Chiede prima il backup
+  del DB, poi cosa aggiornare (**0** tutto, **1** solo B2B, **2** solo vetrina).
+  Attiva la pagina di cortesia, ferma solo i servizi coinvolti, `git pull`, `npm ci`,
+  migrate (solo B2B), build, riavvia, verifica `/api/health` e la vetrina, rimuove il
+  flag. Se qualcosa fallisce la cortesia resta attiva.
 - **Riavvio singolo**: `nssm restart LuisBackend` (pochi secondi di 502 sulle API).
 - **Log**: `backend\service-err.log`, `frontend\service-err.log`,
   `frontend-vetrina\service-err.log`, `caddy-err.log`.
