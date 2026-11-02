@@ -119,6 +119,7 @@ Chiede prima il **backup del DB**, poi **cosa aggiornare**:
 | `0` (default) | portale B2B + sito vetrina |
 | `1` | solo portale B2B (backend + frontend) |
 | `2` | solo sito vetrina (il backend non viene ricostruito) |
+| `3` | solo API (backend; frontend B2B e vetrina non vengono ricostruiti) |
 
 Poi ferma **solo i servizi coinvolti**, fa `git pull`, `npm ci`, migrate (solo
 B2B), build dei target scelti, riavvio e verifica di salute. La pagina di
@@ -135,7 +136,7 @@ cortesia resta attiva finché i siti aggiornati non rispondono.
 |------|-------|
 | `setup-prod.cmd` | Provisioning da zero (Node + dipendenze + migrate + seed + build + viste) |
 | `setup-services.cmd` | Crea i servizi Windows `LuisBackend` / `LuisFrontend` / `LuisCaddy` (nssm) |
-| `deploy-prod.cmd` | Aggiornamento selettivo (backup + scelta 0/1/2 + pull + ci + migrate + build + restart) |
+| `deploy-prod.cmd` | Aggiornamento selettivo (backup + scelta 0/1/2/3 + pull + ci + migrate + build + restart) |
 | `setup-vetrina.cmd` | Sito vetrina: build + servizio `LuisVetrina` (porta 3002) + regola firewall solo rete interna — una volta |
 | `backend/prisma/restore-b2b-views.sql` | Ricrea le viste `b2b_*` / `vista_integra_*` (dblink Integra) |
 | `backend/prisma/manual-fixups.sql` | Oggetti non coperti dalle migration (tabella `site_config`, colonne `raccolte`, chiavi AI) — idempotente |

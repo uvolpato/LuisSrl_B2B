@@ -57,14 +57,16 @@ REM --- [2/8] Scelta cosa aggiornare ---
 echo.
 echo === [2/8] Cosa aggiornare ===
 echo   0 = tutto (portale B2B + sito vetrina)
-echo   1 = solo portale B2B
+echo   1 = solo portale B2B (backend + frontend)
 echo   2 = solo sito vetrina
-set /p TARGET=Scelta [0/1/2] (invio = 0):
+echo   3 = solo API (backend)
+set /p TARGET=Scelta [0/1/2/3] (invio = 0):
 if "!TARGET!"=="" set TARGET=0
 if "!TARGET!"=="0" goto scelta_ok
 if "!TARGET!"=="1" goto scelta_ok
 if "!TARGET!"=="2" goto scelta_ok
-echo [ERRORE] Scelta non valida: usare 0, 1 o 2.
+if "!TARGET!"=="3" goto scelta_ok
+echo [ERRORE] Scelta non valida: usare 0, 1, 2 o 3.
 goto :err_scelta
 
 :scelta_ok
@@ -74,6 +76,7 @@ if "!TARGET!"=="0" set DO_VE=1
 if "!TARGET!"=="1" set DO_BE=1
 if "!TARGET!"=="1" set DO_FE=1
 if "!TARGET!"=="2" set DO_VE=1
+if "!TARGET!"=="3" set DO_BE=1
 
 if "!TARGET!"=="0" if "!USE_VE!"=="0" (
   echo [avviso] Sito vetrina non installato: aggiorno solo il portale B2B.
@@ -90,16 +93,16 @@ if "!TARGET!"=="0" if "!DO_VE!"=="0" echo Aggiorno: solo portale B2B (vetrina no
 if "!TARGET!"=="1" echo Aggiorno: solo portale B2B (la vetrina non viene ricostruita).
 if "!TARGET!"=="2" echo Aggiorno: solo sito vetrina (il backend condiviso non viene ricostruito).
 if "!TARGET!"=="2" echo [nota] La vetrina usa le API del portale: se il backend e' cambiato, aggiorna prima il B2B.
+if "!TARGET!"=="3" echo Aggiorno: solo API backend (frontend B2B e vetrina non vengono ricostruiti).
 
 REM --- [3/8] Stop dei soli servizi coinvolti ---
 echo.
 echo === [3/8] Fermo i servizi ===
 if not exist "%~dp0maintenance" mkdir "%~dp0maintenance"
 REM Flag condiviso dai due siti: Caddy mostra la cortesia a entrambi.
-if "!DO_FE!"=="1" echo maintenance>"%~dp0maintenance\maintenance.flag"
+if "!DO_BE!"=="1" echo maintenance>"%~dp0maintenance\maintenance.flag"
 if "!DO_VE!"=="1" echo maintenance>"%~dp0maintenance\maintenance.flag"
-if "!DO_FE!"=="1" echo Pagina di cortesia ATTIVA (portale e vetrina: flag condiviso).
-if "!DO_FE!"=="0" if "!DO_VE!"=="1" echo Pagina di cortesia ATTIVA (vetrina e portale: flag condiviso).
+echo Pagina di cortesia ATTIVA (flag condiviso da portale e vetrina).
 
 if "!USE_SVC!"=="1" goto svc_stop
 echo Nessun servizio rilevato. Se il portale gira in una finestra, CHIUDILA ora.
@@ -184,6 +187,10 @@ set /a TRIES=0
 :healthwait
 set /a TRIES+=1
 set OK=1
+if "!DO_BE!"=="1" (
+  powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing 'http://localhost:3001/api/health' -TimeoutSec 5; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
+  if errorlevel 1 set OK=0
+)
 if "!DO_FE!"=="1" (
   powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing 'http://localhost:%FE_PORT%/api/health' -TimeoutSec 5; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
   if errorlevel 1 set OK=0
@@ -215,8 +222,10 @@ if "!TARGET!"=="0" if "!DO_VE!"=="1" echo Aggiornati: portale B2B ^(shop^) e sit
 if "!TARGET!"=="0" if "!DO_VE!"=="0" echo Aggiornato: solo portale B2B ^(vetrina non installata^).
 if "!TARGET!"=="1" echo Aggiornato: solo portale B2B. La vetrina NON e' stata ricostruita.
 if "!TARGET!"=="2" echo Aggiornato: solo sito vetrina. Il portale B2B NON e' stato ricostruito.
+if "!TARGET!"=="3" echo Aggiornato: solo API backend. Frontend B2B e vetrina NON sono stati ricostruiti.
 if "!DO_FE!"=="1" echo Portale B2B: http://localhost:%FE_PORT%
 if "!DO_VE!"=="1" echo Sito vetrina: http://localhost:%VE_PORT%
+if "!DO_FE!"=="0" if "!DO_VE!"=="0" echo API backend: http://localhost:3001
 echo.
 pause
 goto :eof
