@@ -300,17 +300,48 @@ export default function RichiesteAccessoSection() {
         )}
       </div>
 
-      {dettaglio && <PannelloDettaglio d={dettaglio} onClose={() => setDettaglio(null)} onAzione={(a) => void esegui(dettaglio, a)} onElimina={() => void elimina(dettaglio)} />}
+      {dettaglio && <PannelloDettaglio d={dettaglio} onClose={() => setDettaglio(null)} onAzione={(a) => void esegui(dettaglio, a)} onElimina={() => void elimina(dettaglio)} onRefresh={() => void apri(dettaglio.id)} />}
     </div>
   );
 }
 
-function PannelloDettaglio({ d, onClose, onAzione, onElimina }: { d: Dettaglio; onClose: () => void; onAzione: (a: Azione) => void; onElimina: () => void }) {
+function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: Dettaglio; onClose: () => void; onAzione: (a: Azione) => void; onElimina: () => void; onRefresh: () => void }) {
+  const confirm = useConfirm();
+  const [invio, setInvio] = useState<{ variant: "success" | "warning"; testo: string } | null>(null);
+  const [inviando, setInviando] = useState<"conferma" | "shop" | null>(null);
   const r = d.report;
   const vcls = r ? { BUONO: "ok", VERIFICARE: "amber", SCARTARE: "red" }[r.verdetto] : "amber";
   const azioni = d.anonimizzato ? [] : AZIONI_PER_STATO[d.stato];
   const sede = d.sedeIndirizzo ? `${d.sedeIndirizzo}, ${d.sedeCap ?? ""} ${d.sedeCitta ?? ""} (${d.sedeProvincia ?? ""})` : null;
   const kv = (k: string, v: React.ReactNode) => <div className="kv-row"><span className="k">{k}</span><span className="v">{v ?? "—"}</span></div>;
+
+  const ultimo = (tipi: string[]) => [...d.eventi].reverse().find((e) => tipi.includes(e.tipo))?.tipo;
+  const inAttesa = d.stato === "NUOVO" || d.stato === "IN_VALUTAZIONE";
+  const reinviaConferma = !d.anonimizzato && inAttesa && ultimo(["conferma_inviata", "conferma_saltata", "conferma_errore"]) === "conferma_errore";
+  const reinviaShop = !d.anonimizzato && inAttesa && ["mail_errore", "promemoria_errore"].includes(ultimo(["mail_inviata", "mail_errore", "promemoria_inviato", "promemoria_errore"]) ?? "");
+
+  async function reinvia(tipo: "conferma" | "shop") {
+    const ok = await confirm({
+      title: tipo === "conferma" ? "Reinviare la conferma al richiedente?" : "Reinviare la segnalazione a shop@?",
+      confirmLabel: "Reinvia",
+      message: tipo === "conferma"
+        ? <p style={{ fontSize: 13, color: "var(--muted)" }}>{d.email} riceverà di nuovo l&apos;email &quot;richiesta ricevuta&quot;.</p>
+        : <p style={{ fontSize: 13, color: "var(--muted)" }}>La mail con il report e i pulsanti Approva / Verifica / Scarta verrà inviata di nuovo a shop@luisbg.it.</p>,
+    });
+    if (!ok) return;
+    setInviando(tipo);
+    try {
+      const res = await api.post<{ esito: "inviata" | "errore"; errore?: string }>(`/api/admin/leads/${d.id}/reinvia`, { tipo });
+      setInvio(res.esito === "inviata"
+        ? { variant: "success", testo: `Email reinviata a ${tipo === "conferma" ? d.email : "shop@luisbg.it"}.` }
+        : { variant: "warning", testo: `Invio non riuscito: ${res.errore ?? "errore"}` });
+      onRefresh();
+    } catch (e) {
+      setInvio({ variant: "warning", testo: `Invio non riuscito: ${e instanceof ApiError ? e.code : "errore"}` });
+    } finally {
+      setInviando(null);
+    }
+  }
 
   return (
     <>
@@ -333,6 +364,7 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina }: { d: Dettaglio; 
           </div>
 
           <div className="drawer-body">
+            {invio && <Notice variant={invio.variant} onClose={() => setInvio(null)} style={{ marginBottom: 16 }}>{invio.testo}</Notice>}
             <div className="drawer-section">
               <p className="section-label">Dati richiesta</p>
               <div className="kv-grid">
@@ -390,7 +422,7 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina }: { d: Dettaglio; 
                 {d.eventi.map((e) => (
                   <div key={e.id} className={`tl-item${e.tipo.startsWith("azione_") ? " accent" : ""}`}>
                     <div className="tl-when">{dataOra(e.createdAt)}</div>
-                    <div className="tl-what">{EVENTI[e.tipo] ?? e.tipo}{e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}</div>
+                    <div className="tl-what">{EVENTI[e.tipo] ?? e.tipo}{e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}{e.dettagli?.manuale ? " (manuale)" : ""}</div>
                   </div>
                 ))}
               </div>
@@ -408,21 +440,24 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina }: { d: Dettaglio; 
             )}
           </div>
 
-          {azioni.length > 0 && (
-            <div className="drawer-foot">
-              {azioni.map((a) => (
-                <button key={a} type="button" className={`btn ${a === "approva" ? "btn-primary" : "btn-secondary"}`} style={a === "scarta" ? { color: "var(--red)" } : undefined} onClick={() => onAzione(a)}>
-                  {a === "approva" ? "✓ " : ""}{ETICHETTA_AZIONE[a]}
-                </button>
-              ))}
-              <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
-            </div>
-          )}
-          {azioni.length === 0 && (
-            <div className="drawer-foot">
-              <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
-            </div>
-          )}
+          <div className="drawer-foot">
+            {azioni.map((a) => (
+              <button key={a} type="button" className={`btn ${a === "approva" ? "btn-primary" : "btn-secondary"}`} style={a === "scarta" ? { color: "var(--red)" } : undefined} onClick={() => onAzione(a)}>
+                {a === "approva" ? "✓ " : ""}{ETICHETTA_AZIONE[a]}
+              </button>
+            ))}
+            {reinviaConferma && (
+              <button type="button" className="btn btn-secondary" disabled={inviando !== null} onClick={() => void reinvia("conferma")}>
+                {inviando === "conferma" ? "Invio…" : "Reinvia conferma"}
+              </button>
+            )}
+            {reinviaShop && (
+              <button type="button" className="btn btn-secondary" disabled={inviando !== null} onClick={() => void reinvia("shop")}>
+                {inviando === "shop" ? "Invio…" : "Reinvia a shop@"}
+              </button>
+            )}
+            <button type="button" className="btn btn-secondary" style={{ color: "var(--red)", marginLeft: "auto" }} onClick={onElimina}>Elimina</button>
+          </div>
         </aside>
       </FocusTrap>
     </>

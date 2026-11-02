@@ -16,12 +16,18 @@ import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermission } from '../auth/decorators/permission.decorator';
 import { AdminLeadsService } from './admin-leads.service';
+import { LeadsService } from './leads.service';
 import { AzioniLeadService } from './azioni.service';
 import { AZIONI, type Azione } from './azioni';
 
 class AzioneDto {
   @IsIn(AZIONI)
   azione!: Azione;
+}
+
+class ReinviaDto {
+  @IsIn(['conferma', 'shop'])
+  tipo!: 'conferma' | 'shop';
 }
 
 /** Area admin "Richieste accesso": stessi permessi della gestione clienti. */
@@ -32,6 +38,7 @@ export class AdminLeadsController {
   constructor(
     private readonly leads: AdminLeadsService,
     private readonly azioni: AzioniLeadService,
+    private readonly invii: LeadsService,
   ) {}
 
   @Get()
@@ -84,6 +91,16 @@ export class AdminLeadsController {
       stato: esito.lead.stato,
       export: esito.tipo === 'eseguita' ? (esito.export ?? null) : null,
     };
+  }
+
+  /** Reinvia a mano la conferma al richiedente o la segnalazione a shop@. */
+  @Post(':id/reinvia')
+  @RequirePermission('vendite.clienti.edit')
+  reinvia(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReinviaDto,
+  ) {
+    return this.invii.reinvia(id, dto.tipo);
   }
 
   /** Eliminazione definitiva della richiesta (solo superuser o admin con permesso edit). */

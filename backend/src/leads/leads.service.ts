@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -131,6 +136,48 @@ export class LeadsService {
       this.logger.warn(`Mail lead #${lead.id} non inviata: ${msg}`);
       await this.evento(lead.id, 'mail_errore', { errore: msg });
     }
+  }
+
+  /**
+   * Reinvia a mano una delle due mail della richiesta quando l'invio automatico e' fallito.
+   * Bypassa il limite delle 24h della conferma: e' un'azione esplicita dell'admin.
+   */
+  async reinvia(
+    id: number,
+    tipo: 'conferma' | 'shop',
+  ): Promise<{ esito: 'inviata' | 'errore'; errore?: string }> {
+    const lead = await this.prisma.lead.findUnique({ where: { id } });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    if (lead.anonimizzatoIl)
+      throw new ConflictException('leads.anonimizzata');
+
+    try {
+      if (tipo === 'conferma') {
+        await this.mail.sendConfermaLead(lead);
+      } else {
+        await this.mail.sendSegnalazioneLead({
+          ...lead,
+          report: lead.report as unknown as ReportIndagine | null,
+          azioni: this.azioni.link(lead.id),
+        });
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(`Reinvio ${tipo} lead #${id} fallito: ${msg}`);
+      await this.evento(
+        id,
+        tipo === 'conferma' ? 'conferma_errore' : 'mail_errore',
+        { errore: msg, manuale: true },
+      );
+      return { esito: 'errore', errore: msg };
+    }
+
+    await this.evento(
+      id,
+      tipo === 'conferma' ? 'conferma_inviata' : 'mail_inviata',
+      { manuale: true },
+    );
+    return { esito: 'inviata' };
   }
 
   /**

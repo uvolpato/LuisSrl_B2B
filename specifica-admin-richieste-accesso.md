@@ -254,6 +254,7 @@ Tutte sotto sessione admin (`AuthenticatedGuard` + ruolo admin), autorizzazione 
 | GET | `/api/admin/leads?stato=&verdetto=&q=&page=` | elenco paginato + KPI |
 | GET | `/api/admin/leads/:id` | dettaglio con report ed eventi |
 | POST | `/api/admin/leads/:id/azione` `{ azione }` | stesse transizioni atomiche dei link mail (`AzioniLeadService`), CSRF di sessione, evento con id admin |
+| POST | `/api/admin/leads/:id/reinvia` `{ tipo: 'conferma' \| 'shop' }` | reinvia la mail fallita (conferma al richiedente o segnalazione a shop@); bypassa il limite delle 24 h perché è un'azione esplicita dell'admin |
 
 ---
 
