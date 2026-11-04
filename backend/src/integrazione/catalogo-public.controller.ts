@@ -139,11 +139,11 @@ export class CatalogoPublicController {
   }
 }
 
-/** {diametro:{valore:40}, altezza:{valore:50}} → "Ø40 H50" (stesso formato dell'anteprima /p). */
+/** {diametro:{valore:40}, altezza:{valore:50}} → "H50 Ø40" (prima l'altezza). */
 function formatDimensioni(d: unknown): string {
   if (!d || typeof d !== 'object') return '';
   const dim = d as Record<string, { valore?: unknown } | undefined>;
-  return ([['diametro', 'Ø'], ['altezza', 'H']] as const)
+  return ([['altezza', 'H'], ['diametro', 'Ø']] as const)
     .map(([k, prefix]) => (dim[k]?.valore != null ? `${prefix}${String(dim[k]!.valore)}` : ''))
     .filter(Boolean)
     .join(' ');
