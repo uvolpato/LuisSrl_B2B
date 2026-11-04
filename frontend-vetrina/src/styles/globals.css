@@ -408,9 +408,8 @@ a.chip { text-decoration: none; display: inline-block; }
 .lightbox-varianti { flex: 0 0 auto; width: 340px; max-width: 340px; color: #fff; }
 .lightbox-varianti h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: oklch(85% 0.01 80); margin: 0 0 12px; }
 .lightbox-varianti .variant-list { max-height: 78vh; overflow-y: auto; border-top-color: rgba(255,255,255,.18); }
-.lightbox-varianti .variant-list li { color: #fff; border-bottom-color: rgba(255,255,255,.18); }
-.lightbox-varianti .variant-list .v-code { color: oklch(85% 0.01 80); }
-.lightbox-varianti .variant-list .v-dim { color: oklch(85% 0.01 80); }
+.lightbox-varianti .variant-list li { color: #fff; border-bottom-color: rgba(255,255,255,.18); font-size: 15px; }
+.lightbox-varianti .variant-list .v-code, .lightbox-varianti .variant-list .v-dim { color: oklch(85% 0.01 80); font-size: 14px; }
 .lightbox-desc { flex: 0 0 auto; width: 340px; max-width: 340px; color: #fff; }
 .lightbox-desc h2 { font-size: clamp(20px, 2.2vw, 28px); color: #fff; margin: 0 0 14px; }
 .lightbox-desc p { color: oklch(88% 0.01 80); line-height: 1.65; margin: 0; max-height: 78vh; overflow-y: auto; }
