@@ -18,10 +18,13 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
 }) {
   const t = useTranslations('catalogo');
   const ref = useRef<HTMLDialogElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
 
   const open = () => {
-    setLoaded(false);
+    // Immagine già in cache: il load event non riparte su img riutilizzata, quindi se è
+    // già completa si salta la dissolvenza a favore della coerenza con i testi.
+    setLoaded(imgRef.current?.complete ?? false);
     ref.current?.showModal();
   };
 
@@ -49,7 +52,7 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
             </ul>
           </div>
           <div className='lightbox-figure'>
-            <img src={full} alt={alt} loading='lazy' onLoad={onLoad} onError={onLoad} />
+            <img ref={imgRef} src={full} alt={alt} loading='lazy' onLoad={onLoad} onError={onLoad} />
             {ai && <span className={`ai-badge ai-badge-lg ${loaded ? 'is-loaded' : ''}`} title={t('aiBadge')}>AI</span>}
           </div>
           <div className={`lightbox-desc ${loaded ? 'is-loaded' : ''}`}>
