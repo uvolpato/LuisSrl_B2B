@@ -1,12 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 type Variante = { codice: string; dimensioni: string };
 
 // Click sull'immagine → vista ingrandita: varianti a sinistra, immagine al centro,
-// descrizione a destra. I testi compaiono in dissolvenza solo quando l'immagine è caricata.
+// descrizione a destra. La dissolvenza dei testi è CSS su [open], riscatta a ogni showModal.
 export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varianti }: {
   src: string;
   full: string;
@@ -18,17 +18,10 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
 }) {
   const t = useTranslations('catalogo');
   const ref = useRef<HTMLDialogElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [loaded, setLoaded] = useState(false);
 
   const open = () => {
-    // Immagine già in cache: il load event non riparte su img riutilizzata, quindi se è
-    // già completa si salta la dissolvenza a favore della coerenza con i testi.
-    setLoaded(imgRef.current?.complete ?? false);
     ref.current?.showModal();
   };
-
-  const onLoad = () => setLoaded(true);
 
   return (
     <>
@@ -40,7 +33,7 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
           <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' width='22' height='22'><line x1='18' y1='6' x2='6' y2='18' /><line x1='6' y1='6' x2='18' y2='18' /></svg>
         </button>
         <div className='lightbox-inner' onClick={(e) => e.stopPropagation()}>
-          <div className={`lightbox-varianti ${loaded ? 'is-loaded' : ''}`}>
+          <div className='lightbox-varianti'>
             <h3>{t('varianti', { n: varianti.length })}</h3>
             <ul className='variant-list'>
               {varianti.map((v) => (
@@ -52,10 +45,10 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
             </ul>
           </div>
           <div className='lightbox-figure'>
-            <img ref={imgRef} src={full} alt={alt} loading='lazy' onLoad={onLoad} onError={onLoad} />
-            {ai && <span className={`ai-badge ai-badge-lg ${loaded ? 'is-loaded' : ''}`} title={t('aiBadge')}>AI</span>}
+            <img src={full} alt={alt} loading='lazy' />
+            {ai && <span className='ai-badge ai-badge-lg' title={t('aiBadge')}>AI</span>}
           </div>
-          <div className={`lightbox-desc ${loaded ? 'is-loaded' : ''}`}>
+          <div className='lightbox-desc'>
             <h2>{nome}</h2>
             {descrizione && <p>{descrizione}</p>}
           </div>
