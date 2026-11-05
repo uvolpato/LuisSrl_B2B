@@ -81,6 +81,7 @@ export class UsersService {
         passwordHash: await hashPassword(provisionalPassword),
         nome: dto.nome,
         ruolo: (dto.ruolo ?? 'UTENTE') as AdminRole,
+        mustChangePassword: true,
         preferredLanguage: dto.preferredLanguage ?? 'it',
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
       },
