@@ -93,11 +93,10 @@ export class LeadsService {
     }
   }
 
-  /** Indagine AI (fail closed: errori → VERIFICARE) e poi mail a shop@ con il report. */
-  private async qualifica(lead: Lead) {
-    let report: ReportIndagine | null = null;
+  /** Indagine AI (fail closed: errori → VERIFICARE), persiste il report. Ritorna null se fallita. */
+  private async qualificaSoloIndagine(lead: Lead): Promise<ReportIndagine | null> {
     try {
-      report = await this.indagine.indaga(lead);
+      const report = await this.indagine.indaga(lead);
       await this.prisma.lead.update({
         where: { id: lead.id },
         data: {
@@ -118,11 +117,18 @@ export class LeadsService {
         durataMs: report.durataMs,
         errore: report.errore,
       });
+      return report;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       this.logger.warn(`Indagine lead #${lead.id} fallita: ${msg}`);
       await this.evento(lead.id, 'indagine_errore', { errore: msg });
+      return null;
     }
+  }
+
+  /** Indagine AI (fail closed: errori → VERIFICARE) e poi mail a shop@ con il report. */
+  private async qualifica(lead: Lead) {
+    const report = await this.qualificaSoloIndagine(lead);
 
     try {
       await this.mail.sendSegnalazioneLead({
@@ -136,6 +142,15 @@ export class LeadsService {
       this.logger.warn(`Mail lead #${lead.id} non inviata: ${msg}`);
       await this.evento(lead.id, 'mail_errore', { errore: msg });
     }
+  }
+
+  /** Ri-esegue l'indagine su richiesta dell'admin (es. dopo indagine_errore). Null se fallita di nuovo. */
+  async reindaga(id: number): Promise<ReportIndagine | null> {
+    const lead = await this.prisma.lead.findUnique({ where: { id } });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    if (lead.anonimizzatoIl)
+      throw new ConflictException('leads.anonimizzata');
+    return this.qualificaSoloIndagine(lead);
   }
 
   /**

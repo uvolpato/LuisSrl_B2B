@@ -103,6 +103,14 @@ export class AdminLeadsController {
     return this.invii.reinvia(id, dto.tipo);
   }
 
+  /** Ri-esegue l'indagine AI (es. dopo un errore) e aggiorna report + verdetto + sede. */
+  @Post(':id/indagine')
+  @RequirePermission('vendite.clienti.edit')
+  async indagine(@Param('id', ParseIntPipe) id: number) {
+    const report = await this.invii.reindaga(id);
+    return { esito: report ? 'ok' : 'errore', errore: report?.errore ?? null };
+  }
+
   /** Eliminazione definitiva della richiesta (solo superuser o admin con permesso edit). */
   @Delete(':id')
   @RequirePermission('vendite.clienti.edit')

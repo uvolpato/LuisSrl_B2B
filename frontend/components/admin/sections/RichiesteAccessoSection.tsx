@@ -320,7 +320,7 @@ export default function RichiesteAccessoSection() {
 function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: Dettaglio; onClose: () => void; onAzione: (a: Azione) => void; onElimina: () => void; onRefresh: () => void }) {
   const confirm = useConfirm();
   const [invio, setInvio] = useState<{ variant: "success" | "warning"; testo: string } | null>(null);
-  const [inviando, setInviando] = useState<"conferma" | "shop" | null>(null);
+  const [inviando, setInviando] = useState<"conferma" | "shop" | "indagine" | null>(null);
   const r = d.report;
   const vcls = r ? { BUONO: "ok", VERIFICARE: "amber", SCARTARE: "red" }[r.verdetto] : "amber";
   const azioni = d.anonimizzato ? [] : AZIONI_PER_STATO[d.stato];
@@ -334,6 +334,10 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   // L'icona sta solo sulla riga dell'errore piu' recente di quel tipo.
   const erroreConfermaId = reinviaConferma ? [...d.eventi].reverse().find((e) => e.tipo === "conferma_errore")?.id : null;
   const erroreShopId = reinviaShop ? [...d.eventi].reverse().find((e) => e.tipo === "mail_errore" || e.tipo === "promemoria_errore")?.id : null;
+  // Riesecuzione indagine: solo se l'errore e' ancora attivo (niente indagine di successo piu' recente).
+  const erroreIndagineId = !d.anonimizzato && (d.errori ?? []).includes("indagine_errore")
+    ? [...d.eventi].reverse().find((e) => e.tipo === "indagine_errore")?.id
+    : null;
   // Problemi attivi: per ognuno il piu' recente evento errore di quel tipo (data + messaggio).
   const attivi = (d.errori ?? []).map((tipo) => {
     const ev = [...d.eventi].reverse().find((e) => e.tipo === tipo);
@@ -358,6 +362,21 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
       onRefresh();
     } catch (e) {
       setInvio({ variant: "warning", testo: `Invio non riuscito: ${e instanceof ApiError ? e.code : "errore"}` });
+    } finally {
+      setInviando(null);
+    }
+  }
+
+  async function reindaga() {
+    setInviando("indagine");
+    try {
+      const res = await api.post<{ esito: "ok" | "errore"; errore?: string | null }>(`/api/admin/leads/${d.id}/indagine`, {});
+      setInvio(res.esito === "ok"
+        ? { variant: "success", testo: `Indagine completata${res.errore ? " con riserve (AI non disponibile)" : ""}: verdetto aggiornato.` }
+        : { variant: "warning", testo: `Indagine non riuscita: ${res.errore ?? "errore"}` });
+      onRefresh();
+    } catch (e) {
+      setInvio({ variant: "warning", testo: `Indagine non riuscita: ${e instanceof ApiError ? e.code : "errore"}` });
     } finally {
       setInviando(null);
     }
@@ -464,6 +483,13 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                       {e.id === erroreShopId && (
                         <Tooltip text="Reinvia mail">
                           <button type="button" className="tl-reinvia" aria-label="Reinvia la segnalazione a shop@" disabled={inviando !== null} onClick={() => void reinvia("shop")}>
+                            <IconReinvia />
+                          </button>
+                        </Tooltip>
+                      )}
+                      {e.id === erroreIndagineId && (
+                        <Tooltip text="Riesegui indagine AI">
+                          <button type="button" className="tl-reinvia" aria-label="Riesegui l'indagine AI" disabled={inviando !== null} onClick={() => void reindaga()}>
                             <IconReinvia />
                           </button>
                         </Tooltip>
