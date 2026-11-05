@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  COPPIE_ERRORE,
   FILTRI_STATO,
   GIORNI_ALLARME,
   ORDINAMENTI,
   STATI_IN_ATTESA,
   VERDETTI,
   giorniAttesa,
+  erroriAttivi,
 } from './admin-leads';
 
 const PAGINA = 10;
@@ -76,12 +78,22 @@ export class AdminLeadsService {
       }),
       this.kpi(),
     ]);
+    // Solo gli eventi che servono per calcolare gli errori attivi: coppie errore + successo.
+    const eventi = await this.prisma.leadEvent.findMany({
+      where: {
+        leadId: { in: righe.map((r) => r.id) },
+        tipo: { in: [...Object.keys(COPPIE_ERRORE), ...Object.values(COPPIE_ERRORE)] },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { leadId: true, tipo: true, createdAt: true },
+    });
     const ora = new Date();
     return {
       items: righe.map((r) => ({
         ...r,
         anonimizzato: r.anonimizzatoIl != null,
         giorniAttesa: giorniAttesa(r.stato, r.createdAt, ora),
+        errori: erroriAttivi(r.id, eventi),
       })),
       total,
       page,
@@ -130,6 +142,10 @@ export class AdminLeadsService {
       ...l,
       anonimizzato: l.anonimizzatoIl != null,
       giorniAttesa: giorniAttesa(l.stato, l.createdAt),
+      errori: erroriAttivi(
+        id,
+        l.eventi.map((e) => ({ leadId: e.leadId, tipo: e.tipo, createdAt: e.createdAt })),
+      ),
       eventi: l.eventi.map((e) => ({
         id: e.id,
         tipo: e.tipo,

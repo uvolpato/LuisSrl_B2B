@@ -25,6 +25,33 @@ export const ORDINAMENTI: Record<string, { campo: string; inverti?: boolean }> =
 
 export const VERDETTI = ['BUONO', 'VERIFICARE', 'SCARTARE'];
 
+/** Eventi errore → evento di successo che li chiude: un errore è attivo finché il successo
+ * corrispondente non arriva DOPO. Usato sia per la lista (avviso riga) che per il dettaglio (banner). */
+export const COPPIE_ERRORE: Record<string, string> = {
+  conferma_errore: 'conferma_inviata',
+  indagine_errore: 'indagine',
+  mail_errore: 'mail_inviata',
+  promemoria_errore: 'promemoria_inviato',
+  invito_errore: 'invito_inviato',
+  export_errore: 'export_integra',
+  aggancio_errore: 'cliente_collegato',
+};
+
+export function erroriAttivi(
+  leadId: number,
+  eventi: { leadId: number; tipo: string; createdAt: Date }[],
+): string[] {
+  const miei = eventi.filter((e) => e.leadId === leadId);
+  return Object.keys(COPPIE_ERRORE).filter((errore) => {
+    const ok = COPPIE_ERRORE[errore];
+    return miei.some(
+      (e) =>
+        e.tipo === errore &&
+        !miei.some((s) => s.tipo === ok && s.createdAt > e.createdAt),
+    );
+  });
+}
+
 /** Giorni di attesa: solo per le richieste ancora da decidere. */
 export function giorniAttesa(
   stato: string,

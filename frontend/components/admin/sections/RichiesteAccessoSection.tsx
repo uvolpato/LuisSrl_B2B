@@ -27,6 +27,7 @@ interface Riga {
   stato: Stato;
   anonimizzato: boolean;
   giorniAttesa: number | null;
+  errori: string[];
 }
 interface Kpi { daDecidere: number; inVerifica: number; approvate30: number; scartate30: number; ferme: number }
 interface Pagina { items: Riga[]; total: number; page: number; pages: number; kpi: Kpi }
@@ -227,6 +228,13 @@ export default function RichiesteAccessoSection() {
         <span className={`attesa${r.giorniAttesa > 6 ? " warn" : ""}`}>{r.giorniAttesa > 6 ? "⚠ " : ""}{r.giorniAttesa} gg</span>
       ),
     },
+    {
+      key: "avvisi", header: "Avvisi", width: "72px", cell: (r) => (r.errori ?? []).length === 0 ? "" : (
+        <Tooltip text={`Problemi nel processo: ${(r.errori ?? []).map((x) => EVENTI[x] ?? x).join(" · ")}`}>
+          <span className="ra-avvisi" role="img" aria-label={`${(r.errori ?? []).length} problema(i) nel processo`}>⚠ {(r.errori ?? []).length}</span>
+        </Tooltip>
+      ),
+    },
   ], []);
   const azioniRiga: RowAction<Riga>[] = useMemo(() => [{ icon: () => IconOcchio, tooltip: () => "Dettaglio", onClick: (r) => void apri(r.id) }], [apri]);
 
@@ -326,6 +334,11 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   // L'icona sta solo sulla riga dell'errore piu' recente di quel tipo.
   const erroreConfermaId = reinviaConferma ? [...d.eventi].reverse().find((e) => e.tipo === "conferma_errore")?.id : null;
   const erroreShopId = reinviaShop ? [...d.eventi].reverse().find((e) => e.tipo === "mail_errore" || e.tipo === "promemoria_errore")?.id : null;
+  // Problemi attivi: per ognuno il piu' recente evento errore di quel tipo (data + messaggio).
+  const attivi = (d.errori ?? []).map((tipo) => {
+    const ev = [...d.eventi].reverse().find((e) => e.tipo === tipo);
+    return { tipo, quando: ev ? dataOra(ev.createdAt) : null, messaggio: typeof ev?.dettagli?.errore === "string" ? ev.dettagli.errore : null };
+  });
 
   async function reinvia(tipo: "conferma" | "shop") {
     const ok = await confirm({
@@ -372,6 +385,16 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
 
           <div className="drawer-body">
             {invio && <Notice variant={invio.variant} onClose={() => setInvio(null)} style={{ marginBottom: 16 }}>{invio.testo}</Notice>}
+            {attivi.length > 0 && (
+              <div className="ra-warn-red" style={{ marginBottom: 16 }}>
+                <strong style={{ display: "block", marginBottom: 4 }}>Problemi nel processo:</strong>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {attivi.map((a) => (
+                    <li key={a.tipo}>{EVENTI[a.tipo] ?? a.tipo}{a.quando ? ` · ${a.quando}` : ""}{a.messaggio ? ` — ${a.messaggio}` : ""}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="drawer-section">
               <p className="section-label">Dati richiesta</p>
               <div className="kv-grid">
