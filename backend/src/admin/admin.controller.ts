@@ -297,7 +297,7 @@ export class AdminController {
   // ── Customer profiles (intelligence commerciale) ──
 
   @Get('customers/:id/profilo')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async getCustomerProfile(
     @Param('id', ParseIntPipe) id: number,
   ) {
@@ -305,7 +305,7 @@ export class AdminController {
   }
 
   @Get('customers/:id/dossier')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async getCustomerDossier(
     @Param('id', ParseIntPipe) id: number,
   ) {
@@ -313,7 +313,7 @@ export class AdminController {
   }
 
   @Get('customers/:id/offerte')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async getCustomerOfferte(
     @Param('id', ParseIntPipe) id: number,
   ) {
@@ -321,7 +321,7 @@ export class AdminController {
   }
 
   @Post('customers/:id/offerta')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async creaOfferta(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { varianti: { codice: string; quantita?: number }[]; nome?: string },
@@ -330,7 +330,7 @@ export class AdminController {
   }
 
   @Post('customers/:id/regenerate-profile')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async regenerateCustomerProfile(
     @Param('id', ParseIntPipe) id: number,
   ) {
@@ -338,7 +338,7 @@ export class AdminController {
   }
 
   @Post('customers/regenerate-profiles')
-  @RequirePermission('admin.customers.view')
+  @RequirePermission('vendite.clienti.view')
   async regenerateAllProfiles() {
     return this.customerProfile.generaTutti();
   }
