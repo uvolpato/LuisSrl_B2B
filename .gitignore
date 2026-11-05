@@ -100,3 +100,6 @@ backend/storage/cataloghi/*
 
 # Segreti solo locali: mai in git
 SEGRETI-LOCALI.md
+
+# --- Graphify: cache AST locale, il grafo si ricrea con 'graphify update .' ---
+graphify-out/cache/
