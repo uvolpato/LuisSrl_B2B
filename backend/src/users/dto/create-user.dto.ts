@@ -1,9 +1,11 @@
 import {
   IsEmail,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   Length,
+  Min,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -21,4 +23,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsIn(['it', 'en'])
   preferredLanguage?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  groupId?: number;
 }

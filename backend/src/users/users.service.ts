@@ -22,6 +22,12 @@ const AVATAR_COLORS = [
   'oklch(55% 0.15 120)',
 ];
 
+/** Gruppo di permessi di default per ruolo: senza gruppo l'utente nasce senza nessun permesso. */
+const GRUPPO_PER_RUOLO: Record<string, string> = {
+  AMMINISTRATORE: 'super-admin',
+  UTENTE: 'viewer',
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -75,12 +81,20 @@ export class UsersService {
     const existingCustomer = await this.prisma.customer.findFirst({ where: { email } });
     if (existing || existingCustomer) throw new ConflictException('users.email_exists');
 
+    const gruppo = dto.groupId
+      ? await this.prisma.permissionGroup.findUnique({ where: { id: dto.groupId } })
+      : await this.prisma.permissionGroup.findUnique({
+          where: { slug: GRUPPO_PER_RUOLO[dto.ruolo ?? 'UTENTE'] ?? 'viewer' },
+        });
+    if (!gruppo) throw new ConflictException('gruppi.not_found');
+
     const user = await this.prisma.user.create({
       data: {
         email,
         passwordHash: await hashPassword(provisionalPassword),
         nome: dto.nome,
         ruolo: (dto.ruolo ?? 'UTENTE') as AdminRole,
+        groupId: gruppo.id,
         mustChangePassword: true,
         preferredLanguage: dto.preferredLanguage ?? 'it',
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
@@ -100,11 +114,22 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('users.not_found');
 
+    // Gruppo esplicito se scelto; altrimenti, cambiando ruolo, quello di default del ruolo.
+    const gruppo = dto.groupId !== undefined
+      ? await this.prisma.permissionGroup.findUnique({ where: { id: dto.groupId } })
+      : dto.ruolo !== undefined
+        ? await this.prisma.permissionGroup.findUnique({
+            where: { slug: GRUPPO_PER_RUOLO[dto.ruolo] ?? 'viewer' },
+          })
+        : null;
+    if (dto.groupId !== undefined && !gruppo) throw new ConflictException('gruppi.not_found');
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...(dto.nome !== undefined && { nome: dto.nome }),
         ...(dto.ruolo !== undefined && { ruolo: dto.ruolo as AdminRole }),
+        ...(gruppo && { groupId: gruppo.id }),
         ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
       },
     });

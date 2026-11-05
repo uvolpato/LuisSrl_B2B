@@ -1,8 +1,10 @@
 import {
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   Length,
+  Min,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -18,4 +20,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsIn(['it', 'en'])
   preferredLanguage?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  groupId?: number;
 }

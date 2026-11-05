@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState, useCallback } from "react";
+import { FormEvent, useState, useCallback, useEffect } from "react";
 import { api, ApiError } from "../../lib/api";
-import type { UserProfile } from "../../lib/types";
+import type { PermissionGroup, UserProfile } from "../../lib/types";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
 
@@ -36,9 +36,17 @@ export default function UserAdminEditorModal({
     nome: editing?.nome ?? "",
     ruolo: editing?.ruolo ?? "UTENTE",
     preferredLanguage: editing?.preferredLanguage ?? "it",
+    groupId: editing?.groupId ?? "",
   });
+  const [gruppi, setGruppi] = useState<{ id: number; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api.get<PermissionGroup[]>("/api/admin/groups")
+      .then((list) => setGruppi(list.map((g) => ({ id: g.id, name: g.name }))))
+      .catch(() => {});
+  }, []);
 
   function set(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -49,11 +57,13 @@ export default function UserAdminEditorModal({
     setBusy(true);
     setError(null);
     try {
+      const groupId = form.groupId === "" ? undefined : Number(form.groupId);
       if (editing) {
         await api.patch(`/api/users/${editing.id}`, {
           nome: form.nome,
           ruolo: form.ruolo,
           preferredLanguage: form.preferredLanguage,
+          ...(groupId !== undefined && { groupId }),
         });
         onSaved();
       } else {
@@ -62,6 +72,7 @@ export default function UserAdminEditorModal({
           nome: form.nome,
           ruolo: form.ruolo,
           preferredLanguage: form.preferredLanguage,
+          ...(groupId !== undefined && { groupId }),
         });
         onSaved({ email: form.email, password: res.provisionalPassword });
       }
@@ -114,6 +125,17 @@ export default function UserAdminEditorModal({
         >
           {RUOLI.map((r) => (
             <option key={r.value} value={r.value}>{r.label}</option>
+          ))}
+        </select>
+
+        <label>Gruppo permessi</label>
+        <select disabled={busy || !!isDeleted}
+          value={form.groupId}
+          onChange={(e) => setForm((f) => ({ ...f, groupId: e.target.value }))}
+        >
+          <option value="">Default per ruolo</option>
+          {gruppi.map((g) => (
+            <option key={g.id} value={g.id}>{g.name}</option>
           ))}
         </select>
 
