@@ -356,10 +356,10 @@
     "semantic_hash": "d264549363aadafbe967b275e2ef000d"
   },
   "backend/src/carrello/carrello.service.ts": {
-    "mtime": 1788907706.3908315,
-    "seen": 1793880362.9489188,
-    "ast_hash": "f1ba548d15d542b217451a401c32c8b5",
-    "semantic_hash": "f1ba548d15d542b217451a401c32c8b5"
+    "mtime": 1793992231.2770934,
+    "seen": 1793992310.7051182,
+    "ast_hash": "cc3d48cc509a10aeb9b12fdf109946f5",
+    "semantic_hash": ""
   },
   "backend/src/cataloghi/brevo.service.ts": {
     "mtime": 1793051297.872948,
@@ -410,10 +410,10 @@
     "semantic_hash": "dbd08c1686e767fb36c598e547e744fc"
   },
   "backend/src/checkout/checkout.service.ts": {
-    "mtime": 1791926235.192705,
-    "seen": 1793880362.9503667,
-    "ast_hash": "eedf29c00d20c528454e7bc35ff50f35",
-    "semantic_hash": "eedf29c00d20c528454e7bc35ff50f35"
+    "mtime": 1793992231.2760916,
+    "seen": 1793992310.705133,
+    "ast_hash": "da217f1d89d8cdc798d0ae0b29f180c7",
+    "semantic_hash": ""
   },
   "backend/src/checkout/dto/fatturazione.dto.ts": {
     "mtime": 1791926262.8466852,
@@ -1319,10 +1319,10 @@
     "semantic_hash": "c3008b03aab10dda3850561886571651"
   },
   "frontend/app/area/catalogo/[codiceLinea]/page.tsx": {
-    "mtime": 1791674248.6709614,
-    "seen": 1793880362.97399,
-    "ast_hash": "caf0f0fd3e7d80a6406187462a946098",
-    "semantic_hash": "caf0f0fd3e7d80a6406187462a946098"
+    "mtime": 1793992195.4769433,
+    "seen": 1793992310.7053912,
+    "ast_hash": "05f76253b71c63c7afda10cbeea1ceec",
+    "semantic_hash": ""
   },
   "frontend/app/area/catalogo/page.tsx": {
     "mtime": 1791416223.7339787,
@@ -2605,9 +2605,9 @@
     "semantic_hash": ""
   },
   "DEVELOPER_NOTES.md": {
-    "mtime": 1793988348.8319206,
-    "seen": 1793988773.4158945,
-    "ast_hash": "c0d00e7daac7fb763a6830b4a1a033de",
+    "mtime": 1793992282.9170237,
+    "seen": 1793992310.705598,
+    "ast_hash": "66ba7c2b6da5149f8199dc8366980989",
     "semantic_hash": ""
   },
   "MCP-B2B.md": {

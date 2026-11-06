@@ -1,17 +1,17 @@
 # Graph Report - Luis Srl - B2B  (2026-11-06)
 
 ## Corpus Check
-- 429 files · ~439,531 words
+- 429 files · ~439,745 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
 ## Summary
-- 3295 nodes · 7522 edges · 229 communities (114 shown, 115 thin omitted)
+- 3295 nodes · 7518 edges · 229 communities (114 shown, 115 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 389 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5d03fb75`
+- Built from commit: `539122e6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -171,8 +171,8 @@
 4. `PrismaService` - 89 edges
 5. `AuthenticatedRequest` - 77 edges
 6. `Modal()` - 61 edges
-7. `Notice()` - 54 edges
-8. `api` - 54 edges
+7. `api` - 54 edges
+8. `Notice()` - 53 edges
 9. `IntegrazioneController` - 46 edges
 10. `DashboardService` - 44 edges
 
@@ -658,13 +658,13 @@ Nodes (3): engines, node, npm
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `PrismaService`, `app.module.ts`, `main.ts`, `users.service.ts`, `backend/package.json`, `AuditService`, `checkout.service.ts`, `integrazione.service.ts`, `LeadsController`, `mail.service.ts`, `cataloghi-admin.service.ts`, `admin.service.ts`, `AiUsageService`, `OrdiniController`, `azioni.service.ts`, `dependencies`, `admin-leads.service.ts`, `LeadsService`, `mail.service.ts`, `export-cliente.service.ts`, `conservazione.service.ts`, `customers.service.ts`, `spese-spedizione.service.ts`, `auth.controller.ts`, `EventsController`?**
-  _High betweenness centrality (0.240) - this node is a cross-community bridge._
+  _High betweenness centrality (0.263) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `PrismaService` be split into smaller, more focused modules?**
   _Cohesion score 0.06103896103896104 - nodes in this community are weakly interconnected._
 - **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `mail.service.ts`, `ref_react`, `UserEditorModal.tsx`, `useConfirm`?**
-  _High betweenness centrality (0.083) - this node is a cross-community bridge._
+  _High betweenness centrality (0.095) - this node is a cross-community bridge._
 - **Should `DataTable` be split into smaller, more focused modules?**
   _Cohesion score 0.0796221322537112 - nodes in this community are weakly interconnected._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
