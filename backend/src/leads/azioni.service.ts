@@ -5,7 +5,11 @@ import {
   ExportClienteService,
   type EsitoExport,
 } from './export-cliente.service';
-import { AggancioLeadService, type EsitoRicerca } from './aggancio.service';
+import {
+  AggancioLeadService,
+  type EsitoAggancio,
+  type EsitoRicerca,
+} from './aggancio.service';
 import { emailAccesso } from './email-integra';
 import {
   AZIONI,
@@ -26,6 +30,7 @@ export type EsitoAzione =
       export?: EsitoExport;
       inIntegra?: boolean;
       verificaIntegra?: 'trovato' | 'assente' | 'non_disponibile';
+      aggancio?: EsitoAggancio;
     }
   | { tipo: 'gia_fatta'; lead: Lead; azione: Azione }
   | { tipo: 'errore'; motivo: 'invalido' | 'scaduto' | 'inesistente' };
@@ -133,6 +138,7 @@ export class AzioniLeadService {
     export?: EsitoExport;
     inIntegra?: boolean;
     verificaIntegra?: 'trovato' | 'assente' | 'non_disponibile';
+    aggancio?: EsitoAggancio;
   }> {
     if (azione !== 'approva') return {};
     let esito: EsitoRicerca = { stato: 'non_disponibile' };
@@ -172,7 +178,18 @@ export class AzioniLeadService {
       await this.evento(lead.id, 'email_da_richiesta', {
         richiesta: lead.email,
       });
-    return { inIntegra: true, verificaIntegra: 'trovato' };
+    // Cliente già in Integra: import subito in Clienti e invito con password provvisoria,
+    // senza aspettare il cron di aggancio (che resta come rete di sicurezza se qualcosa fallisce).
+    let aggancio: EsitoAggancio = { collegato: false, invitato: false };
+    try {
+      aggancio = await this.aggancio.agganciaLead(lead, trovato);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(
+        `Aggancio immediato del lead #${lead.id} fallito: ${msg}`,
+      );
+    }
+    return { inIntegra: true, verificaIntegra: 'trovato', aggancio };
   }
 
   private evento(leadId: number, tipo: string, dettagli: object) {

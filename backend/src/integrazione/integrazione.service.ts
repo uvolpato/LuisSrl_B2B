@@ -2901,30 +2901,31 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
       results.push({ id: cust.id, codiceCliente: codice });
     }
 
-    // AI: genera descrizione cliente solo per nuovi (quelli senza descrizione)
+    // AI: descrizione in background, non deve rallentare l'import (e l'approvazione di un lead).
     for (const c of results) {
-      try {
-        const cust = await this.prisma.customer.findUnique({ where: { id: c.id } });
-        if (cust && !cust.descrizione) {
-          const descrizione = await this.generaDescrizioneCliente(cust.id);
-          if (descrizione) {
-            await this.prisma.customer.update({
-              where: { id: c.id },
-              data: { descrizioneDettagliata: descrizione },
-            });
+      void (async () => {
+        try {
+          const cust = await this.prisma.customer.findUnique({
+            where: { id: c.id },
+          });
+          if (cust && !cust.descrizione) {
+            const descrizione = await this.generaDescrizioneCliente(cust.id);
+            if (descrizione) {
+              await this.prisma.customer.update({
+                where: { id: c.id },
+                data: { descrizioneDettagliata: descrizione },
+              });
+            }
           }
+        } catch {
+          // silenzioso: la descrizione è un arricchimento, non blocca l'import
         }
-      } catch {
-        // silenzioso
-      }
+      })();
     }
 
-    // Importa gli indirizzi di spedizione (idempotente) dopo aver creato/aggiornato i clienti
-    try {
-      await this.importaIndirizziClienti(codici);
-    } catch {
-      // silenzioso — il sync periodico riallineerà
-    }
+    // Indirizzi di spedizione (idempotente): best-effort e potenzialmente lento se Integra è giù
+    // (vista FDW), quindi non blocca l'import.
+    void this.importaIndirizziClienti(codici).catch(() => undefined);
 
     return { creati, aggiornati, saltati, clienti: results };
   }

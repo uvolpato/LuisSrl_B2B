@@ -67,17 +67,20 @@ describe('Approvazione e cliente gia in Integra', () => {
       },
       leadEvent: { create: jest.fn().mockResolvedValue({}) },
     };
+    const agganciaLead = jest
+      .fn()
+      .mockResolvedValue({ collegato: true, invitato: true });
     const svc = new AzioniLeadService(
       prisma as never,
       { esporta } as never,
-      { cercaPerPiva } as never,
+      { cercaPerPiva, agganciaLead } as never,
     );
-    return { svc, prisma };
+    return { svc, prisma, agganciaLead };
   };
 
   it('P.IVA gia in Integra: nessun file anagrafica, segnala la differenza di email', async () => {
     const esporta = jest.fn();
-    const { svc, prisma } = costruisci(
+    const { svc, prisma, agganciaLead } = costruisci(
       esporta,
       jest.fn().mockResolvedValue({
         stato: 'trovato',
@@ -90,7 +93,16 @@ describe('Approvazione e cliente gia in Integra', () => {
     const esito = await svc.applica(7, 'approva', {});
 
     expect(esporta).not.toHaveBeenCalled();
-    expect(esito).toMatchObject({ tipo: 'eseguita', inIntegra: true });
+    // Import e invito partono subito, senza aspettare il cron.
+    expect(agganciaLead).toHaveBeenCalledWith(
+      lead,
+      expect.objectContaining({ stato: 'trovato', codiceCliente: '00123' }),
+    );
+    expect(esito).toMatchObject({
+      tipo: 'eseguita',
+      inIntegra: true,
+      aggancio: { collegato: true, invitato: true },
+    });
     const tipi = prisma.leadEvent.create.mock.calls.map(
       (c: { data: { tipo: string } }[]) => c[0].data.tipo,
     );

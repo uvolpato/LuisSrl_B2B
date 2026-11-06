@@ -192,10 +192,14 @@ export default function RichiesteAccessoSection() {
     });
     if (!ok) return;
     try {
-      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null; inIntegra?: boolean; verificaIntegra?: "trovato" | "assente" | "non_disponibile" | null }>(`/api/admin/leads/${d.id}/azione`, { azione });
+      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null; inIntegra?: boolean; verificaIntegra?: "trovato" | "assente" | "non_disponibile" | null; aggancio?: { collegato: boolean; invitato: boolean } | null }>(`/api/admin/leads/${d.id}/azione`, { azione });
       if (r.esito === "gia_fatta") setEsito({ variant: "warning", testo: "La richiesta era già stata gestita: nessuna modifica." });
       else if (azione === "approva" && r.inIntegra)
-        setEsito({ variant: "success", testo: "Approvata · cliente esistente in Integra: verrà importato e invitato automaticamente, nessun file anagrafica." });
+        setEsito(r.aggancio?.collegato
+          ? r.aggancio.invitato
+            ? { variant: "success", testo: "Approvata · cliente importato in Clienti e email di invito con la password provvisoria inviata." }
+            : { variant: "warning", testo: "Approvata · cliente importato in Clienti, ma l'invio dell'invito non è riuscito: vedi i problemi nel processo e reinvia dalla scheda cliente." }
+          : { variant: "warning", testo: "Approvata · cliente già in Integra ma import/invito non riuscito: verrà ritentato automaticamente entro 15 minuti." });
       else if (azione === "approva" && r.export?.ok)
         setEsito(r.verificaIntegra === "non_disponibile"
           ? { variant: "warning", testo: `Approvata · verifica Integra non disponibile: ${r.export.file} generato, controlla in Integra che la P.IVA non esista già.` }

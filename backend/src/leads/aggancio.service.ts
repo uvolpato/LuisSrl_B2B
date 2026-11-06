@@ -19,6 +19,9 @@ export type EsitoRicerca =
   | { stato: 'assente' }
   | { stato: 'non_disponibile' };
 
+/** Esito dell'aggancio: cliente importato in Clienti e invito con password provvisoria inviato. */
+export type EsitoAggancio = { collegato: boolean; invitato: boolean };
+
 /**
  * Fase 5: lead APPROVATO → (AGOMIR importa l'anagrafica in Integra) → cliente B2B + invito.
  * Ogni 15 minuti cerca in integra_clienti (sincronizzata dal sync) la P.IVA dei lead approvati
@@ -50,7 +53,7 @@ export class AggancioLeadService {
     let collegati = 0;
     for (const lead of leads) {
       try {
-        if (await this.aggancia(lead)) collegati++;
+        if ((await this.aggancia(lead)).collegato) collegati++;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         this.logger.warn(`Aggancio lead #${lead.id} fallito: ${msg}`);
@@ -132,16 +135,29 @@ export class AggancioLeadService {
     }
   }
 
-  private async aggancia(lead: {
-    id: number;
-    partitaIva: string;
-    codiceFiscale: string | null;
-    email: string;
-    emailAccesso: string | null;
-  }): Promise<boolean> {
-    const trovato = await this.cercaPerPiva(lead.partitaIva);
+  /** Aggancio immediato all'approvazione (poi il cron fa da rete di sicurezza). */
+  agganciaLead(
+    lead: Parameters<AggancioLeadService['aggancia']>[0],
+    /** Match già trovato all'approvazione: evita una seconda ricerca su Integra. */
+    giaTrovato?: EsitoRicerca,
+  ) {
+    return this.aggancia(lead, giaTrovato);
+  }
+
+  private async aggancia(
+    lead: {
+      id: number;
+      partitaIva: string;
+      codiceFiscale: string | null;
+      email: string;
+      emailAccesso: string | null;
+    },
+    giaTrovato?: EsitoRicerca,
+  ): Promise<EsitoAggancio> {
+    const trovato = giaTrovato ?? (await this.cercaPerPiva(lead.partitaIva));
     // Non ancora importato in Integra (o Integra non raggiungibile): si riprova al prossimo giro.
-    if (trovato.stato !== 'trovato') return false;
+    if (trovato.stato !== 'trovato')
+      return { collegato: false, invitato: false };
     const codice = trovato.codiceCliente;
     if (trovato.fonte === 'integra') await this.aggiornaCopia(codice);
 
@@ -153,13 +169,18 @@ export class AggancioLeadService {
         codiceCliente: codice,
         altroLead: gia.leadId,
       });
-      return false;
+      return { collegato: false, invitato: false };
     }
 
     // Email di accesso: scelta a mano, altrimenti Integra, altrimenti quella della richiesta.
     const { diversa, daRichiesta } = emailAccesso(trovato.email, lead.email);
-    const effettiva = emailEffettiva(lead.emailAccesso, trovato.email, lead.email);
-    const diversaDaIntegra = effettiva !== (trovato.email ?? '').trim().toLowerCase();
+    const effettiva = emailEffettiva(
+      lead.emailAccesso,
+      trovato.email,
+      lead.email,
+    );
+    const diversaDaIntegra =
+      effettiva !== (trovato.email ?? '').trim().toLowerCase();
     await this.integrazione.importaClienti(
       [codice],
       diversaDaIntegra ? { [codice]: effettiva } : undefined,
@@ -172,7 +193,7 @@ export class AggancioLeadService {
       await this.eventoUnaVolta(lead.id, 'aggancio_senza_email', {
         codiceCliente: codice,
       });
-      return false;
+      return { collegato: false, invitato: false };
     }
 
     if (diversa)
@@ -198,16 +219,17 @@ export class AggancioLeadService {
     });
 
     // Cliente gia' esistente e gia' invitato (es. creato a mano): nessun nuovo invito.
-    if (cliente.invitatoAt) return true;
+    if (cliente.invitatoAt) return { collegato: true, invitato: true };
     try {
       await this.customers.invita(null, cliente.id, undefined);
       await this.evento(lead.id, 'invito_inviato', { customerId: cliente.id });
+      return { collegato: true, invitato: true };
     } catch (e: unknown) {
       await this.evento(lead.id, 'invito_errore', {
         errore: e instanceof Error ? e.message : String(e),
       });
+      return { collegato: true, invitato: false };
     }
-    return true;
   }
 
   private evento(leadId: number, tipo: string, dettagli?: object) {
