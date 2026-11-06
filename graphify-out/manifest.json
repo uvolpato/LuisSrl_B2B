@@ -758,21 +758,21 @@
     "semantic_hash": "1c8424dc3aa42a57a8c496bac8759c17"
   },
   "backend/src/leads/admin-leads.ts": {
-    "mtime": 1793986310.482957,
-    "seen": 1793986790.0201163,
-    "ast_hash": "337b314ef2ebf545f48076eaa2c24496",
+    "mtime": 1793988625.7913418,
+    "seen": 1793988773.4155397,
+    "ast_hash": "c31ecdd295742ceaef2a5b4810928a58",
     "semantic_hash": ""
   },
   "backend/src/leads/aggancio.service.ts": {
-    "mtime": 1793987513.4287355,
-    "seen": 1793987539.6888444,
-    "ast_hash": "3edff10fe0b44b8d54ead9ac6a29ac6f",
+    "mtime": 1793988625.7923436,
+    "seen": 1793988773.4155421,
+    "ast_hash": "6daebb638e7fcc8204a32f0514e2b9a6",
     "semantic_hash": ""
   },
   "backend/src/leads/azioni.service.ts": {
-    "mtime": 1793987513.4691412,
-    "seen": 1793987539.6888459,
-    "ast_hash": "4110d533474d494aa6abd11607bcc018",
+    "mtime": 1793988443.4854674,
+    "seen": 1793988773.4155457,
+    "ast_hash": "27200cf8ed691d576d6db3a13877645e",
     "semantic_hash": ""
   },
   "backend/src/leads/azioni.spec.ts": {
@@ -1637,9 +1637,9 @@
     "semantic_hash": "cad9a7f4da32783874c804c329e9310c"
   },
   "frontend/components/admin/sections/RichiesteAccessoSection.tsx": {
-    "mtime": 1793987105.0932355,
-    "seen": 1793987539.6890876,
-    "ast_hash": "5f4758d2accb1b042b97b3bc70526710",
+    "mtime": 1793988450.5680227,
+    "seen": 1793988773.4157755,
+    "ast_hash": "7500f01fec3235421d10d4fc18c5079a",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/SpeseSpedizioneSection.tsx": {
@@ -2605,9 +2605,9 @@
     "semantic_hash": ""
   },
   "DEVELOPER_NOTES.md": {
-    "mtime": 1788298731.8406684,
-    "seen": 1793882104.0039203,
-    "ast_hash": "a38715e61f61001542ef3781df81dd43",
+    "mtime": 1793988348.8319206,
+    "seen": 1793988773.4158945,
+    "ast_hash": "c0d00e7daac7fb763a6830b4a1a033de",
     "semantic_hash": ""
   },
   "MCP-B2B.md": {
@@ -3772,6 +3772,18 @@
     "mtime": 1793986286.2782133,
     "seen": 1793986790.019913,
     "ast_hash": "1d6d144debbf71d9f026c0abf485b1d8",
+    "semantic_hash": ""
+  },
+  "backend/src/leads/aggancio.spec.ts": {
+    "mtime": 1793988450.5680227,
+    "seen": 1793988773.415544,
+    "ast_hash": "71496161c7592b963ed0878620f97eb4",
+    "semantic_hash": ""
+  },
+  "backend/src/leads/email-accesso.spec.ts": {
+    "mtime": 1793988752.3057148,
+    "seen": 1793988773.4155567,
+    "ast_hash": "309329d37a3e1eb9cefb300b98dc34bb",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
