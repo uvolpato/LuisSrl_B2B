@@ -704,10 +704,10 @@
     "semantic_hash": "a6ecb47992910b79c17582b2f5cf9222"
   },
   "backend/src/integrazione/integrazione.controller.ts": {
-    "mtime": 1786369724.8244448,
-    "seen": 1793880362.9582253,
-    "ast_hash": "f58a9975a6db9041e8657d1831016ab7",
-    "semantic_hash": "f58a9975a6db9041e8657d1831016ab7"
+    "mtime": 1793994034.931713,
+    "seen": 1793994124.0707426,
+    "ast_hash": "4f9619d259751f0dcc3da1fed06a28a4",
+    "semantic_hash": ""
   },
   "backend/src/integrazione/integrazione.module.ts": {
     "mtime": 1785884671.580055,
@@ -734,9 +734,9 @@
     "semantic_hash": "86d38dd18fa6f943d3285183531e777b"
   },
   "backend/src/integrazione/sync.service.ts": {
-    "mtime": 1793983563.0480385,
-    "seen": 1793983621.569124,
-    "ast_hash": "0be513a2bd8189458770cfbe0205d8b5",
+    "mtime": 1793994034.9307144,
+    "seen": 1793994124.0707555,
+    "ast_hash": "9057292f4fe1dc615d1b1fc6d0058e3d",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
@@ -1547,10 +1547,10 @@
     "semantic_hash": "2ca96d37fc995c20d866375d6f05735f"
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
-    "mtime": 1788380381.6244564,
-    "seen": 1793880362.9802265,
-    "ast_hash": "54861e6c51d23c60a8fc74d3635d429a",
-    "semantic_hash": "54861e6c51d23c60a8fc74d3635d429a"
+    "mtime": 1793994048.7645555,
+    "seen": 1793994124.07098,
+    "ast_hash": "f82b73ab43e554535dac86d2c6ce5e82",
+    "semantic_hash": ""
   },
   "frontend/components/admin/sections/CostiAiSection.tsx": {
     "mtime": 1785884671.703878,
@@ -3784,6 +3784,18 @@
     "mtime": 1793988752.3057148,
     "seen": 1793988773.4155567,
     "ast_hash": "309329d37a3e1eb9cefb300b98dc34bb",
+    "semantic_hash": ""
+  },
+  "backend/src/integrazione/sync-clienti-sql.spec.ts": {
+    "mtime": 1793994021.5077882,
+    "seen": 1793994124.0707486,
+    "ast_hash": "decb26a25f54c953303f76f2d4fe5f54",
+    "semantic_hash": ""
+  },
+  "backend/src/integrazione/sync-clienti-sql.ts": {
+    "mtime": 1793994021.5077882,
+    "seen": 1793994124.0707507,
+    "ast_hash": "dab28a69f6898cd6466c5fa85c132424",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
