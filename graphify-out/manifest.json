@@ -860,10 +860,10 @@
     "semantic_hash": "436a2e616c89b4938b9ead40466ab5ff"
   },
   "backend/src/leads/leads.service.ts": {
-    "mtime": 1793878053.8812113,
-    "seen": 1793880362.9623682,
-    "ast_hash": "085347ad77aad62a83fdb4075bf1e7b5",
-    "semantic_hash": "085347ad77aad62a83fdb4075bf1e7b5"
+    "mtime": 1793986040.9865427,
+    "seen": 1793986176.7384245,
+    "ast_hash": "1c32096c4e2b9f00e1d82c66b3af1878",
+    "semantic_hash": ""
   },
   "backend/src/leads/leads.spec.ts": {
     "mtime": 1791818751.1021354,
@@ -890,10 +890,10 @@
     "semantic_hash": "b9b8ac3a796b40ceb4201be7cef3ecb8"
   },
   "backend/src/leads/reinvia.spec.ts": {
-    "mtime": 1793637287.935278,
-    "seen": 1793880362.9631488,
-    "ast_hash": "770201e4be7cbaad082451d393aee215",
-    "semantic_hash": "770201e4be7cbaad082451d393aee215"
+    "mtime": 1793986075.9555454,
+    "seen": 1793986176.7384334,
+    "ast_hash": "716bb2488c2dcd77a629cbf29898c719",
+    "semantic_hash": ""
   },
   "backend/src/mail/mail.module.ts": {
     "mtime": 1785884671.5900664,
@@ -902,10 +902,10 @@
     "semantic_hash": "c6552a0622af8322f627d3db0bed6bed"
   },
   "backend/src/mail/mail.service.ts": {
-    "mtime": 1791872125.5945797,
-    "seen": 1793880362.963461,
-    "ast_hash": "82bf63d98e018f7d2958f5f72cff5ce2",
-    "semantic_hash": "82bf63d98e018f7d2958f5f72cff5ce2"
+    "mtime": 1793986030.945934,
+    "seen": 1793986176.73844,
+    "ast_hash": "4184668a4f2db1564ccb45c9e98413ec",
+    "semantic_hash": ""
   },
   "backend/src/main.ts": {
     "mtime": 1791818725.0729744,
@@ -2845,9 +2845,9 @@
     "semantic_hash": ""
   },
   "backend/src/mail/templates/lead-segnalazione.html": {
-    "mtime": 1791845958.7008042,
-    "seen": 1793882104.0039718,
-    "ast_hash": "9ba11600c248c8c64cdfea2b4ed9509f",
+    "mtime": 1793986024.805657,
+    "seen": 1793986176.7388237,
+    "ast_hash": "48b4a5446824106ead572120bcca6e35",
     "semantic_hash": ""
   },
   "backend/src/mail/templates/ordine-conferma.html": {
@@ -3754,6 +3754,18 @@
     "mtime": 1793983051.8451724,
     "seen": 1793983621.569148,
     "ast_hash": "6c583ab10203abd1cbeef9a4589dfa91",
+    "semantic_hash": ""
+  },
+  "backend/src/mail/cliente-integra.spec.ts": {
+    "mtime": 1793986129.0145495,
+    "seen": 1793986176.738435,
+    "ast_hash": "aa1c7b142bc5d497bd4fc8089ef54de2",
+    "semantic_hash": ""
+  },
+  "backend/src/mail/cliente-integra.ts": {
+    "mtime": 1793986107.0381958,
+    "seen": 1793986176.738437,
+    "ast_hash": "ceef7f9002c80f05578cd5c81f0eb73a",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
