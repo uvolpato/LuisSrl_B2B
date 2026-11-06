@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1793983563.099209,
-    "seen": 1793983621.569119,
-    "ast_hash": "8c37d5d0c3e8b98c64de06acf447f47d",
+    "mtime": 1793986209.5740027,
+    "seen": 1793986236.7198136,
+    "ast_hash": "e8a6ded0d7ffad55dc464e1b03d93d30",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -830,10 +830,10 @@
     "semantic_hash": "dbb39b22cfe4b5a1295b868f2b4d47f9"
   },
   "backend/src/leads/indagine.service.ts": {
-    "mtime": 1791821846.2717502,
-    "seen": 1793880362.9615774,
-    "ast_hash": "936f66d64fd1603144be608c8b6b2e9a",
-    "semantic_hash": "936f66d64fd1603144be608c8b6b2e9a"
+    "mtime": 1793986209.5740027,
+    "seen": 1793986236.7198565,
+    "ast_hash": "9348117c25bab25b391b093606f32a53",
+    "semantic_hash": ""
   },
   "backend/src/leads/indagine.spec.ts": {
     "mtime": 1791821691.1362166,

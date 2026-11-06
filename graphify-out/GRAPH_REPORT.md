@@ -1,7 +1,7 @@
 # Graph Report - Luis Srl - B2B  (2026-11-06)
 
 ## Corpus Check
-- 426 files · ~437,601 words
+- 426 files · ~437,625 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7f6360a4`
+- Built from commit: `06944815`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -593,16 +593,16 @@ Nodes (3): fetchWithRetry(), isRetryableNetworkError(), POST()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `stato()` connect `mail.service.ts` to `ref_react`, `app.js`?**
-  _High betweenness centrality (0.208) - this node is a cross-community bridge._
+  _High betweenness centrality (0.218) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `PrismaService` be split into smaller, more focused modules?**
   _Cohesion score 0.07827260458839407 - nodes in this community are weakly interconnected._
 - **Why does `@nestjs/common` connect `@nestjs/common` to `PrismaService`, `app.module.ts`, `users.service.ts`, `backend/package.json`, `AuditService`, `ProgettiService`, `export-cliente.service.ts`, `dashboard.service.ts`, `LeadsController`, `mail.service.ts`, `cataloghi-admin.service.ts`, `admin.service.ts`, `MailService`, `EventsService`, `auth.service.ts`, `admin-ordini.module.ts`, `azioni.service.ts`, `LeadsService`, `dependencies`, `admin-leads.service.ts`, `ExportOrdiniService`, `customers.service.ts`, `customer-profile.service.ts`, `conservazione.service.ts`, `spese-spedizione.service.ts`?**
-  _High betweenness centrality (0.202) - this node is a cross-community bridge._
+  _High betweenness centrality (0.216) - this node is a cross-community bridge._
 - **Should `Modal` be split into smaller, more focused modules?**
   _Cohesion score 0.04824561403508772 - nodes in this community are weakly interconnected._
-- **Why does `IntegrazioneService` connect `IntegrazioneService` to `PrismaService`, `app.module.ts`, `CouponService`, `@nestjs/common`, `IntegrazioneController`, `ProgettiService`, `dashboard.service.ts`, `mail.service.ts`, `EventsService`, `DashboardService`, `Get`, `auth.service.ts`, `SpeseSpedizioneService`, `CatalogoController`, `CatalogoPublicController`, `customer-profile.service.ts`, `SyncManagerService`, `AggancioLeadService`, `CustomerIntelligenceService`?**
-  _High betweenness centrality (0.090) - this node is a cross-community bridge._
+- **Why does `handleSave()` connect `app.js` to `mail.service.ts`, `ref_react`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.07358156028368794 - nodes in this community are weakly interconnected._
