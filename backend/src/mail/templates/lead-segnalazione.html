@@ -11,6 +11,7 @@
   {{TIPO_ATTIVITA}} {{EMAIL}} {{TELEFONO}} {{CITTA}} {{MESSAGGIO}} {{LINGUA}} {{PRIVACY}} {{IP}}
   Fase 2: {{SEGNALI_ROWS}} {{SINTESI}} {{FONTI}} {{VERDETTO}} {{VERDETTO_COLORE}} {{VERDETTO_NOTA}} {{CHECKLIST_ROWS}}
   Fase 4: {{SEDE}} · Fase 3: {{LINK_APPROVA}} {{LINK_VERIFICA}} {{LINK_SCARTA}}
+  Integra: {{CLIENTE_INTEGRA}}
 -->
 </head>
 <body style="background:#f3f1ec;margin:0;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#221811;">
@@ -31,6 +32,9 @@
     <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;margin:0 0 10px;">Nuova richiesta accesso B2B — {{RAGIONE_SOCIALE}}</h1>
     <p style="font-size:13.5px;color:#706760;margin:0;">Ricevuta dal sito vetrina · richiesta #{{LEAD_ID}} · {{DATA}} · lingua {{LINGUA}}</p>
   </div>
+
+  <!-- Cliente già in Integra / nuovo / non verificabile -->
+  {{CLIENTE_INTEGRA}}
 
   <!-- Dati lead -->
   <div style="padding:20px 28px 0;">

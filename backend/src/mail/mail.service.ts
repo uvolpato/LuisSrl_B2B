@@ -6,6 +6,7 @@ import * as nodemailer from 'nodemailer';
 import { ASSETS_BASE_DIR } from '../common/env';
 import { esc } from '../common/html';
 import type { ReportIndagine, StatoSegnale } from '../leads/indagine';
+import { boxClienteIntegra } from './cliente-integra';
 
 @Injectable()
 export class MailService {
@@ -496,6 +497,9 @@ export class MailService {
       LINGUA: d.lingua.toUpperCase(),
       PRIVACY: esc(`${consenso} · versione ${d.privacyVersione}`),
       IP: esc(d.ip) || 'non disponibile',
+      CLIENTE_INTEGRA: d.verificaIntegra
+        ? boxClienteIntegra(d.clienteIntegra ?? null, d.verificaIntegra)
+        : '',
       SEDE: d.report?.sede
         ? esc(
             `${d.report.sede.indirizzo}, ${d.report.sede.cap} ${d.report.sede.citta} (${d.report.sede.provincia}) · fonte ${d.report.sede.fonte}`,
@@ -542,6 +546,9 @@ export interface DatiLeadMail {
   azioni: { approva: string; verifica: string; scarta: string };
   /** Se valorizzato: mail di promemoria (giorni di attesa) invece della prima segnalazione. */
   promemoriaGiorni?: number;
+  /** Match Integra, mostrato in testa alla mail: cliente già censito, nuovo o non verificabile. */
+  clienteIntegra?: { codiceCliente: string; email: string | null } | null;
+  verificaIntegra?: 'trovato' | 'assente' | 'non_disponibile';
 }
 
 const BADGE: Record<StatoSegnale, [string, string]> = {

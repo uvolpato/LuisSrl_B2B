@@ -47,13 +47,17 @@ function crea(over: Record<string, unknown> = {}) {
     sendSegnalazioneLead: jest.fn().mockResolvedValue(undefined),
   };
   const azioni = { link: jest.fn().mockReturnValue({}) };
+  const aggancio = {
+    cercaPerPiva: jest.fn().mockResolvedValue({ stato: 'assente' }),
+  };
   const svc = new LeadsService(
     prisma as unknown as PrismaService,
     mail as unknown as MailService,
     {} as IndagineService,
     azioni as unknown as AzioniLeadService,
+    aggancio as never,
   );
-  return { svc, prisma, mail };
+  return { svc, prisma, mail, aggancio };
 }
 
 describe('Reinvio manuale email richiesta accesso', () => {
@@ -77,6 +81,10 @@ describe('Reinvio manuale email richiesta accesso', () => {
       esito: 'errore',
       errore: 'SMTP 550',
     });
+    // La mail a shop@ porta anche l'esito della verifica Integra.
+    expect(mail.sendSegnalazioneLead).toHaveBeenCalledWith(
+      expect.objectContaining({ verificaIntegra: 'assente' }),
+    );
     expect(prisma.leadEvent.create).toHaveBeenCalledWith({
       data: {
         leadId: 7,

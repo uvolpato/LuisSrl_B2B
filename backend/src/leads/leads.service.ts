@@ -10,6 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { IndagineService } from './indagine.service';
 import { AzioniLeadService } from './azioni.service';
+import { AggancioLeadService } from './aggancio.service';
 import type { ReportIndagine } from './indagine';
 import {
   STATI_IN_ATTESA,
@@ -33,7 +34,26 @@ export class LeadsService {
     private readonly mail: MailService,
     private readonly indagine: IndagineService,
     private readonly azioni: AzioniLeadService,
+    private readonly aggancio: AggancioLeadService,
   ) {}
+
+  /** Match Integra per la mail a shop@: cliente già censito, nuovo, o verifica non disponibile. */
+  private async datiIntegra(partitaIva: string) {
+    const esito = await this.aggancio
+      .cercaPerPiva(partitaIva)
+      .catch(() => ({ stato: 'non_disponibile' as const }));
+    return {
+      verificaIntegra: esito.stato,
+      ...(esito.stato === 'trovato'
+        ? {
+            clienteIntegra: {
+              codiceCliente: esito.codiceCliente,
+              email: esito.email,
+            },
+          }
+        : {}),
+    };
+  }
 
   /** Salva il lead e notifica shop@ (best-effort: la richiesta resta salvata anche se la mail fallisce). */
   async crea(
@@ -135,6 +155,7 @@ export class LeadsService {
         ...lead,
         report,
         azioni: this.azioni.link(lead.id),
+        ...(await this.datiIntegra(lead.partitaIva)),
       });
       await this.evento(lead.id, 'mail_inviata');
     } catch (e: unknown) {
@@ -174,6 +195,7 @@ export class LeadsService {
           ...lead,
           report: lead.report as unknown as ReportIndagine | null,
           azioni: this.azioni.link(lead.id),
+          ...(await this.datiIntegra(lead.partitaIva)),
         });
       }
     } catch (e: unknown) {
@@ -223,6 +245,7 @@ export class LeadsService {
           report: lead.report as unknown as ReportIndagine | null,
           azioni: this.azioni.link(lead.id),
           promemoriaGiorni: giorniDa(lead.createdAt, ora),
+          ...(await this.datiIntegra(lead.partitaIva)),
         });
         await this.evento(lead.id, 'promemoria_inviato');
         inviati++;
