@@ -53,6 +53,7 @@ interface Dettaglio extends Riga {
   esportatoFile: string | null;
   anonimizzatoIl: string | null;
   cliente: { id: number; codiceCliente: string | null; datiFatturazioneConfermatiIl: string | null } | null;
+  clienteIntegra: { codiceCliente: string; email: string | null } | null;
   eventi: { id: number; tipo: string; createdAt: string; dettagli: Record<string, unknown> | null }[];
 }
 
@@ -81,6 +82,9 @@ const EVENTI: Record<string, string> = {
   azione_scarta: "Scartata",
   export_integra: "File per Integra generato",
   export_errore: "Errore generazione file per Integra",
+  cliente_integra: "Cliente già in Integra: nessun file anagrafica",
+  email_diversa: "Email diversa da quella in Integra",
+  email_da_richiesta: "Email presa dalla richiesta (mancante in Integra)",
   cliente_collegato: "Cliente importato da Integra e collegato",
   invito_inviato: "Invito al portale inviato",
   invito_errore: "Errore invio invito",
@@ -164,7 +168,15 @@ export default function RichiesteAccessoSection() {
         <>
           <div><strong>{d.ragioneSociale}</strong> · P.IVA {d.partitaIva}</div>
           {avvisoScarta && <div className="ra-warn-red">L&apos;indagine AI suggerisce di scartare: approvare solo dopo una verifica diretta.</div>}
-          {azione === "approva" && <p style={{ fontSize: 13, color: "var(--muted)" }}>Verrà generato il file anagrafica per Integra; dopo l&apos;import il cliente sarà invitato al portale.</p>}
+          {azione === "approva" && (d.clienteIntegra ? (
+            <p style={{ fontSize: 13 }}>
+              <strong>Cliente esistente in Integra</strong> (codice {d.clienteIntegra.codiceCliente}): verrà importato con i dati di Integra e invitato al portale. <strong>Nessun file anagrafica</strong>.
+            </p>
+          ) : (
+            <p style={{ fontSize: 13 }}>
+              <strong>Nuovo cliente</strong>: verrà generato il file anagrafica per Integra; dopo l&apos;import il cliente sarà invitato al portale.
+            </p>
+          ))}
           {azione === "scarta" && <p style={{ fontSize: 13, color: "var(--muted)" }}>Al richiedente non viene inviata alcuna comunicazione. La decisione è definitiva.</p>}
           {azione === "verifica" && <p style={{ fontSize: 13, color: "var(--muted)" }}>Potrai approvare o scartare in seguito.</p>}
         </>
@@ -172,8 +184,10 @@ export default function RichiesteAccessoSection() {
     });
     if (!ok) return;
     try {
-      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null }>(`/api/admin/leads/${d.id}/azione`, { azione });
+      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null; inIntegra?: boolean }>(`/api/admin/leads/${d.id}/azione`, { azione });
       if (r.esito === "gia_fatta") setEsito({ variant: "warning", testo: "La richiesta era già stata gestita: nessuna modifica." });
+      else if (azione === "approva" && r.inIntegra)
+        setEsito({ variant: "success", testo: "Approvata · cliente esistente in Integra: verrà importato e invitato automaticamente, nessun file anagrafica." });
       else if (azione === "approva" && r.export?.ok)
         setEsito({ variant: r.export.sedeMancante ? "warning" : "success", testo: `Approvata · ${r.export.file} pronto per Integra${r.export.sedeMancante ? " — completare indirizzo in Integra" : ""}` });
       else if (azione === "approva") setEsito({ variant: "warning", testo: `Approvata, ma il file per Integra non è stato generato (${r.export?.errore ?? "errore"}).` });
@@ -321,6 +335,7 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   const confirm = useConfirm();
   const [invio, setInvio] = useState<{ variant: "success" | "warning"; testo: string } | null>(null);
   const [inviando, setInviando] = useState<"conferma" | "shop" | "indagine" | null>(null);
+  const [riesportando, setRiesportando] = useState(false);
   const r = d.report;
   const vcls = r ? { BUONO: "ok", VERIFICARE: "amber", SCARTARE: "red" }[r.verdetto] : "amber";
   const azioni = d.anonimizzato ? [] : AZIONI_PER_STATO[d.stato];
@@ -341,7 +356,9 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   // Problemi attivi: per ognuno il piu' recente evento errore di quel tipo (data + messaggio).
   const attivi = (d.errori ?? []).map((tipo) => {
     const ev = [...d.eventi].reverse().find((e) => e.tipo === tipo);
-    return { tipo, quando: ev ? dataOra(ev.createdAt) : null, messaggio: typeof ev?.dettagli?.errore === "string" ? ev.dettagli.errore : null };
+    const err = typeof ev?.dettagli?.errore === "string" ? ev.dettagli.errore : null;
+    const email = typeof ev?.dettagli?.integra === "string" ? `Integra ${ev.dettagli.integra} · richiesta ${String(ev.dettagli.richiesta)}` : null;
+    return { tipo, quando: ev ? dataOra(ev.createdAt) : null, messaggio: err ?? email };
   });
 
   async function reinvia(tipo: "conferma" | "shop") {
@@ -382,6 +399,21 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
     }
   }
 
+  async function rigeneraXls() {
+    setRiesportando(true);
+    try {
+      const r = await api.post<{ ok: boolean; file?: string; errore?: string }>(`/api/admin/leads/${d.id}/riesporta`, {});
+      setInvio(r.ok
+        ? { variant: "success", testo: `File ${r.file} pronto per Integra: aggiorna l'anagrafica esistente.` }
+        : { variant: "warning", testo: `Generazione non riuscita: ${r.errore ?? "errore"}` });
+      onRefresh();
+    } catch (e) {
+      setInvio({ variant: "warning", testo: `Generazione non riuscita: ${e instanceof ApiError ? e.code : "errore"}` });
+    } finally {
+      setRiesportando(false);
+    }
+  }
+
   return (
     <>
       <div className="ra-drawer-overlay" onClick={onClose} />
@@ -404,6 +436,27 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
 
           <div className="drawer-body">
             {invio && <Notice variant={invio.variant} onClose={() => setInvio(null)} style={{ marginBottom: 16 }}>{invio.testo}</Notice>}
+            {!d.anonimizzato && d.stato !== "SCARTATO" && (
+              <div style={{ marginBottom: 16 }}>
+                <Notice variant={d.clienteIntegra ? "success" : "info"} style={{ fontWeight: 500 }}>
+                  {d.clienteIntegra ? (
+                    <>
+                      <strong>Cliente esistente in Integra</strong> · codice <strong>{d.clienteIntegra.codiceCliente}</strong>
+                      {d.clienteIntegra.email
+                        ? d.clienteIntegra.email.toLowerCase() !== d.email.toLowerCase()
+                          ? <> · email Integra <strong>{d.clienteIntegra.email}</strong> diversa da quella della richiesta <strong>{d.email}</strong></>
+                          : <> · email {d.clienteIntegra.email}</>
+                        : <> · nessuna email in Integra: si usa quella della richiesta ({d.email})</>}
+                      . All&apos;approvazione viene importato così com&apos;è: <strong>nessun file anagrafica</strong>.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Nuovo cliente</strong> · P.IVA {d.partitaIva} non presente in Integra. All&apos;approvazione viene generato il <strong>file anagrafica</strong>.
+                    </>
+                  )}
+                </Notice>
+              </div>
+            )}
             {attivi.length > 0 && (
               <div className="ra-warn-red" style={{ marginBottom: 16 }}>
                 <strong style={{ display: "block", marginBottom: 4 }}>Problemi nel processo:</strong>
@@ -434,6 +487,11 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                   {d.esportatoFile && kv("File Integra", d.esportatoFile)}
                 </div>
               </div>
+              {d.cliente && (
+                <button type="button" className="btn btn-secondary" style={{ marginTop: 12 }} disabled={riesportando} onClick={() => void rigeneraXls()}>
+                  {riesportando ? "Generazione…" : "Genera XLS aggiornamento Integra"}
+                </button>
+              )}
               {d.messaggio && <div className="msg-box"><strong style={{ fontSize: 11, color: "var(--muted)" }}>MESSAGGIO</strong><p>{d.messaggio}</p></div>}
             </div>
 
@@ -472,7 +530,11 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                   <div key={e.id} className={`tl-item${e.tipo.startsWith("azione_") ? " accent" : ""}`}>
                     <div className="tl-when">{dataOra(e.createdAt)}</div>
                     <div className="tl-what">
-                      {EVENTI[e.tipo] ?? e.tipo}{e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}{e.dettagli?.manuale ? " (manuale)" : ""}
+                      {EVENTI[e.tipo] ?? e.tipo}
+                      {e.tipo === "email_diversa" && e.dettagli ? ` — Integra ${String(e.dettagli.integra)} · richiesta ${String(e.dettagli.richiesta)}` : ""}
+                      {e.tipo === "email_da_richiesta" && e.dettagli ? ` — ${String(e.dettagli.richiesta)}` : ""}
+                      {e.tipo === "cliente_integra" && e.dettagli ? ` — codice ${String(e.dettagli.codiceCliente)}` : ""}
+                      {e.dettagli && "origine" in e.dettagli ? " (area admin)" : ""}{e.dettagli?.manuale ? " (manuale)" : ""}
                       {e.id === erroreConfermaId && (
                         <Tooltip text="Reinvia mail">
                           <button type="button" className="tl-reinvia" aria-label="Reinvia la conferma al richiedente" disabled={inviando !== null} onClick={() => void reinvia("conferma")}>

@@ -1,6 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AggancioLeadService } from './aggancio.service';
+import { ExportClienteService } from './export-cliente.service';
 import {
   COPPIE_ERRORE,
   FILTRI_STATO,
@@ -17,7 +23,11 @@ const GIORNO_MS = 24 * 3600 * 1000;
 
 @Injectable()
 export class AdminLeadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aggancio: AggancioLeadService,
+    private readonly exportCliente: ExportClienteService,
+  ) {}
 
   /** Elenco paginato (10) + KPI sull'intero archivio (non sul filtro). */
   async elenco(p: {
@@ -138,8 +148,13 @@ export class AdminLeadsService {
       },
     });
     if (!l) throw new NotFoundException('leads.non_trovata');
+    // Anteprima del match Integra: dice se l'approvazione e' per un nuovo cliente o per uno esistente.
+    const clienteIntegra = l.anonimizzatoIl
+      ? null
+      : await this.aggancio.cercaPerPiva(l.partitaIva).catch(() => null);
     return {
       ...l,
+      clienteIntegra,
       anonimizzato: l.anonimizzatoIl != null,
       giorniAttesa: giorniAttesa(l.stato, l.createdAt),
       errori: erroriAttivi(
@@ -153,6 +168,24 @@ export class AdminLeadsService {
         dettagli: e.dettagli,
       })),
     };
+  }
+
+  /**
+   * Rigenera il file anagrafica del cliente collegato, con il suo codice: Integra aggiorna il
+   * soggetto esistente invece di crearne uno nuovo (es. dopo una differenza di email).
+   */
+  async riesporta(id: number) {
+    const lead = await this.prisma.lead.findUnique({
+      where: { id },
+      select: { id: true, cliente: { select: { id: true } } },
+    });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    if (!lead.cliente) throw new ConflictException('leads.cliente_assente');
+    const c = await this.prisma.customer.findUnique({
+      where: { id: lead.cliente.id },
+    });
+    if (!c) throw new NotFoundException('leads.cliente_assente');
+    return this.exportCliente.riesportaCliente(c);
   }
 
   /** Eliminazione definitiva (eventi in cascade, cliente scollegato con SetNull). */

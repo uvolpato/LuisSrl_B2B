@@ -2769,7 +2769,11 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
     }
   }
 
-  async importaClienti(codici: string[]) {
+  /** emailFallback: email da usare quando in Integra manca (es. quella approvata nella richiesta). */
+  async importaClienti(
+    codici: string[],
+    emailFallback?: Record<string, string>,
+  ) {
     if (!codici.length) return { creati: 0, clienti: [] };
 
     const phs = codici.map((_, i) => `$${i + 1}`).join(',');
@@ -2799,7 +2803,8 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
       if (!codice) continue;
 
       const ragioneSociale = r.ragione_sociale ? String(r.ragione_sociale).trim() : '';
-      const email = r.email ? String(r.email).trim() : '';
+      const email =
+        emailFallback?.[codice] || (r.email ? String(r.email).trim() : '');
 
       // Senza email il cliente non può accedere al portale (invito/credenziali):
       // non importabile, va saltato e segnalato.

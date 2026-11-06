@@ -90,7 +90,15 @@ export class AdminLeadsController {
       esito: esito.tipo,
       stato: esito.lead.stato,
       export: esito.tipo === 'eseguita' ? (esito.export ?? null) : null,
+      inIntegra: esito.tipo === 'eseguita' ? !!esito.inIntegra : false,
     };
+  }
+
+  /** Rigenera il file anagrafica del cliente collegato, con codice, per aggiornarlo in Integra. */
+  @Post(':id/riesporta')
+  @RequirePermission('vendite.clienti.edit')
+  riesporta(@Param('id', ParseIntPipe) id: number) {
+    return this.leads.riesporta(id);
   }
 
   /** Reinvia a mano la conferma al richiedente o la segnalazione a shop@. */

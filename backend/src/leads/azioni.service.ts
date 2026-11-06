@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Lead, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ExportClienteService,
   type EsitoExport,
 } from './export-cliente.service';
+import { AggancioLeadService, type ClienteIntegra } from './aggancio.service';
+import { emailAccesso } from './email-integra';
 import {
   AZIONI,
   TRANSIZIONI,
@@ -17,7 +19,13 @@ import {
 
 export type EsitoAzione =
   | { tipo: 'conferma'; lead: Lead; azione: Azione }
-  | { tipo: 'eseguita'; lead: Lead; azione: Azione; export?: EsitoExport }
+  | {
+      tipo: 'eseguita';
+      lead: Lead;
+      azione: Azione;
+      export?: EsitoExport;
+      inIntegra?: boolean;
+    }
   | { tipo: 'gia_fatta'; lead: Lead; azione: Azione }
   | { tipo: 'errore'; motivo: 'invalido' | 'scaduto' | 'inesistente' };
 
@@ -26,9 +34,12 @@ type Parametri = { l?: unknown; a?: unknown; e?: unknown; s?: unknown };
 /** Pulsanti Approva/Verifica/Scarta della mail lead: link firmati, TTL 7 giorni, decisioni finali non ripetibili. */
 @Injectable()
 export class AzioniLeadService {
+  private readonly logger = new Logger(AzioniLeadService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly exportCliente: ExportClienteService,
+    private readonly aggancio: AggancioLeadService,
   ) {}
 
   /** URL dei tre pulsanti. Passano dal dominio del portale (APP_DOMAIN), che proxa /api al backend. */
@@ -101,9 +112,61 @@ export class AzioniLeadService {
         dettagli: dettagli,
       },
     });
-    // Approvato → anagrafica per Integra (best-effort: l'approvazione resta valida anche se il file fallisce).
-    const exp =
-      azione === 'approva' ? await this.exportCliente.esporta(lead) : undefined;
-    return { tipo: 'eseguita', lead, azione, export: exp };
+    return {
+      tipo: 'eseguita',
+      lead,
+      azione,
+      ...(await this.esitoApprovazione(lead, azione)),
+    };
+  }
+
+  /**
+   * Se la P.IVA e' gia' in Integra il cliente si importa cosi' com'e' (niente file anagrafica:
+   * creerebbe un secondo soggetto). Altrimenti si genera il file per Integra come prima,
+   * best-effort: l'approvazione resta valida anche se il file fallisce.
+   */
+  private async esitoApprovazione(
+    lead: Lead,
+    azione: Azione,
+  ): Promise<{ export?: EsitoExport; inIntegra?: boolean }> {
+    if (azione !== 'approva') return {};
+    let trovato: ClienteIntegra | null = null;
+    try {
+      trovato = await this.aggancio.cercaPerPiva(lead.partitaIva);
+    } catch (e: unknown) {
+      // Verifica non disponibile: si prosegue come prima, senza bloccare l'approvazione.
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(
+        `Verifica Integra per il lead #${lead.id} fallita: ${msg}`,
+      );
+    }
+    if (!trovato)
+      return {
+        export: await this.exportCliente.esporta(lead),
+        inIntegra: false,
+      };
+
+    const { diversa, daRichiesta } = emailAccesso(trovato.email, lead.email);
+    await this.evento(lead.id, 'cliente_integra', {
+      codiceCliente: trovato.codiceCliente,
+      emailIntegra: trovato.email,
+      emailRichiesta: lead.email,
+    });
+    if (diversa)
+      await this.evento(lead.id, 'email_diversa', {
+        integra: trovato.email,
+        richiesta: lead.email,
+      });
+    else if (daRichiesta)
+      await this.evento(lead.id, 'email_da_richiesta', {
+        richiesta: lead.email,
+      });
+    return { inIntegra: true };
+  }
+
+  private evento(leadId: number, tipo: string, dettagli: object) {
+    return this.prisma.leadEvent
+      .create({ data: { leadId, tipo, dettagli } })
+      .catch(() => undefined);
   }
 }

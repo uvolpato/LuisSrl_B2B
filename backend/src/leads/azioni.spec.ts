@@ -1,4 +1,6 @@
+import type { Lead } from '@prisma/client';
 import { TRANSIZIONI, firma, verificaToken } from './azioni';
+import { AzioniLeadService } from './azioni.service';
 
 const SEGRETO = 'segreto-di-test';
 const ora = 1_800_000_000_000;
@@ -46,5 +48,87 @@ describe('Link firmati pulsanti lead', () => {
     expect(TRANSIZIONI.approva.da).not.toContain('SCARTATO');
     expect(TRANSIZIONI.scarta.da).not.toContain('APPROVATO');
     expect(TRANSIZIONI.verifica.da).toEqual(['NUOVO']);
+  });
+});
+
+describe('Approvazione e cliente gia in Integra', () => {
+  const lead = {
+    id: 7,
+    ragioneSociale: 'Fioreria Test srl',
+    partitaIva: '01234567890',
+    email: 'mario@example.com',
+  } as Lead;
+
+  const costruisci = (esporta: jest.Mock, cercaPerPiva: jest.Mock) => {
+    const prisma = {
+      lead: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn().mockResolvedValue(lead),
+      },
+      leadEvent: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const svc = new AzioniLeadService(
+      prisma as never,
+      { esporta } as never,
+      { cercaPerPiva } as never,
+    );
+    return { svc, prisma };
+  };
+
+  it('P.IVA gia in Integra: nessun file anagrafica, segnala la differenza di email', async () => {
+    const esporta = jest.fn();
+    const { svc, prisma } = costruisci(
+      esporta,
+      jest
+        .fn()
+        .mockResolvedValue({
+          codiceCliente: '00123',
+          email: 'ordini@example.com',
+        }),
+    );
+
+    const esito = await svc.applica(7, 'approva', {});
+
+    expect(esporta).not.toHaveBeenCalled();
+    expect(esito).toMatchObject({ tipo: 'eseguita', inIntegra: true });
+    const tipi = prisma.leadEvent.create.mock.calls.map(
+      (c: { data: { tipo: string } }[]) => c[0].data.tipo,
+    );
+    expect(tipi).toEqual(
+      expect.arrayContaining([
+        'azione_approva',
+        'cliente_integra',
+        'email_diversa',
+      ]),
+    );
+  });
+
+  it('P.IVA assente in Integra: genera il file anagrafica', async () => {
+    const esporta = jest.fn().mockResolvedValue({
+      ok: true,
+      file: 'lead-7.xlsx',
+      giaEsportato: false,
+      sedeMancante: false,
+    });
+    const { svc } = costruisci(esporta, jest.fn().mockResolvedValue(null));
+
+    const esito = await svc.applica(7, 'approva', {});
+
+    expect(esporta).toHaveBeenCalledWith(lead);
+    expect(esito).toMatchObject({ tipo: 'eseguita', inIntegra: false });
+  });
+
+  it('P.IVA in Integra senza email: usa quella della richiesta', async () => {
+    const { svc, prisma } = costruisci(
+      jest.fn(),
+      jest.fn().mockResolvedValue({ codiceCliente: '00123', email: null }),
+    );
+
+    await svc.applica(7, 'approva', {});
+
+    const tipi = prisma.leadEvent.create.mock.calls.map(
+      (c: { data: { tipo: string } }[]) => c[0].data.tipo,
+    );
+    expect(tipi).toContain('email_da_richiesta');
   });
 });

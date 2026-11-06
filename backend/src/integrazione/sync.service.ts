@@ -530,6 +530,10 @@ export class SyncService {
           DROP TABLE IF EXISTS integra_pagamenti_old CASCADE;
         END $$;
       `);
+      // La tabella è ricreata da zero: senza questa riga l'indice della migration va perso.
+      await this.prisma.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS integra_clienti_piva_digits_idx ON integra_clienti ((regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g')))`,
+      );
       await this.setProgress(logId, 92, 'Swap tabelle…');
 
       // Importa testata per listini nuovi e triggera subito syncListini per le righe

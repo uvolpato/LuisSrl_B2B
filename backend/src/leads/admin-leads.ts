@@ -35,6 +35,8 @@ export const COPPIE_ERRORE: Record<string, string> = {
   invito_errore: 'invito_inviato',
   export_errore: 'export_integra',
   aggancio_errore: 'cliente_collegato',
+  // Non è un guasto: resta segnalata finché il file con il codice non allinea l'anagrafica Integra.
+  email_diversa: 'riesportazione_integra',
 };
 
 export function erroriAttivi(

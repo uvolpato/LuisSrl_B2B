@@ -3,6 +3,9 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { CustomersService } from '../customers/customers.service';
+import { emailAccesso } from './email-integra';
+
+export type ClienteIntegra = { codiceCliente: string; email: string | null };
 
 /**
  * Fase 5: lead APPROVATO → (AGOMIR importa l'anagrafica in Integra) → cliente B2B + invito.
@@ -24,7 +27,7 @@ export class AggancioLeadService {
   async agganciaApprovati(): Promise<number> {
     const leads = await this.prisma.lead.findMany({
       where: { stato: 'APPROVATO', cliente: null, anonimizzatoIl: null },
-      select: { id: true, partitaIva: true, codiceFiscale: true },
+      select: { id: true, partitaIva: true, codiceFiscale: true, email: true },
     });
     let collegati = 0;
     for (const lead of leads) {
@@ -39,20 +42,35 @@ export class AggancioLeadService {
     return collegati;
   }
 
+  /**
+   * Cliente Integra con questa P.IVA (confronto sulle sole cifre: in Integra puo' avere prefisso
+   * IT o spazi), non obsoleto. null = non (ancora) importato in Integra.
+   */
+  async cercaPerPiva(partitaIva: string): Promise<ClienteIntegra | null> {
+    const righe = await this.prisma.$queryRaw<
+      { codice_cliente: string; email: string | null }[]
+    >`
+      SELECT codice_cliente, email FROM integra_clienti
+      WHERE regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g') = ${partitaIva}
+        AND coalesce(cli_obsoleto, 0) = 0
+      ORDER BY data_modifica DESC NULLS LAST
+      LIMIT 1`;
+    const r = righe[0];
+    const codice = r?.codice_cliente?.trim();
+    if (!codice) return null;
+    return { codiceCliente: codice, email: r.email?.trim() || null };
+  }
+
   private async aggancia(lead: {
     id: number;
     partitaIva: string;
     codiceFiscale: string | null;
+    email: string;
   }): Promise<boolean> {
-    // P.IVA confrontata sulle sole cifre: in Integra puo' avere prefisso IT o spazi.
-    const righe = await this.prisma.$queryRaw<{ codice_cliente: string }[]>`
-      SELECT codice_cliente FROM integra_clienti
-      WHERE regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g') = ${lead.partitaIva}
-        AND coalesce(cli_obsoleto, 0) = 0
-      ORDER BY data_modifica DESC NULLS LAST
-      LIMIT 1`;
-    const codice = righe[0]?.codice_cliente?.trim();
-    if (!codice) return false; // non ancora importato in Integra: si riprova al prossimo giro
+    const trovato = await this.cercaPerPiva(lead.partitaIva);
+    // Non ancora importato in Integra: si riprova al prossimo giro.
+    if (!trovato) return false;
+    const codice = trovato.codiceCliente;
 
     const gia = await this.prisma.customer.findUnique({
       where: { codiceCliente: codice },
@@ -65,17 +83,32 @@ export class AggancioLeadService {
       return false;
     }
 
-    await this.integrazione.importaClienti([codice]);
+    // Se Integra non ha l'email si usa quella della richiesta approvata.
+    const { diversa, daRichiesta } = emailAccesso(trovato.email, lead.email);
+    await this.integrazione.importaClienti(
+      [codice],
+      daRichiesta ? { [codice]: lead.email } : undefined,
+    );
     const cliente = await this.prisma.customer.findUnique({
       where: { codiceCliente: codice },
     });
     if (!cliente) {
-      // importaClienti salta i clienti senza email in Integra: senza email non si puo' invitare.
+      // Nessuna email utilizzabile (ne' in Integra ne' nella richiesta): non si puo' invitare.
       await this.eventoUnaVolta(lead.id, 'aggancio_senza_email', {
         codiceCliente: codice,
       });
       return false;
     }
+
+    if (diversa)
+      await this.eventoUnaVolta(lead.id, 'email_diversa', {
+        integra: trovato.email,
+        richiesta: lead.email,
+      });
+    else if (daRichiesta)
+      await this.eventoUnaVolta(lead.id, 'email_da_richiesta', {
+        richiesta: lead.email,
+      });
 
     await this.prisma.customer.update({
       where: { id: cliente.id },
