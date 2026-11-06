@@ -716,10 +716,10 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1791674020.6980407,
-    "seen": 1793880362.958538,
-    "ast_hash": "d79e8a7cc934f9afaf31157d2ab59e8a",
-    "semantic_hash": "d79e8a7cc934f9afaf31157d2ab59e8a"
+    "mtime": 1793983563.099209,
+    "seen": 1793983621.569119,
+    "ast_hash": "8c37d5d0c3e8b98c64de06acf447f47d",
+    "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
     "mtime": 1788957597.355839,
@@ -734,22 +734,22 @@
     "semantic_hash": "86d38dd18fa6f943d3285183531e777b"
   },
   "backend/src/integrazione/sync.service.ts": {
-    "mtime": 1791420317.7885342,
-    "seen": 1793880362.9590104,
-    "ast_hash": "4281df0ba67a686177563102d803b431",
-    "semantic_hash": "4281df0ba67a686177563102d803b431"
+    "mtime": 1793983563.0480385,
+    "seen": 1793983621.569124,
+    "ast_hash": "0be513a2bd8189458770cfbe0205d8b5",
+    "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1793878060.9518902,
-    "seen": 1793880362.9591694,
-    "ast_hash": "810df231ded8c5b8beb38234eb16ee4c",
-    "semantic_hash": "810df231ded8c5b8beb38234eb16ee4c"
+    "mtime": 1793983570.4355402,
+    "seen": 1793983621.569126,
+    "ast_hash": "9fef285cd82e7d7b3d2f292cfbd005da",
+    "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
-    "mtime": 1793877865.9642398,
-    "seen": 1793880362.9593284,
-    "ast_hash": "f6a1715e4d6f4b02a9899ed4bb506cc3",
-    "semantic_hash": "f6a1715e4d6f4b02a9899ed4bb506cc3"
+    "mtime": 1793983570.4583325,
+    "seen": 1793983621.5691273,
+    "ast_hash": "f8b5032a272d241bbe0e17f4fa6f1565",
+    "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.spec.ts": {
     "mtime": 1791930736.8443925,
@@ -758,28 +758,28 @@
     "semantic_hash": "1c8424dc3aa42a57a8c496bac8759c17"
   },
   "backend/src/leads/admin-leads.ts": {
-    "mtime": 1793877614.1717265,
-    "seen": 1793880362.9596474,
-    "ast_hash": "07bcd48d5af0d8067db5e2ddc6ba4692",
-    "semantic_hash": "07bcd48d5af0d8067db5e2ddc6ba4692"
+    "mtime": 1793983120.7297487,
+    "seen": 1793983621.5691307,
+    "ast_hash": "97ebe533dd13b9783f148f50a179e9da",
+    "semantic_hash": ""
   },
   "backend/src/leads/aggancio.service.ts": {
-    "mtime": 1791926262.877773,
-    "seen": 1793880362.959815,
-    "ast_hash": "017bd57c4a4a2b0f2b76ecf8ce610fca",
-    "semantic_hash": "017bd57c4a4a2b0f2b76ecf8ce610fca"
+    "mtime": 1793983061.1874247,
+    "seen": 1793983621.5691323,
+    "ast_hash": "9cd6b85e18a171362e381253e48f4898",
+    "semantic_hash": ""
   },
   "backend/src/leads/azioni.service.ts": {
-    "mtime": 1791930702.4099538,
-    "seen": 1793880362.9599712,
-    "ast_hash": "58fac51fe8db41384ef623b207fd60b1",
-    "semantic_hash": "58fac51fe8db41384ef623b207fd60b1"
+    "mtime": 1793983550.0878065,
+    "seen": 1793983621.5691338,
+    "ast_hash": "31676e5a9ed330861e1edd25ee6b6a32",
+    "semantic_hash": ""
   },
   "backend/src/leads/azioni.spec.ts": {
-    "mtime": 1791818750.9652104,
-    "seen": 1793880362.9601283,
-    "ast_hash": "19eb14aeed0d86bbf0614d1b08568296",
-    "semantic_hash": "19eb14aeed0d86bbf0614d1b08568296"
+    "mtime": 1793983550.1844583,
+    "seen": 1793983621.5691352,
+    "ast_hash": "8b54fa2cad60d733d4152a445317939d",
+    "semantic_hash": ""
   },
   "backend/src/leads/azioni.ts": {
     "mtime": 1791818750.983212,
@@ -1637,10 +1637,10 @@
     "semantic_hash": "cad9a7f4da32783874c804c329e9310c"
   },
   "frontend/components/admin/sections/RichiesteAccessoSection.tsx": {
-    "mtime": 1793878101.650543,
-    "seen": 1793880362.9826343,
-    "ast_hash": "84384cb7622f8f9aa38e4d225b8b9d79",
-    "semantic_hash": "84384cb7622f8f9aa38e4d225b8b9d79"
+    "mtime": 1793983142.766661,
+    "seen": 1793983621.5693967,
+    "ast_hash": "fbee74c776eac842069906c143c1699a",
+    "semantic_hash": ""
   },
   "frontend/components/admin/sections/SpeseSpedizioneSection.tsx": {
     "mtime": 1786453164.8413637,
@@ -3736,6 +3736,24 @@
     "mtime": 1783975018.678229,
     "seen": 1793882104.004165,
     "ast_hash": "27baad5ed15b5cac017b11cfe37013a9",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261106000000_integra_clienti_piva_index/migration.sql": {
+    "mtime": 1793983089.8192735,
+    "seen": 1793983621.5689058,
+    "ast_hash": "9e72e43874cdc6e20db210ec57355d79",
+    "semantic_hash": ""
+  },
+  "backend/src/leads/email-integra.spec.ts": {
+    "mtime": 1793983051.8451724,
+    "seen": 1793983621.569146,
+    "ast_hash": "99b5d905fd8d6ef93f166af1f8d016b7",
+    "semantic_hash": ""
+  },
+  "backend/src/leads/email-integra.ts": {
+    "mtime": 1793983051.8451724,
+    "seen": 1793983621.569148,
+    "ast_hash": "6c583ab10203abd1cbeef9a4589dfa91",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
