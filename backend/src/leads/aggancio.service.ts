@@ -20,7 +20,12 @@ export type EsitoRicerca =
   | { stato: 'non_disponibile' };
 
 /** Esito dell'aggancio: cliente importato in Clienti e invito con password provvisoria inviato. */
-export type EsitoAggancio = { collegato: boolean; invitato: boolean };
+export type EsitoAggancio = {
+  collegato: boolean;
+  invitato: boolean;
+  /** Perché l'aggancio non è riuscito (per il messaggio in scheda). */
+  motivo?: 'non_trovato' | 'conflitto' | 'senza_email' | 'errore';
+};
 
 /**
  * Fase 5: lead APPROVATO → (AGOMIR importa l'anagrafica in Integra) → cliente B2B + invito.
@@ -57,7 +62,7 @@ export class AggancioLeadService {
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         this.logger.warn(`Aggancio lead #${lead.id} fallito: ${msg}`);
-        await this.evento(lead.id, 'aggancio_errore', { errore: msg });
+        await this.eventoUnaVolta(lead.id, 'aggancio_errore', { errore: msg });
       }
     }
     return collegati;
@@ -157,7 +162,7 @@ export class AggancioLeadService {
     const trovato = giaTrovato ?? (await this.cercaPerPiva(lead.partitaIva));
     // Non ancora importato in Integra (o Integra non raggiungibile): si riprova al prossimo giro.
     if (trovato.stato !== 'trovato')
-      return { collegato: false, invitato: false };
+      return { collegato: false, invitato: false, motivo: 'non_trovato' };
     const codice = trovato.codiceCliente;
     if (trovato.fonte === 'integra') await this.aggiornaCopia(codice);
 
@@ -165,11 +170,12 @@ export class AggancioLeadService {
       where: { codiceCliente: codice },
     });
     if (gia?.leadId && gia.leadId !== lead.id) {
-      await this.evento(lead.id, 'aggancio_conflitto', {
+      // Una volta sola: il cron riprova ogni 15 minuti e non deve riempire lo storico.
+      await this.eventoUnaVolta(lead.id, 'aggancio_conflitto', {
         codiceCliente: codice,
         altroLead: gia.leadId,
       });
-      return { collegato: false, invitato: false };
+      return { collegato: false, invitato: false, motivo: 'conflitto' };
     }
 
     // Email di accesso: scelta a mano, altrimenti Integra, altrimenti quella della richiesta.
@@ -193,7 +199,7 @@ export class AggancioLeadService {
       await this.eventoUnaVolta(lead.id, 'aggancio_senza_email', {
         codiceCliente: codice,
       });
-      return { collegato: false, invitato: false };
+      return { collegato: false, invitato: false, motivo: 'senza_email' };
     }
 
     if (diversa)

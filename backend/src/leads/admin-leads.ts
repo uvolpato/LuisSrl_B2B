@@ -35,6 +35,8 @@ export const COPPIE_ERRORE: Record<string, string> = {
   invito_errore: 'invito_inviato',
   export_errore: 'export_integra',
   aggancio_errore: 'cliente_collegato',
+  aggancio_conflitto: 'cliente_collegato',
+  aggancio_senza_email: 'invito_inviato',
   // Non è un guasto: resta segnalata finché non si sceglie quale email usare per l'accesso.
   email_diversa: 'email_scelta',
 };

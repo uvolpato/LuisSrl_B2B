@@ -180,7 +180,11 @@ export class AzioniLeadService {
       });
     // Cliente già in Integra: import subito in Clienti e invito con password provvisoria,
     // senza aspettare il cron di aggancio (che resta come rete di sicurezza se qualcosa fallisce).
-    let aggancio: EsitoAggancio = { collegato: false, invitato: false };
+    let aggancio: EsitoAggancio = {
+      collegato: false,
+      invitato: false,
+      motivo: 'errore',
+    };
     try {
       aggancio = await this.aggancio.agganciaLead(lead, trovato);
     } catch (e: unknown) {

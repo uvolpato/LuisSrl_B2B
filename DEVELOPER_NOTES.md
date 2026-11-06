@@ -373,5 +373,23 @@ ecc.) usano **`<DataTip tip={...}>`** → componente comune `Tooltip`
 
 ---
 
-**Ultima modifica:** 30 agosto 2026  
+## IMPORTANTE - Area richieste accesso: da testare a fondo (6 novembre 2026)
+
+Richiesta esplicita del committente: il flusso richieste/lead e' stato modificato piu' volte
+(verifica Integra live, email di accesso, invito automatico all'approvazione, mail a shop@)
+e vanno rifatte prove end-to-end prima di considerarla chiusa. Il committente ha visto
+"errori strani" non ancora identificati: se ricompaiono, annotare testo esatto, schermata e ora.
+
+Punti minimi da coprire:
+- approvazione di un cliente **gia' in Integra**: import in Clienti + invito con password provvisoria;
+- approvazione di un **nuovo cliente**: file anagrafica generato;
+- scelta email di accesso (Integra / richiesta / altra) e reset a "automatica";
+- differenza email: avviso nella scheda, nella lista e nella mail a shop@;
+- **Integra non raggiungibile**: stato "verifica non disponibile" e retry del cron;
+- permessi: una sessione cliente non deve poter chiamare gli endpoint admin delle richieste;
+- transizioni: doppio click su Approva, richiesta gia' decisa, richiesta anonimizzata.
+
+---
+
+**Ultima modifica:** 06 novembre 2026  
 **Autore:** Claude (sviluppo iterativo)
