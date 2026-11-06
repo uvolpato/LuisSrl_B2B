@@ -92,7 +92,7 @@ export class CarrelloService {
   async addItem(clienteId: number, varianteCodice: string, quantita: number) {
     const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true, giacenza: true } });
     const multiplo = v?.multiplo ?? 1;
-    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
+    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}.`);
     const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
     const item = await this.prisma.$transaction(async (tx) => {
@@ -117,13 +117,13 @@ export class CarrelloService {
   async updateQty(clienteId: number, varianteCodice: string, quantita: number) {
     const v = await this.prisma.variante.findUnique({ where: { codice: varianteCodice }, select: { multiplo: true, giacenza: true } });
     const multiplo = v?.multiplo ?? 1;
-    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}`);
+    if (quantita < multiplo) throw new BadRequestException(`Quantità minima: ${multiplo}.`);
     const qty = Math.round(quantita / multiplo) * multiplo;
     const carrello = await this.getOrCreate(clienteId);
     const item = await this.prisma.cartItem.findUnique({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
     });
-    if (!item) throw new NotFoundException('Item non trovato nel carrello');
+    if (!item) throw new NotFoundException('Item non trovato nel carrello.');
     if (v && v.giacenza < qty) {
       throw new BadRequestException(this.GIACENZA_ERR);
     }
@@ -139,7 +139,7 @@ export class CarrelloService {
     const item = await this.prisma.cartItem.findUnique({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
     });
-    if (!item) throw new NotFoundException('Item non trovato nel carrello');
+    if (!item) throw new NotFoundException('Item non trovato nel carrello.');
     await this.prisma.cartItem.delete({ where: { id: item.id } });
     void this.events.track('carrello.remove', { entita: 'variante', entitaId: varianteCodice });
     return { removed: item.quantita };
@@ -150,7 +150,7 @@ export class CarrelloService {
     const item = await this.prisma.cartItem.findUnique({
       where: { carrelloId_varianteCodice: { carrelloId: carrello.id, varianteCodice } },
     });
-    if (!item) throw new NotFoundException('Item non trovato nel carrello');
+    if (!item) throw new NotFoundException('Item non trovato nel carrello.');
     return this.prisma.cartItem.update({
       where: { id: item.id },
       data: { salvato: !item.salvato },

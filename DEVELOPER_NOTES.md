@@ -389,6 +389,18 @@ Punti minimi da coprire:
 - permessi: una sessione cliente non deve poter chiamare gli endpoint admin delle richieste;
 - transizioni: doppio click su Approva, richiesta gia' decisa, richiesta anonimizzata.
 
+### Carrello e conferma ordine (6 novembre 2026)
+
+- Se backend o frontend sono giu' (riavvio del dev server, `nest --watch` che ricompila),
+  carrello e conferma falliscono con errori transitori: prima di diagnosticare, verificare
+  che le porte 3000/3001 siano in ascolto.
+- Una variante con `giacenza` 0 (molte sono a 0 perche' il sync giacenze e' fermo da quando
+  Integra non risponde) non si puo' aggiungere: e' la regola di disponibilita', non un bug.
+- `lib/api.ts` mostra il messaggio del backend solo se contiene un punto; altrimenti lo
+  sostituisce con `errors.HTTP 4xx`. I messaggi destinati all'utente devono finire con un punto.
+- Secondo invio ravvicinato della conferma: carrello gia' svuotato → messaggio dedicato che
+  rimanda a Ordini (l'ordine esiste).
+
 ---
 
 **Ultima modifica:** 06 novembre 2026  

@@ -395,18 +395,26 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
     const results = await Promise.allSettled(
       toAdd.map((v) => api.post("/api/carrello", { varianteCodice: v.codice, quantita: gridQtys[v.codice] })),
     );
+    const aggiunti = toAdd.filter((_, i) => results[i].status === "fulfilled");
     const failures = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
     if (failures.length > 0) {
       const reason = failures[0].reason as unknown;
-      setGridError(reason instanceof ApiError ? reason.code : "errors.generic");
+      const motivo = reason instanceof ApiError ? reason.code : "errors.generic";
+      // Parziale: dice quanti sono passati e lascia in griglia solo quelli falliti.
+      setGridError(`${aggiunti.length} di ${toAdd.length} aggiunti. ${motivo}`);
     } else {
       setGridError(null);
+    }
+    if (aggiunti.length > 0) {
       notifyCart();
-      setGridQtys({});
-      setAddBtnText(`${toAdd.length} articoli aggiunti ✓`);
+      setGridQtys((prev) => {
+        const next = { ...prev };
+        for (const v of aggiunti) delete next[v.codice];
+        return next;
+      });
+      setAddBtnText(`${aggiunti.length} articoli aggiunti ✓`);
       setTimeout(() => setAddBtnText("Aggiungi al carrello"), 2000);
     }
-    if (results.some((r) => r.status === "fulfilled")) notifyCart();
   }
 
   useEffect(() => {

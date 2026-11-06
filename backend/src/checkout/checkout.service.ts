@@ -9,6 +9,10 @@ import { provinciaToRegione } from '../common/geo';
 
 export type ModalitaConsegna = 'RITIRO' | 'SPEDIZIONE';
 
+/** Carrello vuoto: quasi sempre un secondo invio dopo un ordine gia' creato. */
+const CARRELLO_VUOTO =
+  "Il carrello è vuoto: se hai già confermato, l'ordine è in Ordini. Altrimenti aggiungi gli articoli e riprova.";
+
 export interface DatiCheckout {
   cliente: {
     id: number;
@@ -73,7 +77,7 @@ export class CheckoutService {
 
   async getDatiCheckout(clienteId: number): Promise<DatiCheckout> {
     const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
-    if (!customer) throw new NotFoundException('Cliente non trovato');
+    if (!customer) throw new NotFoundException('Cliente non trovato.');
 
     const indirizzi = await this.prisma.indirizzoCliente.findMany({
       where: { customerId: clienteId },
@@ -215,7 +219,7 @@ export class CheckoutService {
 
   async aggiornaIndirizzo(clienteId: number, id: number, dto: { indirizzo?: string; cap?: string; citta?: string; provincia?: string; nazione?: string; ragioneSociale?: string; abituale?: boolean }) {
     const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
-    if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    if (!addr) throw new NotFoundException('Indirizzo non trovato.');
     if (dto.abituale) {
       await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
     }
@@ -236,7 +240,7 @@ export class CheckoutService {
 
   async eliminaIndirizzo(clienteId: number, id: number) {
     const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
-    if (!addr) throw new NotFoundException('Indirizzo non trovato');
+    if (!addr) throw new NotFoundException('Indirizzo non trovato.');
     await this.prisma.indirizzoCliente.delete({ where: { id } });
   }
 
@@ -244,7 +248,7 @@ export class CheckoutService {
     if (id > 0) {
       // Verifica proprietà: l'update per solo id sarebbe una scrittura cross-tenant
       const addr = await this.prisma.indirizzoCliente.findFirst({ where: { id, customerId: clienteId } });
-      if (!addr) throw new NotFoundException('Indirizzo non trovato');
+      if (!addr) throw new NotFoundException('Indirizzo non trovato.');
     }
     await this.prisma.indirizzoCliente.updateMany({ where: { customerId: clienteId }, data: { flagAbituale: false } });
     if (id > 0) {
@@ -277,11 +281,12 @@ export class CheckoutService {
     },
   ) {
     const carrello = await this.prisma.carrello.findUnique({ where: { clienteId } });
-    if (!carrello) throw new BadRequestException('Carrello vuoto');
+    if (!carrello) throw new BadRequestException(CARRELLO_VUOTO);
     const items = await this.prisma.cartItem.findMany({
       where: { carrelloId: carrello.id, salvato: false },
     });
-    if (items.length === 0) throw new BadRequestException('Nessun articolo nel carrello');
+    // Capita anche al secondo invio ravvicinato: il primo ordine c'e' gia' e il carrello e' vuoto.
+    if (items.length === 0) throw new BadRequestException(CARRELLO_VUOTO);
 
     const customer = await this.prisma.customer.findUnique({ where: { id: clienteId } });
     // Clienti nati da una richiesta vetrina: dati di fatturazione (SDI/PEC) confermati prima del primo ordine.
@@ -296,20 +301,20 @@ export class CheckoutService {
       // Nessun indirizzo richiesto: serve data/ora di ritiro
       indirizzoSpedizioneId = null;
       if (!dto.notaSpedizione || dto.notaSpedizione.trim().length === 0) {
-        throw new BadRequestException('Indicare data e ora di ritiro in sede');
+        throw new BadRequestException('Indicare data e ora di ritiro in sede.');
       }
     } else {
       // SPEDIZIONE: serve un indirizzo di consegna
       if (dto.nuovoIndirizzo) {
         if (!allowNewAddress) {
-          throw new BadRequestException('Inserimento di un nuovo indirizzo non abilitato');
+          throw new BadRequestException('Inserimento di un nuovo indirizzo non abilitato.');
         }
         if (
           !dto.nuovoIndirizzo.indirizzo?.trim() ||
           !dto.nuovoIndirizzo.cap?.trim() ||
           !dto.nuovoIndirizzo.citta?.trim()
         ) {
-          throw new BadRequestException('Nuovo indirizzo: indirizzo, cap e città sono obbligatori');
+          throw new BadRequestException('Nuovo indirizzo: indirizzo, cap e città sono obbligatori.');
         }
         const creato = await this.prisma.indirizzoCliente.create({
           data: {
@@ -329,7 +334,7 @@ export class CheckoutService {
         });
         indirizzoSpedizioneId = creato.id;
       } else if (!indirizzoSpedizioneId) {
-        throw new BadRequestException('Selezionare un indirizzo di spedizione');
+        throw new BadRequestException('Selezionare un indirizzo di spedizione.');
       }
     }
 
