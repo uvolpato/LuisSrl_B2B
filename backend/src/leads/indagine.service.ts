@@ -37,7 +37,8 @@ interface RispostaAi {
   sintesi?: string;
 }
 
-const TIMEOUT_MS = Number(process.env.LEAD_INDAGINE_TIMEOUT_MS ?? 45000);
+/** La ricerca web di Gemini può superare i 45 s su aziende con molte fonti: margine più ampio. */
+const TIMEOUT_MS = Number(process.env.LEAD_INDAGINE_TIMEOUT_MS ?? 90000);
 const STATI: StatoSegnale[] = [
   'CONFERMATO',
   'NEUTRO',

@@ -2183,7 +2183,10 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       parts.push({ inlineData: { mimeType: image.mime, data: image.b64 } });
     }
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), images?.length ? 90000 : 60000);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      images?.length || opts?.grounding ? 90000 : 60000,
+    );
     try {
       const url = `${aiCfg.endpoint.replace(/\/+$/, '')}/${aiCfg.model}:generateContent`;
       const res = await fetch(url, {
