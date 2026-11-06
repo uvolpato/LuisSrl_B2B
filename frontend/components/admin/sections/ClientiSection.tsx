@@ -46,12 +46,27 @@ export default function ClientiSection() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function doSyncClienti() {
+  async function forzaRiscrittura() {
+    const ok = await confirm({
+      title: "Riscrivere tutta l'anagrafica?",
+      confirmLabel: "Riscrivi",
+      tone: "danger",
+      message: (
+        <p style={{ fontSize: 13 }}>
+          I dati dei clienti vengono riallineati a Integra, <strong>comprese le email scelte a mano</strong> nelle
+          richieste approvate. Non crea e non cancella clienti.
+        </p>
+      ),
+    });
+    if (ok) await doSyncClienti(true);
+  }
+
+  async function doSyncClienti(force = false) {
     setSyncing(true);
     setSyncProgress(null);
     setSyncFlash(null);
     setSyncError(null);
-    const steps = ["/api/integrazione/sync/clienti", "/api/integrazione/sync/ordini"];
+    const steps = [`/api/integrazione/sync/clienti${force ? "?force=true" : ""}`, "/api/integrazione/sync/ordini"];
     try {
       for (const step of steps) {
         await api.post<{ status: string }>(step);
@@ -302,9 +317,12 @@ export default function ClientiSection() {
           { value: "da-invitare", label: "Da invitare" },
         ]}
       >
-        <button className="btn btn-secondary" onClick={doSyncClienti} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
+        <button className="btn btn-secondary" onClick={() => void doSyncClienti()} disabled={syncing} style={{ minWidth: 130, justifyContent: "center" }}>
           <span className={`sync-icon ${syncing ? "spin" : ""}`}>{IconRefresh}</span>
           <span>{syncing && syncProgress ? `${syncProgress.pct}%` : syncFlash ?? "Sincronizza"}</span>
+        </button>
+        <button className="btn btn-secondary btn-sm" onClick={() => void forzaRiscrittura()} disabled={syncing} title="Riallinea a Integra anche le email scelte a mano nelle richieste">
+          Riscrivi anagrafica
         </button>
         <button className="btn btn-primary btn-sm" onClick={() => setImportOpen(true)}>
           {IconPlus}

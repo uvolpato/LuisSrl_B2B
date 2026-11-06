@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { sqlAggiornaClienti } from './sync-clienti-sql';
 
 export interface SyncResult {
   entity: string;
@@ -418,7 +419,11 @@ export class SyncService {
 
   // ── Sync clienti, indirizzi, pagamenti ──
 
-  async syncClienti(): Promise<SyncResult> {
+  /**
+   * force=true riscrive l'anagrafica anche dove l'email è stata scelta a mano su una
+   * richiesta approvata; senza force quelle email restano.
+   */
+  async syncClienti(force = false): Promise<SyncResult> {
     const startedAt = new Date();
     let logId: number | null = null;
     try {
@@ -556,27 +561,7 @@ export class SyncService {
 
       // Aggiorna i dati anagrafici dei clienti già importati nel portale
       try {
-        await this.prisma.$executeRawUnsafe(`
-          UPDATE customers c
-          SET
-            email = COALESCE(NULLIF(i.email, ''), c.email),
-            nome = COALESCE(NULLIF(i.ragione_sociale, ''), c.nome),
-            ragione_sociale = CASE WHEN NULLIF(i.ragione_sociale, '') IS NOT NULL THEN i.ragione_sociale ELSE c.ragione_sociale END,
-            partita_iva = COALESCE(NULLIF(i.partita_iva, ''), c.partita_iva),
-            telefono = COALESCE(NULLIF(i.telefono, ''), c.telefono),
-            sito_web = COALESCE(NULLIF(i.web, ''), c.sito_web),
-            indirizzo = COALESCE(NULLIF(i.indirizzo, ''), c.indirizzo),
-            cap = COALESCE(NULLIF(i.cap, ''), c.cap),
-            citta = COALESCE(NULLIF(i.citta, ''), c.citta),
-            provincia = COALESCE(NULLIF(i.provincia, ''), c.provincia),
-            codice_listino = COALESCE(NULLIF(NULLIF(i.codice_listino, ''), '--'), c.codice_listino, 'LIS1'),
-            codice_pagamento = COALESCE(NULLIF(i.codice_pagamento, ''), c.codice_pagamento),
-            fido = COALESCE(i.fido_totale, c.fido),
-            updated_at = NOW()
-          FROM integra_clienti i
-          WHERE i.codice_cliente = c.codice_cliente
-            AND c.codice_cliente IS NOT NULL
-        `);
+        await this.prisma.$executeRawUnsafe(sqlAggiornaClienti(force));
         const aggiornati = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
           `SELECT count(*)::int8 n FROM customers c INNER JOIN integra_clienti i ON i.codice_cliente = c.codice_cliente WHERE c.codice_cliente IS NOT NULL`
         );

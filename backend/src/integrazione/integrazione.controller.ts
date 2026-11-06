@@ -28,8 +28,12 @@ export class IntegrazioneController {
 
   @Post('sync/clienti')
   @HttpCode(202)
-  async syncClienti(): Promise<{ status: string }> {
-    this.syncService.syncClienti().catch((err) =>
+  async syncClienti(
+    /** force=true: riscrive anche le email scelte a mano sulle richieste approvate. */
+    @Query('force') force?: string,
+  ): Promise<{ status: string }> {
+    const forza = force === '1' || force === 'true';
+    this.syncService.syncClienti(forza).catch((err) =>
       this.syncService['logger'].error(`Sync clienti fallito: ${err instanceof Error ? err.message : err}`)
     );
     return { status: 'started' };
