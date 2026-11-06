@@ -5,7 +5,19 @@ import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { CustomersService } from '../customers/customers.service';
 import { emailAccesso } from './email-integra';
 
-export type ClienteIntegra = { codiceCliente: string; email: string | null };
+/**
+ * Esito della ricerca per P.IVA. `assente` = Integra risponde e il cliente non c'e';
+ * `non_disponibile` = Integra non raggiungibile e nemmeno la copia locale lo conosce.
+ */
+export type EsitoRicerca =
+  | {
+      stato: 'trovato';
+      codiceCliente: string;
+      email: string | null;
+      fonte: 'integra' | 'copia';
+    }
+  | { stato: 'assente' }
+  | { stato: 'non_disponibile' };
 
 /**
  * Fase 5: lead APPROVATO → (AGOMIR importa l'anagrafica in Integra) → cliente B2B + invito.
@@ -44,21 +56,74 @@ export class AggancioLeadService {
 
   /**
    * Cliente Integra con questa P.IVA (confronto sulle sole cifre: in Integra puo' avere prefisso
-   * IT o spazi), non obsoleto. null = non (ancora) importato in Integra.
+   * IT o spazi), non obsoleto. Prima la sorgente live (b2b_clienti): la copia locale
+   * (integra_clienti) e' aggiornata solo dal sync clienti e puo' essere vecchia di mesi.
    */
-  async cercaPerPiva(partitaIva: string): Promise<ClienteIntegra | null> {
-    const righe = await this.prisma.$queryRaw<
-      { codice_cliente: string; email: string | null }[]
-    >`
-      SELECT codice_cliente, email FROM integra_clienti
-      WHERE regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g') = ${partitaIva}
-        AND coalesce(cli_obsoleto, 0) = 0
-      ORDER BY data_modifica DESC NULLS LAST
-      LIMIT 1`;
-    const r = righe[0];
-    const codice = r?.codice_cliente?.trim();
-    if (!codice) return null;
-    return { codiceCliente: codice, email: r.email?.trim() || null };
+  async cercaPerPiva(partitaIva: string): Promise<EsitoRicerca> {
+    try {
+      const righe = await this.prisma.$transaction(async (tx) => {
+        // Integra raggiungibile ma lenta: la scheda non deve restare appesa.
+        await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = '4000'`);
+        return tx.$queryRaw<{ codice_cliente: string; email: string | null }[]>`
+          SELECT codice_cliente, email FROM b2b_clienti
+          WHERE regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g') = ${partitaIva}
+            AND coalesce(cli_obsoleto, 0) = 0
+          ORDER BY data_modifica DESC NULLS LAST
+          LIMIT 1`;
+      });
+      const r = righe[0];
+      const codice = r?.codice_cliente?.trim();
+      if (!codice) return { stato: 'assente' };
+      return {
+        stato: 'trovato',
+        codiceCliente: codice,
+        email: r.email?.trim() || null,
+        fonte: 'integra',
+      };
+    } catch {
+      // Integra non raggiungibile: si ripiega sulla copia locale, che potrebbe non averlo.
+      const righe = await this.prisma.$queryRaw<
+        { codice_cliente: string; email: string | null }[]
+      >`
+        SELECT codice_cliente, email FROM integra_clienti
+        WHERE regexp_replace(coalesce(partita_iva, ''), '[^0-9]', '', 'g') = ${partitaIva}
+          AND coalesce(cli_obsoleto, 0) = 0
+        ORDER BY data_modifica DESC NULLS LAST
+        LIMIT 1`;
+      const r = righe[0];
+      const codice = r?.codice_cliente?.trim();
+      if (!codice) return { stato: 'non_disponibile' };
+      return {
+        stato: 'trovato',
+        codiceCliente: codice,
+        email: r.email?.trim() || null,
+        fonte: 'copia',
+      };
+    }
+  }
+
+  /** Riallinea alla copia locale il singolo cliente letto da Integra: importaClienti legge da lì. */
+  private async aggiornaCopia(codice: string) {
+    const colonne = `id_cliente, codice_cliente, ragione_sociale, email, telefono, web, partita_iva, codice_fiscale, indirizzo, cap, citta, provincia, codice_listino, codice_pagamento, fido_totale, cli_obsoleto, data_modifica`;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `DELETE FROM integra_clienti WHERE codice_cliente = $1`,
+          codice,
+        );
+        await tx.$executeRawUnsafe(
+          `INSERT INTO integra_clienti (${colonne})
+           SELECT ${colonne} FROM b2b_clienti WHERE codice_cliente = $1`,
+          codice,
+        );
+      });
+    } catch (e: unknown) {
+      // Copia vecchia ma utilizzabile: non bloccare l'aggancio.
+      const msg = e instanceof Error ? e.message : String(e);
+      this.logger.warn(
+        `Riallineamento copia cliente ${codice} fallito: ${msg}`,
+      );
+    }
   }
 
   private async aggancia(lead: {
@@ -68,9 +133,10 @@ export class AggancioLeadService {
     email: string;
   }): Promise<boolean> {
     const trovato = await this.cercaPerPiva(lead.partitaIva);
-    // Non ancora importato in Integra: si riprova al prossimo giro.
-    if (!trovato) return false;
+    // Non ancora importato in Integra (o Integra non raggiungibile): si riprova al prossimo giro.
+    if (trovato.stato !== 'trovato') return false;
     const codice = trovato.codiceCliente;
+    if (trovato.fonte === 'integra') await this.aggiornaCopia(codice);
 
     const gia = await this.prisma.customer.findUnique({
       where: { codiceCliente: codice },

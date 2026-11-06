@@ -79,12 +79,12 @@ describe('Approvazione e cliente gia in Integra', () => {
     const esporta = jest.fn();
     const { svc, prisma } = costruisci(
       esporta,
-      jest
-        .fn()
-        .mockResolvedValue({
-          codiceCliente: '00123',
-          email: 'ordini@example.com',
-        }),
+      jest.fn().mockResolvedValue({
+        stato: 'trovato',
+        codiceCliente: '00123',
+        email: 'ordini@example.com',
+        fonte: 'integra',
+      }),
     );
 
     const esito = await svc.applica(7, 'approva', {});
@@ -110,18 +110,56 @@ describe('Approvazione e cliente gia in Integra', () => {
       giaEsportato: false,
       sedeMancante: false,
     });
-    const { svc } = costruisci(esporta, jest.fn().mockResolvedValue(null));
+    const { svc } = costruisci(
+      esporta,
+      jest.fn().mockResolvedValue({ stato: 'assente' }),
+    );
 
     const esito = await svc.applica(7, 'approva', {});
 
     expect(esporta).toHaveBeenCalledWith(lead);
-    expect(esito).toMatchObject({ tipo: 'eseguita', inIntegra: false });
+    expect(esito).toMatchObject({
+      tipo: 'eseguita',
+      inIntegra: false,
+      verificaIntegra: 'assente',
+    });
+  });
+
+  it('Integra non raggiungibile: genera il file ma segnala la verifica mancata', async () => {
+    const esporta = jest.fn().mockResolvedValue({
+      ok: true,
+      file: 'lead-7.xlsx',
+      giaEsportato: false,
+      sedeMancante: false,
+    });
+    const { svc, prisma } = costruisci(
+      esporta,
+      jest.fn().mockResolvedValue({ stato: 'non_disponibile' }),
+    );
+
+    const esito = await svc.applica(7, 'approva', {});
+
+    expect(esporta).toHaveBeenCalledWith(lead);
+    expect(esito).toMatchObject({
+      tipo: 'eseguita',
+      inIntegra: false,
+      verificaIntegra: 'non_disponibile',
+    });
+    const tipi = prisma.leadEvent.create.mock.calls.map(
+      (c: { data: { tipo: string } }[]) => c[0].data.tipo,
+    );
+    expect(tipi).toContain('verifica_integra_non_disponibile');
   });
 
   it('P.IVA in Integra senza email: usa quella della richiesta', async () => {
     const { svc, prisma } = costruisci(
       jest.fn(),
-      jest.fn().mockResolvedValue({ codiceCliente: '00123', email: null }),
+      jest.fn().mockResolvedValue({
+        stato: 'trovato',
+        codiceCliente: '00123',
+        email: null,
+        fonte: 'copia',
+      }),
     );
 
     await svc.applica(7, 'approva', {});

@@ -53,7 +53,8 @@ interface Dettaglio extends Riga {
   esportatoFile: string | null;
   anonimizzatoIl: string | null;
   cliente: { id: number; codiceCliente: string | null; datiFatturazioneConfermatiIl: string | null } | null;
-  clienteIntegra: { codiceCliente: string; email: string | null } | null;
+  clienteIntegra: { codiceCliente: string; email: string | null; fonte: "integra" | "copia" } | null;
+  verificaIntegra: "trovato" | "assente" | "non_disponibile";
   eventi: { id: number; tipo: string; createdAt: string; dettagli: Record<string, unknown> | null }[];
 }
 
@@ -83,6 +84,7 @@ const EVENTI: Record<string, string> = {
   export_integra: "File per Integra generato",
   export_errore: "Errore generazione file per Integra",
   cliente_integra: "Cliente già in Integra: nessun file anagrafica",
+  verifica_integra_non_disponibile: "Integra non raggiungibile: P.IVA non verificata",
   email_diversa: "Email diversa da quella in Integra",
   email_da_richiesta: "Email presa dalla richiesta (mancante in Integra)",
   cliente_collegato: "Cliente importato da Integra e collegato",
@@ -172,6 +174,10 @@ export default function RichiesteAccessoSection() {
             <p style={{ fontSize: 13 }}>
               <strong>Cliente esistente in Integra</strong> (codice {d.clienteIntegra.codiceCliente}): verrà importato con i dati di Integra e invitato al portale. <strong>Nessun file anagrafica</strong>.
             </p>
+          ) : d.verificaIntegra === "non_disponibile" ? (
+            <p style={{ fontSize: 13 }}>
+              <strong>Verifica Integra non disponibile</strong>: non è possibile sapere se la P.IVA è già censita. Verrà generato il file anagrafica: <strong>controlla prima in Integra</strong> per non creare un doppione.
+            </p>
           ) : (
             <p style={{ fontSize: 13 }}>
               <strong>Nuovo cliente</strong>: verrà generato il file anagrafica per Integra; dopo l&apos;import il cliente sarà invitato al portale.
@@ -184,12 +190,14 @@ export default function RichiesteAccessoSection() {
     });
     if (!ok) return;
     try {
-      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null; inIntegra?: boolean }>(`/api/admin/leads/${d.id}/azione`, { azione });
+      const r = await api.post<{ esito: string; export: { ok: boolean; file?: string; sedeMancante?: boolean; errore?: string } | null; inIntegra?: boolean; verificaIntegra?: "trovato" | "assente" | "non_disponibile" | null }>(`/api/admin/leads/${d.id}/azione`, { azione });
       if (r.esito === "gia_fatta") setEsito({ variant: "warning", testo: "La richiesta era già stata gestita: nessuna modifica." });
       else if (azione === "approva" && r.inIntegra)
         setEsito({ variant: "success", testo: "Approvata · cliente esistente in Integra: verrà importato e invitato automaticamente, nessun file anagrafica." });
       else if (azione === "approva" && r.export?.ok)
-        setEsito({ variant: r.export.sedeMancante ? "warning" : "success", testo: `Approvata · ${r.export.file} pronto per Integra${r.export.sedeMancante ? " — completare indirizzo in Integra" : ""}` });
+        setEsito(r.verificaIntegra === "non_disponibile"
+          ? { variant: "warning", testo: `Approvata · verifica Integra non disponibile: ${r.export.file} generato, controlla in Integra che la P.IVA non esista già.` }
+          : { variant: r.export.sedeMancante ? "warning" : "success", testo: `Approvata · ${r.export.file} pronto per Integra${r.export.sedeMancante ? " — completare indirizzo in Integra" : ""}` });
       else if (azione === "approva") setEsito({ variant: "warning", testo: `Approvata, ma il file per Integra non è stato generato (${r.export?.errore ?? "errore"}).` });
       else setEsito({ variant: "success", testo: azione === "scarta" ? "Richiesta scartata." : "Richiesta messa in verifica." });
       window.dispatchEvent(new CustomEvent("leads-updated"));
@@ -438,7 +446,7 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
             {invio && <Notice variant={invio.variant} onClose={() => setInvio(null)} style={{ marginBottom: 16 }}>{invio.testo}</Notice>}
             {!d.anonimizzato && d.stato !== "SCARTATO" && (
               <div style={{ marginBottom: 16 }}>
-                <Notice variant={d.clienteIntegra ? "success" : "info"} style={{ fontWeight: 500 }}>
+                <Notice variant={d.clienteIntegra ? "success" : d.verificaIntegra === "non_disponibile" ? "warning" : "info"} style={{ fontWeight: 500 }}>
                   {d.clienteIntegra ? (
                     <>
                       <strong>Cliente esistente in Integra</strong> · codice <strong>{d.clienteIntegra.codiceCliente}</strong>
@@ -448,6 +456,11 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                           : <> · email {d.clienteIntegra.email}</>
                         : <> · nessuna email in Integra: si usa quella della richiesta ({d.email})</>}
                       . All&apos;approvazione viene importato così com&apos;è: <strong>nessun file anagrafica</strong>.
+                      {d.clienteIntegra.fonte === "copia" && <em> (dati dalla copia locale di Integra)</em>}
+                    </>
+                  ) : d.verificaIntegra === "non_disponibile" ? (
+                    <>
+                      <strong>Verifica Integra non disponibile</strong> · Integra non risponde e la copia locale non contiene la P.IVA {d.partitaIva}. Non è possibile dire se è un nuovo cliente: <strong>controlla in Integra prima di approvare</strong>. All&apos;approvazione viene comunque generato il file anagrafica.
                     </>
                   ) : (
                     <>

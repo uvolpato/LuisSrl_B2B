@@ -5,7 +5,7 @@ import {
   ExportClienteService,
   type EsitoExport,
 } from './export-cliente.service';
-import { AggancioLeadService, type ClienteIntegra } from './aggancio.service';
+import { AggancioLeadService, type EsitoRicerca } from './aggancio.service';
 import { emailAccesso } from './email-integra';
 import {
   AZIONI,
@@ -25,6 +25,7 @@ export type EsitoAzione =
       azione: Azione;
       export?: EsitoExport;
       inIntegra?: boolean;
+      verificaIntegra?: 'trovato' | 'assente' | 'non_disponibile';
     }
   | { tipo: 'gia_fatta'; lead: Lead; azione: Azione }
   | { tipo: 'errore'; motivo: 'invalido' | 'scaduto' | 'inesistente' };
@@ -128,23 +129,33 @@ export class AzioniLeadService {
   private async esitoApprovazione(
     lead: Lead,
     azione: Azione,
-  ): Promise<{ export?: EsitoExport; inIntegra?: boolean }> {
+  ): Promise<{
+    export?: EsitoExport;
+    inIntegra?: boolean;
+    verificaIntegra?: 'trovato' | 'assente' | 'non_disponibile';
+  }> {
     if (azione !== 'approva') return {};
-    let trovato: ClienteIntegra | null = null;
+    let esito: EsitoRicerca = { stato: 'non_disponibile' };
     try {
-      trovato = await this.aggancio.cercaPerPiva(lead.partitaIva);
+      esito = await this.aggancio.cercaPerPiva(lead.partitaIva);
     } catch (e: unknown) {
-      // Verifica non disponibile: si prosegue come prima, senza bloccare l'approvazione.
       const msg = e instanceof Error ? e.message : String(e);
       this.logger.warn(
         `Verifica Integra per il lead #${lead.id} fallita: ${msg}`,
       );
     }
-    if (!trovato)
+    if (esito.stato !== 'trovato') {
+      // Cliente non trovato (o Integra non raggiungibile): si genera il file come prima,
+      // ma se il controllo non è stato possibile va detto chiaramente all'admin.
+      if (esito.stato === 'non_disponibile')
+        await this.evento(lead.id, 'verifica_integra_non_disponibile', {});
       return {
         export: await this.exportCliente.esporta(lead),
         inIntegra: false,
+        verificaIntegra: esito.stato,
       };
+    }
+    const trovato = esito;
 
     const { diversa, daRichiesta } = emailAccesso(trovato.email, lead.email);
     await this.evento(lead.id, 'cliente_integra', {
@@ -161,7 +172,7 @@ export class AzioniLeadService {
       await this.evento(lead.id, 'email_da_richiesta', {
         richiesta: lead.email,
       });
-    return { inIntegra: true };
+    return { inIntegra: true, verificaIntegra: 'trovato' };
   }
 
   private evento(leadId: number, tipo: string, dettagli: object) {

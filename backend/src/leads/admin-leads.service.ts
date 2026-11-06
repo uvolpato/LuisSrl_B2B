@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AggancioLeadService } from './aggancio.service';
+import { AggancioLeadService, type EsitoRicerca } from './aggancio.service';
 import { ExportClienteService } from './export-cliente.service';
 import {
   COPPIE_ERRORE,
@@ -149,12 +149,26 @@ export class AdminLeadsService {
     });
     if (!l) throw new NotFoundException('leads.non_trovata');
     // Anteprima del match Integra: dice se l'approvazione e' per un nuovo cliente o per uno esistente.
-    const clienteIntegra = l.anonimizzatoIl
-      ? null
-      : await this.aggancio.cercaPerPiva(l.partitaIva).catch(() => null);
+    // "non_disponibile" = Integra non raggiungibile e la copia locale non lo conosce: non si puo' dire.
+    let verifica: EsitoRicerca = { stato: 'non_disponibile' };
+    if (!l.anonimizzatoIl) {
+      try {
+        verifica = await this.aggancio.cercaPerPiva(l.partitaIva);
+      } catch {
+        // resta non_disponibile
+      }
+    }
     return {
       ...l,
-      clienteIntegra,
+      verificaIntegra: verifica.stato,
+      clienteIntegra:
+        verifica.stato === 'trovato'
+          ? {
+              codiceCliente: verifica.codiceCliente,
+              email: verifica.email,
+              fonte: verifica.fonte,
+            }
+          : null,
       anonimizzato: l.anonimizzatoIl != null,
       giorniAttesa: giorniAttesa(l.stato, l.createdAt),
       errori: erroriAttivi(

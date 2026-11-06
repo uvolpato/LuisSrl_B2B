@@ -91,6 +91,8 @@ export class AdminLeadsController {
       stato: esito.lead.stato,
       export: esito.tipo === 'eseguita' ? (esito.export ?? null) : null,
       inIntegra: esito.tipo === 'eseguita' ? !!esito.inIntegra : false,
+      verificaIntegra:
+        esito.tipo === 'eseguita' ? (esito.verificaIntegra ?? null) : null,
     };
   }
 
