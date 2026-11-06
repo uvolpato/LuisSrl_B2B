@@ -185,6 +185,39 @@ export class AdminLeadsService {
   }
 
   /**
+   * Email di accesso scelta a mano (null = automatica: Integra, poi quella della richiesta).
+   * Se il cliente è già collegato aggiorna anche la sua email.
+   */
+  async setEmailAccesso(id: number, email: string | null) {
+    const lead = await this.prisma.lead.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        anonimizzatoIl: true,
+        cliente: { select: { id: true } },
+      },
+    });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    if (lead.anonimizzatoIl)
+      throw new ConflictException('leads.anonimizzata');
+
+    const valore = email?.trim().toLowerCase() || null;
+    await this.prisma.lead.update({
+      where: { id },
+      data: { emailAccesso: valore },
+    });
+    if (valore && lead.cliente)
+      await this.prisma.customer.update({
+        where: { id: lead.cliente.id },
+        data: { email: valore },
+      });
+    await this.prisma.leadEvent.create({
+      data: { leadId: id, tipo: 'email_scelta', dettagli: { email: valore } },
+    });
+    return { emailAccesso: valore };
+  }
+
+  /**
    * Rigenera il file anagrafica del cliente collegato, con il suo codice: Integra aggiorna il
    * soggetto esistente invece di crearne uno nuovo (es. dopo una differenza di email).
    */

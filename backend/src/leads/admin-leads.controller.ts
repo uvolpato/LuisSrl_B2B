@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { IsIn } from 'class-validator';
+import { IsEmail, IsIn, IsOptional } from 'class-validator';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -28,6 +28,13 @@ class AzioneDto {
 class ReinviaDto {
   @IsIn(['conferma', 'shop'])
   tipo!: 'conferma' | 'shop';
+}
+
+class EmailAccessoDto {
+  /** null / assente = automatica (quella di Integra, poi quella della richiesta). */
+  @IsOptional()
+  @IsEmail()
+  email?: string | null;
 }
 
 /** Area admin "Richieste accesso": stessi permessi della gestione clienti. */
@@ -94,6 +101,16 @@ export class AdminLeadsController {
       verificaIntegra:
         esito.tipo === 'eseguita' ? (esito.verificaIntegra ?? null) : null,
     };
+  }
+
+  /** Sceglie l'email di accesso del cliente (null = automatica). */
+  @Post(':id/email-accesso')
+  @RequirePermission('vendite.clienti.edit')
+  emailAccesso(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: EmailAccessoDto,
+  ) {
+    return this.leads.setEmailAccesso(id, dto.email ?? null);
   }
 
   /** Rigenera il file anagrafica del cliente collegato, con codice, per aggiornarlo in Integra. */

@@ -55,6 +55,7 @@ interface Dettaglio extends Riga {
   cliente: { id: number; codiceCliente: string | null; datiFatturazioneConfermatiIl: string | null } | null;
   clienteIntegra: { codiceCliente: string; email: string | null; fonte: "integra" | "copia" } | null;
   verificaIntegra: "trovato" | "assente" | "non_disponibile";
+  emailAccesso: string | null;
   eventi: { id: number; tipo: string; createdAt: string; dettagli: Record<string, unknown> | null }[];
 }
 
@@ -87,6 +88,7 @@ const EVENTI: Record<string, string> = {
   verifica_integra_non_disponibile: "Integra non raggiungibile: P.IVA non verificata",
   email_diversa: "Email diversa da quella in Integra",
   email_da_richiesta: "Email presa dalla richiesta (mancante in Integra)",
+  email_scelta: "Email di accesso scelta a mano",
   cliente_collegato: "Cliente importato da Integra e collegato",
   invito_inviato: "Invito al portale inviato",
   invito_errore: "Errore invio invito",
@@ -470,6 +472,16 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                 </Notice>
               </div>
             )}
+            {!d.anonimizzato && d.clienteIntegra && (
+              <EmailAccessoEditor
+                key={`${d.id}:${d.emailAccesso ?? "auto"}`}
+                leadId={d.id}
+                daIntegra={d.clienteIntegra.email}
+                daRichiesta={d.email}
+                scelta={d.emailAccesso}
+                onEsito={(testo) => { setInvio({ variant: "success", testo }); onRefresh(); }}
+              />
+            )}
             {attivi.length > 0 && (
               <div className="ra-warn-red" style={{ marginBottom: 16 }}>
                 <strong style={{ display: "block", marginBottom: 4 }}>Problemi nel processo:</strong>
@@ -598,5 +610,51 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
         </aside>
       </FocusTrap>
     </>
+  );
+}
+
+/** Scelta dell'email con cui il cliente accede: Integra, richiesta o un indirizzo scritto a mano. */
+function EmailAccessoEditor({ leadId, daIntegra, daRichiesta, scelta, onEsito }: {
+  leadId: number;
+  daIntegra: string | null;
+  daRichiesta: string;
+  scelta: string | null;
+  onEsito: (testo: string) => void;
+}) {
+  const [valore, setValore] = useState(scelta ?? daIntegra ?? daRichiesta);
+  const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const valida = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valore.trim());
+
+  async function salva(email: string | null) {
+    setSalvando(true);
+    setErrore(null);
+    try {
+      const r = await api.post<{ emailAccesso: string | null }>(`/api/admin/leads/${leadId}/email-accesso`, { email });
+      onEsito(r.emailAccesso
+        ? `Email di accesso salvata: ${r.emailAccesso}.`
+        : "Email di accesso automatica: quella di Integra, poi quella della richiesta.");
+    } catch (e) {
+      setErrore(e instanceof ApiError ? e.code : "errore");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px" }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", margin: "0 0 8px" }}>Email per l&apos;accesso al portale</p>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <input className="input" type="email" value={valore} onChange={(e) => setValore(e.target.value)} aria-label="Email per l'accesso al portale" style={{ flex: 1, minWidth: 200 }} />
+        <button type="button" className="btn btn-primary" disabled={salvando || !valida} onClick={() => void salva(valore.trim())}>Salva</button>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+        {daIntegra && <button type="button" className="btn btn-secondary" disabled={salvando} onClick={() => setValore(daIntegra)}>Usa Integra ({daIntegra})</button>}
+        <button type="button" className="btn btn-secondary" disabled={salvando} onClick={() => setValore(daRichiesta)}>Usa richiesta ({daRichiesta})</button>
+        {scelta && <button type="button" className="btn btn-secondary" disabled={salvando} onClick={() => void salva(null)}>Automatica</button>}
+      </div>
+      {errore && <p style={{ color: "var(--red)", fontSize: 12, margin: "8px 0 0" }}>Salvataggio non riuscito: {errore}</p>}
+      {scelta && <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "8px 0 0" }}>Scelta manuale: {scelta}. Se il cliente è già stato invitato, reinvia l&apos;invito dalla scheda cliente.</p>}
+    </div>
   );
 }

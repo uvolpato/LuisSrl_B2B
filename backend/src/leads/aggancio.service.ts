@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { CustomersService } from '../customers/customers.service';
-import { emailAccesso } from './email-integra';
+import { emailAccesso, emailEffettiva } from './email-integra';
 
 /**
  * Esito della ricerca per P.IVA. `assente` = Integra risponde e il cliente non c'e';
@@ -39,7 +39,13 @@ export class AggancioLeadService {
   async agganciaApprovati(): Promise<number> {
     const leads = await this.prisma.lead.findMany({
       where: { stato: 'APPROVATO', cliente: null, anonimizzatoIl: null },
-      select: { id: true, partitaIva: true, codiceFiscale: true, email: true },
+      select: {
+        id: true,
+        partitaIva: true,
+        codiceFiscale: true,
+        email: true,
+        emailAccesso: true,
+      },
     });
     let collegati = 0;
     for (const lead of leads) {
@@ -131,6 +137,7 @@ export class AggancioLeadService {
     partitaIva: string;
     codiceFiscale: string | null;
     email: string;
+    emailAccesso: string | null;
   }): Promise<boolean> {
     const trovato = await this.cercaPerPiva(lead.partitaIva);
     // Non ancora importato in Integra (o Integra non raggiungibile): si riprova al prossimo giro.
@@ -149,11 +156,13 @@ export class AggancioLeadService {
       return false;
     }
 
-    // Se Integra non ha l'email si usa quella della richiesta approvata.
+    // Email di accesso: scelta a mano, altrimenti Integra, altrimenti quella della richiesta.
     const { diversa, daRichiesta } = emailAccesso(trovato.email, lead.email);
+    const effettiva = emailEffettiva(lead.emailAccesso, trovato.email, lead.email);
+    const diversaDaIntegra = effettiva !== (trovato.email ?? '').trim().toLowerCase();
     await this.integrazione.importaClienti(
       [codice],
-      daRichiesta ? { [codice]: lead.email } : undefined,
+      diversaDaIntegra ? { [codice]: effettiva } : undefined,
     );
     const cliente = await this.prisma.customer.findUnique({
       where: { codiceCliente: codice },

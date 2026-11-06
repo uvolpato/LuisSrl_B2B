@@ -678,6 +678,8 @@ model Lead {
   referente          String
   tipoAttivita       String?     @map("tipo_attivita")
   email              String
+  /// Email scelta a mano per l'accesso (vuoto = quella di Integra, poi quella della richiesta)
+  emailAccesso       String?     @map("email_accesso")
   telefono           String?
   citta              String?
   messaggio          String?
