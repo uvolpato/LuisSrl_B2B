@@ -740,15 +740,15 @@
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1793983570.4355402,
-    "seen": 1793983621.569126,
-    "ast_hash": "9fef285cd82e7d7b3d2f292cfbd005da",
+    "mtime": 1793984862.6621575,
+    "seen": 1793985140.9605377,
+    "ast_hash": "5438a54ea014b79dc43217c0d4218323",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
-    "mtime": 1793983570.4583325,
-    "seen": 1793983621.5691273,
-    "ast_hash": "f8b5032a272d241bbe0e17f4fa6f1565",
+    "mtime": 1793984869.0257568,
+    "seen": 1793985140.9605398,
+    "ast_hash": "f970f13b51c4ad47e977fa389a8a6b02",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.spec.ts": {
@@ -764,21 +764,21 @@
     "semantic_hash": ""
   },
   "backend/src/leads/aggancio.service.ts": {
-    "mtime": 1793983061.1874247,
-    "seen": 1793983621.5691323,
-    "ast_hash": "9cd6b85e18a171362e381253e48f4898",
+    "mtime": 1793985110.8615932,
+    "seen": 1793985140.9605446,
+    "ast_hash": "d13e07192db2a57b8bacc4f8877880f5",
     "semantic_hash": ""
   },
   "backend/src/leads/azioni.service.ts": {
-    "mtime": 1793983550.0878065,
-    "seen": 1793983621.5691338,
-    "ast_hash": "31676e5a9ed330861e1edd25ee6b6a32",
+    "mtime": 1793984862.6621575,
+    "seen": 1793985140.960546,
+    "ast_hash": "421877f7914612c58910ccba9daded74",
     "semantic_hash": ""
   },
   "backend/src/leads/azioni.spec.ts": {
-    "mtime": 1793983550.1844583,
-    "seen": 1793983621.5691352,
-    "ast_hash": "8b54fa2cad60d733d4152a445317939d",
+    "mtime": 1793984894.013182,
+    "seen": 1793985140.9605477,
+    "ast_hash": "9d29644501d2aa8aaf08d2862318c11b",
     "semantic_hash": ""
   },
   "backend/src/leads/azioni.ts": {
@@ -1637,9 +1637,9 @@
     "semantic_hash": "cad9a7f4da32783874c804c329e9310c"
   },
   "frontend/components/admin/sections/RichiesteAccessoSection.tsx": {
-    "mtime": 1793983142.766661,
-    "seen": 1793983621.5693967,
-    "ast_hash": "fbee74c776eac842069906c143c1699a",
+    "mtime": 1793984887.4207895,
+    "seen": 1793985140.9607787,
+    "ast_hash": "e1295de2349fc241ff86ace404c9fea7",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/SpeseSpedizioneSection.tsx": {
