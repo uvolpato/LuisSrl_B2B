@@ -177,7 +177,10 @@ export class CataloghiAdminService {
     const links = await this.prisma.downloadLink.findMany({
       where: { mailingId: id },
       orderBy: { id: 'asc' },
-      include: { eventi: { select: { tipo: true, catalogoId: true, at: true } } },
+      include: {
+        eventi: { select: { tipo: true, catalogoId: true, at: true } },
+        customer: { select: { ragioneSociale: true, nome: true } },
+      },
     });
     const aperto = links.filter((l) => l.eventi.some((e) => e.tipo === 'VIEW'));
     const cliccato = links.filter((l) => l.eventi.some((e) => e.tipo === 'DOWNLOAD'));
@@ -197,6 +200,7 @@ export class CataloghiAdminService {
         id: l.id,
         email: l.email,
         nome: l.nome,
+        cliente: l.customer ? (l.customer.ragioneSociale ?? l.customer.nome) : null,
         token: l.token,
         link: `${this.domain}/c/${l.token}`,
         revocato: l.revokedAt != null,
@@ -214,12 +218,14 @@ export class CataloghiAdminService {
 
     const contatti = await this.leggiContatti(file);
     if (contatti.length === 0) throw new BadRequestException('Nessun contatto valido nel file: serve una colonna con l\'email');
+    const collegati = await this.clientiPerEmail(contatti.map((c) => c.email));
 
     const creati = await this.prisma.$transaction(
       contatti.map((c) =>
         this.prisma.downloadLink.create({
           data: {
             mailingId,
+            customerId: collegati.get(c.email) ?? null,
             email: c.email,
             nome: c.nome,
             token: randomBytes(32).toString('base64url'),
@@ -242,7 +248,7 @@ export class CataloghiAdminService {
 
     const clienti = await this.prisma.customer.findMany({
       where: { id: { in: ids }, stato: 'ATTIVO' },
-      select: { email: true, ragioneSociale: true, nome: true },
+      select: { id: true, email: true, ragioneSociale: true, nome: true },
     });
     if (clienti.length === 0) throw new BadRequestException('Nessun cliente valido tra quelli selezionati');
 
@@ -251,6 +257,7 @@ export class CataloghiAdminService {
         this.prisma.downloadLink.create({
           data: {
             mailingId,
+            customerId: c.id,
             email: c.email,
             nome: c.ragioneSociale ?? c.nome,
             token: randomBytes(32).toString('base64url'),
@@ -315,6 +322,24 @@ export class CataloghiAdminService {
   }
 
   // ── helper ──────────────────────────────────────────────────────
+
+  /** email (minuscola) → id cliente, solo quando l'email appartiene a un unico cliente. */
+  private async clientiPerEmail(emails: string[]): Promise<Map<string, number>> {
+    const uniche = [...new Set(emails.map((e) => e.toLowerCase()))];
+    if (uniche.length === 0) return new Map();
+    const clienti = await this.prisma.customer.findMany({
+      where: { email: { in: uniche, mode: 'insensitive' } },
+      select: { id: true, email: true },
+    });
+    const perEmail = new Map<string, number[]>();
+    for (const c of clienti) {
+      const mail = c.email.toLowerCase();
+      perEmail.set(mail, [...(perEmail.get(mail) ?? []), c.id]);
+    }
+    const out = new Map<string, number>();
+    for (const [mail, ids] of perEmail) if (ids.length === 1) out.set(mail, ids[0]);
+    return out;
+  }
 
   /** Estrae (email, nome) da xlsx o csv: trova l'email (cella con @) e il nome (prima cella senza @). */
   private async leggiContatti(file: Express.Multer.File): Promise<{ email: string; nome: string | null }[]> {

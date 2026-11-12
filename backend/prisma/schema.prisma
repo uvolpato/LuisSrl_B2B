@@ -93,6 +93,7 @@ model Customer {
   contatti           ContattoCliente[]
   ordini             OrdineCliente[]
   progetti           Progetto[]
+  downloadLinks      DownloadLink[]
   customerProfile    CustomerProfile?
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
@@ -773,18 +774,22 @@ model MailingCatalogo {
 
 /// Link unico per destinatario: il token opaco identifica chi scarica.
 model DownloadLink {
-  id        Int             @id @default(autoincrement())
-  mailingId Int             @map("mailing_id")
-  email     String
-  nome      String?
-  token     String          @unique
-  createdAt DateTime        @default(now()) @map("created_at")
-  expiresAt DateTime?       @map("expires_at")
-  revokedAt DateTime?       @map("revoked_at")
-  mailing   Mailing         @relation(fields: [mailingId], references: [id], onDelete: Cascade)
-  eventi    DownloadEvent[]
+  id         Int             @id @default(autoincrement())
+  mailingId  Int             @map("mailing_id")
+  /// Cliente B2B collegato (facoltativo: i destinatari da file possono non essere clienti)
+  customerId Int?            @map("customer_id")
+  email      String
+  nome       String?
+  token      String          @unique
+  createdAt  DateTime        @default(now()) @map("created_at")
+  expiresAt  DateTime?       @map("expires_at")
+  revokedAt  DateTime?       @map("revoked_at")
+  mailing    Mailing         @relation(fields: [mailingId], references: [id], onDelete: Cascade)
+  customer   Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  eventi     DownloadEvent[]
 
   @@index([mailingId, createdAt])
+  @@index([customerId])
   @@map("download_links")
 }
 

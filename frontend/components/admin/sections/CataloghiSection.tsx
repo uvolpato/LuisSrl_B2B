@@ -8,7 +8,7 @@ import DataTable, { type Column, type RowAction } from "../DataTable";
 
 interface Catalogo { id: number; nome: string; copertina: string | null; archiviato: boolean; dimensione: number | null; createdAt: string }
 interface MailingRiga { id: number; nome: string; stato: string; canale: string; createdAt: string; nCataloghi: number; generati: number; aperti: number; scaricati: number }
-interface Destinatario { id: number; email: string; nome: string | null; link: string; revocato: boolean; apertoIl: string | null; scaricati: number[] }
+interface Destinatario { id: number; email: string; nome: string | null; cliente: string | null; link: string; revocato: boolean; apertoIl: string | null; scaricati: number[] }
 interface MailingDettaglio { id: number; nome: string; stato: string; canale: string; createdAt: string; cataloghi: { id: number; nome: string }[]; stats: { destinatari: number; aperture: number; click: number }; destinatari: Destinatario[] }
 interface Cliente { id: number; email: string; nome: string; ragioneSociale: string | null; stato: string }
 
@@ -595,16 +595,17 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
         <div className="data-table t-dest">
           <div className="data-table-scroll">
             <table>
-              <thead><tr><th className="d-nome">Destinatario</th><th className="d-ape">Aperto il</th><th className="num">Click</th><th className="col-actions">Azioni</th></tr></thead>
+              <thead><tr><th className="d-nome">Destinatario</th><th className="d-ape">Aperto il</th><th>Scaricati</th><th className="col-actions">Azioni</th></tr></thead>
               <tbody>
                 {d.destinatari.map((r) => (
                   <tr key={r.id} className={r.revocato ? "is-revocato" : undefined}>
                     <td className="d-nome">
                       <div className="name-line"><strong>{r.nome ?? "—"}</strong>{r.revocato && <span className="pill pv-neutral revoked-pill">Revocato</span>}</div>
                       <div className="cell-entity-sub d-mail">{r.email}</div>
+                      {r.cliente && <div className="cell-entity-sub">Cliente B2B · {r.cliente}</div>}
                     </td>
                     <td className="d-ape mono">{fmtOra(r.apertoIl)}</td>
-                    <td className="num">{r.scaricati.length > 0 ? r.scaricati.length : "—"}</td>
+                    <td className="c-sca">{r.scaricati.length > 0 ? r.scaricati.map((id) => d.cataloghi.find((c) => c.id === id)?.nome ?? `#${id}`).join(" · ") : "—"}</td>
                     <td className="col-actions d-az">
                       <button type="button" className="btn btn-secondary btn-xs" onClick={() => { navigator.clipboard.writeText(r.link); onEsito("Link copiato."); }}>Link</button>
                       {!r.revocato && <button type="button" className="btn btn-secondary danger btn-xs" onClick={() => onRevoca(r.id)}>Revoca</button>}
