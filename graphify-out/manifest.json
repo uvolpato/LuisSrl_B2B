@@ -1541,9 +1541,9 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1794498930.2176201,
-    "seen": 1794499106.7562852,
-    "ast_hash": "ddddbf2d9cae029df93ba80631578a59",
+    "mtime": 1794500562.0407302,
+    "seen": 1794500627.026423,
+    "ast_hash": "b3bc9fe8fae24e5b7075ab7b19c1de92",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {

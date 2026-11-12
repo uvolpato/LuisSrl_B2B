@@ -1,7 +1,7 @@
 # Graph Report - Luis Srl - B2B  (2026-11-12)
 
 ## Corpus Check
-- 433 files · ~441,159 words
+- 433 files · ~441,334 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `757181a7`
+- Built from commit: `0f4f2722`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -638,16 +638,16 @@ Nodes (4): typescript@^5.7.3, typescript, typescript@^5, typescript@^5
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `PrismaService`, `app.module.ts`, `main.ts`, `@prisma/client`, `backend/package.json`, `customer-intelligence.service.ts`, `checkout.module.ts`, `integrazione.service.ts`, `leads.controller.ts`, `mail.service.ts`, `cataloghi-admin.controller.ts`, `admin.service.ts`, `MailService`, `OrdiniController`, `azioni.service.ts`, `dependencies`, `admin-leads.service.ts`, `leads.service.ts`, `ImgController`, `checkout.controller.ts`, `conservazione.service.ts`, `app.e2e-spec.ts`, `spese-spedizione.service.ts`, `coupon.service.ts`?**
-  _High betweenness centrality (0.225) - this node is a cross-community bridge._
+  _High betweenness centrality (0.247) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `PrismaService` be split into smaller, more focused modules?**
   _Cohesion score 0.05048076923076923 - nodes in this community are weakly interconnected._
 - **Why does `stato()` connect `mail.service.ts` to `ref_react`?**
-  _High betweenness centrality (0.204) - this node is a cross-community bridge._
+  _High betweenness centrality (0.209) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.06105457909343201 - nodes in this community are weakly interconnected._
-- **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `UserEditorModal.tsx`, `ref_react`, `checkout/page.tsx`, `AdminPanel.tsx`, `mail.service.ts`?**
-  _High betweenness centrality (0.091) - this node is a cross-community bridge._
+- **Why does `handleSave()` connect `mail.service.ts` to `ref_react`, `app.js`?**
+  _High betweenness centrality (0.094) - this node is a cross-community bridge._
 - **Should `ref_react` be split into smaller, more focused modules?**
   _Cohesion score 0.060246360582306833 - nodes in this community are weakly interconnected._
