@@ -64,6 +64,12 @@ export default function CatalogoLandingPage({ params }: { params: Promise<{ toke
               ))}
             </div>
             <p style={styles.muted}>Il link è personale. Se non sei il destinatario, ignora questo messaggio.</p>
+            <p style={styles.accesso}>
+              Non hai ancora le credenziali del portale B2B?{" "}
+              <a href="https://www.luisbg.it/richiedi-accesso" target="_blank" rel="noopener noreferrer" style={styles.accessoLink}>
+                Richiedi l&apos;accesso
+              </a>
+            </p>
           </>
         )}
       </div>
@@ -129,4 +135,6 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
   },
   muted: { color: "oklch(52% 0.015 60)", fontSize: 14, margin: 0 },
+  accesso: { color: "oklch(52% 0.015 60)", fontSize: 13, margin: "18px 0 0", paddingTop: 16, borderTop: "1px solid oklch(92% 0.008 70)" },
+  accessoLink: { color: "oklch(50% 0.14 45)", fontWeight: 600 },
 };
