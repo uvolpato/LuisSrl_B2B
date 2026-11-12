@@ -368,16 +368,16 @@
     "semantic_hash": "0b9bf8306f5348c3342a599cdfaa03ee"
   },
   "backend/src/cataloghi/cataloghi-admin.controller.ts": {
-    "mtime": 1793115440.5958312,
-    "seen": 1793880362.9492314,
-    "ast_hash": "b984aac2d12fd9992ec37684e7ab5c58",
-    "semantic_hash": "b984aac2d12fd9992ec37684e7ab5c58"
+    "mtime": 1794491717.379869,
+    "seen": 1794492577.564748,
+    "ast_hash": "ff674ad70a84f14f5909d2517f6f76d7",
+    "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-admin.service.ts": {
-    "mtime": 1793115446.7538166,
-    "seen": 1793880362.9493887,
-    "ast_hash": "8c3bc8cb25489ecc6bac7f496696a956",
-    "semantic_hash": "8c3bc8cb25489ecc6bac7f496696a956"
+    "mtime": 1794492507.6012485,
+    "seen": 1794492577.5647502,
+    "ast_hash": "c6e0f63ca182c991fe66bd99fddb1c73",
+    "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-public.controller.ts": {
     "mtime": 1792944082.9461138,
@@ -1379,10 +1379,10 @@
     "semantic_hash": "199703d07e0081f8fe736ba3e8ef05b3"
   },
   "frontend/app/c/[token]/page.tsx": {
-    "mtime": 1792943157.8204672,
-    "seen": 1793880362.9755976,
-    "ast_hash": "de8e88117482495373e7ef333aa92742",
-    "semantic_hash": "de8e88117482495373e7ef333aa92742"
+    "mtime": 1794491756.3109174,
+    "seen": 1794492577.5650265,
+    "ast_hash": "1c21c457c0215fa3631345b0a52b8af7",
+    "semantic_hash": ""
   },
   "frontend/app/layout.tsx": {
     "mtime": 1786444089.9988189,
@@ -1541,10 +1541,10 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1793115486.9626596,
-    "seen": 1793880362.9800692,
-    "ast_hash": "2ca96d37fc995c20d866375d6f05735f",
-    "semantic_hash": "2ca96d37fc995c20d866375d6f05735f"
+    "mtime": 1794492204.0830092,
+    "seen": 1794492577.5650687,
+    "ast_hash": "44756735ed6738b0a628b0c17206fa2a",
+    "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
     "mtime": 1793994048.7645555,
@@ -1931,10 +1931,10 @@
     "semantic_hash": "09a577504d31a01214bbb0b0a7e5b70d"
   },
   "frontend/lib/api.ts": {
-    "mtime": 1786440758.7776048,
-    "seen": 1793880362.9904242,
-    "ast_hash": "d2971fad35a467bbdf16c92820b7ff6d",
-    "semantic_hash": "d2971fad35a467bbdf16c92820b7ff6d"
+    "mtime": 1794491723.299043,
+    "seen": 1794492577.5651686,
+    "ast_hash": "00b1f251c59ef7de14055be4b37b217c",
+    "semantic_hash": ""
   },
   "frontend/lib/helpers.ts": {
     "mtime": 1785884671.7883148,
@@ -2005,8 +2005,8 @@
     "ast_empty": true
   },
   "frontend/next.config.ts": {
-    "mtime": 1789504957.7041,
-    "seen": 1793880362.9919574,
+    "mtime": 1794492207.4560487,
+    "seen": 1794492577.5651882,
     "ast_hash": "34d0e752d08d3610ce85f48760a94ef8",
     "semantic_hash": "34d0e752d08d3610ce85f48760a94ef8"
   },
@@ -3796,6 +3796,12 @@
     "mtime": 1793994021.5077882,
     "seen": 1793994124.0707507,
     "ast_hash": "dab28a69f6898cd6466c5fa85c132424",
+    "semantic_hash": ""
+  },
+  "frontend/app/api/admin/cataloghi/upload/route.ts": {
+    "mtime": 1794492199.9819214,
+    "seen": 1794492577.5650077,
+    "ast_hash": "9a1af47a02a5b6aea438185a76f3a4fc",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
