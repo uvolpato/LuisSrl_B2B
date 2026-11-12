@@ -374,9 +374,9 @@
     "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-admin.service.ts": {
-    "mtime": 1794492507.6012485,
-    "seen": 1794492577.5647502,
-    "ast_hash": "c6e0f63ca182c991fe66bd99fddb1c73",
+    "mtime": 1794496972.6498418,
+    "seen": 1794497091.6804292,
+    "ast_hash": "cda16ff9bcddd66ac8d3b65ecfe4250f",
     "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-public.controller.ts": {
@@ -1541,9 +1541,9 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1794492204.0830092,
-    "seen": 1794492577.5650687,
-    "ast_hash": "44756735ed6738b0a628b0c17206fa2a",
+    "mtime": 1794496872.7070756,
+    "seen": 1794497091.6807559,
+    "ast_hash": "17c21519a49c630a17dcb9811e7682b4",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
