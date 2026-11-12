@@ -73,6 +73,14 @@ export default function CatalogoLandingPage({ params }: { params: Promise<{ toke
             </p>
           </>
         )}
+
+        <p style={styles.legale}>
+          Catalogo riservato ai rivenditori. Prezzi IVA esclusa. Contenuti di proprietà di Luis S.r.l.; vietata la riproduzione e la diffusione senza autorizzazione.<br />
+          Luis S.r.l. — Via F. Bellafino 28/30, Bergamo — C.F. e P. IVA 04253020160 —{" "}
+          <a href="mailto:shop@luisbg.it" style={styles.legaleLink}>shop@luisbg.it</a><br />
+          La pagina registra apertura e download per le statistiche della campagna.{" "}
+          <a href="https://www.luisbg.it/privacy" target="_blank" rel="noopener noreferrer" style={styles.legaleLink}>Informativa privacy</a>
+        </p>
       </div>
     </div>
   );
@@ -139,4 +147,6 @@ const styles: Record<string, React.CSSProperties> = {
   muted: { color: "oklch(52% 0.015 60)", fontSize: 14, margin: 0 },
   accesso: { color: "oklch(52% 0.015 60)", fontSize: 13, margin: "18px 0 0", paddingTop: 16, borderTop: "1px solid oklch(92% 0.008 70)" },
   accessoLink: { color: "oklch(50% 0.14 45)", fontWeight: 600 },
+  legale: { margin: "16px 0 0", color: "oklch(52% 0.015 60)", fontSize: 11, lineHeight: 1.5, textAlign: "left" },
+  legaleLink: { color: "oklch(50% 0.14 45)" },
 };
