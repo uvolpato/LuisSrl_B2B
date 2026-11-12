@@ -35,6 +35,7 @@ export default function CatalogoLandingPage({ params }: { params: Promise<{ toke
   return (
     <div style={styles.page}>
       <div style={styles.card}>
+        <img src="/images/b2b/logo.webp" alt="Luis S.r.l." width={120} height={52} style={styles.logo} />
         {stato === "loading" && <p style={styles.muted}>Caricamento…</p>}
 
         {stato === "errore" && (
@@ -97,6 +98,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "36px 32px",
     textAlign: "center",
   },
+  logo: { display: "block", margin: "0 0 18px", maxWidth: "100%", height: "auto" },
   eyebrow: {
     fontFamily: "ui-monospace, Menlo, monospace",
     fontSize: 12,
