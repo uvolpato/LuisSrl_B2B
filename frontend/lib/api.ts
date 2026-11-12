@@ -44,6 +44,11 @@ async function request<T>(
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('session-stolen'));
       throw new ApiError(401, rawMsg);
     }
+    // Sessione scaduta per inattività: torna al login (non da /login, dove un 401
+    // è la password sbagliata, e non per il login stesso).
+    if (res.status === 401 && path !== '/api/auth/login' && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
     throw new ApiError(res.status, rawMsg);
   }
   return data as T;
