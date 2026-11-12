@@ -140,7 +140,7 @@ export default function CataloghiSection() {
       <div className="screens">
         {view === "elenco" && <ElencoScreen mailing={mailing} loading={loading} onDettaglio={apriDettaglio} onNuova={() => setView("nuova")} onElimina={eliminaCampagna} />}
         {view === "nuova" && <WizardScreen cataloghi={cataloghi} onCarica={carica} onDone={(id) => { void carica(); void apriDettaglio(id); }} />}
-        {view === "dettaglio" && dettaglio && <DettaglioScreen d={dettaglio} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} sending={sendingId === dettaglio.id} onElimina={eliminaCampagna} />}
+        {view === "dettaglio" && dettaglio && <DettaglioScreen key={dettaglio.id} d={dettaglio} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} sending={sendingId === dettaglio.id} onElimina={eliminaCampagna} />}
       </div>
     </div>
   );
@@ -545,6 +545,8 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
   onElimina: (id: number, nome: string) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
+  const [cerca, setCerca] = useState("");
+  const [filtro, setFiltro] = useState<"tutti" | "aperti" | "non-aperti" | "scaricati" | "revocati">("tutti");
 
   function scaricaCsv(csv: string, nome: string) {
     const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
@@ -567,6 +569,16 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
   }
 
   const pct = (n: number) => (d.stats.destinatari ? `${Math.round((n / d.stats.destinatari) * 100)}% del totale` : "—");
+
+  const q = cerca.trim().toLowerCase();
+  const visibili = d.destinatari.filter((r) => {
+    if (q && ![r.nome ?? "", r.email, r.cliente ?? ""].some((v) => v.toLowerCase().includes(q))) return false;
+    if (filtro === "aperti") return r.apertoIl != null;
+    if (filtro === "non-aperti") return r.apertoIl == null;
+    if (filtro === "scaricati") return r.scaricati.length > 0;
+    if (filtro === "revocati") return r.revocato;
+    return true;
+  });
 
   return (
     <section className="screen" data-screen="dettaglio">
@@ -592,12 +604,34 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
           <div className="stat"><div className="label">Aperture</div><div className="value">{d.stats.aperture}</div><div className="sub">{pct(d.stats.aperture)}</div></div>
           <div className="stat"><div className="label">Click</div><div className="value">{d.stats.click}</div><div className="sub">{pct(d.stats.click)}</div></div>
         </div>
+        <div className="top-actions" style={{ margin: "0 0 12px", flexShrink: 0 }}>
+          <div className="admin-search">
+            <span className="search-icon">{iSearch}</span>
+            <input type="text" placeholder="Cerca nome, email o cliente…" value={cerca} onChange={(e) => setCerca(e.target.value)} aria-label="Cerca destinatari" />
+          </div>
+          <div className="filter-pills" role="group" aria-label="Filtri destinatari">
+            {([
+              ["tutti", "Tutti"],
+              ["aperti", "Hanno aperto"],
+              ["non-aperti", "Non hanno aperto"],
+              ["scaricati", "Hanno scaricato"],
+              ["revocati", "Revocati"],
+            ] as const).map(([value, label]) => (
+              <button type="button" key={value} className={`filter-pill ${filtro === value ? "active" : ""}`} onClick={() => setFiltro(value)} aria-pressed={filtro === value}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="data-table t-dest">
           <div className="data-table-scroll">
             <table>
               <thead><tr><th className="d-nome">Destinatario</th><th className="d-ape">Aperto il</th><th>Scaricati</th><th className="col-actions">Azioni</th></tr></thead>
               <tbody>
-                {d.destinatari.map((r) => (
+                {visibili.length === 0 && (
+                  <tr><td colSpan={4} style={{ padding: 24, textAlign: "center", color: "var(--muted)" }}>Nessun destinatario con questi filtri.</td></tr>
+                )}
+                {visibili.map((r) => (
                   <tr key={r.id} className={r.revocato ? "is-revocato" : undefined}>
                     <td className="d-nome">
                       <div className="name-line"><strong>{r.nome ?? "—"}</strong>{r.revocato && <span className="pill pv-neutral revoked-pill">Revocato</span>}</div>
@@ -615,7 +649,7 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
               </tbody>
             </table>
           </div>
-          <div className="data-table-footer"><span>{d.destinatari.length} destinatari · {d.stats.aperture} hanno aperto</span></div>
+          <div className="data-table-footer"><span>{visibili.length} di {d.destinatari.length} destinatari · {d.stats.aperture} hanno aperto</span></div>
         </div>
       </div>
     </section>
