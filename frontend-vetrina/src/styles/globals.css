@@ -416,10 +416,13 @@ a.chip { text-decoration: none; display: inline-block; }
 .lightbox-close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; cursor: pointer; z-index: 2; }
 .ai-badge-lg { bottom: 16px; right: 20px; font-size: 12px; padding: 4px 8px; }
 
-/* Testi (varianti + descrizione) e badge AI in dissolvenza a OGNI apertura del lightbox:
-   l'animazione è agganciata all'attributo [open] che torna valido a ogni showModal. */
-.lightbox[open] .lightbox-varianti, .lightbox[open] .lightbox-desc, .lightbox[open] .ai-badge-lg {
-  animation: lightbox-fade .5s ease .1s both;
+/* Immagine e testi entrano insieme, solo quando l'immagine è caricata:
+   la classe .is-loaded la mette il componente dopo onLoad (o subito se è in cache). */
+.lightbox-figure img { opacity: 0; transition: opacity .5s ease; }
+.lightbox-varianti, .lightbox-desc, .lightbox .ai-badge-lg { opacity: 0; }
+.lightbox.is-loaded .lightbox-figure img { opacity: 1; }
+.lightbox.is-loaded .lightbox-varianti, .lightbox.is-loaded .lightbox-desc, .lightbox.is-loaded .ai-badge-lg {
+  animation: lightbox-fade .5s ease both;
 }
 @keyframes lightbox-fade {
   from { opacity: 0; }

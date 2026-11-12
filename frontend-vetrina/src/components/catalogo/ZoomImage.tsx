@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 type Variante = { codice: string; dimensioni: string };
@@ -18,8 +18,13 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
 }) {
   const t = useTranslations('catalogo');
   const ref = useRef<HTMLDialogElement>(null);
+  const fullRef = useRef<HTMLImageElement>(null);
+  // Testi e immagine entrano insieme: si aspetta che l'immagine sia pronta.
+  const [loaded, setLoaded] = useState(false);
 
   const open = () => {
+    const img = fullRef.current;
+    setLoaded(!!img && img.complete && img.naturalWidth > 0);
     ref.current?.showModal();
   };
 
@@ -28,7 +33,7 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
       <button type='button' className='zoom-trigger' onClick={open} aria-label={t('ingrandisci', { nome: alt })}>
         <img className='product-img' src={src} alt={alt} loading='lazy' />
       </button>
-      <dialog ref={ref} className='lightbox' onClick={() => ref.current?.close()} aria-label={alt}>
+      <dialog ref={ref} className={`lightbox${loaded ? ' is-loaded' : ''}`} onClick={() => ref.current?.close()} aria-label={alt}>
         <button type='button' className='lightbox-close' aria-label={t('chiudi')}>
           <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' width='22' height='22'><line x1='18' y1='6' x2='6' y2='18' /><line x1='6' y1='6' x2='18' y2='18' /></svg>
         </button>
@@ -45,7 +50,7 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
             </ul>
           </div>
           <div className='lightbox-figure'>
-            <img src={full} alt={alt} loading='lazy' />
+            <img ref={fullRef} src={full} alt={alt} loading='lazy' onLoad={() => setLoaded(true)} onError={() => setLoaded(true)} />
             {ai && <span className='ai-badge ai-badge-lg' title={t('aiBadge')}>AI</span>}
           </div>
           <div className='lightbox-desc'>
