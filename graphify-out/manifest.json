@@ -374,9 +374,9 @@
     "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-admin.service.ts": {
-    "mtime": 1794496972.6498418,
-    "seen": 1794497091.6804292,
-    "ast_hash": "cda16ff9bcddd66ac8d3b65ecfe4250f",
+    "mtime": 1794498920.520445,
+    "seen": 1794499106.7559674,
+    "ast_hash": "b0b7e8e9321f52f9479b5c2a9835dd1c",
     "semantic_hash": ""
   },
   "backend/src/cataloghi/cataloghi-public.controller.ts": {
@@ -1541,9 +1541,9 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1794496872.7070756,
-    "seen": 1794497091.6807559,
-    "ast_hash": "17c21519a49c630a17dcb9811e7682b4",
+    "mtime": 1794498930.2176201,
+    "seen": 1794499106.7562852,
+    "ast_hash": "ddddbf2d9cae029df93ba80631578a59",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
@@ -3802,6 +3802,12 @@
     "mtime": 1794492199.9819214,
     "seen": 1794492577.5650077,
     "ast_hash": "9a1af47a02a5b6aea438185a76f3a4fc",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261112000000_cataloghi_download_cliente/migration.sql": {
+    "mtime": 1794498889.254035,
+    "seen": 1794499106.7558734,
+    "ast_hash": "337c94be7fa5ca12a8f050c0e4977c11",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
