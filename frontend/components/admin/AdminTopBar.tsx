@@ -14,6 +14,7 @@ import ClearButton from "../common/ClearButton";
  */
 export default function AdminTopBar({
   title,
+  subtitle,
   searchValue,
   onSearchChange,
   searchPlaceholder = "Cerca…",
@@ -24,6 +25,8 @@ export default function AdminTopBar({
   children,
 }: {
   title: string;
+  /** Riga piccola sotto il titolo (facoltativa). */
+  subtitle?: string;
   /** Ricerca: se omessa, il campo non viene mostrato. */
   searchValue?: string;
   onSearchChange?: (q: string) => void;
@@ -51,7 +54,10 @@ export default function AdminTopBar({
   return (
     <header className="admin-top">
       <div className="admin-top-titlebar">
-        <h1>{title}</h1>
+        <div className="admin-top-heading">
+          <h1>{title}</h1>
+          {subtitle && <div className="admin-top-sub">{subtitle}</div>}
+        </div>
         <button
           type="button"
           className="admin-top-toggle"

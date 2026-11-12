@@ -232,6 +232,16 @@
   letter-spacing: -0.01em;
   margin: 0;
 }
+.admin-top-heading { min-width: 0; }
+.admin-top-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .top-actions { display: flex; align-items: center; gap: 12px; }
 .action-buttons { display: flex; flex-direction: column; gap: 4px; }
 .action-buttons > .btn { width: 100%; justify-content: center; }
@@ -2587,6 +2597,7 @@
     flex: 1 1 100%;
   }
   .admin-top h1 { font-size: 20px; margin: 0; }
+  .admin-top-sub { display: none; }
   .admin-top-toggle {
     display: grid;
     place-items: center;

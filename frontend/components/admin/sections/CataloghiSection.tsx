@@ -5,6 +5,7 @@ import { api, ApiError } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
 import DataTable, { type Column, type RowAction } from "../DataTable";
+import AdminTopBar from "../AdminTopBar";
 
 interface Catalogo { id: number; nome: string; copertina: string | null; archiviato: boolean; dimensione: number | null; createdAt: string }
 interface MailingRiga { id: number; nome: string; stato: string; canale: string; createdAt: string; nCataloghi: number; generati: number; aperti: number; scaricati: number }
@@ -15,6 +16,15 @@ interface Cliente { id: number; email: string; nome: string; ragioneSociale: str
 const fmtData = (s: string) => new Date(s).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
 const fmtOra = (s: string | null) => (s ? new Date(s).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—");
 const fmtSize = (b: number | null) => (b == null ? "—" : `${(b / (1024 * 1024)).toLocaleString("it-IT", { maximumFractionDigits: 1 })} MB`);
+
+type FiltroDest = "tutti" | "aperti" | "non-aperti" | "scaricati" | "revocati";
+const FILTRI_DEST: { value: FiltroDest; label: string }[] = [
+  { value: "tutti", label: "Tutti i destinatari" },
+  { value: "aperti", label: "Hanno aperto" },
+  { value: "non-aperti", label: "Non hanno aperto" },
+  { value: "scaricati", label: "Hanno scaricato" },
+  { value: "revocati", label: "Revocati" },
+];
 
 const Icon = ({ d }: { d: React.ReactNode }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -42,6 +52,8 @@ export default function CataloghiSection() {
   const [esito, setEsito] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState<number | null>(null);
+  const [cercaDest, setCercaDest] = useState("");
+  const [filtroDest, setFiltroDest] = useState<FiltroDest>("tutti");
 
   const carica = useCallback(async () => {
     setLoading(true);
@@ -65,6 +77,8 @@ export default function CataloghiSection() {
   async function apriDettaglio(id: number) {
     try {
       setDettaglio(await api.get<MailingDettaglio>(`/api/admin/cataloghi/mailing/${id}`));
+      setCercaDest("");
+      setFiltroDest("tutti");
       setView("dettaglio");
     } catch (e) { setErrore(e instanceof ApiError ? e.code : "errors.generic"); }
   }
@@ -111,28 +125,27 @@ export default function CataloghiSection() {
 
   return (
     <div className="cat" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <header className="admin-top">
-        <div className="top-title">
-          <h1>{view === "dettaglio" && dettaglio ? dettaglio.nome : "Cataloghi"}</h1>
-          <div className="top-sub">{view === "dettaglio" && dettaglio ? "Marketing · Dettaglio campagna" : `Marketing · ${mailing.length} campagne`}</div>
+      <AdminTopBar
+        title={view === "dettaglio" && dettaglio ? dettaglio.nome : "Cataloghi"}
+        subtitle={view === "dettaglio" && dettaglio ? "Marketing · Dettaglio campagna" : `Marketing · ${mailing.length} campagne`}
+        searchValue={view === "dettaglio" ? cercaDest : undefined}
+        onSearchChange={view === "dettaglio" ? setCercaDest : undefined}
+        searchPlaceholder="Cerca nome, email o cliente…"
+        filter={view === "dettaglio" ? filtroDest : undefined}
+        onFilterChange={view === "dettaglio" ? (v) => setFiltroDest(v as FiltroDest) : undefined}
+        filterOptions={FILTRI_DEST}
+      >
+        <div className="action-buttons">
+          {view === "elenco" && <button type="button" className="btn btn-primary btn-sm" onClick={() => setView("nuova")}>{iPlus}Nuova campagna</button>}
+          {view === "nuova" && <button type="button" className="btn btn-secondary btn-sm" onClick={() => setView("elenco")}>{iX}Annulla</button>}
+          {view === "dettaglio" && dettaglio && (
+            <>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setView("elenco")}>{iChevronLeft}Cataloghi</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.open(`/api/admin/cataloghi/mailing/${dettaglio.id}/export`, "_blank")}>{iDownload}Esporta CSV</button>
+            </>
+          )}
         </div>
-        {view === "elenco" && (
-          <div className="top-actions">
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => setView("nuova")}>{iPlus}Nuova campagna</button>
-          </div>
-        )}
-        {view === "nuova" && (
-          <div className="top-actions">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setView("elenco")}>{iX}Annulla</button>
-          </div>
-        )}
-        {view === "dettaglio" && dettaglio && (
-          <div className="top-actions">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setView("elenco")}>{iChevronLeft}Cataloghi</button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.open(`/api/admin/cataloghi/mailing/${dettaglio.id}/export`, "_blank")}>{iDownload}Esporta CSV</button>
-          </div>
-        )}
-      </header>
+      </AdminTopBar>
 
       {errore && <div style={{ padding: "8px 32px 0" }}><Notice variant="error" onClose={() => setErrore(null)}>Errore: {errore}</Notice></div>}
       {esito && <div style={{ padding: "8px 32px 0" }}><Notice variant="success" onClose={() => setEsito(null)}>{esito}</Notice></div>}
@@ -140,7 +153,7 @@ export default function CataloghiSection() {
       <div className="screens">
         {view === "elenco" && <ElencoScreen mailing={mailing} loading={loading} onDettaglio={apriDettaglio} onNuova={() => setView("nuova")} onElimina={eliminaCampagna} />}
         {view === "nuova" && <WizardScreen cataloghi={cataloghi} onCarica={carica} onDone={(id) => { void carica(); void apriDettaglio(id); }} />}
-        {view === "dettaglio" && dettaglio && <DettaglioScreen key={dettaglio.id} d={dettaglio} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} sending={sendingId === dettaglio.id} onElimina={eliminaCampagna} />}
+        {view === "dettaglio" && dettaglio && <DettaglioScreen key={dettaglio.id} d={dettaglio} cerca={cercaDest} filtro={filtroDest} onRevoca={revoca} onBrevo={inviaABrevo} onEsito={setEsito} onCarica={carica} onRefresh={apriDettaglio} sending={sendingId === dettaglio.id} onElimina={eliminaCampagna} />}
       </div>
     </div>
   );
@@ -534,8 +547,10 @@ function SelettoreClienti({ sel, onSelChange, onError }: { sel: number[]; onSelC
 
 /* ────────────────────────────── Dettaglio ────────────────────────────── */
 
-function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, sending, onElimina }: {
+function DettaglioScreen({ d, cerca, filtro, onRevoca, onBrevo, onEsito, onCarica, onRefresh, sending, onElimina }: {
   d: MailingDettaglio;
+  cerca: string;
+  filtro: FiltroDest;
   onRevoca: (id: number) => void;
   onBrevo: (id: number) => void;
   onEsito: (s: string) => void;
@@ -545,8 +560,6 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
   onElimina: (id: number, nome: string) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
-  const [cerca, setCerca] = useState("");
-  const [filtro, setFiltro] = useState<"tutti" | "aperti" | "non-aperti" | "scaricati" | "revocati">("tutti");
 
   function scaricaCsv(csv: string, nome: string) {
     const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
@@ -603,25 +616,6 @@ function DettaglioScreen({ d, onRevoca, onBrevo, onEsito, onCarica, onRefresh, s
           <div className="stat"><div className="label">Destinatari</div><div className="value">{d.stats.destinatari}</div><div className="sub">email inviate</div></div>
           <div className="stat"><div className="label">Aperture</div><div className="value">{d.stats.aperture}</div><div className="sub">{pct(d.stats.aperture)}</div></div>
           <div className="stat"><div className="label">Click</div><div className="value">{d.stats.click}</div><div className="sub">{pct(d.stats.click)}</div></div>
-        </div>
-        <div className="top-actions" style={{ margin: "0 0 12px", flexShrink: 0 }}>
-          <div className="admin-search">
-            <span className="search-icon">{iSearch}</span>
-            <input type="text" placeholder="Cerca nome, email o cliente…" value={cerca} onChange={(e) => setCerca(e.target.value)} aria-label="Cerca destinatari" />
-          </div>
-          <div className="filter-pills" role="group" aria-label="Filtri destinatari">
-            {([
-              ["tutti", "Tutti"],
-              ["aperti", "Hanno aperto"],
-              ["non-aperti", "Non hanno aperto"],
-              ["scaricati", "Hanno scaricato"],
-              ["revocati", "Revocati"],
-            ] as const).map(([value, label]) => (
-              <button type="button" key={value} className={`filter-pill ${filtro === value ? "active" : ""}`} onClick={() => setFiltro(value)} aria-pressed={filtro === value}>
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
         <div className="data-table t-dest">
           <div className="data-table-scroll">
