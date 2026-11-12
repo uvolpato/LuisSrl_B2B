@@ -624,6 +624,8 @@
 .cat .file-clear svg { width: 14px; height: 14px; }
 .cat .file-clear:hover { color: var(--red); background: var(--red-soft); }
 .cat .inline-upload.has-file .file-clear { display: inline-flex; }
+.cat .inline-upload.is-dragging { border-color: var(--accent); background: var(--accent-tint); }
+.cat .upload-status { margin: -6px 0 14px; font-size: 12.5px; color: var(--accent); }
 .cat .cat-table { flex: 1; min-height: 0; display: flex; }
 .cat .cat-pick {
   display: flex;

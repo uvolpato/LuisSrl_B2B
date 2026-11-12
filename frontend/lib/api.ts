@@ -44,7 +44,6 @@ async function request<T>(
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('session-stolen'));
       throw new ApiError(401, rawMsg);
     }
-    if (!rawMsg.includes('.')) throw new ApiError(res.status, `errors.HTTP ${res.status}`);
     throw new ApiError(res.status, rawMsg);
   }
   return data as T;

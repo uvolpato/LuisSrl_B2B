@@ -12,10 +12,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { mkdirSync } from 'fs';
+import { randomBytes } from 'crypto';
 import { IsArray, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermission } from '../auth/decorators/permission.decorator';
+import { CATALOGHI_DIR } from '../common/env';
 import { CataloghiAdminService } from './cataloghi-admin.service';
 
 class CreaMailingDto {
@@ -50,7 +54,16 @@ export class CataloghiAdminController {
 
   @Post()
   @RequirePermission('marketing.cataloghi.edit')
-  @UseInterceptors(FileInterceptor('file'))
+  // Su disco e non in memoria: i PDF possono superare i 300MB.
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (_req, _file, cb) => {
+        mkdirSync(CATALOGHI_DIR, { recursive: true });
+        cb(null, CATALOGHI_DIR);
+      },
+      filename: (_req, _file, cb) => cb(null, `${Date.now()}_${randomBytes(4).toString('hex')}.pdf`),
+    }),
+  }))
   creaCatalogo(@Body('nome') nome: string, @UploadedFile() file: Express.Multer.File) {
     return this.admin.creaCatalogo(nome, file);
   }

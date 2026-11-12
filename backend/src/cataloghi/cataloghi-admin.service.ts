@@ -22,18 +22,34 @@ export class CataloghiAdminService {
 
   // ── Cataloghi (PDF) ──────────────────────────────────────────────
 
+  /** Limite alto perché i cataloghi di stampa arrivano a 300-400MB. */
+  private static readonly MAX_PDF = 512 * 1024 * 1024;
+
   async creaCatalogo(nome: string, file: Express.Multer.File) {
-    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Solo file PDF sono permessi');
-    if (file.size > 50 * 1024 * 1024) throw new BadRequestException('File troppo grande (max 50MB)');
+    const scarta = () => (file ? fsp.unlink(file.path).catch(() => undefined) : Promise.resolve());
+    if (!file) throw new BadRequestException('Nessun file ricevuto.');
+    if (file.mimetype !== 'application/pdf') {
+      await scarta();
+      throw new BadRequestException('Solo file PDF sono permessi.');
+    }
+    if (file.size > CataloghiAdminService.MAX_PDF) {
+      await scarta();
+      throw new BadRequestException('File troppo grande (max 512MB).');
+    }
+    if (!nome?.trim()) {
+      await scarta();
+      throw new BadRequestException('Nome del catalogo mancante.');
+    }
 
-    const nomeFile = `${Date.now()}_${randomBytes(4).toString('hex')}.pdf`;
-    await fsp.mkdir(CATALOGHI_DIR, { recursive: true });
-    await fsp.writeFile(join(CATALOGHI_DIR, nomeFile), file.buffer);
-
-    const catalogo = await this.prisma.catalogo.create({
-      data: { nome: nome.trim().slice(0, 200), pdfFile: nomeFile },
-    });
-    return { id: catalogo.id, nome: catalogo.nome };
+    try {
+      const catalogo = await this.prisma.catalogo.create({
+        data: { nome: nome.trim().slice(0, 200), pdfFile: file.filename },
+      });
+      return { id: catalogo.id, nome: catalogo.nome };
+    } catch (e) {
+      await scarta();
+      throw e;
+    }
   }
 
   async elencoCataloghi() {

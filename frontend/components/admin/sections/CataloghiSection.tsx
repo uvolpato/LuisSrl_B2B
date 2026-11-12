@@ -213,6 +213,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
   const [nomeCatalogo, setNomeCatalogo] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploadando, setUploadando] = useState(false);
+  const [dragAttivo, setDragAttivo] = useState(false);
   const [catalogoSel, setCatalogoSel] = useState<number[]>([]);
 
   const [fonte, setFonte] = useState<"file" | "clienti">("file");
@@ -224,6 +225,18 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
   const [creando, setCreando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
 
+  /** Accetta il PDF sia dal selettore file sia dal trascinamento sulla dropzone. */
+  function prendiFile(f: File | undefined) {
+    if (!f) return;
+    if (f.type !== "application/pdf" && !/\.pdf$/i.test(f.name)) {
+      setErrore("Solo file PDF sono permessi.");
+      return;
+    }
+    setErrore(null);
+    setPdfFile(f);
+    if (!nomeCatalogo.trim()) setNomeCatalogo(f.name.replace(/\.pdf$/i, ""));
+  }
+
   async function caricaCatalogo() {
     if (!pdfFile || !nomeCatalogo.trim()) return;
     setUploadando(true);
@@ -232,7 +245,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
     fd.append("file", pdfFile);
     fd.append("nome", nomeCatalogo.trim());
     try {
-      const c = await api.post<{ id: number }>("/api/admin/cataloghi", fd);
+      const c = await api.post<{ id: number }>("/api/admin/cataloghi/upload", fd);
       setNomeCatalogo("");
       setPdfFile(null);
       setCatalogoSel((p) => [...p, c.id]);
@@ -336,19 +349,31 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
             {step === 0 && (
               <div className="wiz-step">
                 <h2 className="wizard-q">Quali cataloghi vuoi inviare?</h2>
-                <div className="inline-upload">
-                  <input className="input" type="text" placeholder="Nome del nuovo catalogo" value={nomeCatalogo} onChange={(e) => setNomeCatalogo(e.target.value)} />
-                  <label className="file-chip" style={{ cursor: "pointer" }}>
-                    {iUpload}<span>{pdfFile ? pdfFile.name : "Carica PDF"}</span>
-                    <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      setPdfFile(f);
-                      if (f && !nomeCatalogo.trim()) setNomeCatalogo(f.name.replace(/\.pdf$/i, ""));
+                <div
+                  className={`inline-upload ${pdfFile ? "has-file" : ""} ${dragAttivo ? "is-dragging" : ""}`}
+                  aria-busy={uploadando}
+                  onDragOver={(e) => { if (uploadando) return; e.preventDefault(); setDragAttivo(true); }}
+                  onDragLeave={() => setDragAttivo(false)}
+                  onDrop={(e) => { e.preventDefault(); setDragAttivo(false); if (!uploadando) prendiFile(e.dataTransfer.files?.[0]); }}
+                >
+                  <input className="input" type="text" placeholder="Nome del nuovo catalogo" value={nomeCatalogo} disabled={uploadando} onChange={(e) => setNomeCatalogo(e.target.value)} />
+                  <label className="file-chip" style={{ cursor: uploadando ? "default" : "pointer", opacity: uploadando ? 0.6 : 1 }}>
+                    {iUpload}<span>{pdfFile ? pdfFile.name : "Scegli un PDF o trascinalo qui"}</span>
+                    <input type="file" accept="application/pdf" style={{ display: "none" }} disabled={uploadando} onChange={(e) => {
+                      prendiFile(e.target.files?.[0]);
+                      e.target.value = "";
                     }} />
                   </label>
-                  {pdfFile && <button type="button" className="file-clear" aria-label="Rimuovi il file" onClick={() => setPdfFile(null)}>{iX}</button>}
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={caricaCatalogo} disabled={!pdfFile || !nomeCatalogo.trim() || uploadando}>{uploadando ? "…" : "Aggiungi"}</button>
+                  {pdfFile && !uploadando && <button type="button" className="file-clear" aria-label="Rimuovi il file" onClick={() => setPdfFile(null)}>{iX}</button>}
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={caricaCatalogo} disabled={!pdfFile || !nomeCatalogo.trim() || uploadando}>
+                    {uploadando ? <><span className="wizard-spinner btn-spinner" />Caricamento…</> : "Aggiungi"}
+                  </button>
                 </div>
+                {uploadando && pdfFile && (
+                  <p className="upload-status" role="status">
+                    Caricamento di «{pdfFile.name}» ({fmtSize(pdfFile.size)}) in corso: non chiudere la scheda. Con i PDF grandi può richiedere qualche minuto.
+                  </p>
+                )}
                 <div className="cat-table">
                   <DataTable<Catalogo>
                     rows={attivi}
