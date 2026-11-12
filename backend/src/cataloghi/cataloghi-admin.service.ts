@@ -213,7 +213,7 @@ export class CataloghiAdminService {
     if (!m) throw new NotFoundException('cataloghi.mailing_non_trovata');
 
     const contatti = await this.leggiContatti(file);
-    if (contatti.length === 0) throw new BadRequestException('Nessun contatto valido nel file');
+    if (contatti.length === 0) throw new BadRequestException('Nessun contatto valido nel file: serve una colonna con l\'email');
 
     const creati = await this.prisma.$transaction(
       contatti.map((c) =>
@@ -316,25 +316,50 @@ export class CataloghiAdminService {
 
   // ── helper ──────────────────────────────────────────────────────
 
-  /** Estrae (email, nome) da xlsx o csv: trova l'email (cella con @) e il nome (l'altra cella non vuota). */
+  /** Estrae (email, nome) da xlsx o csv: trova l'email (cella con @) e il nome (prima cella senza @). */
   private async leggiContatti(file: Express.Multer.File): Promise<{ email: string; nome: string | null }[]> {
     const contatti: { email: string; nome: string | null }[] = [];
+    const viste = new Set<string>();
     const aggiungi = (celle: string[]) => {
       if (celle.length === 0) return;
-      const email = celle.find((c) => /\S+@\S+\.\S+/.test(c))?.toLowerCase();
-      if (!email) return; // salta l'eventuale riga d'intestazione
-      const nome = celle.find((c) => c.toLowerCase() !== email) ?? null;
-      contatti.push({ email, nome });
+      const email = celle.find((c) => /\S+@\S+\.\S+/.test(c))?.match(/\S+@\S+\.\S+/)![0].toLowerCase();
+      if (!email || viste.has(email)) return; // salta intestazione e doppioni
+      viste.add(email);
+      contatti.push({ email, nome: celle.find((c) => !/\S+@\S+\.\S+/.test(c)) ?? null });
     };
-    const pulisci = (v: unknown) => String(v ?? '').trim().replace(/^"(.*)"$/s, '$1');
+    // Le celle possono essere testo, numeri, rich text, link o formule: serve il testo vero.
+    const testo = (v: unknown): string => {
+      if (v == null) return '';
+      if (typeof v === 'string') return v;
+      if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+      if (v instanceof Date) return v.toISOString();
+      if (typeof v === 'object') {
+        const o = v as { text?: unknown; richText?: unknown; hyperlink?: unknown; result?: unknown };
+        if (Array.isArray(o.richText)) return o.richText.map((r) => testo((r as { text?: unknown }).text)).join('');
+        // Testo e link insieme: l'email può stare solo nel mailto.
+        const parti: string[] = [];
+        if (o.text != null) parti.push(testo(o.text));
+        if (o.hyperlink != null) parti.push(testo(o.hyperlink).replace(/^mailto:/i, ''));
+        if (o.result != null) parti.push(testo(o.result));
+        return parti.join(' ');
+      }
+      return '';
+    };
+    const pulisci = (v: unknown) => testo(v).trim().replace(/^"(.*)"$/s, '$1');
 
     // xlsx = archivio zip (inizia con "PK"), altrimenti testo csv
     if (file.buffer[0] === 0x50 && file.buffer[1] === 0x4b) {
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);
-      wb.worksheets[0].eachRow({ includeEmpty: false }, (row) => {
-        aggiungi((Array.isArray(row.values) ? row.values.slice(1) : []).map(pulisci).filter(Boolean));
-      });
+      // Tutti i fogli: spesso i contatti stanno nel secondo.
+      for (const ws of wb.worksheets) {
+        ws.eachRow({ includeEmpty: false }, (row) => {
+          aggiungi((Array.isArray(row.values) ? row.values.slice(1) : []).map(pulisci).filter(Boolean));
+        });
+      }
+    } else if (file.buffer.subarray(0, 1024).includes(0, 0)) {
+      // Binario non-zip: vecchio .xls o altro formato che non sappiamo leggere.
+      throw new BadRequestException('Formato non riconosciuto: carica un file .xlsx o .csv');
     } else {
       const righe = file.buffer.toString('utf8').replace(/^\uFEFF/, '').split(/\r?\n/);
       // shortcut: nessun parsing delle virgolette, un nome con separatore dentro le virgolette si spezza

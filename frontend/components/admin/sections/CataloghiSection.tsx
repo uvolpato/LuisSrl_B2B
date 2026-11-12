@@ -313,12 +313,18 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
     setErrore(null);
     try {
       const m = await api.post<{ id: number }>("/api/admin/cataloghi/mailing", { nome: nomeCampagna.trim(), cataloghi: catalogoSel, canale });
-      if (fonte === "file" && xlsxFile) {
-        const fd = new FormData();
-        fd.append("file", xlsxFile);
-        await api.post(`/api/admin/cataloghi/mailing/${m.id}/import`, fd);
-      } else if (fonte === "clienti") {
-        await api.post(`/api/admin/cataloghi/mailing/${m.id}/import-clienti`, { customerIds: clientiSel });
+      try {
+        if (fonte === "file" && xlsxFile) {
+          const fd = new FormData();
+          fd.append("file", xlsxFile);
+          await api.post(`/api/admin/cataloghi/mailing/${m.id}/import`, fd);
+        } else if (fonte === "clienti") {
+          await api.post(`/api/admin/cataloghi/mailing/${m.id}/import-clienti`, { customerIds: clientiSel });
+        }
+      } catch (e) {
+        // Senza destinatari la campagna non serve: non lasciare bozze orfane.
+        await api.del(`/api/admin/cataloghi/mailing/${m.id}`).catch(() => undefined);
+        throw e;
       }
       onDone(m.id);
     } catch (e) { setErrore(e instanceof ApiError ? e.code : "errors.generic"); }
