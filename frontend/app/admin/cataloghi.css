@@ -588,7 +588,8 @@
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface);
+  /* background-color, non la shorthand: altrimenti azzera la freccia delle select */
+  background-color: var(--surface);
   color: var(--fg);
   font: inherit;
   font-size: 14px;
@@ -596,6 +597,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .cat .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.cat select.input { padding-right: 34px; }
 .cat .inline-upload .input { flex: 1 1 200px; width: auto; }
 .cat .file-chip {
   display: inline-flex;
