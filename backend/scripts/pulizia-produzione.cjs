@@ -4,11 +4,11 @@
  *   node scripts/pulizia-produzione.cjs
  *
  * Cosa fa:
- *  1. rimuove querystring, token e email in chiaro dai log giÃ  scritti;
+ *  1. rimuove querystring, token e email in chiaro dai log già scritti;
  *  2. azzera i referenti salvati senza fonte (nomi non verificabili);
  *  3. elimina i segreti del vecchio secondo fattore TOTP.
  *
- * Non tocca clienti, ordini, documenti nÃ© configurazioni.
+ * Non tocca clienti, ordini, documenti né configurazioni.
  */
 const { Client } = require('pg');
 require('dotenv/config');

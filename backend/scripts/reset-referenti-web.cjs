@@ -2,7 +2,7 @@
  * Azzera i referenti salvati prima della fonte obbligatoria (nomi senza URL, quindi
  * non verificabili). I profili vengono rigenerati dalla settimana successiva.
  *
- * Idempotente: dopo il primo giro non trova piÃ¹ righe da toccare.
+ * Idempotente: dopo il primo giro non trova più righe da toccare.
  * Uso: node scripts/reset-referenti-web.cjs
  */
 const { Client } = require('pg');
