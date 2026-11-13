@@ -103,3 +103,8 @@ SEGRETI-LOCALI.md
 
 # --- Graphify: cache AST locale, il grafo si ricrea con 'graphify update .' ---
 graphify-out/cache/
+
+# --- Graphify: artefatti rigenerati (non versionati) ---
+graphify-out/graph.html
+graphify-out/.graphify_labels*
+graphify-out/.graphify_build_state.json
