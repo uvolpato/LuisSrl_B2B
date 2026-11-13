@@ -210,6 +210,8 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   const [galleryModalIdx, setGalleryModalIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
+  // L'immagine entra in dissolvenza: false a ogni cambio, true a onLoad.
+  const [lbLoaded, setLbLoaded] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const varianti = useMemo(() => {
@@ -309,10 +311,12 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
 
   function openLightbox(idx?: number) {
     setLightboxIdx(idx ?? selectedImgIdx);
+    setLbLoaded(false);
     setLightboxOpen(true);
   }
 
   function lbNav(delta: number) {
+    setLbLoaded(false);
     setLightboxIdx((prev) => (prev + delta + allImages.length) % allImages.length);
     setSelectedImgIdx((prev) => (prev + delta + galleryImages.length) % galleryImages.length);
   }
@@ -818,26 +822,53 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
       )}
 
       {lightboxOpen && (
-        <div className="lightbox-overlay open" onClick={() => setLightboxOpen(false)}>
+        <div className={`lightbox-overlay open ${lbLoaded ? "is-loaded" : ""}`} onClick={() => setLightboxOpen(false)}>
           <button className="lightbox-close" onClick={() => setLightboxOpen(false)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
-          <button className="lightbox-nav prev" onClick={(e) => { e.stopPropagation(); lbNav(-1); }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M15 18l-6-6 6-6" /></svg>
-          </button>
-          {/* Vista completa: immagine intera, senza ritaglio ma con la rotazione/zoom impostati */}
-          {(() => {
-            const p = parseImgCss(allImages[lightboxIdx]?.css);
-            const t = p.zoom !== 0 || p.rotation !== 0 ? `scale(${1 + p.zoom / 100}) rotate(${p.rotation}deg)` : undefined;
-            return <img id="lbImage" src={allImages[lightboxIdx]?.url} alt="Zoom" onClick={(e) => e.stopPropagation()} style={{ transform: t }} />;
-          })()}
-          <button className="lightbox-nav next" onClick={(e) => { e.stopPropagation(); lbNav(1); }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M9 18l6-6-6-6" /></svg>
-          </button>
+          {/* Come la vetrina: varianti a sinistra, immagine al centro, descrizione a destra */}
+          <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-varianti">
+              <h3>Varianti ({varianti.length})</h3>
+              <ul>
+                {varianti.map((v) => (
+                  <li key={v.codice}>
+                    <span className="v-code">{v.codice}</span>
+                    <span className="v-dim">
+                      {dimKeys.map((key) => {
+                        const e = v.dimensioni?.[key];
+                        if (!e) return "";
+                        const prefix = key === "diametro" ? "Ø" : key === "altezza" ? "H" : "";
+                        return `${prefix}${e.valore} `;
+                      }).join("").trim()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="lightbox-figure">
+              {/* Vista completa: immagine intera, senza ritaglio ma con la rotazione/zoom impostati */}
+              {(() => {
+                const p = parseImgCss(allImages[lightboxIdx]?.css);
+                const t = p.zoom !== 0 || p.rotation !== 0 ? `scale(${1 + p.zoom / 100}) rotate(${p.rotation}deg)` : undefined;
+                return <img id="lbImage" src={allImages[lightboxIdx]?.url} alt={articolo?.nome ?? "Zoom"} style={{ transform: t }} onLoad={() => setLbLoaded(true)} onError={() => setLbLoaded(true)} />;
+              })()}
+              {allImages[lightboxIdx]?.tipo === "AI" && (
+                <span className="ai-badge ai-badge-lg" title="Immagine generata con AI">AI</span>
+              )}
+              <button className="lightbox-nav prev" onClick={(e) => { e.stopPropagation(); lbNav(-1); }} aria-label="Immagine precedente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M15 18l-6-6 6-6" /></svg>
+              </button>
+              <button className="lightbox-nav next" onClick={(e) => { e.stopPropagation(); lbNav(1); }} aria-label="Immagine successiva">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </div>
+            <div className="lightbox-desc">
+              <h2>{articolo?.nome}</h2>
+              <p>{articolo?.descrizione || "Descrizione non disponibile."}</p>
+            </div>
+          </div>
           <div className="lightbox-counter">{lightboxIdx + 1} / {allImages.length}</div>
-{allImages[lightboxIdx]?.tipo === "AI" && (
-            <span className="ai-badge ai-badge-lg" title="Immagine generata con AI">AI</span>
-          )}
         </div>
       )}
 
