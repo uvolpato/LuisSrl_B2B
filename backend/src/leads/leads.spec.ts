@@ -12,6 +12,7 @@ const valido = {
   email: 'mario@example.com',
   lingua: 'it',
   privacy: true,
+  titolarita: true,
 };
 
 const errori = (o: object) =>
@@ -25,6 +26,7 @@ describe('Lead pubblico (vetrina)', () => {
   it('rifiuta privacy non accettata, P.IVA e email non valide, lingua ignota', () => {
     expect(errori({ ...valido, privacy: false })).toEqual(['privacy']);
     expect(errori({ ...valido, privacy: 'true' })).toEqual(['privacy']);
+    expect(errori({ ...valido, titolarita: false })).toEqual(['titolarita']);
     expect(errori({ ...valido, partitaIva: '123' })).toEqual(['partitaIva']);
     expect(errori({ ...valido, email: 'non-email' })).toEqual(['email']);
     expect(errori({ ...valido, lingua: 'fr' })).toEqual(['lingua']);

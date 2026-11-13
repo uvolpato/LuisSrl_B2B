@@ -5,6 +5,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IntegrazioneService } from '../integrazione/integrazione.service';
 import { DatiImpresaService, type DatiImpresa } from '../dati-impresa/dati-impresa.service';
 import { estraiJson } from '../common/ai-json';
+import {
+  filtraReferentiPubblici,
+  type ReferentePubblico,
+} from './referenti-pubblici';
 
 interface CustomerProfileData {
   datiImpresa: DatiImpresa | null;
@@ -15,7 +19,8 @@ interface CustomerProfileData {
   citta: string | null;
   provincia: string | null;
   sediSpedizione: string;
-  contatti: Array<{ tipo: string; contenuto: string }>;
+  /** Solo il numero: i recapiti non escono mai verso l'AI (minimizzazione). */
+  referentiCensiti: number;
   totaleOrdini: number;
   ordiniUltimi12Mesi: number;
   famiglieAcquistate: Array<{ codice: string; nome: string; n: number }>;
@@ -36,7 +41,7 @@ export interface CustomerProfileResult {
   fatturatoStimato: string | null;
   composizioneBusiness: string | null;
   sedi: string[];
-  contattiChiave: Array<{ nome: string; ruolo: string }>;
+  contattiChiave: ReferentePubblico[];
   interessiPrincipali: string[];
   interessiSecondari: string[];
   nonCompreraMai: string[];
@@ -69,7 +74,7 @@ export class CustomerProfileService {
       fatturatoStimato: row.fatturatoStimato?.toString() ?? null,
       composizioneBusiness: row.composizione,
       sedi: row.sedi ? row.sedi.split('; ').filter(Boolean) : [],
-      contattiChiave: Array.isArray(row.contatti) ? (row.contatti as { nome: string; ruolo: string }[]) : [],
+      contattiChiave: Array.isArray(row.contatti) ? (row.contatti as unknown as ReferentePubblico[]) : [],
       interessiPrincipali: Array.isArray(row.interessiPrincipali) ? (row.interessiPrincipali as string[]) : [],
       interessiSecondari: Array.isArray(row.interessiSecondari) ? (row.interessiSecondari as string[]) : [],
       nonCompreraMai: Array.isArray(row.nonCompreraMai) ? (row.nonCompreraMai as string[]) : [],
@@ -88,7 +93,7 @@ export class CustomerProfileService {
     const raw = await this.integrazione.generaSintesiAIConRicerca(prompt);
     if (!raw) return null;
 
-    const json = estraiJson<CustomerProfileResult>(raw);
+    const json = estraiJson<CustomerProfileResult & { referentiChiave?: unknown }>(raw);
     if (!json) {
       this.log.warn(`Profilo cliente #${customerId}: LLM non ha restituito JSON valido`);
       return null;
@@ -102,7 +107,7 @@ export class CustomerProfileService {
         : json.fatturatoStimato ?? null,
       composizioneBusiness: json.composizioneBusiness ?? null,
       sedi: Array.isArray(json.sedi) ? json.sedi : [],
-      contattiChiave: Array.isArray(json.contattiChiave) ? json.contattiChiave : [],
+      contattiChiave: filtraReferentiPubblici(json.referentiChiave),
       interessiPrincipali: Array.isArray(json.interessiPrincipali) ? json.interessiPrincipali : [],
       interessiSecondari: Array.isArray(json.interessiSecondari) ? json.interessiSecondari : [],
       nonCompreraMai: Array.isArray(json.nonCompreraMai) ? json.nonCompreraMai : [],
@@ -120,7 +125,7 @@ export class CustomerProfileService {
         fatturatoStimato: result.fatturatoStimato,
         composizione: result.composizioneBusiness,
         sedi: result.sedi.join('; '),
-        contatti: result.contattiChiave,
+        contatti: result.contattiChiave as unknown as Prisma.InputJsonValue,
         segmento: result.dimensione,
         sintesi: result.sintesiBreve,
         interessiPrincipali: result.interessiPrincipali,
@@ -128,14 +133,14 @@ export class CustomerProfileService {
         nonCompreraMai: result.nonCompreraMai,
         opportunitaCrossSell: result.opportunitaCrossSell,
         stagionalita: result.stagionalita,
-        fonti: { segnaliUsati: ['ordini', 'tracking', 'progetti', 'indirizzi', 'contatti'], versionePubblica: '2026-08' },
+        fonti: { segnaliUsati: ['ordini', 'tracking', 'progetti', 'indirizzi'], versionePubblica: '2026-11' },
       },
       update: {
         settore: result.settore,
         fatturatoStimato: result.fatturatoStimato,
         composizione: result.composizioneBusiness,
         sedi: result.sedi.join('; '),
-        contatti: result.contattiChiave,
+        contatti: result.contattiChiave as unknown as Prisma.InputJsonValue,
         segmento: result.dimensione,
         sintesi: result.sintesiBreve,
         interessiPrincipali: result.interessiPrincipali,
@@ -143,7 +148,7 @@ export class CustomerProfileService {
         nonCompreraMai: result.nonCompreraMai,
         opportunitaCrossSell: result.opportunitaCrossSell,
         stagionalita: result.stagionalita,
-        fonti: { segnaliUsati: ['ordini', 'tracking', 'progetti', 'indirizzi', 'contatti'], versionePubblica: '2026-08' },
+        fonti: { segnaliUsati: ['ordini', 'tracking', 'progetti', 'indirizzi'], versionePubblica: '2026-11' },
         aggiornatoIl: new Date(),
       },
     });
@@ -157,6 +162,68 @@ export class CustomerProfileService {
     this.log.log('Batch customer profiles: inizio generazione');
     const result = await this.generaTutti();
     this.log.log(`Batch customer profiles: ${result.ok} ok, ${result.errori} errori su ${result.totali} clienti`);
+  }
+
+  /**
+   * Fine del rapporto: Integra è il master dell'anagrafica. Se il cliente è bloccato,
+   * non esiste più in `integra_clienti` e non ordina da PROFILO_RETENTION_MESI (default 24),
+   * il profilo commerciale e le sintesi AI non hanno più ragione d'essere: si cancellano.
+   * Non tocca anagrafica, ordini e documenti.
+   */
+  @Cron('0 5 1 * *')
+  async pulisciProfiliCessati(): Promise<number> {
+    const mesi = Number(process.env.PROFILO_RETENTION_MESI ?? 24);
+    if (!Number.isFinite(mesi) || mesi <= 0) return 0;
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - mesi);
+
+    try {
+      // Se la vista del gestionale è vuota o non raggiungibile non si cancella niente.
+      const [{ n }] = await this.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+        'SELECT count(*)::bigint AS n FROM integra_clienti',
+      );
+      if (Number(n) === 0) {
+        this.log.warn('Pulizia profili: integra_clienti vuota, nessuna cancellazione');
+        return 0;
+      }
+
+      const clienti = await this.prisma.customer.findMany({
+        where: { stato: 'BLOCCATO' },
+        select: { id: true, codiceCliente: true, createdAt: true },
+      });
+
+      let eliminati = 0;
+      for (const c of clienti) {
+        if (!c.codiceCliente) continue;
+        const presente = await this.prisma.$queryRawUnsafe<{ c: number }[]>(
+          'SELECT 1::int AS c FROM integra_clienti WHERE codice_cliente = $1 LIMIT 1',
+          c.codiceCliente,
+        );
+        if (presente.length > 0) continue;
+
+        const ultimo = await this.prisma.ordineCliente.findFirst({
+          where: { customerId: c.id },
+          orderBy: { dataOrdine: 'desc' },
+          select: { dataOrdine: true },
+        });
+        const riferimento = ultimo?.dataOrdine ?? c.createdAt;
+        if (riferimento > limite) continue;
+
+        const profilo = await this.prisma.customerProfile.findUnique({ where: { customerId: c.id }, select: { id: true } });
+        if (!profilo) continue;
+
+        await this.prisma.$transaction([
+          this.prisma.customerProfile.deleteMany({ where: { customerId: c.id } }),
+          this.prisma.customerInsight.deleteMany({ where: { customerId: c.id } }),
+        ]);
+        eliminati++;
+      }
+      if (eliminati) this.log.log(`Pulizia profili: rimossi ${eliminati} profili di clienti cessati`);
+      return eliminati;
+    } catch (e) {
+      this.log.warn(`Pulizia profili fallita: ${(e as Error).message}`);
+      return 0;
+    }
   }
 
   async generaTutti(): Promise<{ totali: number; ok: number; errori: number }> {
@@ -193,6 +260,7 @@ export class CustomerProfileService {
         cap: true,
         citta: true,
         provincia: true,
+        trackingOptOut: true,
       },
     });
     if (!customer) return null;
@@ -204,7 +272,7 @@ export class CustomerProfileService {
       }),
       this.prisma.contattoCliente.findMany({
         where: { customerId },
-        select: { tipo: true, contenuto: true },
+        select: { tipo: true },
       }),
       this.prisma.ordineCliente.findMany({
         where: { customerId },
@@ -263,14 +331,16 @@ export class CustomerProfileService {
     }
     const famiglieAcquistate = [...famiglieMap.values()].sort((a, b) => b.n - a.n);
 
-    const tracking = await this.prisma.$queryRawUnsafe<{ tipo: string; n: bigint }[]>(
-      `SELECT tipo, count(*)::bigint AS n
+    const tracking = customer.trackingOptOut
+      ? []
+      : await this.prisma.$queryRawUnsafe<{ tipo: string; n: bigint }[]>(
+          `SELECT tipo, count(*)::bigint AS n
          FROM customer_event
         WHERE customer_id = $1
         AND tipo IN ('articolo.view', 'carrello.add', 'carrello.remove', 'carrello.update', 'ricerca')
         GROUP BY tipo`,
-      customerId,
-    );
+          customerId,
+        );
     const trackingMap: Record<string, number> = {};
     for (const t of tracking) trackingMap[t.tipo] = Number(t.n);
 
@@ -296,7 +366,7 @@ export class CustomerProfileService {
       citta: customer.citta,
       provincia: customer.provincia,
       sediSpedizione,
-      contatti: contatti.map((c) => ({ tipo: c.tipo, contenuto: c.contenuto })),
+      referentiCensiti: contatti.length,
       totaleOrdini,
       ordiniUltimi12Mesi,
       famiglieAcquistate,
@@ -335,7 +405,7 @@ export class CustomerProfileService {
       `- Partita IVA: ${data.partitaIva ?? '—'}`,
       `- Sede legale: ${[data.indirizzo, data.cap, data.citta, data.provincia].filter(Boolean).join(', ') || '—'}`,
       `- Sedi di spedizione: ${data.sediSpedizione || '—'}`,
-      `- Contatti: ${data.contatti.map((c) => `${c.tipo}: ${c.contenuto}`).join('; ') || '—'}`,
+      `- Referenti censiti in anagrafica: ${data.referentiCensiti} (recapiti non trasmessi)`,
       '',
       'DATI DI VENDITA (dal portale):',
       `- Ordini totali: ${data.totaleOrdini}`,
@@ -347,6 +417,11 @@ export class CustomerProfileService {
       `- Tracking: ${data.tracking.visti} visti, ${data.tracking.salvati} salvati`,
       `- Progetti attivi: ${data.progetti.map((p) => `${p.nome} (${p.n} righe)`).join('; ') || '—'}`,
       '',
+      'REFERENTI (solo se trovi una pagina pubblica che li nomina):',
+      '- Per ogni persona indica nome, ruolo e "fonte": l\'URL esatto della pagina pubblica che la nomina.',
+      '- Nessuna fonte = non inserirla. Preferisci sito aziendale, registro imprese, pagine ufficiali.',
+      '- Niente email, telefoni o altri recapiti. Non dedurre nomi dalla P.IVA o da somiglianze.',
+      '',
       'OUTPUT RICHIESTO (solo JSON, nessun testo aggiuntivo):',
       JSON.stringify({
         settore: 'es. Vivaistica, Garden Center, Floricoltura...',
@@ -354,7 +429,7 @@ export class CustomerProfileService {
         fatturatoStimato: 'es. 500k-1M€',
         composizioneBusiness: 'cosa produce/vende il cliente, in quale fase della filiera',
         sedi: ['sede1', 'sede2'],
-        contattiChiave: [{ nome: '...', ruolo: '...' }],
+        referentiChiave: [{ nome: '...', ruolo: '...', fonte: 'https://...' }],
         interessiPrincipali: ['vasi da esterno', 'illuminazione giardino', '...'],
         interessiSecondari: ['...', '...'],
         nonCompreraMai: ['prodotti che non combaciano con il business'],

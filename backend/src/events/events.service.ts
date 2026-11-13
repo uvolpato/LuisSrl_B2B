@@ -11,6 +11,8 @@ import { reqCtx } from '../common/request-context';
 export class EventsService {
   private readonly log = new Logger(EventsService.name);
   private readonly retentionMonths = parseInt(process.env.EVENTS_RETENTION_MONTHS || '18', 10);
+  /** Il testo libero delle ricerche può contenere dati personali: dura meno del resto. */
+  private readonly ricercaRetentionMonths = parseInt(process.env.RICERCA_RETENTION_MONTHS || '6', 10);
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -26,7 +28,33 @@ export class EventsService {
     await this.write(customerId, tipo, opts, ip);
   }
 
+  /** Cache breve: l'opt-out si legge una volta al minuto per cliente, non a ogni evento. */
+  private optOutCache = new Map<number, { valore: boolean; ts: number }>();
+
+  private async haOptOut(customerId: number): Promise<boolean> {
+    const hit = this.optOutCache.get(customerId);
+    if (hit && Date.now() - hit.ts < 60_000) return hit.valore;
+    try {
+      const c = await this.prisma.customer.findUnique({
+        where: { id: customerId },
+        select: { trackingOptOut: true },
+      });
+      const valore = c?.trackingOptOut ?? false;
+      this.optOutCache.set(customerId, { valore, ts: Date.now() });
+      return valore;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Da chiamare quando il cliente cambia l'opposizione, per non aspettare la cache. */
+  invalidaOptOut(customerId: number) {
+    this.optOutCache.delete(customerId);
+  }
+
   private async write(customerId: number, tipo: string, opts: { entita?: string; entitaId?: string; dettagli?: unknown } | undefined, ip?: string) {
+    // Opposizione al tracciamento (art. 21): resta solo il log di accesso, che serve alla sicurezza.
+    if (tipo !== 'login' && (await this.haOptOut(customerId))) return;
     try {
       await this.prisma.customerEvent.create({
         data: {
@@ -50,6 +78,14 @@ export class EventsService {
     try {
       const { count } = await this.prisma.customerEvent.deleteMany({ where: { createdAt: { lt: cutoff } } });
       if (count) this.log.log(`Retention: eliminati ${count} eventi oltre ${this.retentionMonths} mesi`);
+
+      const cutoffRicerche = new Date();
+      cutoffRicerche.setMonth(cutoffRicerche.getMonth() - this.ricercaRetentionMonths);
+      const ricerche = await this.prisma.customerEvent.deleteMany({
+        where: { tipo: 'ricerca', createdAt: { lt: cutoffRicerche } },
+      });
+      if (ricerche.count)
+        this.log.log(`Retention: eliminati ${ricerche.count} testi di ricerca oltre ${this.ricercaRetentionMonths} mesi`);
     } catch (e) {
       this.log.warn(`Retention fallita: ${(e as Error).message}`);
     }

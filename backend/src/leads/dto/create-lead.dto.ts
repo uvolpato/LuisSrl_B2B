@@ -59,6 +59,10 @@ export class CreateLeadDto {
   @Equals(true)
   privacy!: boolean;
 
+  /** Dichiarazione di avere titolo a fornire i dati del referente (art. 14 GDPR). */
+  @Equals(true)
+  titolarita!: boolean;
+
   /** Honeypot anti-spam: campo nascosto, un umano lo lascia vuoto. */
   @IsOptional()
   @IsString()

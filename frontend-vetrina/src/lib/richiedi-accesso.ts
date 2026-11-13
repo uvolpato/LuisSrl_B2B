@@ -19,7 +19,11 @@ export async function inviaRichiestaAccesso(form: FormData): Promise<EsitoRichie
   const h = await headers();
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim().replace(/^::ffff:/, '') ?? '';
 
-  const body: Record<string, unknown> = { lingua: await getLocale(), privacy: form.get('privacy') === 'on' };
+  const body: Record<string, unknown> = {
+    lingua: await getLocale(),
+    privacy: form.get('privacy') === 'on',
+    titolarita: form.get('titolarita') === 'on',
+  };
   for (const k of CAMPI) {
     const v = form.get(k);
     if (typeof v === 'string' && v.trim()) body[k] = v.trim();

@@ -77,7 +77,8 @@ export class LeadsService {
         privacyVersione: PRIVACY_VERSIONE,
         ip,
         userAgent: userAgent?.slice(0, 300) ?? null,
-        eventi: { create: { tipo: 'creato' } },
+        // Prova della dichiarazione: chi inserisce i dati di un referente dichiara di averne titolo.
+        eventi: { create: [{ tipo: 'creato' }, { tipo: 'dichiarazione_titolarita' }] },
       },
     });
 

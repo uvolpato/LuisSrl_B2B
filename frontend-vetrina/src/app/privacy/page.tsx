@@ -41,6 +41,11 @@ function It() {
         consenso a questa informativa, la sua versione, l&apos;indirizzo IP e il tipo di browser, come prova della richiesta.
         I campi contrassegnati con * sono necessari: senza di essi non possiamo valutare la richiesta.
       </p>
+      <p>
+        Indicando il nome di un referente dichiari di avere titolo a fornirne i dati (per esempio perché è un
+        dipendente o un collaboratore della tua azienda). Se il referente ci contatta, possiamo reperire nome e
+        ruolo anche da fonti pubbliche (sito aziendale, registro imprese), indicando la fonte.
+      </p>
 
       <h2>3. Finalità e basi giuridiche</h2>
       <ul>
@@ -68,7 +73,7 @@ function It() {
       <h2>5. A chi comunichiamo i dati</h2>
       <ul>
         <li>Personale autorizzato di Luis S.r.l. (ufficio commerciale e amministrazione).</li>
-        <li>Fornitori che trattano dati per nostro conto, nominati responsabili del trattamento: servizio di posta elettronica <Da>Microsoft (Outlook / Microsoft 365)</Da>; Google (servizio Gemini, solo per i dati aziendali indicati al punto 4); il fornitore del gestionale aziendale, se la richiesta viene approvata (anagrafica cliente).</li>
+        <li>Fornitori che trattano dati per nostro conto, nominati responsabili del trattamento: servizio di posta elettronica <Da>Microsoft (Outlook / Microsoft 365)</Da>; Google (servizio Gemini, solo per i dati aziendali indicati al punto 4); il fornitore del gestionale aziendale, se la richiesta viene approvata (anagrafica cliente); il provider usato per la verifica della partita IVA.</li>
         <li>Commissione Europea, per la sola verifica della partita IVA sul sistema VIES.</li>
       </ul>
       <p>I dati non vengono diffusi né venduti.</p>
@@ -133,6 +138,11 @@ function En() {
         type, email, phone, town/province and an optional message. We also record the date and time of your consent to this notice,
         its version, your IP address and browser type as evidence of the request. Fields marked with * are required.
       </p>
+      <p>
+        By naming a contact person you confirm you are entitled to provide their data (for example because they
+        are an employee or colleague of your company). If that person contacts us, we may also obtain their name
+        and role from public sources (company website, business register), stating the source.
+      </p>
 
       <h2>3. Purposes and legal bases</h2>
       <ul>
@@ -158,7 +168,7 @@ function En() {
       <h2>5. Recipients</h2>
       <ul>
         <li>Authorised staff of Luis S.r.l.</li>
-        <li>Processors acting on our behalf: email service <Da>Microsoft (Outlook / Microsoft 365)</Da>; Google (Gemini, company data only); our ERP provider if the request is approved.</li>
+        <li>Processors acting on our behalf: email service <Da>Microsoft (Outlook / Microsoft 365)</Da>; Google (Gemini, company data only); our ERP provider if the request is approved; the company-data provider used for VAT checks.</li>
         <li>The European Commission, solely for the VIES VAT check.</li>
       </ul>
       <p>Data is not disclosed to the public or sold.</p>
