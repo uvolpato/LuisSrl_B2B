@@ -89,13 +89,26 @@ export class CataloghiService {
     let ricevuti = 0;
     for (const e of eventi) {
       const raw = e as { event?: unknown; email?: unknown };
-      const tipo = this.mappaTipoBrevo(typeof raw.event === 'string' ? raw.event : '');
+      const evento = typeof raw.event === 'string' ? raw.event : '';
       const email = typeof raw.email === 'string' ? raw.email.trim().toLowerCase() : '';
-      if (!tipo || !email) continue;
+      if (!email) continue;
+      // Revoca della comunicazione commerciale o indirizzo non più valido: esclusione permanente.
+      if (['unsubscribed', 'spam', 'hard_bounce', 'blocked', 'invalid_email'].includes(evento)) {
+        await this.escludiEmail(email);
+        ricevuti++;
+        continue;
+      }
+      const tipo = this.mappaTipoBrevo(evento);
+      if (!tipo) continue;
       await this.registraEventoBrevo(email, tipo);
       ricevuti++;
     }
     return { ricevuti };
+  }
+
+  /** Lista di esclusione locale: chi si è disiscritto non deve rientrare al prossimo import. */
+  private async escludiEmail(email: string) {
+    await this.prisma.downloadLink.updateMany({ where: { email }, data: { escluso: true } });
   }
 
   private mappaTipoBrevo(ev: string): string | null {

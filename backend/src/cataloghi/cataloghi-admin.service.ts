@@ -212,9 +212,17 @@ export class CataloghiAdminService {
 
   // ── Import contatti ─────────────────────────────────────────────
 
-  async importContatti(mailingId: number, file: Express.Multer.File) {
+  /** Fonti ammesse per un import da file: il consenso non si presume. */
+  private static readonly FONTI_FILE = ['consenso-email', 'richiesta-diretta'];
+
+  async importContatti(mailingId: number, file: Express.Multer.File, fonte?: string) {
     const m = await this.prisma.mailing.findUnique({ where: { id: mailingId }, select: { id: true } });
     if (!m) throw new NotFoundException('cataloghi.mailing_non_trovata');
+
+    // Senza una fonte dichiarata il destinatario non ha una base per la comunicazione commerciale.
+    if (!fonte || !CataloghiAdminService.FONTI_FILE.includes(fonte)) {
+      throw new BadRequestException('cataloghi.fonte_consenso_obbligatoria');
+    }
 
     const contatti = await this.leggiContatti(file);
     if (contatti.length === 0) throw new BadRequestException('Nessun contatto valido nel file: serve una colonna con l\'email');
@@ -229,6 +237,8 @@ export class CataloghiAdminService {
             email: c.email,
             nome: c.nome,
             token: randomBytes(32).toString('base64url'),
+            consensoMarketing: new Date(),
+            fonteConsenso: fonte,
           },
         }),
       ),
@@ -261,6 +271,9 @@ export class CataloghiAdminService {
             email: c.email,
             nome: c.ragioneSociale ?? c.nome,
             token: randomBytes(32).toString('base64url'),
+            // Cliente B2B esistente: soft opt-in (art. 130 c.4 Codice privacy), opt-out in ogni messaggio.
+            consensoMarketing: new Date(),
+            fonteConsenso: 'soft-opt-in-cliente',
           },
         }),
       ),
@@ -312,7 +325,8 @@ export class CataloghiAdminService {
     if (m.canale === 'link') return { inviati: 0, soloLink: true };
     if (!this.brevo.attivo) throw new BadRequestException('Brevo non configurato (BREVO_API_KEY mancante)');
     const links = await this.prisma.downloadLink.findMany({
-      where: { mailingId, revokedAt: null },
+      // Solo chi ha una base dichiarata e non è escluso: i link vecchi senza fonte non partono.
+      where: { mailingId, revokedAt: null, escluso: false, fonteConsenso: { not: null } },
       select: { email: true, nome: true, token: true },
     });
     if (links.length === 0) throw new BadRequestException('Nessun destinatario da inviare');

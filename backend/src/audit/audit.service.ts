@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { reqCtx } from '../common/request-context';
+import { hashLogIdentifier } from '../common/log-hash';
+import { urlSenzaSegreti } from '../common/log-redact';
+import type { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async log(params: {
@@ -50,7 +56,7 @@ export class AuditService {
         azione: params.success ? 'auth.login_success' : 'auth.login_failed',
         entita: 'auth',
         dettagli: {
-          email: params.email,
+          emailHash: params.email ? hashLogIdentifier(params.email) : null,
           motivo: params.motivo,
         },
         esito: params.success ? 'OK' : 'KO',
@@ -62,13 +68,72 @@ export class AuditService {
 
   /** Accesso HTTP (interceptor). Fire-and-forget: non deve mai bloccare la risposta. */
   async logAccess(method: string, url: string, status: number, duration: number, label: string) {
+    const pulito = urlSenzaSegreti(url);
     void this.log({
       azione: 'http.access',
       entita: 'http',
-      dettagli: { method, url, status, label },
+      dettagli: { method, url: pulito, status, label: urlSenzaSegreti(label) },
       esito: status < 400 ? 'OK' : 'KO',
       durationMs: duration,
     }).catch(() => {});
+  }
+
+  /**
+   * Retention dei log (art. 5.1.e). Soglie in env:
+   * AUDIT_RETENTION_ACCESS_DAYS (90), AUDIT_RETENTION_ERROR_DAYS (180), AUDIT_RETENTION_ADMIN_DAYS (730).
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async purgeOld() {
+    const giorni = (env: string, def: number) => {
+      const n = Number(process.env[env]);
+      return Number.isFinite(n) && n > 0 ? n : def;
+    };
+    try {
+      await this.eliminaVecchi(
+        { azione: 'http.access' },
+        giorni('AUDIT_RETENTION_ACCESS_DAYS', 90),
+        'accessi',
+      );
+      await this.eliminaVecchi(
+        { azione: 'http.error' },
+        giorni('AUDIT_RETENTION_ERROR_DAYS', 180),
+        'errori',
+      );
+      await this.eliminaVecchi(
+        { azione: { notIn: ['http.access', 'http.error'] } },
+        giorni('AUDIT_RETENTION_ADMIN_DAYS', 730),
+        'azioni',
+      );
+    } catch (e) {
+      this.logger.warn(`Retention audit fallita: ${(e as Error).message}`);
+    }
+  }
+
+  /** Cancella a blocchi: la prima esecuzione su uno storico grande non deve bloccare la tabella. */
+  private async eliminaVecchi(
+    where: Prisma.AuditLogWhereInput,
+    giorniFa: number,
+    etichetta: string,
+  ) {
+    const filtro: Prisma.AuditLogWhereInput = {
+      ...where,
+      createdAt: { lt: new Date(Date.now() - giorniFa * 86400000) },
+    };
+    let totale = 0;
+    for (;;) {
+      const righe = await this.prisma.auditLog.findMany({
+        where: filtro,
+        select: { id: true },
+        take: 5000,
+      });
+      if (!righe.length) break;
+      await this.prisma.auditLog.deleteMany({
+        where: { id: { in: righe.map((r) => r.id) } },
+      });
+      totale += righe.length;
+      if (righe.length < 5000) break;
+    }
+    if (totale) this.logger.log(`Retention audit (${etichetta}): eliminati ${totale}`);
   }
 
   /** Eccezione/errore HTTP (filtro globale). */

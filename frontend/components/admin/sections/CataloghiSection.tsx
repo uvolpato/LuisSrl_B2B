@@ -231,6 +231,8 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
 
   const [fonte, setFonte] = useState<"file" | "clienti">("file");
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
+  // Base della comunicazione commerciale: obbligatoria per importare da file.
+  const [fonteConsenso, setFonteConsenso] = useState<"" | "consenso-email" | "richiesta-diretta">("");
   const [clientiSel, setClientiSel] = useState<number[]>([]);
 
   const [nomeCampagna, setNomeCampagna] = useState("");
@@ -320,6 +322,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
   async function crea() {
     if (catalogoSel.length === 0) { setErrore("Seleziona almeno un catalogo"); return; }
     if (fonte === "file" && !xlsxFile) { setErrore("Carica il file dei contatti"); return; }
+    if (fonte === "file" && !fonteConsenso) { setErrore("Dichiara la fonte del consenso dei contatti"); return; }
     if (fonte === "clienti" && clientiSel.length === 0) { setErrore("Seleziona almeno un cliente"); return; }
     if (!nomeCampagna.trim()) { setErrore("Indica il nome della campagna"); return; }
     setCreando(true);
@@ -330,6 +333,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
         if (fonte === "file" && xlsxFile) {
           const fd = new FormData();
           fd.append("file", xlsxFile);
+          fd.append("fonte", fonteConsenso);
           await api.post(`/api/admin/cataloghi/mailing/${m.id}/import`, fd);
         } else if (fonte === "clienti") {
           await api.post(`/api/admin/cataloghi/mailing/${m.id}/import-clienti`, { customerIds: clientiSel });
@@ -346,7 +350,7 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
 
   const attivi = cataloghi.filter((c) => !c.archiviato);
   const archiviati = cataloghi.filter((c) => c.archiviato);
-  const puoAvanti = step === 0 ? catalogoSel.length > 0 : step === 1 ? (fonte === "file" ? !!xlsxFile : clientiSel.length > 0) : false;
+  const puoAvanti = step === 0 ? catalogoSel.length > 0 : step === 1 ? (fonte === "file" ? !!xlsxFile && !!fonteConsenso : clientiSel.length > 0) : false;
 
   return (
     <section className="screen">
@@ -445,6 +449,15 @@ function WizardScreen({ cataloghi, onCarica, onDone }: { cataloghi: Catalogo[]; 
                       <span className="dropzone-hint">.xlsx o .csv · colonne nome, email</span>
                       <input type="file" accept=".xlsx,.csv" style={{ display: "none" }} onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)} />
                     </label>
+                    <div className="field">
+                      <span>Base del consenso (obbligatoria)</span>
+                      <select className="input" value={fonteConsenso} onChange={(e) => setFonteConsenso(e.target.value as typeof fonteConsenso)}>
+                        <option value="">Scegli la fonte…</option>
+                        <option value="consenso-email">Consenso raccolto via email o modulo</option>
+                        <option value="richiesta-diretta">Richiesta diretta del contatto</option>
+                      </select>
+                      <p className="wiz-hint">Senza una fonte dichiarata i contatti non vengono importati.</p>
+                    </div>
                     <p className="wiz-hint excel-hint">
                       Due colonne: <strong>nome</strong> ed <strong>email</strong> (intestazione facoltativa). Le righe senza email vengono saltate.{" "}
                       Scarica un esempio:{" "}

@@ -118,8 +118,12 @@ export class CataloghiAdminController {
   @Post('mailing/:id/import')
   @RequirePermission('marketing.cataloghi.edit')
   @UseInterceptors(FileInterceptor('file'))
-  importContatti(@Param('id', ParseIntPipe) id: number, @UploadedFile() file: Express.Multer.File) {
-    return this.admin.importContatti(id, file);
+  importContatti(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('fonte') fonte?: string,
+  ) {
+    return this.admin.importContatti(id, file, fonte);
   }
 
   @Post('mailing/:id/import-clienti')
