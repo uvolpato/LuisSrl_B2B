@@ -8,7 +8,7 @@ import AdminTopBar from "../AdminTopBar";
 import DataTable, { type Column, type RowAction } from "../DataTable";
 import UserEditorModal, { UserEditorTarget } from "../../users/UserEditorModal";
 import ProvisionalPasswordModal from "../../users/ProvisionalPasswordModal";
-import { IconEdit, IconLock, IconMail, IconPlus, IconRefresh, IconReset, IconUnlock } from "../icons";
+import { IconDownload, IconEdit, IconLock, IconMail, IconPlus, IconRefresh, IconReset, IconTrash, IconUnlock } from "../icons";
 import { initials } from "../../../lib/helpers";
 import { PAGE_SIZE } from "../types";
 import { useConfirm } from "../../common/ConfirmProvider";
@@ -158,10 +158,34 @@ export default function ClientiSection() {
   }
 
   async function onResetPassword(u: CustomerProfile) {
+    if (u.datiPersonaliRimossiIl) {
+      setError("Dati personali rimossi: la password non è reimpostabile.");
+      return;
+    }
     if (!(await confirm({ message: t("confirmReset"), tone: "danger" }))) return;
     void run(async () => {
       const res = await api.post<ProvisionalPasswordResponse>(`/api/customers/${u.id}/reset-password`);
       setProvisional({ email: u.email, password: res.provisionalPassword });
+    });
+  }
+
+  /** Pseudonimizzazione: toglie i dati del referente, conserva ordini e documenti. */
+  async function onRimuoviDatiPersonali(u: CustomerProfile) {
+    if (!(await confirm({
+      title: "Rimuovere i dati personali?",
+      tone: "danger",
+      confirmLabel: "Rimuovi",
+      message: (
+        <p style={{ fontSize: 13 }}>
+          Rimuovere i dati personali del referente di <strong>{u.ragioneSociale ?? u.nome}</strong>?
+          Restano ordini, fatture e dati aziendali. L&apos;account viene bloccato e l&apos;email resa
+          inutilizzabile. Azione irreversibile.
+        </p>
+      ),
+    }))) return;
+    void run(async () => {
+      await api.post(`/api/customers/${u.id}/rimuovi-dati-personali`);
+      setInviteResult(`Dati personali rimossi per ${u.ragioneSociale ?? u.nome}`);
     });
   }
 
@@ -178,6 +202,10 @@ export default function ClientiSection() {
   }
 
   async function onInvita(u: CustomerProfile) {
+    if (u.datiPersonaliRimossiIl) {
+      setError("Dati personali rimossi: invito non disponibile.");
+      return;
+    }
     const reinvio = !!u.invitatoAt;
     if (!(await confirm({
       title: reinvio ? "Reinvia invito" : "Invia invito",
@@ -292,6 +320,8 @@ export default function ClientiSection() {
     { icon: () => IconEdit, tooltip: () => t("edit"), onClick: (u) => setEditor({ mode: "edit", user: u }) },
     { icon: () => IconMail, tooltip: (u) => (u.invitatoAt ? "Reinvia invito B2B" : "Invia invito B2B"), onClick: onInvita },
     { icon: () => IconReset, tooltip: () => t("resetPassword"), onClick: onResetPassword },
+    { icon: () => IconTrash, tooltip: () => "Rimuovi dati personali (GDPR)", variant: "danger", hidden: (u) => !!u.datiPersonaliRimossiIl, onClick: onRimuoviDatiPersonali },
+    { icon: () => IconDownload, tooltip: () => "Esporta dati del cliente (GDPR)", onClick: (u) => window.location.assign(`/api/customers/${u.id}/export`) },
     { icon: () => IconRefresh, tooltip: () => "Rigenera box dashboard", onClick: onRigeneraBox },
     {
       icon: (u) => (u.stato === "ATTIVO" ? IconLock : IconUnlock),

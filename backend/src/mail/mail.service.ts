@@ -112,8 +112,8 @@ export class MailService {
     });
   }
 
-  /** Invito al portale B2B: presentazione + credenziali temporanee. Lancia in caso di errore SMTP. */
-  async sendInvito(to: string, ragioneSociale: string, provisionalPassword: string): Promise<void> {
+  /** Invito al portale B2B: link monouso per scegliere la password. Lancia in caso di errore SMTP. */
+  async sendInvito(to: string, ragioneSociale: string, linkAttivazione: string): Promise<void> {
     const recipient = this.resolveRecipient(to);
 
     let html: string;
@@ -122,7 +122,7 @@ export class MailService {
       html = tplInvito
         .replace(/\{\{RAGIONE_SOCIALE\}\}/g, ragioneSociale)
         .replace(/\{\{EMAIL\}\}/g, to)
-        .replace(/\{\{PASSWORD\}\}/g, provisionalPassword)
+        .replace(/\{\{LINK\}\}/g, linkAttivazione)
         .replace(/\{\{DOMAIN\}\}/g, this.domain);
     } else {
       // fallback minimale con i colori del portale
@@ -131,11 +131,10 @@ export class MailService {
   <h1 style="font-family:Georgia,serif;color:#221811;font-size:24px">Benvenuto nel Portale B2B Luis</h1>
   <p style="color:#221811">Gentile <strong>${ragioneSociale}</strong>, Luis S.r.l. ti invita al suo portale riservato ai rivenditori: catalogo con i tuoi prezzi (IVA esclusa), ordini online 24/7, novità e raccolte stagionali.</p>
   <p style="background:#fff;border:1px solid #b2511e;border-radius:8px;padding:14px;color:#221811">
-    <strong>Email:</strong> <a href="${this.domain}/login" style="color:#221811;text-decoration:underline;">${to}</a><br>
-    <strong>Password temporanea:</strong> <code style="background:#f7f5f1;padding:2px 6px;border-radius:4px">${provisionalPassword}</code><br>
-    <span style="font-size:12px;color:#706760">Al primo accesso ti verrà chiesto di cambiarla.</span>
+    <strong>Account:</strong> ${to}<br>
+    <span style="font-size:12px;color:#706760">Scegli la password dal link: vale una sola volta e scade tra 7 giorni.</span>
   </p>
-  <p style="text-align:center;margin:20px 0"><a href="${this.domain}/login" style="background:#b2511e;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold">Accedi al portale</a></p>
+  <p style="text-align:center;margin:20px 0"><a href="${linkAttivazione}" style="background:#b2511e;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold">Scegli la password</a></p>
   <p style="font-size:11px;color:#706760">Luis S.r.l. · Via F. Bellafino 28/30, Bergamo · Accesso su invito. Messaggio automatico, non rispondere.</p>
 </div>`;
     }
@@ -146,6 +145,26 @@ export class MailService {
       subject: 'Il tuo invito al Portale B2B Luis S.r.l.',
       html,
       attachments: html.includes('cid:logo') ? this.allegatoLogo() : [],
+    });
+  }
+
+  /** Codice di verifica per il secondo fattore via email. Lancia in caso di errore SMTP. */
+  async sendCodiceMfa(to: string, codice: string, nome?: string): Promise<void> {
+    const recipient = this.resolveRecipient(to);
+    const html = `
+<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f7f5f1;border:1px solid #dcd6d1;border-radius:12px">
+  <h1 style="font-family:Georgia,serif;color:#221811;font-size:22px;margin:0 0 8px">Codice di accesso</h1>
+  <p style="color:#221811;font-size:14px;line-height:1.6;margin:0 0 14px">
+    ${nome ? `Ciao ${nome}, ` : ''}stai accedendo al Portale B2B Luis. Inserisci questo codice per completare l'accesso:
+  </p>
+  <p style="font-family:'Courier New',monospace;font-size:32px;letter-spacing:8px;font-weight:bold;color:#221811;background:#fff;border:1px solid #e7d3c7;border-radius:8px;padding:14px;text-align:center;margin:0 0 14px">${codice}</p>
+  <p style="color:#706760;font-size:12.5px;line-height:1.6;margin:0">Il codice vale 10 minuti e una sola volta. Se non hai richiesto tu l'accesso, ignora questa email e cambia la password.</p>
+</div>`;
+    await this.transporter.sendMail({
+      from: this.from,
+      to: recipient,
+      subject: `Codice di accesso: ${codice} — Portale B2B Luis`,
+      html,
     });
   }
 

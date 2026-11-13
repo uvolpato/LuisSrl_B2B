@@ -28,6 +28,8 @@ export interface CustomerProfile {
   sitoWeb: string | null;
   ruolo: string;
   stato: "ATTIVO" | "BLOCCATO";
+  /** Data di rimozione dei dati personali (pseudonimizzazione) */
+  datiPersonaliRimossiIl?: string | null;
   preferredLanguage: string;
   mustChangePassword: boolean;
   avatarColor: string;
@@ -63,7 +65,7 @@ export interface CustomerIntelligenceProfile {
   fatturatoStimato: string | null;
   composizioneBusiness: string | null;
   sedi: string[];
-  contattiChiave: Array<{ nome: string; ruolo: string }>;
+  contattiChiave: Array<{ nome: string; ruolo: string; fonte?: string; stato?: string }>;
   interessiPrincipali: string[];
   interessiSecondari: string[];
   nonCompreraMai: string[];

@@ -46,6 +46,11 @@ export default function LoginForm({
   const [forgot, setForgot] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaMetodo, setMfaMetodo] = useState<"email" | "totp" | null>(null);
+  const [ricordaDevice, setRicordaDevice] = useState(false);
+  const [reinviato, setReinviato] = useState(false);
 
   // Dev only: precompila le credenziali admin dopo il mount (client-only, safe per hydration)
   useEffect(() => {
@@ -60,15 +65,53 @@ export default function LoginForm({
     setBusy(true);
     setError(null);
     try {
-      const res = await api.post<MeResponse>("/api/auth/login", {
+      const res = await api.post<MeResponse & { mfaRichiesta?: boolean; metodo?: "email" | "totp"; invioFallito?: boolean }>("/api/auth/login", {
         email,
         password,
         remember,
+      });
+      if (res.mfaRichiesta) {
+        setMfaMetodo(res.metodo ?? "totp");
+        setMfaStep(true);
+        if (res.invioFallito) setError("Invio del codice non riuscito. Usa “Reinvia il codice”.");
+        setBusy(false);
+        return;
+      }
+      setCsrfToken(res.csrfToken);
+      onLoginSuccess?.(res, password);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : "errors.generic");
+      setBusy(false);
+    }
+  }
+
+  async function onMfaSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<MeResponse>("/api/auth/mfa/verifica", {
+        code: mfaCode.trim(),
+        ricordaDispositivo: ricordaDevice,
       });
       setCsrfToken(res.csrfToken);
       onLoginSuccess?.(res, password);
     } catch (err) {
       setError(err instanceof ApiError ? err.code : "errors.generic");
+      setBusy(false);
+    }
+  }
+
+  async function onRinvia() {
+    setBusy(true);
+    setError(null);
+    setReinviato(false);
+    try {
+      await api.post("/api/auth/mfa/rinvia", {});
+      setReinviato(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.code : "errors.generic");
+    } finally {
       setBusy(false);
     }
   }
@@ -87,6 +130,65 @@ export default function LoginForm({
 
       {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
 
+      {mfaStep ? (
+        <form onSubmit={onMfaSubmit}>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
+            {mfaMetodo === "email"
+              ? `Abbiamo inviato un codice di 6 cifre a ${email}. Vale 10 minuti.`
+              : "Inserisci il codice a 6 cifre dell'app di autenticazione."}
+          </p>
+          <label htmlFor="mfa-code">{mfaMetodo === "email" ? "Codice ricevuto via email" : "Codice dell'app"}</label>
+          <input
+            id="mfa-code"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            autoFocus
+            required
+            maxLength={16}
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value)}
+          />
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={ricordaDevice}
+              onChange={(e) => setRicordaDevice(e.target.checked)}
+              style={{ width: "auto", marginTop: 3 }}
+            />
+            <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+              Ricorda questo dispositivo per 90 giorni: al prossimo accesso da qui basterà la password.
+            </span>
+          </label>
+          <button className="primary" style={{ width: "100%", marginTop: 14 }} disabled={busy}>
+            {busy ? t("submitting") : "Verifica"}
+          </button>
+          {mfaMetodo === "email" && (
+            <>
+              <button
+                type="button"
+                onClick={() => void onRinvia()}
+                disabled={busy}
+                style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 13, textDecoration: "underline" }}
+              >
+                Reinvia il codice
+              </button>
+              {reinviato && (
+                <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "4px 0 0", textAlign: "center" }}>
+                  Codice reinviato.
+                </p>
+              )}
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => { setMfaStep(false); setMfaCode(""); setError(null); }}
+            style={{ width: "100%", marginTop: 8, background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 13, textDecoration: "underline" }}
+          >
+            Torna al login
+          </button>
+        </form>
+      ) : (
       <form onSubmit={onSubmit}>
         <label htmlFor="login-email">{t("email")}</label>
         <input
@@ -141,6 +243,7 @@ export default function LoginForm({
           {busy ? t("submitting") : t("submit")}
         </button>
       </form>
+      )}
 
       <div style={{ marginTop: 16, fontSize: 13, color: "var(--muted)", textAlign: "center" }}>
         <button

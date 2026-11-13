@@ -16,11 +16,18 @@ export class InsightService {
   /** Digest compatto degli eventi del cliente + metriche. */
   private async digest(customerId: number, days = 120) {
     const from = new Date(Date.now() - days * 24 * 3600 * 1000);
-    const events = await this.prisma.customerEvent.findMany({
-      where: { customerId, createdAt: { gte: from } },
-      orderBy: { createdAt: 'desc' },
-      take: 500,
+    const cliente = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { trackingOptOut: true },
     });
+    // Chi si oppone al tracciamento non viene analizzato sul comportamento: restano solo i dati di vendita.
+    const events = cliente?.trackingOptOut
+      ? []
+      : await this.prisma.customerEvent.findMany({
+          where: { customerId, createdAt: { gte: from } },
+          orderBy: { createdAt: 'desc' },
+          take: 500,
+        });
     const d = (e: (typeof events)[number]) => (e.dettagli ?? {}) as Record<string, unknown>;
     const ricerche = events.filter((e) => e.tipo === 'ricerca').map((e) => String(d(e).q ?? d(e).tipo ?? '')).filter(Boolean);
     const viste = new Map<string, number>();

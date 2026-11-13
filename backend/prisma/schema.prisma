@@ -33,6 +33,17 @@ model User {
   mustChangePassword Boolean   @default(false) @map("must_change_password")
   avatarColor       String     @default("oklch(55% 0.15 250)") @map("avatar_color")
   sessionToken      String?    @map("session_token")
+  /// MFA TOTP: segreto cifrato (AES-GCM), stato e codici di recupero (hash, uso singolo)
+  mfaSecret         String?    @map("mfa_secret")
+  mfaAttivo         Boolean    @default(false) @map("mfa_attivo")
+  mfaBackupCodes    String?    @map("mfa_backup_codes")
+  /// Metodo del secondo fattore: "email" (codice via mail) o "totp" (app)
+  mfaMetodo         String?    @map("mfa_metodo")
+  /// Codice via email: hash, scadenza e tentativi (max 5)
+  otpCodiceHash     String?    @map("otp_codice_hash")
+  otpScadenza       DateTime?  @map("otp_scadenza")
+  otpTentativi      Int        @default(0) @map("otp_tentativi")
+  mfaDevices        MfaDevice[]
   bio               String?
   gender            String?
   birthDate         DateTime?  @map("birth_date") @db.Date
@@ -88,6 +99,17 @@ model Customer {
   pec                String?
   /// Conferma dati di fatturazione (obbligatoria al primo ordine per i clienti nati da lead)
   datiFatturazioneConfermatiIl DateTime? @map("dati_fatturazione_confermati_il")
+  /// Informativa privacy del portale: versione accettata e data (prova, art. 12 GDPR)
+  privacyVersione    String?   @map("privacy_versione")
+  privacyAccettataIl DateTime? @map("privacy_accettata_il")
+  /// Opposizione al tracciamento comportamentale (art. 21 GDPR)
+  trackingOptOut     Boolean   @default(false) @map("tracking_opt_out")
+  /// Invito con link monouso: in DB solo l'hash del token, con scadenza
+  inviteTokenHash    String?   @unique @map("invite_token_hash")
+  inviteTokenScadenza DateTime? @map("invite_token_scadenza")
+  /// Data di rimozione dei dati personali del referente. Il record resta ricongiungibile
+  /// al gestionale: e' pseudonimizzazione, non anonimizzazione.
+  datiPersonaliRimossiIl DateTime? @map("dati_personali_rimossi_il")
   carrello           Carrello?
   indirizzi          IndirizzoCliente[]
   contatti           ContattoCliente[]
@@ -784,6 +806,11 @@ model DownloadLink {
   createdAt  DateTime        @default(now()) @map("created_at")
   expiresAt  DateTime?       @map("expires_at")
   revokedAt  DateTime?       @map("revoked_at")
+  /// Base della comunicazione commerciale: data consenso o soft opt-in, con la fonte dichiarata
+  consensoMarketing DateTime? @map("consenso_marketing")
+  fonteConsenso     String?   @map("fonte_consenso")
+  /// Escluso dagli invii (revoca, richiesta dell'interessato, lista di esclusione)
+  escluso    Boolean         @default(false)
   mailing    Mailing         @relation(fields: [mailingId], references: [id], onDelete: Cascade)
   customer   Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   eventi     DownloadEvent[]
@@ -807,4 +834,20 @@ model DownloadEvent {
 
   @@index([linkId, at])
   @@map("download_events")
+}
+
+/// Dispositivo fidato per la MFA: il token vive nel cookie, qui solo l'hash.
+model MfaDevice {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastUsedAt DateTime  @default(now()) @map("last_used_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  @@index([userId])
+  @@map("mfa_devices")
 }

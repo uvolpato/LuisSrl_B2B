@@ -102,7 +102,11 @@
       "user_blocked": "Account blocked. Contact Luis S.r.l.",
       "not_authenticated": "Session expired, please sign in again.",
       "forbidden": "Operation not allowed.",
-      "wrong_password": "The current password is incorrect."
+      "wrong_password": "The current password is incorrect.",
+      "invito_non_valido": "Invite link is invalid or expired.",
+      "mfa_sessione_scaduta": "Verification expired: please sign in again.",
+      "mfa_codice_non_valido": "Invalid code.",
+      "mfa_non_iniziata": "MFA setup not started."
     },
     "users": {
       "email_exists": "An account with this email already exists.",
@@ -110,7 +114,11 @@
       "not_found": "Customer not found.",
       "cannot_block_admin": "Administrators cannot be blocked.",
       "ordine_not_found": "Order not found.",
-      "stato_non_consentito": "Invalid order status."
+      "stato_non_consentito": "Invalid order status.",
+      "ha_ordini_conservati": "This customer has orders or documents: you can only remove personal data (pseudonymisation), not delete the record."
+    },
+    "cataloghi": {
+      "fonte_consenso_obbligatoria": "Declare the consent source before importing contacts."
     },
     "security": {
       "csrf": "Invalid session, reload the page."

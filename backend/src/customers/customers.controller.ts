@@ -12,8 +12,10 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -168,5 +170,31 @@ export class CustomersController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.customers.deleteCustomer(req.user.id, id, req.ip);
+  }
+
+  /** Pseudonimizzazione su richiesta dell'interessato: conserva ordini e documenti. */
+  @Post(':id/rimuovi-dati-personali')
+  @HttpCode(200)
+  @RequirePermission('admin.users.edit')
+  rimuoviDatiPersonali(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.customers.rimuoviDatiPersonali(req.user.id, id, req.ip);
+  }
+
+  /** Esportazione dei dati del cliente (portabilità, artt. 15 e 20 GDPR). */
+  @Get(':id/export')
+  @RequirePermission('admin.users.view')
+  async export(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const dati = await this.customers.esportaDatiPersonali(req.user.id, id, req.ip);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="cliente-${id}.json"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return dati;
   }
 }

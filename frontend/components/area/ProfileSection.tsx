@@ -7,6 +7,7 @@ import { api, ApiError } from "../../lib/api";
 import ComboboxField from "../admin/ComboboxField";
 import IndirizzoEditorModal from "./IndirizzoEditorModal";
 import Modal from "../common/Modal";
+import PrivacyControls from "./PrivacyControls";
 
 function BuildingIcon() {
   return (
@@ -369,6 +370,8 @@ export default function ProfileSection({
             {c.codicePagamento && <span className="tag">Attivo</span>}
           </div>
         </div>
+
+        <PrivacyControls />
 
         {/* Sicurezza + password */}
         <div className="profile-card">

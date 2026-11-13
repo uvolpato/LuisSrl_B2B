@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import type { Prisma, Customer } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -6,6 +7,7 @@ import {
   generateProvisionalPassword,
   hashPassword,
 } from '../common/password';
+import { generaTokenInvito, hashToken } from '../common/session-token';
 import { toCustomerProfile } from '../common/auth-types';
 import type { CustomerProfile } from '../common/auth-types';
 import { MailService } from '../mail/mail.service';
@@ -260,14 +262,19 @@ export class CustomersService {
     if (!existing) throw new NotFoundException('users.not_found');
     if (!existing.email || !existing.email.includes('@')) throw new ConflictException('customers.email_non_valida');
 
-    const provisionalPassword = generateProvisionalPassword();
-    // Prima l'email: se l'invio fallisce non tocchiamo la password del cliente
-    await this.mail.sendInvito(existing.email, existing.ragioneSociale || existing.nome, provisionalPassword);
+    const token = generaTokenInvito();
+    const scadenza = new Date(Date.now() + 7 * 86400000);
+    const dominio = process.env.APP_DOMAIN ?? 'http://localhost:3000';
+    const link = `${dominio.replace(/\/+$/, '')}/attiva?token=${encodeURIComponent(token)}`;
+
+    // Prima l'email: se l'invio fallisce non cambiamo nulla sul cliente.
+    await this.mail.sendInvito(existing.email, existing.ragioneSociale || existing.nome, link);
 
     const updated = await this.prisma.customer.update({
       where: { id: customerId },
       data: {
-        passwordHash: await hashPassword(provisionalPassword),
+        inviteTokenHash: hashToken(token),
+        inviteTokenScadenza: scadenza,
         mustChangePassword: true,
         invitatoAt: new Date(),
         stato: 'ATTIVO',
@@ -368,17 +375,13 @@ export class CustomersService {
     const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
     if (!existing) throw new NotFoundException('users.not_found');
 
-    // Non eliminabile se ci sono ordini nati sul B2B non ancora confermati da Integra
-    // (numero_integra null: BOZZA, ESPORTATO, errori di export): esistono solo localmente
-    // e andrebbero persi. Il frontend propone il blocco al posto dell'eliminazione.
-    const inCoda = await this.prisma.ordineCliente.count({
-      where: { customerId, numeroOrdine: { startsWith: 'B2B-' }, numeroIntegra: null },
-    });
-    if (inCoda > 0) throw new ConflictException('users.ha_ordini_non_importati');
+    // Mai cancellare un cliente con ordini: sono documenti contabili (art. 17.3.b GDPR).
+    // In quel caso si usa la pseudonimizzazione (rimuoviDatiPersonali).
+    const ordini = await this.prisma.ordineCliente.count({ where: { customerId } });
+    if (ordini > 0) throw new ConflictException('users.ha_ordini_conservati');
 
-    // Nessun ordine locale in attesa di conferma: eliminazione reale a cascata. Le tabelle
-    // con FK (progetti, indirizzi, contatti, carrello) cascano via onDelete: Cascade;
-    // le altre vanno ripulite a mano.
+    // Nessun ordine: eliminazione reale a cascata. Le tabelle con FK (progetti, indirizzi,
+    // contatti, carrello) cascano via onDelete: Cascade; le altre vanno ripulite a mano.
     await this.prisma.$transaction(async (tx) => {
       await tx.customerProfile.deleteMany({ where: { customerId } });
       await tx.customerInsight.deleteMany({ where: { customerId } });
@@ -388,5 +391,155 @@ export class CustomersService {
       await tx.customer.delete({ where: { id: customerId } });
     });
     await this.audit.log({ actorId, azione: 'customer.delete', entita: 'customers', entitaId: String(customerId), ip });
+  }
+
+  /**
+   * Pseudonimizzazione del referente (art. 17 GDPR): rimuove i dati personali e conserva
+   * ordini, fatture e dati aziendali. Il record resta ricongiungibile al gestionale tramite
+   * codiceCliente, quindi NON e' anonimizzazione: la base giuridica della conservazione resta
+   * l'obbligo contabile, non il consenso.
+   */
+  async rimuoviDatiPersonali(
+    actorId: number,
+    customerId: number,
+    ip: string | undefined,
+  ) {
+    const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!existing) throw new NotFoundException('users.not_found');
+    if (existing.datiPersonaliRimossiIl) {
+      return { giaRimosso: true, datiPersonaliRimossiIl: existing.datiPersonaliRimossiIl };
+    }
+
+    const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
+    const quando = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.customer.update({
+        where: { id: customerId },
+        data: {
+          nome: 'Referente rimosso',
+          email: `anon-${customerId}@invalid`,
+          telefono: null,
+          telefonoFisso: null,
+          pec: null,
+          passwordHash,
+          sessionToken: null,
+          stato: 'BLOCCATO',
+          trackingOptOut: true,
+          datiPersonaliRimossiIl: quando,
+        },
+      });
+      // Dati del referente, non dei documenti.
+      await tx.contattoCliente.deleteMany({ where: { customerId } });
+      await tx.customerEvent.deleteMany({ where: { customerId } });
+      await tx.customerProfile.deleteMany({ where: { customerId } });
+      await tx.customerInsight.deleteMany({ where: { customerId } });
+      await tx.dashboardBox.deleteMany({ where: { customerId } });
+      await tx.campaignUsage.deleteMany({ where: { customerId } });
+    });
+
+    await this.audit.log({
+      actorId,
+      azione: 'customer.personal_data_removed',
+      entita: 'customers',
+      entitaId: String(customerId),
+      ip,
+    });
+    return { giaRimosso: false, datiPersonaliRimossiIl: quando };
+  }
+
+  /**
+   * Esportazione dei dati del cliente per accesso e portabilità (artt. 15 e 20 GDPR).
+   * Non include credenziali né token.
+   */
+  async esportaDatiPersonali(actorId: number, customerId: number, ip: string | undefined) {
+    const cliente = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: {
+        id: true,
+        codiceCliente: true,
+        email: true,
+        nome: true,
+        ragioneSociale: true,
+        partitaIva: true,
+        codiceFiscale: true,
+        telefono: true,
+        telefonoFisso: true,
+        sitoWeb: true,
+        indirizzo: true,
+        cap: true,
+        citta: true,
+        provincia: true,
+        pec: true,
+        codiceSdi: true,
+        codiceListino: true,
+        codicePagamento: true,
+        fido: true,
+        stato: true,
+        preferredLanguage: true,
+        createdAt: true,
+        privacyVersione: true,
+        privacyAccettataIl: true,
+        trackingOptOut: true,
+        datiPersonaliRimossiIl: true,
+        invitatoAt: true,
+      },
+    });
+    if (!cliente) throw new NotFoundException('users.not_found');
+
+    const [indirizzi, contatti, ordini, eventi, profilo, insight, progetti, linkCataloghi] =
+      await Promise.all([
+        this.prisma.indirizzoCliente.findMany({ where: { customerId } }),
+        this.prisma.contattoCliente.findMany({ where: { customerId } }),
+        this.prisma.ordineCliente.findMany({
+          where: { customerId },
+          orderBy: { dataOrdine: 'desc' },
+          include: { righe: true },
+        }),
+        this.prisma.customerEvent.findMany({
+          where: { customerId },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.customerProfile.findUnique({ where: { customerId } }),
+        this.prisma.customerInsight.findMany({ where: { customerId } }),
+        this.prisma.progetto.findMany({
+          where: { clienteId: customerId },
+          select: { id: true, nome: true, createdAt: true, items: true },
+        }),
+        this.prisma.downloadLink.findMany({
+          where: { customerId },
+          select: {
+            email: true,
+            nome: true,
+            createdAt: true,
+            consensoMarketing: true,
+            fonteConsenso: true,
+            escluso: true,
+          },
+        }),
+      ]);
+
+    await this.audit.log({
+      actorId,
+      azione: 'customer.export',
+      entita: 'customers',
+      entitaId: String(customerId),
+      ip,
+    });
+
+    return {
+      esportatoIl: new Date().toISOString(),
+      titolare: 'Luis S.r.l. — Via F. Bellafino 28/30, 24126 Bergamo (BG)',
+      nota: 'Esportazione dei dati del cliente e del referente. Non contiene password né token di sessione.',
+      cliente,
+      indirizzi,
+      contatti,
+      ordini,
+      eventiUtilizzo: eventi,
+      profiloAI: profilo,
+      sintesiAI: insight,
+      progetti,
+      linkCataloghi,
+    };
   }
 }

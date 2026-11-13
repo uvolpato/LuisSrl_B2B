@@ -949,19 +949,28 @@ function ProfiloTab({
           <div className="block-h">
             <span className="block-t">Contatti chiave</span>
             <span style={{ flex: 1 }} />
-            <Hint text="Figure di riferimento del cliente con cui parlano i commerciali." />
+            <Hint text="Referenti proposti dalla ricerca web su fonti pubbliche. Da verificare prima dell'uso: la fonte è accanto a ogni nome." />
           </div>
           <div className="data-table">
             <div className="data-table-scroll">
               <table>
                 <thead>
-                  <tr><th>Nome</th><th>Ruolo</th></tr>
+                  <tr><th>Nome</th><th>Ruolo</th><th>Fonte</th></tr>
                 </thead>
                 <tbody>
                   {profilo.contattiChiave.map((c, i) => (
                     <tr key={i}>
                       <td>{c.nome}</td>
                       <td>{c.ruolo}</td>
+                      <td>
+                        {c.fonte ? (
+                          <a href={c.fonte} target="_blank" rel="noopener noreferrer">
+                            apri
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

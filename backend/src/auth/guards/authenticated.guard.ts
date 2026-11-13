@@ -7,6 +7,7 @@ import {
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../../common/auth-types';
+import { hashSessionToken } from '../../common/session-token';
 
 export interface AuthenticatedRequest extends Request {
   user: AuthUser;
@@ -25,17 +26,19 @@ export class AuthenticatedGuard implements CanActivate {
       throw new UnauthorizedException('auth.not_authenticated');
     }
 
-    // Verifica session token: se non corrisponde, un altro login ha invalidato questa sessione
+    // Verifica session token: se non corrisponde, un altro login ha invalidato questa sessione.
+    // Fallback sul valore in chiaro per le sessioni aperte prima del passaggio all'hash.
     if (sessionToken) {
+      const atteso = hashSessionToken(sessionToken);
       if (userType === 'admin') {
         const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { sessionToken: true } });
-        if (user?.sessionToken && user.sessionToken !== sessionToken) {
+        if (user?.sessionToken && user.sessionToken !== atteso && user.sessionToken !== sessionToken) {
           await new Promise<void>((resolve) => req.session.destroy(() => resolve()));
           throw new UnauthorizedException('Connesso da un altro dispositivo');
         }
       } else {
         const customer = await this.prisma.customer.findUnique({ where: { id: userId }, select: { sessionToken: true } });
-        if (customer?.sessionToken && customer.sessionToken !== sessionToken) {
+        if (customer?.sessionToken && customer.sessionToken !== atteso && customer.sessionToken !== sessionToken) {
           await new Promise<void>((resolve) => req.session.destroy(() => resolve()));
           throw new UnauthorizedException('Connesso da un altro dispositivo');
         }

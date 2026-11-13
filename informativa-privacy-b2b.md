@@ -31,6 +31,7 @@ credenziali. I dati delle aziende in quanto tali non sono dati personali; lo son
 | Ordini e carrello | articoli, quantità, prezzi, note, indirizzi di consegna | cliente |
 | **Utilizzo del portale** | accessi, pagine visitate e tempo di permanenza, profondità di scorrimento, articoli aperti, ricerche effettuate, operazioni sul carrello, ordini, indirizzo IP, tipo di browser | raccolti automaticamente durante l'uso, **solo da utenti autenticati** |
 | Ricerche con AI | testo delle ricerche "in linguaggio naturale" e **foto caricate** per la ricerca per immagine | cliente |
+| Referenti dell'azienda | nome e ruolo delle persone di riferimento, forniti dall'azienda cliente o reperiti da fonti pubbliche (sito aziendale, registro imprese), con la fonte | azienda cliente; fonti pubbliche |
 | Sicurezza | log tecnici (IP, data/ora, esito delle richieste), registro delle operazioni | automatici |
 
 ### 4. Finalità e basi giuridiche
@@ -51,9 +52,9 @@ credenziali. I dati delle aziende in quanto tali non sono dati personali; lo son
 - **Non** tracciamo la navigazione fuori dal portale, **non** usiamo cookie di terze parti, strumenti pubblicitari o
   servizi di analisi esterni: i dati restano sui nostri sistemi.
 - Il dettaglio per cliente è visibile solo al personale autorizzato (amministrazione e commerciale).
-- **Diritto di opposizione:** puoi opporti in qualsiasi momento a questo trattamento scrivendo al contatto privacy;
-  cesseremo la registrazione degli eventi d'uso per il tuo account (resta quanto necessario a ordini e sicurezza).
-  **[DA COMPLETARE: oggi l'opposizione va gestita a mano; valutare un'opzione nel profilo utente.]**
+- **Diritto di opposizione:** puoi opporti in qualsiasi momento a questo trattamento dalla sezione
+  **Profilo → Privacy** del portale: la registrazione si ferma subito. Resta quanto necessario a ordini,
+  fatture e sicurezza.
 
 ### 6. Profilazione con intelligenza artificiale
 
@@ -65,6 +66,11 @@ ricerca web sulla ragione sociale e partita IVA dell'azienda.
 - Il profilo serve a **proporre** prodotti e a supportare il commerciale; **non** produce decisioni con effetti
   giuridici o analoghi (prezzi, fido e condizioni non sono decisi dall'AI): non rientra nell'art. 22 GDPR.
 - Puoi chiedere di conoscere il profilo, farlo correggere o opporti alla profilazione (§10).
+- I **referenti dell'azienda** (nome e ruolo) possono essere proposti dalla ricerca web su **fonti pubbliche**
+  (sito aziendale, registro imprese, pagine ufficiali). Di ogni referente conserviamo la **fonte** (URL) ed è
+  indicato come “da verificare” finché una persona non lo conferma. Non raccogliamo email o telefoni da queste
+  fonti e **non inviamo recapiti dei referenti all'AI**. Ogni proposta resta modificabile e il referente viene
+  sostituito all'aggiornamento successivo; puoi chiederne la correzione o la cancellazione (§12).
 
 ### 7. Ricerche con AI
 
@@ -77,7 +83,8 @@ Le immagini non vengono conservate sul portale **[DA VERIFICARE]**.
 - Personale autorizzato di Luis S.r.l.
 - Responsabili del trattamento: fornitore del gestionale aziendale (Integra, AGOMIR); servizio di posta elettronica
   **Microsoft (Outlook / Microsoft 365) [DA CONFERMARE]**; **Google** (Gemini: profilazione, ricerche AI, descrizioni
-  prodotto); **[DA COMPLETARE: corriere/spedizioni, hosting o assistenza tecnica, backup]**.
+  prodotto); **Brevo** (invio dei cataloghi); **provider dei dati d'impresa** (P.IVA, ATECO, fatturato);
+  **corrieri/vettori** per le consegne; hosting e assistenza tecnica. **[DA COMPLETARE: contratti di nomina]**.
 - Autorità pubbliche e Sistema di Interscambio (fatturazione elettronica) quando previsto dalla legge.
 
 I dati non sono diffusi né venduti.
@@ -96,7 +103,8 @@ adeguatezza EU-US Data Privacy Framework e/o delle clausole contrattuali standar
 | Account e anagrafica | durata del rapporto commerciale |
 | Ordini e documenti fiscali | 10 anni (obblighi civilistici e fiscali) |
 | Sessione di accesso | cookie tecnico `luis.sid`, scade dopo 8 ore di inattività |
-| Log tecnici e copie di sicurezza | **[DA COMPLETARE]** |
+| Log tecnici e di sicurezza | 90 giorni (accessi) / 180 giorni (errori) / 24 mesi (azioni amministrative) |
+| Copie di sicurezza | **[DA COMPLETARE: durata e cifratura]** |
 
 ### 11. Cookie del portale
 

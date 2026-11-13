@@ -102,7 +102,11 @@
       "user_blocked": "Account bloccato. Contatta Luis S.r.l.",
       "not_authenticated": "Sessione scaduta, accedi di nuovo.",
       "forbidden": "Operazione non consentita.",
-      "wrong_password": "La password attuale non è corretta."
+      "wrong_password": "La password attuale non è corretta.",
+      "invito_non_valido": "Link di invito non valido o scaduto.",
+      "mfa_sessione_scaduta": "Verifica scaduta: accedi di nuovo.",
+      "mfa_codice_non_valido": "Codice non valido.",
+      "mfa_non_iniziata": "Configurazione MFA non avviata."
     },
     "users": {
       "email_exists": "Esiste già un account con questa email.",
@@ -110,7 +114,11 @@
       "not_found": "Cliente non trovato.",
       "cannot_block_admin": "Non si può bloccare un amministratore.",
       "ordine_not_found": "Ordine non trovato.",
-      "stato_non_consentito": "Stato ordine non valido."
+      "stato_non_consentito": "Stato ordine non valido.",
+      "ha_ordini_conservati": "Il cliente ha ordini o documenti: si può solo rimuovere i dati personali (pseudonimizzazione), non cancellarlo."
+    },
+    "cataloghi": {
+      "fonte_consenso_obbligatoria": "Dichiara la fonte del consenso prima di importare i contatti."
     },
     "security": {
       "csrf": "Sessione non valida, ricarica la pagina."

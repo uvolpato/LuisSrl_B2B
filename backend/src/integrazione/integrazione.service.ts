@@ -2859,9 +2859,18 @@ Rispondi SOLO con questo JSON esatto, senza markdown ne' altri caratteri. Tutti 
       const existing = await this.prisma.customer.findUnique({ where: { codiceCliente: codice } });
       let cust: { id: number };
       if (existing) {
+        // Cliente pseudonimizzato: si riallineano solo i dati aziendali e si conservano
+        // i valori anonimizzati, altrimenti il gestionale ripristinerebbe i dati personali.
         cust = await this.prisma.customer.update({
           where: { id: existing.id },
-          data: { ...datiComuni },
+          data: existing.datiPersonaliRimossiIl
+            ? {
+                ...datiComuni,
+                email: existing.email,
+                nome: existing.nome,
+                telefono: existing.telefono,
+              }
+            : datiComuni,
         });
         aggiornati++;
       } else {

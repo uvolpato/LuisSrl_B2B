@@ -9,6 +9,7 @@ import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEd
 import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
 import SyncPanel from "./SyncPanel";
 import CostiAiSection from "./sections/CostiAiSection";
+import MfaSection from "./sections/MfaSection";
 import EventLogSection from "./sections/EventLogSection";
 import Modal from "../common/Modal";
 import Notice from "../common/Notice";
@@ -36,7 +37,7 @@ function formatDate(d: string): string {
   return dt.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "log-eventi";
+type AdminPanelTab = "utenti" | "clienti" | "ai" | "sync" | "costi-ai" | "log-eventi" | "sicurezza";
 type UserSubTab = "panoramica" | "gruppi";
 type StatoFilter = "" | "ATTIVO" | "BLOCCATO" | "ELIMINATO" | "TUTTI";
 
@@ -337,6 +338,9 @@ export default function AdminPanel() {
         <button className={`admin-panel-tab ${activeTab === "log-eventi" ? "active" : ""}`} onClick={() => { setActiveTab("log-eventi"); }}>
           Log eventi
         </button>
+        <button className={`admin-panel-tab ${activeTab === "sicurezza" ? "active" : ""}`} onClick={() => { setActiveTab("sicurezza"); }}>
+          Sicurezza
+        </button>
       </div>
 
       <div className="admin-panel-body">
@@ -468,6 +472,9 @@ export default function AdminPanel() {
           )}
           {activeTab === "log-eventi" && (
             <EventLogSection />
+          )}
+          {activeTab === "sicurezza" && (
+            <MfaSection />
           )}
         </div>
       </div>
