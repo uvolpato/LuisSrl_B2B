@@ -595,7 +595,7 @@ listino comparato.
 (ATECO, provincia, dimensione, famiglie acquistate), cerca aziende **simili non clienti** (registro
 imprese via `DatiImpresaService` + web), esclude chi è già in `customers` o `prospect`, assegna uno
 score e **si ferma lì**: il contatto lo decide un umano. Solo dati d'impresa pubblici, mai persone
-fisiche — coerente con `ANALISI_DATI_LLM_GDPR_AIAct.md`.
+fisiche — coerente con `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md`.
 
 ### 4.11 Il profilo di Luis (la bussola) — quasi tutto SQL
 

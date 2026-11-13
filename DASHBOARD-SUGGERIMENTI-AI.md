@@ -2,7 +2,7 @@
 
 > Documento di progetto. Data: 2026-08-03 (rev. 3 — aggiunto §14 "Assistente commerciale: catalogo ad hoc") · Stato: proposta · Autore: Ugo Volpato
 > Repo: `LuisSrl_B2B` · Correlati: `roadmap-b2b-luis.md` (Blocco 13), `CUSTOMER-TRACKING.md`,
-> `RAG-RICERCA-SEMANTICA.md`, `MCP-B2B.md`, `ANALISI_DATI_LLM_GDPR_AIAct.md`
+> `RAG-RICERCA-SEMANTICA.md`, `MCP-B2B.md`, `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md`
 
 ---
 

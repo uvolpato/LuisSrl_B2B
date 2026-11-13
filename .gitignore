@@ -108,3 +108,6 @@ graphify-out/cache/
 graphify-out/graph.html
 graphify-out/.graphify_labels*
 graphify-out/.graphify_build_state.json
+
+# --- Documenti Word generati ---
+GDPR/word/node_modules/

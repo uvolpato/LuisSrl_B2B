@@ -110,6 +110,7 @@ Nessuna registrazione preventiva al Garante, nessun DPO obbligatorio. Serve ques
 | `SPECIFICA-BACKUP.md` | Specifica per il sistemista (cifratura, restore, retention) | da consegnare |
 | `NOMINA-RESPONSABILE-TEMPLATE.md` | Fac-simile nomina art. 28 | da firmare |
 | `ISTRUZIONI-AUTORIZZATI-TEMPLATE.md` | Istruzioni art. 29 per il personale | da firmare |
+| `word/` | Versioni Word con carta intestata Luis e modello `CARTA-INTESTATA-LUIS.docx` | pronte |
 | `CRITICITA-ALTE-DETTAGLIO.md` | Analisi P1.1-P1.6 | aggiornato |
 
 ## 8. Limiti dell'analisi

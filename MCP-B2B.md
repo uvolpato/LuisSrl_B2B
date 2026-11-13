@@ -2,7 +2,7 @@
 
 > Documento di pianificazione (nessuna implementazione richiesta).
 > Data: 2026-08-03 · Stato: proposta · Autore: Ugo Volpato
-> Repo: `LuisSrl_B2B` · Riferimenti: `RAG-RICERCA-SEMANTICA.md`, `ANALISI_DATI_LLM_GDPR_AIAct.md`, `DEPLOY.md`
+> Repo: `LuisSrl_B2B` · Riferimenti: `RAG-RICERCA-SEMANTICA.md`, `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md`, `DEPLOY.md`
 
 ---
 
@@ -128,7 +128,7 @@ MCP su HTTP è **machine-to-machine**: niente cookie/sessione del portale.
 
 ## 6. Privacy e GDPR
 
-Il progetto ha già `ANALISI_DATI_LLM_GDPR_AIAct.md`: MCP deve rispettarne i principi.
+Il progetto ha già `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md`: MCP deve rispettarne i principi.
 
 1. **Minimizzazione** — ogni tool espone solo i campi necessari (es. cliente: nome, codice,
    listino; **niente** dati di pagamento). API di risposta dedicate, non il modello intero.

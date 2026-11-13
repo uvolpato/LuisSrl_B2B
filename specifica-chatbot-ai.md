@@ -1,7 +1,7 @@
 # Specifica — Chatbot AI che segue il cliente
 
 > Documento di progetto. Data: 2026-09-07 · Stato: proposta · Autore: opencode (per conto del committente)
-> Contesto: `roadmap-b2b-luis.md` (To-do #6) · Complementa `DASHBOARD-SUGGERIMENTI-AI.md` §14 (agente per l'admin) e `ANALISI_DATI_LLM_GDPR_AIAct.md` (privacy/AI Act).
+> Contesto: `roadmap-b2b-luis.md` (To-do #6) · Complementa `DASHBOARD-SUGGERIMENTI-AI.md` §14 (agente per l'admin) e `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md` (privacy/AI Act).
 > In conflitto vince `specifiche-b2b-luis.md`.
 
 ---
@@ -41,7 +41,7 @@ su:
 3. **Mai dati anagrafici verso l'LLM**: l'identità del cliente è tradotta in un segnaposto
    (`cliente #<id>`, `listino <codice>`) prima di costruire il prompt; al provider arrivano solo
    dati di business minimi (stati, codici articolo, testo richiesta). Vincolo GDPR come da
-   `ANALISI_DATI_LLM_GDPR_AIAct.md` (lì: "nessun dato anagrafico va a Gemini").
+   `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md` (lì: "nessun dato anagrafico va a Gemini").
 4. **Trasparenza (AI Act, art. 50)**: il chatbot è chiaramente marcato "AI" e fa capire che è
    un'IA (microcopy in ogni apertura del pannello).
 5. **Dati per cliente**: ogni tool è limitato al `customerId` autenticato; impossibile leggere
@@ -186,7 +186,7 @@ model ChatbotMessage {
   niente HTML/JS (XSS). Metadata tool resi come componenti React, non markup dal modello.
 - **Privacy**: minimizzazione (mai anagrafiche verso LLM), informativa aggiornata, registro
   trattamenti con la voce "assistente AI", retention conversazioni. Rispettare i punti
-  `ANALISI_DATI_LLM_GDPR_AIAct.md` (piano a pagamento + DPA; avviso che è IA).
+  `GDPR/GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md` (piano a pagamento + DPA; avviso che è IA).
 - **Log**: loggare accessi/errori del chatbot senza contenuto sensibile; mai testo conversazione
   nei log.
 
