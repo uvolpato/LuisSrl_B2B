@@ -5,6 +5,7 @@ import { api, ApiError } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import { useConfirm } from "../../common/ConfirmProvider";
 import DataTable, { type Column, type RowAction } from "../DataTable";
+import DataTableSkeleton from "../DataTableSkeleton";
 import AdminTopBar from "../AdminTopBar";
 
 interface Catalogo { id: number; nome: string; copertina: string | null; archiviato: boolean; dimensione: number | null; createdAt: string }
@@ -165,13 +166,7 @@ function ElencoScreen({ mailing, loading, onDettaglio, onNuova, onElimina }: { m
   return (
     <section className="screen">
       <div className="content-scroll">
-        {loading && (
-          <div className="data-table" aria-busy="true">
-            <div className="skeleton">
-              {[0, 1, 2, 3].map((i) => <div className="skeleton-row" key={i}><span className="sk sk-name" /><span className="sk sk-pill" /><span className="sk sk-num" /><span className="sk sk-num" /><span className="sk sk-num" /><span className="sk sk-action" /></div>)}
-            </div>
-          </div>
-        )}
+        {loading && <div className="data-table"><DataTableSkeleton rows={4} cols={6} /></div>}
         {!loading && mailing.length === 0 && (
           <div className="data-table">
             <div className="state">

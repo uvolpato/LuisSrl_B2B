@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import { IconEye, IconRefresh } from "./icons";
 import Notice from "../common/Notice";
 import DataTable, { type Column } from "./DataTable";
+import DataTableSkeleton from "./DataTableSkeleton";
 import Modal from "../common/Modal";
 
 interface SyncConfigRow {
@@ -322,7 +323,7 @@ export default function SyncPanel() {
     },
   ];
 
-  if (loading && configs.length === 0) return <div className="admin-panel-loading">Caricamento...</div>;
+  if (loading && configs.length === 0) return <div className="data-table"><DataTableSkeleton /></div>;
   if (error && configs.length === 0) return <div className="admin-panel-error">{error}</div>;
 
   return (

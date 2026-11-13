@@ -325,7 +325,6 @@
 .cat .screen .content-scroll > .view { flex: 1; min-height: 0; }
 .cat .data-table { flex: 1; min-height: 0; }
 .cat .data-table > .state { flex: 1; justify-content: center; }
-.cat .data-table > .skeleton { flex: 1; overflow-y: auto; }
 .cat .detail-bar {
   flex-shrink: 0;
   display: flex;
@@ -473,38 +472,6 @@
 .cat .state-sm > svg { width: 22px; height: 22px; }
 .cat .state-sm strong { font-size: 15px; }
 .cat .state-sm p { font-size: 12.5px; }
-
-/* ── Skeleton ── */
-.cat .skeleton { padding: 2px 0; }
-.cat .skeleton-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-}
-.cat .skeleton-row:last-child { border-bottom: none; }
-.cat .sk {
-  height: 10px;
-  border-radius: 6px;
-  background: color-mix(in oklch, var(--fg) 12%, transparent);
-  animation: sk-pulse 1.4s ease-in-out infinite;
-}
-.cat .sk-name { flex: 0 0 28%; }
-.cat .sk-num { flex: 0 0 6%; min-width: 28px; }
-.cat .sk-pill { flex: 0 0 70px; height: 20px; border-radius: 999px; }
-.cat .sk-action { flex: 0 0 68px; height: 28px; border-radius: 8px; margin-left: auto; }
-.cat .sk-block {
-  padding: 14px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.cat .sk-block:last-child { margin-bottom: 0; }
-@keyframes sk-pulse { 50% { opacity: 0.4; } }
 
 /* ── Wizard ── */
 .cat .wizard {
@@ -1106,9 +1073,6 @@
     border-top: 1px solid var(--border);
   }
   .cat .data-table-footer { padding: 10px 14px; }
-  .cat .sk-name { flex: 1 0 55%; }
-  .cat .sk-num { flex: 0 0 10%; }
-  .cat .sk-action { display: none; }
   .cat .pager-current { min-width: 42px; }
 }
 @container (max-width: 520px) {
@@ -1130,5 +1094,5 @@
 .cat .screens { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cat .screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .cat .sk, .cat .toast, .cat .sidebar, .cat .scrim { animation: none; transition: none; }
+  .cat .toast, .cat .sidebar, .cat .scrim { animation: none; transition: none; }
 }

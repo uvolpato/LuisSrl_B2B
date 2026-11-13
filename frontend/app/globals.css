@@ -584,3 +584,25 @@ tr:last-child td { border-bottom: none; }
 .option-label { font-weight: 500; }
 .option-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; flex-shrink: 0; }
 .combobox-empty { padding: 10px 12px; color: var(--muted); font-size: 13px; }
+
+/* Skeleton di caricamento tabelle (DataTableSkeleton), condiviso da admin e area cliente */
+.data-table-skeleton { flex: 1; min-height: 0; overflow: auto; padding: 2px 0; }
+.data-table-skeleton .skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table-skeleton .skeleton-row:last-child { border-bottom: none; }
+.data-table-skeleton .sk {
+  height: 10px;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--fg) 12%, transparent);
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+.data-table-skeleton .sk-action { height: 28px; border-radius: 8px; }
+@keyframes sk-pulse { 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) {
+  .data-table-skeleton .sk { animation: none; }
+}

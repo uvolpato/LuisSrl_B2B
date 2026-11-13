@@ -250,26 +250,6 @@
   .action-buttons > .btn { width: auto; }
 }
 
-/* Loading overlay per la tabella "Nuovo Articolo" */
-.data-table-loading-overlay {
-  /* Copre e offusca le righe; centrato nello spazio delle righe (tra header e
-     footer) qualunque sia la posizione della scrollbar. Il footer resta sopra
-     e nitido grazie allo z-index piu' alto. */
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,0.5);
-  backdrop-filter: blur(2px);
-}
-.data-table-loading-overlay > * {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted, #888);
-}
-.data-table-footer { position: relative; z-index: 11; }
 /* Sync progress bar */
 .btn .sync-icon { display: inline-flex; align-items: center; vertical-align: middle; }
 .sync-icon.spin {

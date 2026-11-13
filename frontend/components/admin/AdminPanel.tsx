@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import type { UserProfile, CustomerProfile, UserListResponse, CustomerListResponse, PermissionGroup } from "../../lib/types";
 import { usePresence } from "../../lib/use-presence";
 import DataTable, { type Column, type RowAction } from "./DataTable";
+import DataTableSkeleton from "./DataTableSkeleton";
 import UserAdminEditorModal, { type UserAdminTarget } from "../users/UserAdminEditorModal";
 import UserEditorModal, { type UserEditorTarget } from "../users/UserEditorModal";
 import SyncPanel from "./SyncPanel";
@@ -389,7 +390,7 @@ export default function AdminPanel() {
                   </button>
                 </div>
               </div>
-              {loading && <div className="admin-panel-loading">Caricamento...</div>}
+              {loading && <div className="data-table"><DataTableSkeleton /></div>}
               {error && <div className="admin-panel-error">{error}</div>}
               {!loading && !error && data && (
                 <DataTable
@@ -441,7 +442,7 @@ export default function AdminPanel() {
                   </button>
                 </div>
               </div>
-              {loading && <div className="admin-panel-loading">Caricamento...</div>}
+              {loading && <div className="data-table"><DataTableSkeleton /></div>}
               {error && <div className="admin-panel-error">{error}</div>}
               {!loading && !error && data && (
                 <DataTable
@@ -613,7 +614,7 @@ function GroupsSection() {
         </div>
       </div>
 
-      {loading && <div className="admin-panel-loading">Caricamento...</div>}
+      {loading && <div className="data-table"><DataTableSkeleton /></div>}
       {!loading && (
         <DataTable
           columns={groupColumns}

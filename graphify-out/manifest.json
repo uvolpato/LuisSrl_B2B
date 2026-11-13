@@ -284,9 +284,9 @@
     "semantic_hash": ""
   },
   "backend/src/auth/auth.controller.ts": {
-    "mtime": 1794570073.2459683,
-    "seen": 1794570160.9615579,
-    "ast_hash": "2abbec3fc94fd87ca6e33eb59ea1f6ee",
+    "mtime": 1794570573.0073278,
+    "seen": 1794579181.34675,
+    "ast_hash": "b65bc44033dd3ceb66aaedb894f04a6a",
     "semantic_hash": ""
   },
   "backend/src/auth/auth.module.ts": {
@@ -296,9 +296,9 @@
     "semantic_hash": "3dfc46d2078133380b3d2f3dae88d40e"
   },
   "backend/src/auth/auth.service.ts": {
-    "mtime": 1794569972.427441,
-    "seen": 1794570160.9615617,
-    "ast_hash": "cc2ee0380b1786cf6b4f589ff6f4e739",
+    "mtime": 1794570556.4204936,
+    "seen": 1794579181.346753,
+    "ast_hash": "057f5bde6d91c7e61c151e079933f788",
     "semantic_hash": ""
   },
   "backend/src/auth/decorators/permission.decorator.ts": {
@@ -1425,9 +1425,9 @@
     "semantic_hash": "3b01e46f9e1adc881e1daa692dcd1f8e"
   },
   "frontend/components/admin/AdminPanel.tsx": {
-    "mtime": 1794567899.0279586,
-    "seen": 1794568069.0601847,
-    "ast_hash": "5934d2851c917f9b473cd1740678cc07",
+    "mtime": 1794578945.99337,
+    "seen": 1794579181.3473918,
+    "ast_hash": "41fd8ef68ae8483feb03c536d4a46c85",
     "semantic_hash": ""
   },
   "frontend/components/admin/AdminSidebar.tsx": {
@@ -1467,10 +1467,10 @@
     "semantic_hash": "e80c86bacd396a09e23dad0591fd3864"
   },
   "frontend/components/admin/DataTable.tsx": {
-    "mtime": 1791674134.7397237,
-    "seen": 1793880362.9781497,
-    "ast_hash": "afcc0e87275b51a0d4c590253ca2d337",
-    "semantic_hash": "afcc0e87275b51a0d4c590253ca2d337"
+    "mtime": 1794578930.9583907,
+    "seen": 1794579181.347426,
+    "ast_hash": "c59ac4a26db270fba887b1b9d13d090f",
+    "semantic_hash": ""
   },
   "frontend/components/admin/ImageDropzone.tsx": {
     "mtime": 1785884671.6908755,
@@ -1497,10 +1497,10 @@
     "semantic_hash": "a32d488a9f82c25833a4d29c44ce1a9b"
   },
   "frontend/components/admin/SyncPanel.tsx": {
-    "mtime": 1785884671.6948762,
-    "seen": 1793880362.9789438,
-    "ast_hash": "e9c193b62058ccb42789a62352cfee23",
-    "semantic_hash": "e9c193b62058ccb42789a62352cfee23"
+    "mtime": 1794578948.1898184,
+    "seen": 1794579181.3474543,
+    "ast_hash": "6471a6c4596043457864df1a5a79931d",
+    "semantic_hash": ""
   },
   "frontend/components/admin/icons.tsx": {
     "mtime": 1794565866.5953293,
@@ -1539,9 +1539,9 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1794563841.9276721,
-    "seen": 1794564796.8770814,
-    "ast_hash": "b6c2fca90c0b323db6f64d175ebfc66f",
+    "mtime": 1794578938.7025974,
+    "seen": 1794579181.3474865,
+    "ast_hash": "7e3d1cf70e2893a2860639d0c75686e6",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
@@ -2565,51 +2565,45 @@
     "semantic_hash": ""
   },
   "AGENT-SPEC.md": {
-    "mtime": 1785884671.3872173,
-    "seen": 1793882104.0039124,
-    "ast_hash": "a6de0ffe8256ca7030c7651f8f0c3070",
-    "semantic_hash": ""
-  },
-  "ANALISI_DATI_LLM_GDPR_AIAct.md": {
-    "mtime": 1785884671.3897228,
-    "seen": 1793882104.0039136,
-    "ast_hash": "d8d042472e614714d049b42269ec3094",
+    "mtime": 1794571390.380696,
+    "seen": 1794579181.34793,
+    "ast_hash": "fbfa997749ac19cbf72c4a9edff69352",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791558794.913047,
-    "seen": 1793882104.003915,
-    "ast_hash": "2106f86dfc6c153592ea47e515df935b",
+    "mtime": 1794571390.4613805,
+    "seen": 1794579181.3479354,
+    "ast_hash": "0d4905ab21ebd14a92d4f849aa61db81",
     "semantic_hash": ""
   },
   "CUSTOMER-TRACKING.md": {
-    "mtime": 1785884671.3917296,
-    "seen": 1793882104.0039163,
-    "ast_hash": "c598ba26bc2201ff73345995e4287eac",
+    "mtime": 1794571390.518481,
+    "seen": 1794579181.3479395,
+    "ast_hash": "dcc6bfb4d1a0e7dbb814e218c7291595",
     "semantic_hash": ""
   },
   "DASHBOARD-SUGGERIMENTI-AI.md": {
-    "mtime": 1788297680.0348394,
-    "seen": 1793882104.003918,
-    "ast_hash": "35657299a8d563dac7cdaeb519476553",
+    "mtime": 1794571505.267136,
+    "seen": 1794579181.347944,
+    "ast_hash": "fabb252456e7e0b44ca3e41dd74ede55",
     "semantic_hash": ""
   },
   "DEPLOY.md": {
-    "mtime": 1791558796.005297,
-    "seen": 1793882104.0039191,
-    "ast_hash": "cc3018e1a1500f2721a17271c4ae7cdc",
+    "mtime": 1794571390.8963213,
+    "seen": 1794579181.3479483,
+    "ast_hash": "d7ccfde9be4f05d23b0a7a0f3989cc25",
     "semantic_hash": ""
   },
   "DEVELOPER_NOTES.md": {
-    "mtime": 1793992282.9170237,
-    "seen": 1793992310.705598,
+    "mtime": 1794571390.9826233,
+    "seen": 1794579181.3479528,
     "ast_hash": "66ba7c2b6da5149f8199dc8366980989",
     "semantic_hash": ""
   },
   "MCP-B2B.md": {
-    "mtime": 1785884671.397312,
-    "seen": 1793882104.0039215,
-    "ast_hash": "cbfca1ddd0e52d564fef56c06e72379d",
+    "mtime": 1794571505.2876093,
+    "seen": 1794579181.348033,
+    "ast_hash": "596ec7659d494fba8dd1ff8a4104515f",
     "semantic_hash": ""
   },
   "Prototipo Sito Vetrina/catalogo.html": {
@@ -2631,9 +2625,9 @@
     "semantic_hash": ""
   },
   "RAG-RICERCA-SEMANTICA.md": {
-    "mtime": 1785884671.3983128,
-    "seen": 1793882104.0039265,
-    "ast_hash": "0f56b3ff6a0ae5690e5010768d8758bc",
+    "mtime": 1794571391.1075013,
+    "seen": 1794579181.3480518,
+    "ast_hash": "f1c893fe6b215c0eb44a65cb2b018a46",
     "semantic_hash": ""
   },
   "Rivendita Privati/carrello.html": {
@@ -2667,33 +2661,33 @@
     "semantic_hash": ""
   },
   "SCHEMA-INFRASTRUTTURA.md": {
-    "mtime": 1793639332.285102,
-    "seen": 1793882104.0039349,
-    "ast_hash": "a0279edbff15eede6d56e94466ef6b38",
+    "mtime": 1794571391.3967917,
+    "seen": 1794579181.348082,
+    "ast_hash": "37603ce5708f6bb5f01fbe3097589fce",
     "semantic_hash": ""
   },
   "SEO-ROADMAP.md": {
-    "mtime": 1791847995.376503,
-    "seen": 1793882104.0039363,
-    "ast_hash": "07f9cb331b6425b9468b5bde7776f407",
+    "mtime": 1794571391.4718785,
+    "seen": 1794579181.3480866,
+    "ast_hash": "bef067686e07e6b16a4f14dfebe564f5",
     "semantic_hash": ""
   },
   "SETUP-PRODUZIONE.md": {
-    "mtime": 1793639332.306107,
-    "seen": 1793882104.0039375,
-    "ast_hash": "11cc26963b14bf16c12813b51f02c364",
+    "mtime": 1794571391.5359538,
+    "seen": 1794579181.348091,
+    "ast_hash": "3309fd61f4a52f268ece0837201be166",
     "semantic_hash": ""
   },
   "SETUP.md": {
-    "mtime": 1791558794.1431649,
-    "seen": 1793882104.003939,
-    "ast_hash": "29a67efebb90483c0ac8a8bed8415786",
+    "mtime": 1794571391.601553,
+    "seen": 1794579181.3480952,
+    "ast_hash": "1c217b446a3838b335a448d69720864c",
     "semantic_hash": ""
   },
   "SISTEMA-AGENTICO-LUIS.md": {
-    "mtime": 1786475730.5581944,
-    "seen": 1793882104.00394,
-    "ast_hash": "25392f5aca49a53d16f2c4226fc5bb20",
+    "mtime": 1794571505.2918122,
+    "seen": 1794579181.3480992,
+    "ast_hash": "daaa5dee4a8189aa91f7a02afff7160d",
     "semantic_hash": ""
   },
   "admin-ai-config.html": {
@@ -2853,9 +2847,9 @@
     "semantic_hash": ""
   },
   "brand-spec.md": {
-    "mtime": 1788960855.0164523,
-    "seen": 1793882104.0039744,
-    "ast_hash": "a7a0352dac2b472ee5f83445284621ca",
+    "mtime": 1794571391.7296605,
+    "seen": 1794579181.3482358,
+    "ast_hash": "64393b7a2609ef606e765d57bc1de3cc",
     "semantic_hash": ""
   },
   "checkout.html": {
@@ -2883,9 +2877,9 @@
     "semantic_hash": ""
   },
   "costi-e-architettura.md": {
-    "mtime": 1785884671.6227605,
-    "seen": 1793882104.0039806,
-    "ast_hash": "558c0680f14ed2ff800a54f4fc5fda56",
+    "mtime": 1794571391.7757337,
+    "seen": 1794579181.3482583,
+    "ast_hash": "aa71d966b39486bfaeca8a705cdf0136",
     "semantic_hash": ""
   },
   "customer-tracking-viewer.html": {
@@ -2901,9 +2895,9 @@
     "semantic_hash": ""
   },
   "design-brief-descrizione-ai.md": {
-    "mtime": 1785884671.6277606,
-    "seen": 1793882104.0039845,
-    "ast_hash": "2b07e736193cc2dd5bcd53097f3619e0",
+    "mtime": 1794571391.820945,
+    "seen": 1794579181.3482735,
+    "ast_hash": "564322d684769d47e30febbf779f466c",
     "semantic_hash": ""
   },
   "docs/security-review-owasp-2026-09-15.md": {
@@ -2960,16 +2954,10 @@
     "ast_hash": "9612a75bc42057b18b8fb1357314008a",
     "semantic_hash": ""
   },
-  "informativa-privacy-b2b.md": {
-    "mtime": 1794565874.3329458,
-    "seen": 1794566011.0653856,
-    "ast_hash": "65cf6cf173b40f84029508beddc20bfc",
-    "semantic_hash": ""
-  },
   "integrazione-api-integra.md": {
-    "mtime": 1785884671.8630366,
-    "seen": 1793882104.0039988,
-    "ast_hash": "21756a87e69ac631e92066ee8a0d52bc",
+    "mtime": 1794571392.1148505,
+    "seen": 1794579181.3483224,
+    "ast_hash": "d1ef529d5ef30aef85c71577c4b08758",
     "semantic_hash": ""
   },
   "integrazione-viewer.html": {
@@ -2997,27 +2985,27 @@
     "semantic_hash": ""
   },
   "prompt-admin-cataloghi.md": {
-    "mtime": 1792952388.3285763,
-    "seen": 1793882104.0040052,
-    "ast_hash": "8dc7141b232b8e72703a95e600b7bd81",
+    "mtime": 1794571392.166543,
+    "seen": 1794579181.348345,
+    "ast_hash": "3066d48c05e2596c646ab5674ae0ece0",
     "semantic_hash": ""
   },
   "prompt-admin-richieste-accesso.md": {
-    "mtime": 1791930258.028281,
-    "seen": 1793882104.0040064,
-    "ast_hash": "9542088c3621c28f9f1ea85a418b41ac",
+    "mtime": 1794571392.2370336,
+    "seen": 1794579181.348349,
+    "ast_hash": "e889bb20bbc9e088e39ac1cd6318e96c",
     "semantic_hash": ""
   },
   "prompt-popup-aperture-domenicali-dev.md": {
-    "mtime": 1792784949.542709,
-    "seen": 1793882104.0040076,
-    "ast_hash": "83d04cf1b2f27ebc1b9e689eeb8f448c",
+    "mtime": 1794571392.3017364,
+    "seen": 1794579181.3483539,
+    "ast_hash": "8ef52c1d0ae43cc5f5f9fb09b2ca7061",
     "semantic_hash": ""
   },
   "prompt-riproduzione-ai-config.md": {
-    "mtime": 1788124440.5323708,
-    "seen": 1793882104.0040092,
-    "ast_hash": "afe5b86092a7bb239ff115f96b19cca0",
+    "mtime": 1794571392.367245,
+    "seen": 1794579181.3483584,
+    "ast_hash": "c2b31fc79fbef2b02b6f7e55d7977526",
     "semantic_hash": ""
   },
   "recap-ordine.html": {
@@ -3027,15 +3015,15 @@
     "semantic_hash": ""
   },
   "richiesta-dati-integra.md": {
-    "mtime": 1785884671.8765514,
-    "seen": 1793882104.0040119,
-    "ast_hash": "58ce003b4d09110377a00f73485f3202",
+    "mtime": 1794571392.4367037,
+    "seen": 1794579181.3483684,
+    "ast_hash": "8e2ec200bf73c1bdb236dde80ef0ad7a",
     "semantic_hash": ""
   },
   "roadmap-b2b-luis.md": {
-    "mtime": 1791934178.3484235,
-    "seen": 1793882104.004013,
-    "ast_hash": "0f86c7191db95303e65b31d730b0afe3",
+    "mtime": 1794571392.5007722,
+    "seen": 1794579181.348372,
+    "ast_hash": "05205607c19540489e6788c7491f1321",
     "semantic_hash": ""
   },
   "roadmap-viewer.html": {
@@ -3051,9 +3039,9 @@
     "semantic_hash": ""
   },
   "seo-kappa.md": {
-    "mtime": 1791746179.7274082,
-    "seen": 1793882104.0040169,
-    "ast_hash": "a6ac2da66e5a462a9ab01762092767bc",
+    "mtime": 1794571392.5618458,
+    "seen": 1794579181.3483872,
+    "ast_hash": "b197d542336495756f28225cf9135bef",
     "semantic_hash": ""
   },
   "seo-roadmap-viewer.html": {
@@ -3069,111 +3057,111 @@
     "semantic_hash": ""
   },
   "specifica-admin-cataloghi.md": {
-    "mtime": 1792952555.546797,
-    "seen": 1793882104.0040236,
-    "ast_hash": "207f41fb394deb9036de9e750ef805b3",
+    "mtime": 1794571392.6240778,
+    "seen": 1794579181.348402,
+    "ast_hash": "4d8ee72520326e15a8e77e23ba78aad8",
     "semantic_hash": ""
   },
   "specifica-admin-ordini.md": {
-    "mtime": 1786221350.4459984,
-    "seen": 1793882104.0040257,
-    "ast_hash": "0e161eea81003760df65720244e90a4d",
+    "mtime": 1794571392.6881404,
+    "seen": 1794579181.3484058,
+    "ast_hash": "e5481ead04c30caa384a54fde78e0d04",
     "semantic_hash": ""
   },
   "specifica-admin-richieste-accesso.md": {
-    "mtime": 1793637725.3657248,
-    "seen": 1793882104.0040278,
-    "ast_hash": "f1f4c1d6288d6ed39999cdd8c852f6a1",
+    "mtime": 1794571392.7512124,
+    "seen": 1794579181.3484104,
+    "ast_hash": "87100c62c9c6a41c9d374326049979d2",
     "semantic_hash": ""
   },
   "specifica-ai-config.md": {
-    "mtime": 1788124431.825284,
-    "seen": 1793882104.0040302,
-    "ast_hash": "046f76af64d088775882c0e94a173c0c",
+    "mtime": 1794571392.801298,
+    "seen": 1794579181.3484147,
+    "ast_hash": "bc57357806fcd0a68f477378add88bea",
     "semantic_hash": ""
   },
   "specifica-anomalie.md": {
-    "mtime": 1786114930.0436547,
-    "seen": 1793882104.0040314,
-    "ast_hash": "00405b7166dbff6a30e1f37d29f034ef",
+    "mtime": 1794571392.8490274,
+    "seen": 1794579181.3484187,
+    "ast_hash": "0c10d9aa26fdd0838836e3c7d8cd874a",
     "semantic_hash": ""
   },
   "specifica-api-dropshipping.md": {
-    "mtime": 1791718059.4598403,
-    "seen": 1793882104.004033,
-    "ast_hash": "fdc2d6215437b7746bfbd5018edae7a5",
+    "mtime": 1794571392.925113,
+    "seen": 1794579181.3484223,
+    "ast_hash": "6d19207d60f78aa767d576e49f327e3c",
     "semantic_hash": ""
   },
   "specifica-articoli-componenti.md": {
-    "mtime": 1792795282.9205532,
-    "seen": 1793882104.0040343,
-    "ast_hash": "fd8e9973ec9ed8a311600e6f7e31b914",
+    "mtime": 1794571392.9880035,
+    "seen": 1794579181.348427,
+    "ast_hash": "446c609ee74c55289c74952450ebba3b",
     "semantic_hash": ""
   },
   "specifica-chatbot-ai.md": {
-    "mtime": 1788817405.402465,
-    "seen": 1793882104.0040355,
-    "ast_hash": "4f59d8bcf2d0a742e6c9324b06ff70d0",
+    "mtime": 1794571505.2962902,
+    "seen": 1794579181.3484309,
+    "ast_hash": "0cabe414d9ce9b778e106b9877f61cd7",
     "semantic_hash": ""
   },
   "specifica-checkout.md": {
-    "mtime": 1786051412.3992898,
-    "seen": 1793882104.0040371,
-    "ast_hash": "7a777d860288a302585f14585bedd0ef",
+    "mtime": 1794571393.369792,
+    "seen": 1794579181.3484347,
+    "ast_hash": "d6cc33ed323891bc069ec288c06d71ce",
     "semantic_hash": ""
   },
   "specifica-coupon.md": {
-    "mtime": 1786472568.8491464,
-    "seen": 1793882104.0040386,
-    "ast_hash": "0d2036b49e5c02b09181f18a6f1a0e84",
+    "mtime": 1794571393.4143486,
+    "seen": 1794579181.3484395,
+    "ast_hash": "e96390720d11679d129037d37cfd5597",
     "semantic_hash": ""
   },
   "specifica-event-log.md": {
-    "mtime": 1786524595.389838,
-    "seen": 1793882104.00404,
-    "ast_hash": "6a82904b0b835cd77d050711bf4353ce",
+    "mtime": 1794571393.4617622,
+    "seen": 1794579181.3484435,
+    "ast_hash": "f494b421b57a7c88eaca094f4c78e028",
     "semantic_hash": ""
   },
   "specifica-qualifica-lead.md": {
-    "mtime": 1791926883.7107232,
-    "seen": 1793882104.0040412,
-    "ast_hash": "66ca94e155ec43883b9f054097aed3ac",
+    "mtime": 1794571393.5546498,
+    "seen": 1794579181.3484476,
+    "ast_hash": "84a08cf5275464d7e48cdcf63975bb5a",
     "semantic_hash": ""
   },
   "specifica-recap-ordine.md": {
-    "mtime": 1786117838.8965013,
-    "seen": 1793882104.0040424,
-    "ast_hash": "4430b516239d3a85b4a88fa9fd55c11b",
+    "mtime": 1794571393.6041875,
+    "seen": 1794579181.3484519,
+    "ast_hash": "4a9f858fdb36c10ec2dc9812e6a36e61",
     "semantic_hash": ""
   },
   "specifica-scambio-dati-integra.md": {
-    "mtime": 1785884671.8905523,
-    "seen": 1793882104.0040438,
-    "ast_hash": "d825661232b7e6028d7532100822e00b",
+    "mtime": 1794571393.6540124,
+    "seen": 1794579181.3484561,
+    "ast_hash": "b7cc068d26da1f290f1f589ae222c932",
     "semantic_hash": ""
   },
   "specifica-sito-vetrina.md": {
-    "mtime": 1791847995.40197,
-    "seen": 1793882104.004045,
+    "mtime": 1794571394.5146608,
+    "seen": 1794579181.348461,
     "ast_hash": "374c83b32b9cf9147ca56f6c425baf1d",
     "semantic_hash": ""
   },
   "specifica-spese-spedizione.md": {
-    "mtime": 1786006784.1892638,
-    "seen": 1793882104.0040464,
-    "ast_hash": "1dbda4be048ea1d148f9544f475b45ef",
+    "mtime": 1794571394.56478,
+    "seen": 1794579181.348465,
+    "ast_hash": "bb700e34e310d2b55bdb576545767a61",
     "semantic_hash": ""
   },
   "specifica-sync.md": {
-    "mtime": 1786090049.9904075,
-    "seen": 1793882104.0040479,
-    "ast_hash": "85e6898b043e9bc1be1d287db8ef7fb8",
+    "mtime": 1794571394.6083505,
+    "seen": 1794579181.348469,
+    "ast_hash": "4e03b706ea246448217a5e8ce48eb88f",
     "semantic_hash": ""
   },
   "specifiche-b2b-luis.md": {
-    "mtime": 1785884671.8925524,
-    "seen": 1793882104.0040488,
-    "ast_hash": "d349ff1b11755aa64743ece02c81d5a9",
+    "mtime": 1794571394.65344,
+    "seen": 1794579181.3484735,
+    "ast_hash": "0ce5c6691963cfc762b5d3a0e60907fd",
     "semantic_hash": ""
   },
   "specifiche.html": {
@@ -3189,15 +3177,15 @@
     "semantic_hash": ""
   },
   "stima-sito-vetrina.md": {
-    "mtime": 1791934188.667361,
-    "seen": 1793882104.0040534,
-    "ast_hash": "4ecf1c0e0600e0fdc4cef1bb3dca96a5",
+    "mtime": 1794571395.2376795,
+    "seen": 1794579181.3484888,
+    "ast_hash": "69a9820826bff81f11b32b7674797ff6",
     "semantic_hash": ""
   },
   "sync-architettura.md": {
-    "mtime": 1785884671.895553,
-    "seen": 1793882104.0040545,
-    "ast_hash": "0224266e241ddef0cf3c945ee2e319fc",
+    "mtime": 1794571395.3236222,
+    "seen": 1794579181.3484924,
+    "ast_hash": "fcacce28271df2c28bcc6583288b3a8e",
     "semantic_hash": ""
   },
   "Prototipo Sito Vetrina/img-tre-vasi.png": {
@@ -3819,9 +3807,9 @@
     "semantic_hash": ""
   },
   "backend/scripts/reset-referenti-web.cjs": {
-    "mtime": 1794560663.1834965,
-    "seen": 1794564796.8766856,
-    "ast_hash": "62cf532956e119731fc2d3347cdae4c1",
+    "mtime": 1794571491.8402965,
+    "seen": 1794579181.3466911,
+    "ast_hash": "7e0a58762aed94e84c9c96f92541b254",
     "semantic_hash": ""
   },
   "backend/src/auth/dto/privacy.dto.ts": {
@@ -3897,9 +3885,9 @@
     "semantic_hash": ""
   },
   "GDPR/CRITICITA-ALTE-DETTAGLIO.md": {
-    "mtime": 1794560797.6177287,
-    "seen": 1794564796.877237,
-    "ast_hash": "7188916511e5d60818599f87dd345a7b",
+    "mtime": 1794570747.749468,
+    "seen": 1794579181.3479736,
+    "ast_hash": "581223fc01a4732b1424b4cb4f7fea75",
     "semantic_hash": ""
   },
   "GDPR/DPIA-SCREENING.md": {
@@ -3933,9 +3921,9 @@
     "semantic_hash": ""
   },
   "GDPR/REPORT-PRIVACY-GDPR.md": {
-    "mtime": 1794570138.6562946,
-    "seen": 1794570160.962397,
-    "ast_hash": "bc4afd98d317c6660d5c0048dfddf4f7",
+    "mtime": 1794571874.750783,
+    "seen": 1794579181.3480146,
+    "ast_hash": "4fe8129c0c970536c09dd61419c3ddb2",
     "semantic_hash": ""
   },
   "backend/src/common/session-token.ts": {
@@ -3998,24 +3986,6 @@
     "ast_hash": "555e4ef4f67e0f76919b613667c431bc",
     "semantic_hash": ""
   },
-  "backend/src/common/crypto-box.ts": {
-    "mtime": 1794567723.3379157,
-    "seen": 1794568069.0598755,
-    "ast_hash": "b979d8c601f92e1184c4f20a98201d12",
-    "semantic_hash": ""
-  },
-  "backend/src/common/totp.spec.ts": {
-    "mtime": 1794567723.3359165,
-    "seen": 1794568069.0599015,
-    "ast_hash": "03f6986635466f5491aff5176aa5f048",
-    "semantic_hash": ""
-  },
-  "backend/src/common/totp.ts": {
-    "mtime": 1794567723.3359165,
-    "seen": 1794568069.059903,
-    "ast_hash": "98c59ec8309ea7f3a0dc62cef551374e",
-    "semantic_hash": ""
-  },
   "frontend/components/admin/sections/MfaSection.tsx": {
     "mtime": 1794570024.3738952,
     "seen": 1794570160.962161,
@@ -4032,6 +4002,48 @@
     "mtime": 1794569930.3363657,
     "seen": 1794570160.961405,
     "ast_hash": "05a760a48d8abaa0948b52db68dd203d",
+    "semantic_hash": ""
+  },
+  "GDPR/word/genera-docx.cjs": {
+    "mtime": 1794571833.0354433,
+    "seen": 1794579181.3464794,
+    "ast_hash": "016ad50bffe46c9ae42effc54161e734",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261113050000_pulizia_totp/migration.sql": {
+    "mtime": 1794570573.0078557,
+    "seen": 1794579181.3466601,
+    "ast_hash": "e550a11abdcba1981706674920cd3675",
+    "semantic_hash": ""
+  },
+  "backend/scripts/pulizia-produzione.cjs": {
+    "mtime": 1794571491.8402965,
+    "seen": 1794579181.3466892,
+    "ast_hash": "bf7b5efee6a55d61bda59fe31ed16d69",
+    "semantic_hash": ""
+  },
+  "frontend/components/admin/DataTableSkeleton.tsx": {
+    "mtime": 1794578922.5626233,
+    "seen": 1794579181.3474307,
+    "ast_hash": "46c1f128d4548b3d1b3a3003d29eae7b",
+    "semantic_hash": ""
+  },
+  "GDPR/ANALISI_DATI_LLM_GDPR_AIAct.md": {
+    "mtime": 1785884671.3897228,
+    "seen": 1794579181.3479629,
+    "ast_hash": "d8d042472e614714d049b42269ec3094",
+    "semantic_hash": ""
+  },
+  "GDPR/informativa-privacy-b2b.md": {
+    "mtime": 1794565874.3329458,
+    "seen": 1794579181.348024,
+    "ast_hash": "65cf6cf173b40f84029508beddc20bfc",
+    "semantic_hash": ""
+  },
+  "GDPR/word/LEGGIMI.md": {
+    "mtime": 1794571875.5139942,
+    "seen": 1794579181.348028,
+    "ast_hash": "d0087063e3241d82ea05a8ad4ad6df4b",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {

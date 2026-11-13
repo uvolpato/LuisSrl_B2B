@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import DataTip from "../common/DataTip";
+import DataTableSkeleton from "./DataTableSkeleton";
 
 /** Definizione di una colonna: header e cella usano la stessa colonna,
  *  quindi l'incolonnamento header↔valori e' garantito. */
@@ -169,12 +170,8 @@ export default function DataTable<T>({
 
   return (
     <div className="data-table">
-      {loading && (
-        <div className="data-table-loading-overlay">
-          <span>Caricamento…</span>
-        </div>
-      )}
-      <div className="data-table-scroll">
+      {loading && <DataTableSkeleton cols={colCount} rows={Math.min(pageSize, 6)} />}
+      <div className="data-table-scroll" hidden={loading}>
         <table>
           <colgroup>
             {onRowReorder && <col style={{ width: "32px" }} />}
