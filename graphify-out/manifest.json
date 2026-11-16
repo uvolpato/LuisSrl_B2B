@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794854045.665804,
-    "seen": 1794854327.984023,
-    "ast_hash": "2b3f391c5d00a02bf07888741e0d9ae4",
+    "mtime": 1794854627.6580217,
+    "seen": 1794854749.5857475,
+    "ast_hash": "071472beea480833047c26c96c7ce2a9",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -1527,9 +1527,9 @@
     "semantic_hash": "cd0cba831312a4eaf0cac17781871b39"
   },
   "frontend/components/admin/sections/ArticoloEditModal.tsx": {
-    "mtime": 1794854125.8398008,
-    "seen": 1794854327.9842498,
-    "ast_hash": "8440d956eb61e93240e0f3e7ccbb4fac",
+    "mtime": 1794854647.3540106,
+    "seen": 1794854749.58598,
+    "ast_hash": "b9355daaf0a523e087d9bfac8f6fc8f5",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/BoxSuggerimentiSection.tsx": {
@@ -3093,9 +3093,9 @@
     "semantic_hash": ""
   },
   "specifica-articoli-componenti.md": {
-    "mtime": 1794854300.941505,
-    "seen": 1794854327.9845707,
-    "ast_hash": "e65382b568637b63b8c4f71244843ebb",
+    "mtime": 1794854691.2818348,
+    "seen": 1794854749.5862844,
+    "ast_hash": "fa721ae5af3e1718dc30951aa34cf920",
     "semantic_hash": ""
   },
   "specifica-chatbot-ai.md": {
@@ -4053,15 +4053,15 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/componenti.spec.ts": {
-    "mtime": 1794854050.2242942,
-    "seen": 1794854327.984014,
-    "ast_hash": "bd789cd5b4bb1c3fefb63c9b46fda5c3",
+    "mtime": 1794854632.6183536,
+    "seen": 1794854749.5857382,
+    "ast_hash": "bd50b67cd362a2f953da9832b7a8a445",
     "semantic_hash": ""
   },
   "backend/src/integrazione/componenti.ts": {
-    "mtime": 1794854013.358665,
-    "seen": 1794854327.9840157,
-    "ast_hash": "7a0fb697473c12025eeadb7346aa94ca",
+    "mtime": 1794854612.3357387,
+    "seen": 1794854749.5857399,
+    "ast_hash": "da2fa0bd76454d2a9c0e1b938b745291",
     "semantic_hash": ""
   },
   "frontend-vetrina/src/components/catalogo/Composizione.tsx": {
@@ -4080,6 +4080,12 @@
     "mtime": 1794853209.6199138,
     "seen": 1794854327.9838407,
     "ast_hash": "f443a75135fa0b39d00978bc0b98a3be",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261116020000_rimuovi_descrizione_composizione/migration.sql": {
+    "mtime": 1794854597.7582622,
+    "seen": 1794854749.58554,
+    "ast_hash": "9cf7bb38ea7ab3092fbc11d8cd3df453",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
