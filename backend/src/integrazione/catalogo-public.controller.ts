@@ -59,7 +59,14 @@ export class CatalogoPublicController {
             descrizione: true,
             varianti: {
               where: { stato: { not: 'NASCOSTO' } },
-              select: { codice: true, dimensioni: true },
+              select: {
+                codice: true,
+                dimensioni: true,
+                componenti: {
+                  select: { codice: true, descrizione: true, dimensioni: true, quantita: true },
+                  orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
+                },
+              },
               orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
             },
           },
@@ -81,6 +88,12 @@ export class CatalogoPublicController {
           varianti: (d?.varianti ?? []).map((v) => ({
             codice: v.codice,
             dimensioni: formatDimensioni(v.dimensioni),
+            componenti: v.componenti.map((c) => ({
+              codice: c.codice,
+              descrizione: c.descrizione,
+              dimensioni: c.dimensioni ?? '',
+              quantita: c.quantita,
+            })),
           })),
         };
       }),
@@ -125,6 +138,12 @@ export class CatalogoPublicController {
           descrizione: v.descrizione,
           dimensioni: v.dimensioni,
           stato: v.stato,
+          componenti: (v.componenti ?? []).map((c: any) => ({
+            codice: c.codice,
+            descrizione: c.descrizione,
+            dimensioni: c.dimensioni,
+            quantita: c.quantita,
+          })),
         })),
       immagini: art.immagini.map((i: any) => ({
         id: i.id,

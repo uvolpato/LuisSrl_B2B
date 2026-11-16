@@ -431,8 +431,30 @@ model Variante {
   articolo    Articolo  @relation(fields: [articoloId], references: [id])
   ordinamento Int       @default(0)
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  /// Descrizione breve della composizione (kit), compilata in admin: va nel prompt AI
+  descrizioneComposizione String? @map("descrizione_composizione")
+  componenti  VarianteComponente[]
 
   @@map("varianti")
+}
+
+/// Pezzi che compongono una variante "kit" (codice padre `X`, figli `X-00001`).
+/// I figli non sono ordinabili: prezzo e giacenza stanno solo sul padre. La
+/// quantità è compilata a mano in admin: Integra non la fornisce.
+model VarianteComponente {
+  id          Int      @id @default(autoincrement())
+  padreCodice String   @map("padre_codice")
+  padre       Variante @relation(fields: [padreCodice], references: [codice], onDelete: Cascade)
+  codice      String
+  descrizione String
+  dimensioni  String?
+  quantita    Int      @default(1)
+  ordinamento Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([padreCodice, codice])
+  @@index([padreCodice, ordinamento])
+  @@map("varianti_componenti")
 }
 
 model Immagine {

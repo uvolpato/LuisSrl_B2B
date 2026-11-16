@@ -9,6 +9,7 @@ import { ASSETS_BASE_DIR, ASSETS_PUBLIC_URL } from '../common/env';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
 import { EventsService } from '../events/events.service';
+import { candidatoPadre, padreComponente, promptComposizione, MAX_DESCRIZIONE_COMPOSIZIONE } from './componenti';
 
 function hexToSrgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
@@ -166,15 +167,63 @@ export class IntegrazioneService {
   }
 
   async importaVarianti(codici: string[]) {
-    const placeholders = codici.map((_, i) => `$${i + 1}`).join(',');
-    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT a.*, f.nome AS famiglia_nome
-       FROM integra_articoli a
-       LEFT JOIN integra_famiglie f ON f.codice_numerico = a.famiglia_codice
-       WHERE a.pro_cod IN (${placeholders})`,
-      ...codici,
-    );
-    if (!rows.length) return { creati: 0, articoli: [] };
+    const loadRows = (codes: string[]) => {
+      const placeholders = codes.map((_, i) => `$${i + 1}`).join(',');
+      return this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+        `SELECT a.*, f.nome AS famiglia_nome
+         FROM integra_articoli a
+         LEFT JOIN integra_famiglie f ON f.codice_numerico = a.famiglia_codice
+         WHERE a.pro_cod IN (${placeholders})`,
+        ...codes,
+      );
+    };
+
+    const rows = await loadRows(codici);
+    if (!rows.length) return { creati: 0, articoli: [], componenti: 0 };
+
+    // Composizioni: i figli (`padre-00001`) non diventano varianti ordinabili,
+    // finiscono nella tabella della descrizione del padre.
+    const codiciBatch = rows.map((r) => String(r.pro_cod).trim());
+    const candidati = [...new Set(codiciBatch.map(candidatoPadre).filter((c): c is string => !!c))];
+    const padriEsistenti = new Set<string>();
+    if (candidati.length) {
+      const found = await this.prisma.$queryRawUnsafe<{ pro_cod: string }[]>(
+        `SELECT pro_cod FROM integra_articoli WHERE pro_cod = ANY($1)`,
+        candidati,
+      );
+      for (const f of found) padriEsistenti.add(f.pro_cod);
+    }
+    const figli = new Map<string, string>();
+    for (const codice of codiciBatch) {
+      const padre = padreComponente(codice, (c) => padriEsistenti.has(c));
+      if (padre) figli.set(codice, padre);
+    }
+    // Il padre può non essere tra i codici selezionati: senza di lui il kit non ha prezzo.
+    const padriMancanti = [...new Set(figli.values())].filter((p) => !codiciBatch.includes(p));
+    if (padriMancanti.length) rows.push(...(await loadRows(padriMancanti)));
+
+    // Viceversa: importando il solo padre il kit deve uscire completo, quindi
+    // cerco i figli (`padre-#####`) anche quando non sono stati selezionati.
+    const padriDaEspandere = codiciBatch.filter((c) => !figli.has(c));
+    if (padriDaEspandere.length) {
+      const figliTrovati = await this.prisma.$queryRawUnsafe<{ pro_cod: string }[]>(
+        `SELECT pro_cod FROM integra_articoli WHERE ${padriDaEspandere
+          .map((_, i) => `pro_cod ~ $${i + 1}`)
+          .join(' OR ')}`,
+        ...padriDaEspandere.map((p) => `^${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-[0-9]{5}$`),
+      );
+      const nuovi = figliTrovati.map((f) => f.pro_cod).filter((c) => !figli.has(c));
+      if (nuovi.length) {
+        const righeFigli = await loadRows(nuovi);
+        rows.push(...righeFigli);
+        for (const r of righeFigli) {
+          const codice = String(r.pro_cod).trim();
+          const padre = padreComponente(codice, (c) => padriDaEspandere.includes(c));
+          if (padre) figli.set(codice, padre);
+        }
+      }
+    }
+
 
     let defaultPrompt: string | undefined;
     const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
@@ -236,6 +285,7 @@ export class IntegrazioneService {
       const created: { articoloId: number; codiceLinea: string; varianti: number }[] = [];
       for (const row of rows) {
         const codice = String(row.pro_cod).trim();
+        if (figli.has(codice)) continue;
         const descrizione = row.pro_descr ? String(row.pro_descr).trim() : '';
         const famigliaCodice = row.famiglia_codice ? String(row.famiglia_codice).trim() : null;
         const famCodice = await upsertFamiglia(tx, famigliaCodice, row.famiglia_nome ? String(row.famiglia_nome) : null);
@@ -265,6 +315,23 @@ export class IntegrazioneService {
           });
         }
         created.push({ articoloId: art.id, codiceLinea, varianti: 1 });
+      }
+
+      // Tabella della composizione. La quantità è compilata a mano in admin, quindi
+      // l'upsert non la tocca. Un figlio importato in passato come variante viene
+      // rimosso: non è ordinabile da solo.
+      for (const [codice, padre] of figli) {
+        const row = rows.find((r) => String(r.pro_cod).trim() === codice);
+        if (!row) continue;
+        const descrizione = row.pro_descr ? String(row.pro_descr).trim() : codice;
+        const dimensioni = row.dimensione_testo ? String(row.dimensione_testo).trim() : this.dimText(row.dimensione_json) || null;
+        const ordinamento = Number(codice.slice(codice.lastIndexOf('-') + 1)) || 0;
+        await tx.varianteComponente.upsert({
+          where: { padreCodice_codice: { padreCodice: padre, codice } },
+          create: { padreCodice: padre, codice, descrizione, dimensioni, ordinamento },
+          update: { descrizione, dimensioni, ordinamento },
+        });
+        await tx.variante.deleteMany({ where: { codice } });
       }
       return created;
     });
@@ -300,7 +367,7 @@ export class IntegrazioneService {
       void this.reembedArticolo(codiceLinea).catch(() => {});
     }
 
-    return { creati: result.length, articoli: result };
+    return { creati: result.length, articoli: result, componenti: figli.size };
   }
 
   /** Undo split: riaccorpa varianti negli articoli originali e cancella articoli duplicati. */
@@ -1624,7 +1691,10 @@ Rispondi SOLO con JSON valido, senza testo attorno:
     const art = await this.prisma.articolo.findUnique({
       where: { codiceLinea },
       include: {
-        varianti: { orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }] },
+        varianti: {
+          orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
+          include: { componenti: { orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }] } },
+        },
         famiglia: true,
         immagini: { orderBy: { ordinamento: 'asc' } },
         raccolte: { include: { raccolta: { select: { id: true, nome: true, slug: true, sconto: true, stato: true } } } },
@@ -1666,6 +1736,14 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         multiplo: v.multiplo,
         giacenza: v.giacenza,
         stato: v.stato === 'NASCOSTO' ? 'nascosto' : 'attivo',
+        descrizioneComposizione: v.descrizioneComposizione,
+        componenti: v.componenti.map((c) => ({
+          id: c.id,
+          codice: c.codice,
+          descrizione: c.descrizione,
+          dimensioni: c.dimensioni,
+          quantita: c.quantita,
+        })),
       })),
       immagini: art.immagini.map((i) => ({ id: i.id, url: i.url, ordinamento: i.ordinamento, copertina: i.copertina, tipo: i.tipo, inGalleria: i.inGalleria, css: i.css, prompt: i.prompt, aiModel: i.aiModel, aiAspect: i.aiAspect, aiTemperature: i.aiTemperature, aiSeed: i.aiSeed, immaginePadreId: i.immaginePadreId })),
     };
@@ -1760,7 +1838,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; variantiOrdine?: string[]; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; variantiOrdine?: string[]; componentiQuantita?: Record<string, number>; descrizioniComposizione?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -1824,6 +1902,26 @@ Rispondi SOLO con JSON valido, senza testo attorno:
           }),
         ),
       );
+    }
+    if (data.componentiQuantita) {
+      // Il padre deve appartenere a questo articolo: nessuna scrittura su kit di altri.
+      for (const [id, quantita] of Object.entries(data.componentiQuantita)) {
+        const componenteId = Number(id);
+        if (!Number.isFinite(componenteId)) continue;
+        await this.prisma.varianteComponente.updateMany({
+          where: { id: componenteId, padre: { articoloId: art.id } },
+          data: { quantita: Math.max(1, Math.trunc(Number(quantita) || 1)) },
+        });
+      }
+    }
+    if (data.descrizioniComposizione) {
+      // Descrizione breve del kit: va nel prompt AI. Limite applicato qui, non solo in UI.
+      for (const [codice, testo] of Object.entries(data.descrizioniComposizione)) {
+        await this.prisma.variante.updateMany({
+          where: { codice, articoloId: art.id },
+          data: { descrizioneComposizione: String(testo ?? '').trim().slice(0, MAX_DESCRIZIONE_COMPOSIZIONE) || null },
+        });
+      }
     }
     const deletedIds = new Set(data.immaginiDaEliminare ?? []);
     if (data.immaginiDaEliminare?.length) {
@@ -2434,7 +2532,16 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
     // Misure reali dal DB (varianti): l'AI deve usare queste, non stimare "a occhio".
     const variantiDim = await this.prisma.variante.findMany({
       where: { articoloId: art.id, stato: { not: 'NASCOSTO' } },
-      select: { descrizione: true, dimensioni: true },
+      select: {
+        codice: true,
+        descrizione: true,
+        dimensioni: true,
+        descrizioneComposizione: true,
+        componenti: {
+          select: { descrizione: true, dimensioni: true, quantita: true },
+          orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],
+        },
+      },
       orderBy: { codice: 'asc' },
     });
     const dimSection = variantiDim.length
@@ -2442,12 +2549,14 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
           .map((v) => `- ${v.descrizione}${v.dimensioni ? `: ${JSON.stringify(v.dimensioni)}` : ''}`)
           .join('\n')}`
       : '';
+    // Kit: i pezzi vanno citati nella descrizione (si vendono solo insieme).
+    const compSection = promptComposizione(variantiDim);
 
     // Requisiti oggettivi: garantiscono che la descrizione contenga gli attributi su
     // cui si appoggiano ricerca testuale e per immagine (embedding + boost).
     const requisiti = `\n\nRequisiti obbligatori: nella descrizione dettagliata cita in modo esplicito e concreto, quando determinabili, questi attributi oggettivi: tipo di prodotto, materiale, forma, colore, finitura, dimensioni (usa le misure reali delle varianti qui sopra), uso (interno/esterno). Non inventare attributi non presenti nelle immagini o nei dati.`;
 
-    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}${dimSection}${requisiti}`;
+    const fullPrompt = `${systemPrompt}\n\nContributi dell'operatore:\n${contributi}${imgSection}${dimSection}${compSection}${requisiti}`;
 
     const raw = await this.callGeminiText(fullPrompt, undefined, 'descrizione', undefined, geminiTokens);
     console.log(`[wizardDescrizione] Gemini risposta per ${codiceLinea}: token ${geminiTokens.tokenIn}/${geminiTokens.tokenOut}, testo (${raw.length}): ${raw.slice(0, 500)}`);
