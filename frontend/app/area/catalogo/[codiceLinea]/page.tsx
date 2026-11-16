@@ -26,6 +26,14 @@ interface PrezzoInfo {
   sconto: number;
 }
 
+interface Componente {
+  id: number;
+  codice: string;
+  descrizione: string;
+  dimensioni: string | null;
+  quantita: number;
+}
+
 interface Variante {
   codice: string;
   descrizione: string;
@@ -34,6 +42,7 @@ interface Variante {
   giacenza: number;
   stato: string;
   prezzo: PrezzoInfo | null;
+  componenti?: Componente[];
 }
 
 interface Immagine {
@@ -285,6 +294,7 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
   }, [varianti, selDim, dimKeys]);
 
   const singleVariant = varianti.length === 1 ? varianti[0] : null;
+  const kitVarianti = varianti.filter((v) => (v.componenti?.length ?? 0) > 0);
 
   const buyVariant = selectedVariant || singleVariant;
   const buyOut = buyVariant ? getStock(buyVariant.giacenza) === "out" : false;
@@ -512,6 +522,39 @@ export default function SchedaArticoloPage({ params }: { params: Promise<{ codic
                   <h3>Descrizione</h3>
                   <p>{articolo.descrizione || "Descrizione non disponibile."}</p>
                 </div>
+
+                {kitVarianti.length > 0 && (
+                  <div className="product-desc-block">
+                    <h3>Composizione</h3>
+                    {kitVarianti.map((v) => (
+                      <div key={v.codice} style={{ marginBottom: 12 }}>
+                        {kitVarianti.length > 1 && <p className="eyebrow" style={{ marginBottom: 6 }}>Cod. {v.codice}</p>}
+                        <div className="variant-table-scroll">
+                          <table className="variant-table">
+                            <thead>
+                              <tr>
+                                <th>Codice</th>
+                                <th>Descrizione</th>
+                                <th>Dimensioni</th>
+                                <th>Q.tà</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {v.componenti!.map((c) => (
+                                <tr key={c.codice}>
+                                  <td style={{ fontFamily: "var(--font-mono)", fontSize: 13, whiteSpace: "nowrap" }}>{c.codice}</td>
+                                  <td style={{ fontSize: 13, color: "var(--muted)" }}>{c.descrizione}</td>
+                                  <td style={{ fontSize: 13, color: "var(--muted)" }}>{c.dimensioni || "—"}</td>
+                                  <td style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>{c.quantita}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="product-desc-block">
                   <h3>Caratteristiche</h3>

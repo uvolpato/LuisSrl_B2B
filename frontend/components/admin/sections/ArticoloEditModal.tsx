@@ -17,6 +17,17 @@ interface DimensioneEntry {
   descrizione?: string;
   valore?: string | number;
 }
+interface ComponenteDetail {
+  id: number;
+  codice: string;
+  descrizione: string;
+  dimensioni: string | null;
+  quantita: number;
+}
+
+/** Riga del tab Composizione: il pezzo più il codice del kit a cui appartiene. */
+type RigaComponente = ComponenteDetail & { padre: string };
+
 interface VarianteDetail {
   codice: string;
   descrizione: string;
@@ -24,6 +35,8 @@ interface VarianteDetail {
   multiplo: number;
   giacenza: number;
   stato: string;
+  descrizioneComposizione?: string | null;
+  componenti?: ComponenteDetail[];
 }
 
 interface RaccoltaSlim {
@@ -59,6 +72,7 @@ const tabs = [
   { key: "generale", label: "Generale" },
   { key: "immagini", label: "Immagini" },
   { key: "varianti", label: "Varianti" },
+  { key: "composizione", label: "Composizione" },
   { key: "descrizione-ai", label: "Descrizione AI" },
   { key: "famiglia", label: "Famiglia" },
   { key: "raccolte", label: "Raccolte" },
@@ -94,6 +108,9 @@ export default function ArticoloEditModal({
   const [editStato, setEditStato] = useState<"attivo" | "nascosto">("attivo");
   const [editVarianti, setEditVarianti] = useState<Record<string, string>>({});
   const [editMultipli, setEditMultipli] = useState<Record<string, number>>({});
+  const [editComponenti, setEditComponenti] = useState<Record<number, number>>({});
+  const [editComposizioni, setEditComposizioni] = useState<Record<string, string>>({});
+  const [cPage, setCPage] = useState(1);
   const [vPage, setVPage] = useState(1);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -169,7 +186,10 @@ export default function ArticoloEditModal({
       setEditStato(a.stato);
       setEditVarianti(Object.fromEntries(a.varianti.map((v) => [v.codice, v.stato])));
       setEditMultipli(Object.fromEntries(a.varianti.map((v) => [v.codice, v.multiplo])));
+      setEditComponenti(Object.fromEntries(a.varianti.flatMap((v) => (v.componenti ?? []).map((c) => [c.id, c.quantita]))));
+      setEditComposizioni(Object.fromEntries(a.varianti.map((v) => [v.codice, v.descrizioneComposizione ?? ""])));
       setVPage(1);
+      setCPage(1);
       setPendingImages([]);
       setImmaginiOrdine(null);
       setVariantiOrdine(null);
@@ -235,6 +255,12 @@ export default function ArticoloEditModal({
       if ((editVarianti[v.codice] || v.stato) !== v.stato) return true;
       if ((editMultipli[v.codice] ?? v.multiplo) !== v.multiplo) return true;
     }
+    for (const c of article.varianti.flatMap((v) => v.componenti ?? [])) {
+      if ((editComponenti[c.id] ?? c.quantita) !== c.quantita) return true;
+    }
+    for (const v of article.varianti) {
+      if ((editComposizioni[v.codice] ?? "") !== (v.descrizioneComposizione ?? "")) return true;
+    }
     if ((article.descrizione ?? "") !== initialDescRef.current.descrizione) return true;
     if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
     if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
@@ -243,7 +269,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, immaginiOrdine, variantiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, editComponenti, editComposizioni, immaginiOrdine, variantiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -268,6 +294,22 @@ export default function ArticoloEditModal({
       if (article.wizardStepTesti) payload.wizardStepTesti = article.wizardStepTesti;
       if (immaginiOrdine) payload.immaginiOrdine = immaginiOrdine;
       if (variantiOrdine) payload.variantiOrdine = variantiOrdine;
+      // Quantità dei pezzi: solo quelle cambiate, altrimenti si riscrivono le altre.
+      const componentiQuantita = Object.fromEntries(
+        article.varianti.flatMap((v) =>
+          (v.componenti ?? [])
+            .filter((c) => (editComponenti[c.id] ?? c.quantita) !== c.quantita)
+            .map((c) => [c.id, editComponenti[c.id] ?? c.quantita]),
+        ),
+      );
+      if (Object.keys(componentiQuantita).length > 0) payload.componentiQuantita = componentiQuantita;
+      // Descrizione del kit: solo quelle cambiate (va nel prompt AI).
+      const descrizioniComposizione = Object.fromEntries(
+        article.varianti
+          .filter((v) => (editComposizioni[v.codice] ?? "") !== (v.descrizioneComposizione ?? ""))
+          .map((v) => [v.codice, editComposizioni[v.codice] ?? ""]),
+      );
+      if (Object.keys(descrizioniComposizione).length > 0) payload.descrizioniComposizione = descrizioniComposizione;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
       if (Object.keys(immaginiTipo).length > 0) payload.immaginiTipo = immaginiTipo;
@@ -324,6 +366,12 @@ export default function ArticoloEditModal({
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
+  // Il tab Composizione compare solo se l'articolo ha almeno un kit.
+  const righeComponenti: RigaComponente[] = (article?.varianti ?? []).flatMap((v) =>
+    (v.componenti ?? []).map((c) => ({ ...c, padre: v.codice })),
+  );
+  const tabsVisibili = tabs.filter((t) => t.key !== "composizione" || righeComponenti.length > 0);
+
   if (!open) return null;
 
   return (
@@ -338,12 +386,12 @@ export default function ArticoloEditModal({
       <div className="modal-tabs-bar" ref={tabsBarRef}>
         {compactTabs ? (
           <select className="input" value={activeTab} onChange={(e) => setActiveTab(e.target.value)} style={{ width: "calc(100% - 16px)", margin: "8px 8px", fontSize: 14 }}>
-            {tabs.map((t) => (
+            {tabsVisibili.map((t) => (
               <option key={t.key} value={t.key}>{t.label}</option>
             ))}
           </select>
         ) : (
-          tabs.map((t) => (
+          tabsVisibili.map((t) => (
             <button key={t.key} className={`modal-tab-btn ${activeTab === t.key ? "active" : ""}`} onClick={() => { setActiveTab(t.key); }}>
               {t.label}
             </button>
@@ -351,7 +399,7 @@ export default function ArticoloEditModal({
         )}
       </div>
 
-      <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "immagini" || activeTab === "raccolte" ? " modal-body-edit--fill" : ""}`}>
+      <div className={`modal-body-edit${activeTab === "varianti" || activeTab === "composizione" || activeTab === "immagini" || activeTab === "raccolte" ? " modal-body-edit--fill" : ""}`}>
         {error && <Notice variant="error" onClose={() => setError(null)} style={{ marginBottom: 16 }}>{error}</Notice>}
 
         {loading && <p style={{ color: "var(--muted)", padding: 40, textAlign: "center" }}>Caricamento…</p>}
@@ -556,6 +604,62 @@ export default function ArticoloEditModal({
                         copy.splice(ti, 0, moved);
                         return copy;
                       })}
+                    />
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTab === "composizione" && (
+              <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                <p style={{ margin: "0 0 16px", flexShrink: 0, color: "var(--muted)", fontSize: 14 }}>
+                  Pezzi delle varianti kit. I figli non sono ordinabili: prezzo e giacenza sono del padre.
+                  La quantità non arriva da Integra e si salva con &quot;Salva Modifiche&quot;. La descrizione
+                  della composizione (max 120 caratteri) entra nel prompt che genera la descrizione dell&apos;articolo.
+                </p>
+                {(() => {
+                  const cols: Column<RigaComponente>[] = [
+                    { key: "composizione", header: "Composizione", width: "260px", cell: (c) => (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          className="input"
+                          maxLength={120}
+                          placeholder="Descrizione composizione"
+                          aria-label={`Descrizione composizione ${c.padre}`}
+                          value={editComposizioni[c.padre] ?? ""}
+                          onChange={(e) => setEditComposizioni((prev) => ({ ...prev, [c.padre]: e.target.value }))}
+                          style={{ width: "100%", fontSize: 13, padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg)", color: "var(--fg)" }}
+                        />
+                        <span style={{ display: "block", marginTop: 2, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.padre}</span>
+                      </div>
+                    )},
+                    { key: "codice", header: "Codice componente", grow: true, mono: true, cell: (c) => c.codice },
+                    { key: "descrizione", header: "Descrizione", cell: (c) => <span className="desc-col">{c.descrizione}</span> },
+                    { key: "dimensioni", header: "Dimensioni", width: "120px", cell: (c) => c.dimensioni || "—" },
+                    { key: "qta", header: "Q.tà", width: "90px", align: "right", cell: (c) => (
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        className="input"
+                        value={String(editComponenti[c.id] ?? c.quantita)}
+                        onChange={(e) => setEditComponenti((prev) => ({ ...prev, [c.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: "70px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 13, padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg)", color: "var(--fg)" }}
+                      />
+                    ) },
+                  ];
+                  return (
+                    <DataTable
+                      columns={cols}
+                      rows={righeComponenti}
+                      rowKey={(c) => c.id}
+                      page={cPage}
+                      pageSize={50}
+                      total={righeComponenti.length}
+                      onPageChange={setCPage}
+                      emptyText="Nessuna composizione"
                     />
                   );
                 })()}
