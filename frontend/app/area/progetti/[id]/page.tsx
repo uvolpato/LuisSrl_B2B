@@ -69,7 +69,8 @@ export default function ProgettoDetailPage({ params }: { params: Promise<{ id: s
   function copyLink() {
     if (!p) return;
     const url = `${window.location.origin}/progetti/${p.shareToken}`;
-    void navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    // Clipboard negata (HTTP da LAN, permessi): nessun errore in console, si copia a mano dall'URL.
+    void navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
   }
 
 

@@ -643,7 +643,12 @@ function DettaglioScreen({ d, cerca, filtro, onRevoca, onBrevo, onEsito, onCaric
                     <td className="d-ape mono">{fmtOra(r.apertoIl)}</td>
                     <td className="c-sca">{r.scaricati.length > 0 ? r.scaricati.map((id) => d.cataloghi.find((c) => c.id === id)?.nome ?? `#${id}`).join(" · ") : "—"}</td>
                     <td className="col-actions d-az">
-                      <button type="button" className="btn btn-secondary btn-xs" onClick={() => { navigator.clipboard.writeText(r.link); onEsito("Link copiato."); }}>Link</button>
+                      <button type="button" className="btn btn-secondary btn-xs" onClick={() => {
+                        // Clipboard può essere negata (HTTP da LAN): messaggio onesto, niente errore in console.
+                        navigator.clipboard.writeText(r.link)
+                          .then(() => onEsito("Link copiato."))
+                          .catch(() => onEsito("Copia non riuscita: seleziona il link a mano."));
+                      }}>Link</button>
                       {!r.revocato && <button type="button" className="btn btn-secondary danger btn-xs" onClick={() => onRevoca(r.id)}>Revoca</button>}
                     </td>
                   </tr>
