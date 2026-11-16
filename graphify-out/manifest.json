@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794854627.6580217,
-    "seen": 1794854749.5857475,
-    "ast_hash": "071472beea480833047c26c96c7ce2a9",
+    "mtime": 1794856395.5920453,
+    "seen": 1794856453.290863,
+    "ast_hash": "9a80ddea4164d75dce7e12f66597a677",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -1479,10 +1479,10 @@
     "semantic_hash": "7cc5a61ed6bc508f52a4055dcad8aeeb"
   },
   "frontend/components/admin/ImportaArticoliModal.tsx": {
-    "mtime": 1786363418.8594854,
-    "seen": 1793880362.9784625,
-    "ast_hash": "bf03bebf7c411d9768b07b7e8aa97574",
-    "semantic_hash": "bf03bebf7c411d9768b07b7e8aa97574"
+    "mtime": 1794856395.5920453,
+    "seen": 1794856453.2910788,
+    "ast_hash": "1bdd3ccb23e3b7d3b59ac41c959c7ca1",
+    "semantic_hash": ""
   },
   "frontend/components/admin/ImportaClientiModal.tsx": {
     "mtime": 1788380386.8054936,
@@ -4086,6 +4086,24 @@
     "mtime": 1794854597.7582622,
     "seen": 1794854749.58554,
     "ast_hash": "9cf7bb38ea7ab3092fbc11d8cd3df453",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261116030000_codice_linea_sicuro/migration.sql": {
+    "mtime": 1794856346.368862,
+    "seen": 1794856453.2906344,
+    "ast_hash": "e70d9d813e6bc0b4364fade898f833e3",
+    "semantic_hash": ""
+  },
+  "backend/src/common/codice-articolo.spec.ts": {
+    "mtime": 1794856298.7737463,
+    "seen": 1794856453.2907624,
+    "ast_hash": "8964fd8e52edf66f179193520a2c57a6",
+    "semantic_hash": ""
+  },
+  "backend/src/common/codice-articolo.ts": {
+    "mtime": 1794856298.772735,
+    "seen": 1794856453.2907825,
+    "ast_hash": "0494bf8914892e1afa70b11c4666b702",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
