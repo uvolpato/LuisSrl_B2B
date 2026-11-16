@@ -230,12 +230,6 @@ export class IntegrazioneService {
     const sc = await this.prisma.siteConfig.findUnique({ where: { key: 'Prompt_AI_Descrizione_Articolo' } });
     if (sc?.value?.trim()) defaultPrompt = sc.value.trim();
 
-    const existingVarianti = await this.prisma.variante.findMany({
-      where: { codice: { in: codici } },
-      select: { codice: true },
-    });
-    const existingSet = new Set(existingVarianti.map((v) => v.codice));
-
     // Mappa codice famiglia (numerico) → codice (FAM_* da FDW)
     const famMap = new Map<string, { proCod: string; nome: string }>();
     try {
@@ -311,17 +305,14 @@ export class IntegrazioneService {
         });
 
         const dim = row.dimensione_json || null;
-        if (existingSet.has(codice)) {
-          const updateData: any = { descrizione };
-          if (dim) updateData.dimensioni = dim as any;
-          const existing = await tx.variante.findUnique({ where: { codice }, select: { articoloId: true } });
-          if (existing && existing.articoloId !== art.id) updateData.articoloId = art.id;
-          await tx.variante.update({ where: { codice }, data: updateData });
-        } else {
-          await tx.variante.create({
-            data: { codice, descrizione, articoloId: art.id, ...(dim ? { dimensioni: dim as any } : {}) },
-          });
-        }
+        // Upsert: il batch può contenere codici aggiunti da soli (padri dei kit,
+        // figli espansi) che non erano nella richiesta: il create su un codice
+        // già presente faceva fallire l'import con una violazione di unicità.
+        await tx.variante.upsert({
+          where: { codice },
+          create: { codice, descrizione, articoloId: art.id, ...(dim ? { dimensioni: dim as any } : {}) },
+          update: { descrizione, articoloId: art.id, ...(dim ? { dimensioni: dim as any } : {}) },
+        });
         created.push({ articoloId: art.id, codiceLinea, varianti: 1 });
       }
 
