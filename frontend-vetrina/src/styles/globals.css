@@ -275,12 +275,19 @@ a { color: var(--accent); }
 .product-body { padding: 16px 18px 18px; display: flex; flex-direction: column; flex: 1; }
 .product-kind { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .product-name { font-size: 17px; margin: 6px 0 6px; }
-.product-desc { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
 .variant-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
 .variant-list li { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .variant-list .v-code { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); flex: 0 0 auto; white-space: nowrap; }
 .variant-list .v-desc { flex: 1; min-width: 0; }
 .variant-list .v-dim { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+/* Kit: tabella dei pezzi (i figli non sono ordinabili, il prezzo è del padre). */
+.comp-wrap { overflow-x: auto; margin: 10px 0 0; }
+.comp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.comp-table caption { text-align: left; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding-bottom: 4px; }
+.comp-table th, .comp-table td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.comp-table th { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.comp-table td:first-child { font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap; }
+.comp-table th:last-child, .comp-table td:last-child { text-align: right; white-space: nowrap; width: 1%; }
 .product-foot { margin-top: auto; padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .product-variants { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .product-lock { font-size: 12.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
@@ -372,9 +379,8 @@ a { color: var(--accent); }
 }
 .ai-badge-hero { bottom: 14px; right: 14px; z-index: 2; }
 
-/* ── Catalogo da backend: chip come link, descrizioni lunghe, paginazione ── */
+/* ── Catalogo da backend: chip come link, paginazione ── */
 a.chip { text-decoration: none; display: inline-block; }
-.product-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .catalog-pager { display: flex; justify-content: space-between; gap: 12px; padding-bottom: clamp(40px, 6vw, 72px); }
 .variant-list .v-dim { margin-left: auto; }
 
@@ -413,6 +419,11 @@ a.chip { text-decoration: none; display: inline-block; }
 .lightbox-desc { flex: 0 0 auto; width: 340px; max-width: 340px; color: #fff; }
 .lightbox-desc h2 { font-size: clamp(20px, 2.2vw, 28px); color: #fff; margin: 0 0 14px; }
 .lightbox-desc p { color: oklch(88% 0.01 80); line-height: 1.65; margin: 0; max-height: 78vh; overflow-y: auto; }
+.lightbox-desc .comp-wrap { margin-top: 14px; }
+.lightbox-desc .comp-table { color: oklch(88% 0.01 80); }
+.lightbox-desc .comp-table caption { color: oklch(82% 0.05 60); }
+.lightbox-desc .comp-table th { color: oklch(82% 0.01 80); }
+.lightbox-desc .comp-table th, .lightbox-desc .comp-table td { border-color: oklch(100% 0 0 / .2); }
 .lightbox-close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; cursor: pointer; z-index: 2; }
 .ai-badge-lg { bottom: 16px; right: 20px; font-size: 12px; padding: 4px 8px; }
 

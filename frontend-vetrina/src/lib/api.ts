@@ -9,6 +9,8 @@ export type FamigliaPubblica = {
   immagineAI: boolean;
 };
 
+export type Componente = { codice: string; descrizione: string; dimensioni: string; quantita: number };
+
 export type ArticoloPubblico = {
   codiceLinea: string;
   nome: string;
@@ -16,7 +18,7 @@ export type ArticoloPubblico = {
   famiglia: string | null;
   img: string | null;
   imgAI: boolean;
-  varianti: { codice: string; dimensioni: string }[];
+  varianti: { codice: string; dimensioni: string; componenti: Componente[] }[];
 };
 
 export type PaginaArticoli = { total: number; hasMore: boolean; articoli: ArticoloPubblico[] };
@@ -85,7 +87,14 @@ export async function getArticoli(params: { famiglia?: string; q?: string; page?
         imgAI: a?.imgAI === true,
         varianti: (Array.isArray(a?.varianti) ? a.varianti : []).flatMap((v: Raw) => {
           const codice = str(v?.codice);
-          return codice ? [{ codice, dimensioni: str(v?.dimensioni) ?? '' }] : [];
+          if (!codice) return [];
+          const componenti = (Array.isArray(v?.componenti) ? v.componenti : []).flatMap((c: Raw) => {
+            const cCodice = str(c?.codice);
+            return cCodice
+              ? [{ codice: cCodice, descrizione: str(c?.descrizione) ?? '', dimensioni: str(c?.dimensioni) ?? '', quantita: Number.isFinite(c?.quantita) ? Number(c.quantita) : 1 }]
+              : [];
+          });
+          return [{ codice, dimensioni: str(v?.dimensioni) ?? '', componenti }];
         }),
       }];
     }),

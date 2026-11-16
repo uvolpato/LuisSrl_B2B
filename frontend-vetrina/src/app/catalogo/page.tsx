@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { getArticoli, getFamiglie, imgUrl } from '@/lib/api';
 import ZoomImage from '@/components/catalogo/ZoomImage';
+import Composizione from '@/components/catalogo/Composizione';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
@@ -82,7 +83,6 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
                 <div className='product-body'>
                   {a.famiglia && <span className='product-kind'>{a.famiglia}</span>}
                   <h3 className='product-name'>{a.nome}</h3>
-                  {a.descrizione && <p className='product-desc'>{a.descrizione}</p>}
                   <ul className='variant-list'>
                     {a.varianti.map((v) => (
                       <li key={v.codice}>
@@ -91,6 +91,9 @@ export default async function CatalogoPage({ searchParams }: { searchParams: Pro
                       </li>
                     ))}
                   </ul>
+                  {a.varianti.filter((v) => v.componenti.length > 0).map((v) => (
+                    <Composizione key={v.codice} codice={v.codice} componenti={v.componenti} />
+                  ))}
                   <div className='product-foot'>
                     <span className='product-variants'>{t('varianti', { n: a.varianti.length })}</span>
                     <Link className='product-lock' href='/#accesso'>{t('prezziRiservati')}</Link>

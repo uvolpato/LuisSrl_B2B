@@ -2,8 +2,10 @@
 
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import type { Componente } from '@/lib/api';
+import Composizione from './Composizione';
 
-type Variante = { codice: string; dimensioni: string };
+type Variante = { codice: string; dimensioni: string; componenti: Componente[] };
 
 // Click sull'immagine → vista ingrandita: varianti a sinistra, immagine al centro,
 // descrizione a destra. La dissolvenza dei testi è CSS su [open], riscatta a ogni showModal.
@@ -56,6 +58,9 @@ export default function ZoomImage({ src, full, alt, ai, nome, descrizione, varia
           <div className='lightbox-desc'>
             <h2>{nome}</h2>
             {descrizione && <p>{descrizione}</p>}
+            {varianti.filter((v) => v.componenti.length > 0).map((v) => (
+              <Composizione key={v.codice} codice={v.codice} componenti={v.componenti} />
+            ))}
           </div>
         </div>
       </dialog>
