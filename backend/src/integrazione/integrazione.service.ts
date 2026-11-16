@@ -10,6 +10,7 @@ import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
 import { EventsService } from '../events/events.service';
 import { candidatoPadre, padreComponente, promptComposizione } from './componenti';
+import { codiceLineaSicuro } from '../common/codice-articolo';
 
 function hexToSrgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
@@ -281,6 +282,10 @@ export class IntegrazioneService {
       return famCodice;
     };
 
+    // Codici Integra con slash/spazi: normalizzati per le URL (il vincolo su
+    // articoli.codice_linea li rifiuterebbe). Vanno segnalati a chi cura i dati.
+    const normalizzati: string[] = [];
+
     const result = await this.prisma.$transaction(async (tx) => {
       const created: { articoloId: number; codiceLinea: string; varianti: number }[] = [];
       for (const row of rows) {
@@ -293,7 +298,10 @@ export class IntegrazioneService {
         // Determina codiceLinea articolo: LINEA pro_cod se la variante ha linea_codice, altrimenti pro_cod variante
         const lineaCodice = row.linea_codice ? String(row.linea_codice).trim() : null;
         const lineaEntry = lineaCodice ? lineaMap.get(lineaCodice) : undefined;
-        const codiceLinea = lineaEntry?.proCod ?? codice;
+        // Il codice linea finisce nelle URL: slash e riservati vanno normalizzati.
+        const codiceGrezzo = lineaEntry?.proCod ?? codice;
+        const codiceLinea = codiceLineaSicuro(codiceGrezzo);
+        if (codiceLinea !== codiceGrezzo) normalizzati.push(codiceGrezzo);
         const nomeArticolo = lineaEntry?.nome || descrizione;
 
         const art = await tx.articolo.upsert({
@@ -367,7 +375,7 @@ export class IntegrazioneService {
       void this.reembedArticolo(codiceLinea).catch(() => {});
     }
 
-    return { creati: result.length, articoli: result, componenti: figli.size };
+    return { creati: result.length, articoli: result, componenti: figli.size, codiciNormalizzati: [...new Set(normalizzati)] };
   }
 
   /** Undo split: riaccorpa varianti negli articoli originali e cancella articoli duplicati. */
@@ -464,20 +472,18 @@ export class IntegrazioneService {
         const [first, ...rest] = art.varianti;
         const oldLineaCodice = cacheLineaMap.get(first.codice);
         const lineaEntry = oldLineaCodice ? lineaMap.get(oldLineaCodice) : undefined;
-        const targetCodiceLinea = lineaEntry?.proCod || (art.varianti.length < 2 ? first.codice : first.codice);
-        if (!lineaEntry && art.varianti.length < 2 && art.codiceLinea === first.codice) continue;
+        const targetCodiceLinea = codiceLineaSicuro(lineaEntry?.proCod || first.codice);
+        if (!lineaEntry && art.varianti.length < 2 && art.codiceLinea === targetCodiceLinea) continue;
 
         await this.prisma.$transaction(async (tx) => {
-          if (lineaEntry && art.codiceLinea !== lineaEntry.proCod) {
-            await tx.articolo.update({ where: { id: art.id }, data: { codiceLinea: lineaEntry.proCod } });
-          } else if (!lineaEntry && art.codiceLinea !== first.codice) {
-            await tx.articolo.update({ where: { id: art.id }, data: { codiceLinea: first.codice } });
+          if (art.codiceLinea !== targetCodiceLinea) {
+            await tx.articolo.update({ where: { id: art.id }, data: { codiceLinea: targetCodiceLinea } });
           }
           for (const v of rest) {
             await tx.variante.update({ where: { codice: v.codice }, data: { articoloId: art.id } });
           }
         });
-        if (lineaEntry) splittati.push({ vecchioCodiceLinea: art.codiceLinea, nuovoCodiceLinea: lineaEntry.proCod });
+        if (lineaEntry) splittati.push({ vecchioCodiceLinea: art.codiceLinea, nuovoCodiceLinea: targetCodiceLinea });
       } catch (e: any) {
         errori.push({ articolo: art.codiceLinea, errore: e?.message ?? String(e) });
       }
@@ -560,7 +566,9 @@ export class IntegrazioneService {
     let moved = 0;
     const oldIds = new Set<number>();
 
-    for (const [lineaProCod, rows] of byLinea) {
+    for (const [linea, rows] of byLinea) {
+      // Il codice linea finisce nelle URL: normalizzalo (slash, riservati).
+      const lineaProCod = codiceLineaSicuro(linea);
       const first = rows[0];
       // Risolvi famiglia
       let famCodice = 'INTEGRA';

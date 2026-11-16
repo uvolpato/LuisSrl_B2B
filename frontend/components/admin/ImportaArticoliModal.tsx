@@ -107,13 +107,19 @@ export default function ImportaArticoliModal({
     timeoutRef.current = startTimeout();
 
     try {
-      const res = await api.post<{ creati: number; articoli: { articoloId: number; codiceLinea: string; varianti: number }[] }>(
+      const res = await api.post<{ creati: number; articoli: { articoloId: number; codiceLinea: string; varianti: number }[]; codiciNormalizzati?: string[] }>(
         "/api/integrazione/importa",
         { codici: [...selected] },
       );
       clearTimeout(timeoutRef.current);
       if (!cancelled) {
-        setImportResult(`Importati ${res.creati} articoli (${res.articoli.reduce((s, a) => s + a.varianti, 0)} varianti)`);
+        const normalizzati = res.codiciNormalizzati ?? [];
+        setImportResult(
+          `Importati ${res.creati} articoli (${res.articoli.reduce((s, a) => s + a.varianti, 0)} varianti)` +
+            (normalizzati.length
+              ? ` · ${normalizzati.length} codici normalizzati per le URL (${normalizzati.slice(0, 3).join(", ")}${normalizzati.length > 3 ? "…" : ""}): segnalali a chi cura Integra`
+              : ""),
+        );
         setSelected(new Set());
         fetchData(pageRef.current);
       }
