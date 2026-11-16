@@ -35,7 +35,6 @@ interface VarianteDetail {
   multiplo: number;
   giacenza: number;
   stato: string;
-  descrizioneComposizione?: string | null;
   componenti?: ComponenteDetail[];
 }
 
@@ -109,7 +108,6 @@ export default function ArticoloEditModal({
   const [editVarianti, setEditVarianti] = useState<Record<string, string>>({});
   const [editMultipli, setEditMultipli] = useState<Record<string, number>>({});
   const [editComponenti, setEditComponenti] = useState<Record<number, number>>({});
-  const [editComposizioni, setEditComposizioni] = useState<Record<string, string>>({});
   const [cPage, setCPage] = useState(1);
   const [vPage, setVPage] = useState(1);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
@@ -187,7 +185,6 @@ export default function ArticoloEditModal({
       setEditVarianti(Object.fromEntries(a.varianti.map((v) => [v.codice, v.stato])));
       setEditMultipli(Object.fromEntries(a.varianti.map((v) => [v.codice, v.multiplo])));
       setEditComponenti(Object.fromEntries(a.varianti.flatMap((v) => (v.componenti ?? []).map((c) => [c.id, c.quantita]))));
-      setEditComposizioni(Object.fromEntries(a.varianti.map((v) => [v.codice, v.descrizioneComposizione ?? ""])));
       setVPage(1);
       setCPage(1);
       setPendingImages([]);
@@ -258,9 +255,6 @@ export default function ArticoloEditModal({
     for (const c of article.varianti.flatMap((v) => v.componenti ?? [])) {
       if ((editComponenti[c.id] ?? c.quantita) !== c.quantita) return true;
     }
-    for (const v of article.varianti) {
-      if ((editComposizioni[v.codice] ?? "") !== (v.descrizioneComposizione ?? "")) return true;
-    }
     if ((article.descrizione ?? "") !== initialDescRef.current.descrizione) return true;
     if ((article.descrizioneDettagliata ?? "") !== initialDescRef.current.descrizioneDettagliata) return true;
     if (JSON.stringify(article.wizardStepTesti) !== JSON.stringify(initialStepTestiRef.current)) return true;
@@ -269,7 +263,7 @@ export default function ArticoloEditModal({
     if (origIds.size !== selectedRaccoltaIds.size) return true;
     for (const id of origIds) { if (!selectedRaccoltaIds.has(id)) return true; }
     return false;
-  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, editComponenti, editComposizioni, immaginiOrdine, variantiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
+  }, [article, editNome, editColore, editColoreRgb, editStato, editVarianti, editMultipli, editComponenti, immaginiOrdine, variantiOrdine, pendingImages, pendingDeleteImages, immaginiGalleria, immaginiDisplay, immaginiTipo]);
 
   async function handleClose() {
     if (!isDirty) { onClose(); return; }
@@ -303,13 +297,6 @@ export default function ArticoloEditModal({
         ),
       );
       if (Object.keys(componentiQuantita).length > 0) payload.componentiQuantita = componentiQuantita;
-      // Descrizione del kit: solo quelle cambiate (va nel prompt AI).
-      const descrizioniComposizione = Object.fromEntries(
-        article.varianti
-          .filter((v) => (editComposizioni[v.codice] ?? "") !== (v.descrizioneComposizione ?? ""))
-          .map((v) => [v.codice, editComposizioni[v.codice] ?? ""]),
-      );
-      if (Object.keys(descrizioniComposizione).length > 0) payload.descrizioniComposizione = descrizioniComposizione;
       if (immaginiGalleria) payload.immaginiGalleria = immaginiGalleria;
       if (Object.keys(immaginiDisplay).length > 0) payload.immaginiDisplay = immaginiDisplay;
       if (Object.keys(immaginiTipo).length > 0) payload.immaginiTipo = immaginiTipo;
@@ -614,26 +601,11 @@ export default function ArticoloEditModal({
               <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <p style={{ margin: "0 0 16px", flexShrink: 0, color: "var(--muted)", fontSize: 14 }}>
                   Pezzi delle varianti kit. I figli non sono ordinabili: prezzo e giacenza sono del padre.
-                  La quantità non arriva da Integra e si salva con &quot;Salva Modifiche&quot;. La descrizione
-                  della composizione (max 120 caratteri) entra nel prompt che genera la descrizione dell&apos;articolo.
+                  La quantità non arriva da Integra e si salva con &quot;Salva Modifiche&quot;.
                 </p>
                 {(() => {
                   const cols: Column<RigaComponente>[] = [
-                    { key: "composizione", header: "Composizione", width: "260px", cell: (c) => (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          className="input"
-                          maxLength={120}
-                          placeholder="Descrizione composizione"
-                          aria-label={`Descrizione composizione ${c.padre}`}
-                          value={editComposizioni[c.padre] ?? ""}
-                          onChange={(e) => setEditComposizioni((prev) => ({ ...prev, [c.padre]: e.target.value }))}
-                          style={{ width: "100%", fontSize: 13, padding: "4px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg)", color: "var(--fg)" }}
-                        />
-                        <span style={{ display: "block", marginTop: 2, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{c.padre}</span>
-                      </div>
-                    )},
+                    { key: "padre", header: "Kit", width: "140px", mono: true, cell: (c) => c.padre },
                     { key: "codice", header: "Codice componente", grow: true, mono: true, cell: (c) => c.codice },
                     { key: "descrizione", header: "Descrizione", cell: (c) => <span className="desc-col">{c.descrizione}</span> },
                     { key: "dimensioni", header: "Dimensioni", width: "120px", cell: (c) => c.dimensioni || "—" },

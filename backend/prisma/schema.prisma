@@ -431,8 +431,6 @@ model Variante {
   articolo    Articolo  @relation(fields: [articoloId], references: [id])
   ordinamento Int       @default(0)
   updatedAt   DateTime  @updatedAt @map("updated_at")
-  /// Descrizione breve della composizione (kit), compilata in admin: va nel prompt AI
-  descrizioneComposizione String? @map("descrizione_composizione")
   componenti  VarianteComponente[]
 
   @@map("varianti")

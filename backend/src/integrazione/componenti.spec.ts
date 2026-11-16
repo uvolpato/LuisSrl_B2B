@@ -33,11 +33,10 @@ describe('promptComposizione', () => {
     expect(promptComposizione([{ codice: 'A', componenti: [] }])).toBe('');
   });
 
-  it('elenca descrizione del kit, pezzi, misure e quantità', () => {
+  it('elenca pezzi, misure e quantità', () => {
     const testo = promptComposizione([
       {
         codice: 'MC108886',
-        descrizioneComposizione: 'set di 4 cubi in misure decrescenti',
         componenti: [
           { descrizione: 'cubo piccolo', dimensioni: '23x23 x 23', quantita: 1 },
           { descrizione: 'cubo medio', dimensioni: '28x28 x 28', quantita: 2 },
@@ -45,7 +44,7 @@ describe('promptComposizione', () => {
       },
       { codice: 'MC999', componenti: [] },
     ]);
-    expect(testo).toContain('Kit MC108886 — set di 4 cubi in misure decrescenti');
+    expect(testo).toContain('Kit MC108886');
     expect(testo).toContain('cubo piccolo (23x23 x 23)');
     expect(testo).toContain('2× cubo medio (28x28 x 28)');
     expect(testo).not.toContain('MC999');

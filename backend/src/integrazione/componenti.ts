@@ -16,12 +16,8 @@ export function padreComponente(codice: string, esistePadre: (padre: string) => 
   return padre && esistePadre(padre) ? padre : null;
 }
 
-/** Lunghezza massima della descrizione della composizione (campo admin). */
-export const MAX_DESCRIZIONE_COMPOSIZIONE = 120;
-
 export type VarianteConComposizione = {
   codice: string;
-  descrizioneComposizione?: string | null;
   componenti?: { descrizione: string; dimensioni?: string | null; quantita: number }[];
 };
 
@@ -30,11 +26,10 @@ export function promptComposizione(varianti: VarianteConComposizione[]): string 
   const kit = varianti.filter((v) => v.componenti?.length);
   if (!kit.length) return '';
   const righe = kit.map((v) => {
-    const titolo = [`Kit ${v.codice}`, v.descrizioneComposizione?.trim()].filter(Boolean).join(' — ');
     const pezzi = v.componenti!
       .map((c) => `${c.quantita > 1 ? `${c.quantita}× ` : ''}${c.descrizione}${c.dimensioni ? ` (${c.dimensioni})` : ''}`)
       .join('; ');
-    return `- ${titolo}: ${pezzi}`;
+    return `- Kit ${v.codice}: ${pezzi}`;
   });
   return `\n\nComposizione dei kit (i pezzi si vendono solo insieme, prezzo e giacenza sono del codice kit):\n${righe.join('\n')}`;
 }

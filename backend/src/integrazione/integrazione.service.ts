@@ -9,7 +9,7 @@ import { ASSETS_BASE_DIR, ASSETS_PUBLIC_URL } from '../common/env';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageService } from '../ai-usage/ai-usage.service';
 import { EventsService } from '../events/events.service';
-import { candidatoPadre, padreComponente, promptComposizione, MAX_DESCRIZIONE_COMPOSIZIONE } from './componenti';
+import { candidatoPadre, padreComponente, promptComposizione } from './componenti';
 
 function hexToSrgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
@@ -1736,7 +1736,6 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         multiplo: v.multiplo,
         giacenza: v.giacenza,
         stato: v.stato === 'NASCOSTO' ? 'nascosto' : 'attivo',
-        descrizioneComposizione: v.descrizioneComposizione,
         componenti: v.componenti.map((c) => ({
           id: c.id,
           codice: c.codice,
@@ -1838,7 +1837,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
 
   async updateArticolo(
     codiceLinea: string,
-    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; variantiOrdine?: string[]; componentiQuantita?: Record<string, number>; descrizioniComposizione?: Record<string, string>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
+    data: { nome?: string; colore?: string; coloreRgb?: string; stato?: string; descrizione?: string | null; descrizioneDettagliata?: string | null; promptAi?: string | null; varianti?: Record<string, string>; variantiMultipli?: Record<string, number>; variantiOrdine?: string[]; componentiQuantita?: Record<string, number>; immaginiOrdine?: number[]; immaginiGalleria?: Record<number, boolean>; immaginiDisplay?: Record<number, { css?: string }>; immaginiTipo?: Record<number, string>; immaginiDaEliminare?: number[]; wizardStepTesti?: unknown; raccolte?: number[] },
   ) {
     const art = await this.prisma.articolo.findUnique({ where: { codiceLinea } });
     if (!art) throw new NotFoundException('Articolo non trovato');
@@ -1911,15 +1910,6 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         await this.prisma.varianteComponente.updateMany({
           where: { id: componenteId, padre: { articoloId: art.id } },
           data: { quantita: Math.max(1, Math.trunc(Number(quantita) || 1)) },
-        });
-      }
-    }
-    if (data.descrizioniComposizione) {
-      // Descrizione breve del kit: va nel prompt AI. Limite applicato qui, non solo in UI.
-      for (const [codice, testo] of Object.entries(data.descrizioniComposizione)) {
-        await this.prisma.variante.updateMany({
-          where: { codice, articoloId: art.id },
-          data: { descrizioneComposizione: String(testo ?? '').trim().slice(0, MAX_DESCRIZIONE_COMPOSIZIONE) || null },
         });
       }
     }
@@ -2536,7 +2526,6 @@ Rispondi SOLO con un JSON valido in questo formato, senza testo aggiuntivo:
         codice: true,
         descrizione: true,
         dimensioni: true,
-        descrizioneComposizione: true,
         componenti: {
           select: { descrizione: true, dimensioni: true, quantita: true },
           orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }],

@@ -47,9 +47,9 @@ model VarianteComponente {
 }
 ```
 
-La descrizione breve della composizione sta sulla **variante** padre:
-`varianti.descrizione_composizione` (max 120 caratteri, compilata in admin nel tab
-Composizione). Non arriva da Integra.
+La descrizione breve della composizione non esiste più: i pezzi bastano al prompt AI
+e la descrizione dell'articolo resta quella dell'articolo (migration
+`20261116020000_rimuovi_descrizione_composizione`).
 
 ## 4. Import (`importaVarianti`)
 
@@ -63,7 +63,7 @@ Composizione). Non arriva da Integra.
 
 - **Scheda B2B**: blocco "Composizione" tra Descrizione e Caratteristiche, tabella `Codice | Descrizione | Dimensioni | Q.tà`, ordinata per suffisso. Si mostra solo per le varianti con componenti.
 - **Vetrina pubblica**: stessa tabella nella card del catalogo e nel lightbox (`Composizione.tsx`).
-- **Admin** (modale articolo, tab **Composizione**): DataTable con `Composizione | Codice componente | Descrizione | Dimensioni | Q.tà`. La prima colonna è un campo testo (max 120 caratteri) con la descrizione del kit; la quantità è modificabile. Il tab compare solo se l'articolo ha componenti.
+- **Admin** (modale articolo, tab **Composizione**): DataTable con `Kit | Codice componente | Descrizione | Dimensioni | Q.tà`; la quantità è modificabile. Il tab compare solo se l'articolo ha componenti.
 - **Catalogo/griglia d'ordine**: invariati. Il padre è una riga come le altre; i figli non sono ordinabili.
 
 ## 6. Ordini
@@ -74,9 +74,9 @@ Prezzi, sconti e giacenza dei figli sono ignorati.
 ## 7. Prompt AI
 
 Il wizard che genera la descrizione articolo (`wizardDescrizione`) aggiunge al prompt il
-blocco `promptComposizione`: per ogni kit con componenti, descrizione del kit + elenco
-pezzi con misure e quantità (es. `2× cubo medio (28x28 x 28)`). Senza componenti il blocco
-non compare e il prompt resta identico a prima.
+blocco `promptComposizione`: per ogni kit con componenti, l'elenco dei pezzi con misure e
+quantità (es. `2× cubo medio (28x28 x 28)`). Senza componenti il blocco non compare e il
+prompt resta identico a prima.
 
 ## 8. Punti aperti
 
