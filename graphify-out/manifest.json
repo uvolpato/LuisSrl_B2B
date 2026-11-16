@@ -680,10 +680,10 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/catalogo-public.controller.ts": {
-    "mtime": 1793803149.5335522,
-    "seen": 1793880362.9575868,
-    "ast_hash": "359e920388031f79a6266c94b64c6ee9",
-    "semantic_hash": "359e920388031f79a6266c94b64c6ee9"
+    "mtime": 1794850938.2616885,
+    "seen": 1794851820.0639777,
+    "ast_hash": "2373ce0da04eca1bb7f64b8d90001349",
+    "semantic_hash": ""
   },
   "backend/src/integrazione/catalogo.controller.ts": {
     "mtime": 1788355195.1230204,
@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794569075.4461143,
-    "seen": 1794569288.8759925,
-    "ast_hash": "e05d9d646a370a39a4f7bbec718443c8",
+    "mtime": 1794854045.665804,
+    "seen": 1794854327.984023,
+    "ast_hash": "2b3f391c5d00a02bf07888741e0d9ae4",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -1095,15 +1095,15 @@
     "semantic_hash": "414c3984a3dfed56d4d36f2e210c8e56"
   },
   "frontend-vetrina/messages/en.json": {
-    "mtime": 1794565822.429662,
-    "seen": 1794566011.0637236,
-    "ast_hash": "8b89d4ccfe853ae03b1b625d3af5c27f",
+    "mtime": 1794853375.0824711,
+    "seen": 1794854327.9841316,
+    "ast_hash": "8f8b8f606f327379fcb7fdddd55f45be",
     "semantic_hash": ""
   },
   "frontend-vetrina/messages/it.json": {
-    "mtime": 1794565815.0932977,
-    "seen": 1794566011.0637286,
-    "ast_hash": "1078ed6ce9a8faa8476faa67cad8c23e",
+    "mtime": 1794853375.0824711,
+    "seen": 1794854327.9841328,
+    "ast_hash": "43529e78840b6d157e6eeafdab3d2230",
     "semantic_hash": ""
   },
   "frontend-vetrina/next.config.mjs": {
@@ -1131,10 +1131,10 @@
     "semantic_hash": "65137eb16059dc067a84b878dc205fae"
   },
   "frontend-vetrina/src/app/catalogo/page.tsx": {
-    "mtime": 1792794660.4964433,
-    "seen": 1793880362.9690192,
-    "ast_hash": "e0ce95737a0dfe620eac5d2f3679cddc",
-    "semantic_hash": "e0ce95737a0dfe620eac5d2f3679cddc"
+    "mtime": 1794852956.7293043,
+    "seen": 1794854327.98414,
+    "ast_hash": "b4daa3dc6bb162092e08cc71eb022642",
+    "semantic_hash": ""
   },
   "frontend-vetrina/src/app/contatti/page.tsx": {
     "mtime": 1791810735.8507228,
@@ -1173,9 +1173,9 @@
     "semantic_hash": "3beb880b1e40075bd0aef213d3ca7558"
   },
   "frontend-vetrina/src/components/catalogo/ZoomImage.tsx": {
-    "mtime": 1794501315.6561437,
-    "seen": 1794564796.876984,
-    "ast_hash": "eb3921c1aeb57616b6eeaa93d50ed674",
+    "mtime": 1794851115.6432703,
+    "seen": 1794851820.0641344,
+    "ast_hash": "5444b6036e5a6a6e379cb34e6298fb2f",
     "semantic_hash": ""
   },
   "frontend-vetrina/src/components/home/AccessoB2B.tsx": {
@@ -1275,10 +1275,10 @@
     "semantic_hash": "6161111a98787f14f578130dfbba6ad1"
   },
   "frontend-vetrina/src/lib/api.ts": {
-    "mtime": 1791813245.3391047,
-    "seen": 1793880362.9728742,
-    "ast_hash": "cd5c799fbe8395780b80d8de3a166947",
-    "semantic_hash": "cd5c799fbe8395780b80d8de3a166947"
+    "mtime": 1794851079.6836817,
+    "seen": 1794851820.0641613,
+    "ast_hash": "2d1b22636904b294e612ce128ab13c48",
+    "semantic_hash": ""
   },
   "frontend-vetrina/src/lib/richiedi-accesso.ts": {
     "mtime": 1794565808.3795896,
@@ -1317,9 +1317,9 @@
     "semantic_hash": "c3008b03aab10dda3850561886571651"
   },
   "frontend/app/area/catalogo/[codiceLinea]/page.tsx": {
-    "mtime": 1794582602.261822,
-    "seen": 1794582672.2762065,
-    "ast_hash": "6b7b2edf9c794a26c1d9dd14b435f44c",
+    "mtime": 1794851021.6061535,
+    "seen": 1794851820.0641742,
+    "ast_hash": "6c245b51145e622e21429af82726265e",
     "semantic_hash": ""
   },
   "frontend/app/area/catalogo/page.tsx": {
@@ -1365,10 +1365,10 @@
     "semantic_hash": "0b2608e07c63c39c7dfa93687b51b576"
   },
   "frontend/app/area/progetti/[id]/page.tsx": {
-    "mtime": 1785884671.6597683,
-    "seen": 1793880362.975266,
-    "ast_hash": "42ae0096abca05f69f66c658a8fc85c9",
-    "semantic_hash": "42ae0096abca05f69f66c658a8fc85c9"
+    "mtime": 1794853257.3389904,
+    "seen": 1794854327.984202,
+    "ast_hash": "a54d196049092eb1bb8889d77e0d7724",
+    "semantic_hash": ""
   },
   "frontend/app/area/progetti/page.tsx": {
     "mtime": 1785884671.661769,
@@ -1527,10 +1527,10 @@
     "semantic_hash": "cd0cba831312a4eaf0cac17781871b39"
   },
   "frontend/components/admin/sections/ArticoloEditModal.tsx": {
-    "mtime": 1791675605.4992118,
-    "seen": 1793880362.9797385,
-    "ast_hash": "43d1f661fc4ee12288cc6a26493f7422",
-    "semantic_hash": "43d1f661fc4ee12288cc6a26493f7422"
+    "mtime": 1794854125.8398008,
+    "seen": 1794854327.9842498,
+    "ast_hash": "8440d956eb61e93240e0f3e7ccbb4fac",
+    "semantic_hash": ""
   },
   "frontend/components/admin/sections/BoxSuggerimentiSection.tsx": {
     "mtime": 1791933727.3244884,
@@ -1539,9 +1539,9 @@
     "semantic_hash": "b1ff984fbc573101e1a66e8364f48b7f"
   },
   "frontend/components/admin/sections/CataloghiSection.tsx": {
-    "mtime": 1794578938.7025974,
-    "seen": 1794579181.3474865,
-    "ast_hash": "7e3d1cf70e2893a2860639d0c75686e6",
+    "mtime": 1794853262.9659472,
+    "seen": 1794854327.9842527,
+    "ast_hash": "e9ab9b6fd5a771ea025dccd6ec828dd1",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ClientiSection.tsx": {
@@ -3093,9 +3093,9 @@
     "semantic_hash": ""
   },
   "specifica-articoli-componenti.md": {
-    "mtime": 1794571392.9880035,
-    "seen": 1794579181.348427,
-    "ast_hash": "446c609ee74c55289c74952450ebba3b",
+    "mtime": 1794854300.941505,
+    "seen": 1794854327.9845707,
+    "ast_hash": "e65382b568637b63b8c4f71244843ebb",
     "semantic_hash": ""
   },
   "specifica-chatbot-ai.md": {
@@ -4044,6 +4044,42 @@
     "mtime": 1794571875.5139942,
     "seen": 1794579181.348028,
     "ast_hash": "d0087063e3241d82ea05a8ad4ad6df4b",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261116000000_varianti_componenti/migration.sql": {
+    "mtime": 1794850877.9731748,
+    "seen": 1794851820.0637717,
+    "ast_hash": "276b08f30949b0b57650d5910c1f73bb",
+    "semantic_hash": ""
+  },
+  "backend/src/integrazione/componenti.spec.ts": {
+    "mtime": 1794854050.2242942,
+    "seen": 1794854327.984014,
+    "ast_hash": "bd789cd5b4bb1c3fefb63c9b46fda5c3",
+    "semantic_hash": ""
+  },
+  "backend/src/integrazione/componenti.ts": {
+    "mtime": 1794854013.358665,
+    "seen": 1794854327.9840157,
+    "ast_hash": "7a0fb697473c12025eeadb7346aa94ca",
+    "semantic_hash": ""
+  },
+  "frontend-vetrina/src/components/catalogo/Composizione.tsx": {
+    "mtime": 1794853335.0144117,
+    "seen": 1794854327.9841502,
+    "ast_hash": "4ee70df1606b8f7653301b50e99c37d2",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261116010000_varianti_descrizione_composizione/migration.sql": {
+    "mtime": 1794854007.0735002,
+    "seen": 1794854327.983817,
+    "ast_hash": "7f58bba34abdf83cf82f72f399971823",
+    "semantic_hash": ""
+  },
+  "backend/scripts/demo-kit-composizione.cjs": {
+    "mtime": 1794853209.6199138,
+    "seen": 1794854327.9838407,
+    "ast_hash": "f443a75135fa0b39d00978bc0b98a3be",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
