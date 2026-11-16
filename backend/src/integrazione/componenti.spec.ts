@@ -10,9 +10,15 @@ describe('componenti (kit)', () => {
     expect(padreComponente('MC108886-08614', esiste)).toBe('MC108886');
   });
 
+  it('accetta suffissi di 5 o più cifre', () => {
+    expect(padreComponente('MC108621-108622', (c) => c === 'MC108621')).toBe('MC108621');
+    expect(padreComponente('MC108621-1000000', (c) => c === 'MC108621')).toBe('MC108621');
+  });
+
   it('ignora il trattino dei colori/varianti', () => {
     expect(padreComponente('PTD100440-61', esiste)).toBeNull();
     expect(padreComponente('AL21-19004', esiste)).toBeNull();
+    expect(padreComponente('CR121-0403', esiste)).toBeNull();
   });
 
   it('ignora i 5 numeri quando il padre non esiste', () => {

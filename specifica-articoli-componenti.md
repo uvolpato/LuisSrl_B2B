@@ -22,10 +22,11 @@ Solo il **padre** è vendibile: ha prezzo e giacenza. I figli si mostrano come t
 
 ## 2. Regola di riconoscimento
 
-Un codice è figlio se rispetta `<padre>-<5 cifre>` **e il padre esiste** in `integra_articoli`.
+Un codice è figlio se rispetta `<padre>-<5 o più cifre>` **e il padre esiste** in `integra_articoli`
+(es. `MC108886-08611`, `MC108621-108622`).
 
-Il trattino da solo non basta: i codici normali lo usano per colori e varianti
-(`AL21-19004`, `PTD100440-61` → non sono figli). Un suffisso a 5 cifre senza padre
+Il trattino da solo non basta: colori e varianti usano suffissi di 1-4 cifre
+(`AL21-19004`, `PTD100440-61` → non sono figli). Un suffisso lungo senza padre
 esistente resta un articolo normale (`OA31-04030`).
 
 Helper: `backend/src/integrazione/componenti.ts` (con `componenti.spec.ts`).

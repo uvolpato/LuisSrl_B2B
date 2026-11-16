@@ -1,10 +1,11 @@
 /**
  * Riconosce i figli di una composizione ("kit") dal codice Integra: il padre è
- * il codice che ha davanti, i figli hanno suffisso a 5 cifre (`MC108886-08611`).
- * Il trattino da solo non basta (i codici normali lo usano per colori e varianti:
- * `AL21-19004`, `PTD100440-61`), quindi il padre deve esistere davvero.
+ * il codice che ha davanti, i figli hanno suffisso numerico di 5 o più cifre
+ * (`MC108886-08611`, `MC108621-108622`). Il trattino da solo non basta: colori e
+ * varianti usano suffissi di 1-4 cifre (`AL21-19004`, `PTD100440-61`), quindi
+ * oltre alla lunghezza serve che il padre esista davvero.
  */
-const SUFFISSO_FIGLIO = /^(.+)-\d{5}$/;
+const SUFFISSO_FIGLIO = /^(.+)-\d{5,}$/;
 
 export function candidatoPadre(codice: string): string | null {
   const m = SUFFISSO_FIGLIO.exec(codice.trim());
