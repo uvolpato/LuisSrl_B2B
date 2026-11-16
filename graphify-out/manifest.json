@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794870276.1456525,
-    "seen": 1794870401.3073213,
-    "ast_hash": "a4b2373525d9256f569452b16ca98bdf",
+    "mtime": 1794870873.9933863,
+    "seen": 1794871012.6637657,
+    "ast_hash": "3f76327694c1d1abca30b0d7cbbb172d",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -1479,9 +1479,9 @@
     "semantic_hash": "7cc5a61ed6bc508f52a4055dcad8aeeb"
   },
   "frontend/components/admin/ImportaArticoliModal.tsx": {
-    "mtime": 1794856395.5920453,
-    "seen": 1794856453.2910788,
-    "ast_hash": "1bdd3ccb23e3b7d3b59ac41c959c7ca1",
+    "mtime": 1794870912.216966,
+    "seen": 1794871012.6639872,
+    "ast_hash": "be6e5c2cddef78eaf54116df4552dbcc",
     "semantic_hash": ""
   },
   "frontend/components/admin/ImportaClientiModal.tsx": {
@@ -1521,10 +1521,10 @@
     "semantic_hash": "33780c0bac192479c1f151591124f9de"
   },
   "frontend/components/admin/sections/ArticoliSection.tsx": {
-    "mtime": 1786389473.7282073,
-    "seen": 1793880362.9795773,
-    "ast_hash": "cd0cba831312a4eaf0cac17781871b39",
-    "semantic_hash": "cd0cba831312a4eaf0cac17781871b39"
+    "mtime": 1794870902.2484624,
+    "seen": 1794871012.663998,
+    "ast_hash": "8e80328068b4dd69f2e73131c6073909",
+    "semantic_hash": ""
   },
   "frontend/components/admin/sections/ArticoloEditModal.tsx": {
     "mtime": 1794854647.3540106,
@@ -1647,10 +1647,10 @@
     "semantic_hash": "d80280f375bff059777f56f134d4f827"
   },
   "frontend/components/admin/types.ts": {
-    "mtime": 1785884671.7275665,
-    "seen": 1793880362.9829614,
-    "ast_hash": "459300e359a35d659d5462cff8dddb63",
-    "semantic_hash": "459300e359a35d659d5462cff8dddb63"
+    "mtime": 1794870902.2484624,
+    "seen": 1794871012.6640325,
+    "ast_hash": "7c9065f8ad47fc08312d5235264a8ba4",
+    "semantic_hash": ""
   },
   "frontend/components/area/AddToProjectModal.tsx": {
     "mtime": 1785884671.732581,
