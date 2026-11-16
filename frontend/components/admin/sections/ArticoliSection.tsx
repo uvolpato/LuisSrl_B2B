@@ -57,7 +57,7 @@ export default function ArticoliSection() {
   }).filter((a) => {
     if (!articleSearch) return true;
     const q = articleSearch.toLowerCase();
-    return a.id.toLowerCase().includes(q) || a.name.toLowerCase().includes(q);
+    return a.id.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || (a.codiciVarianti ?? []).some((c) => c.toLowerCase().includes(q));
   });
   const artRows = filteredArticles.slice((artPage - 1) * PAGE_SIZE, artPage * PAGE_SIZE);
   const artMeta = `${articles.length} articoli · ${articles.filter((a) => a.stato === "attivo").length} attivi · ${articles.filter((a) => a.stato === "nascosto").length} nascosti · ${articles.reduce((s, a) => s + (a.variantiCount ?? 0), 0)} varianti`;

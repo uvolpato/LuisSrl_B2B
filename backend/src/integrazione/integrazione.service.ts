@@ -1612,6 +1612,9 @@ Rispondi SOLO con JSON valido, senza testo attorno:
       include: {
         _count: { select: { varianti: true } },
         immagini: { where: { copertina: true }, take: 1 },
+        // Serve a trovare l'articolo cercando un codice variante (l'articolo di
+        // una linea non si chiama come il codice che l'operatore ha in mano).
+        varianti: { select: { codice: true }, orderBy: { ordinamento: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -1641,6 +1644,7 @@ Rispondi SOLO con JSON valido, senza testo attorno:
         imgTipo: a.immagini[0]?.tipo ?? null,
         variantiCount: a._count.varianti,
         variantiVisibiliCount: visMap.get(a.id) ?? 0,
+        codiciVarianti: a.varianti.map((v) => v.codice),
         configurato: a.configurato ?? false,
       };
     }));

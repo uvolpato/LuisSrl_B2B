@@ -107,15 +107,22 @@ export default function ImportaArticoliModal({
     timeoutRef.current = startTimeout();
 
     try {
-      const res = await api.post<{ creati: number; articoli: { articoloId: number; codiceLinea: string; varianti: number }[]; codiciNormalizzati?: string[] }>(
+      const res = await api.post<{ creati: number; articoli: { articoloId: number; codiceLinea: string; varianti: number }[]; componenti?: number; codiciNormalizzati?: string[] }>(
         "/api/integrazione/importa",
         { codici: [...selected] },
       );
       clearTimeout(timeoutRef.current);
       if (!cancelled) {
         const normalizzati = res.codiciNormalizzati ?? [];
+        // Zero articoli ha due cause diverse: pezzi di composizione (esito giusto)
+        // oppure codici non presenti in Integra (serve un sync articoli).
+        const esito = res.creati > 0
+          ? `Importati ${res.creati} articoli (${res.articoli.reduce((s, a) => s + a.varianti, 0)} varianti)`
+          : (res.componenti ?? 0) > 0
+            ? `Nessun nuovo articolo: i codici selezionati sono pezzi di composizione (${res.componenti}) di un kit già presente`
+            : "Nessuna variante importata: i codici non risultano in Integra. Esegui prima il sync articoli.";
         setImportResult(
-          `Importati ${res.creati} articoli (${res.articoli.reduce((s, a) => s + a.varianti, 0)} varianti)` +
+          esito +
             (normalizzati.length
               ? ` · ${normalizzati.length} codici normalizzati per le URL (${normalizzati.slice(0, 3).join(", ")}${normalizzati.length > 3 ? "…" : ""}): segnalali a chi cura Integra`
               : ""),

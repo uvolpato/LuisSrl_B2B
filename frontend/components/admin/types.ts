@@ -15,6 +15,8 @@ export interface Article {
   imgTipo?: string | null;
   variantiCount?: number;
   variantiVisibiliCount?: number;
+  /** Codici delle varianti: permettono di trovare l'articolo cercando il codice Integra. */
+  codiciVarianti?: string[];
   configurato?: boolean;
 }
 
