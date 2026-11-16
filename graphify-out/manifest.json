@@ -3093,9 +3093,9 @@
     "semantic_hash": ""
   },
   "specifica-articoli-componenti.md": {
-    "mtime": 1794854691.2818348,
-    "seen": 1794854749.5862844,
-    "ast_hash": "fa721ae5af3e1718dc30951aa34cf920",
+    "mtime": 1794858239.1997323,
+    "seen": 1794858272.7383988,
+    "ast_hash": "4674cddee47f5f7ae1b0626633106357",
     "semantic_hash": ""
   },
   "specifica-chatbot-ai.md": {
@@ -4053,15 +4053,15 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/componenti.spec.ts": {
-    "mtime": 1794854632.6183536,
-    "seen": 1794854749.5857382,
-    "ast_hash": "bd50b67cd362a2f953da9832b7a8a445",
+    "mtime": 1794858183.9310117,
+    "seen": 1794858272.737835,
+    "ast_hash": "a5ac19815ccb3401a76ee4afceb96cbf",
     "semantic_hash": ""
   },
   "backend/src/integrazione/componenti.ts": {
-    "mtime": 1794854612.3357387,
-    "seen": 1794854749.5857399,
-    "ast_hash": "da2fa0bd76454d2a9c0e1b938b745291",
+    "mtime": 1794858191.9165962,
+    "seen": 1794858272.7378373,
+    "ast_hash": "52e2bf37f0a1e75ba2e6405bb7fa6bb3",
     "semantic_hash": ""
   },
   "frontend-vetrina/src/components/catalogo/Composizione.tsx": {

@@ -1,7 +1,7 @@
 # Graph Report - Luis Srl - B2B  (2026-11-16)
 
 ## Corpus Check
-- 470 files · ~467,058 words
+- 470 files · ~467,093 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `289f209b`
+- Built from commit: `525e15d5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -666,16 +666,16 @@ Nodes (3): fetchWithRetry(), isRetryableNetworkError(), POST()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `auth.controller.ts`, `app.module.ts`, `backend/package.json`, `users.service.ts`, `ProgettiService`, `dashboard.service.ts`, `azioni.service.ts`, `mail.service.ts`, `admin.service.ts`, `OrdiniController`, `prisma.service.ts`, `PrismaService`, `dependencies`, `export-cliente.service.ts`, `main.ts`, `admin-leads.service.ts`, `leads.service.ts`, `leads.service.ts`, `AuditService`, `mail.service.ts`, `customer-profile.service.ts`, `conservazione.service.ts`, `spese-spedizione.service.ts`?**
-  _High betweenness centrality (0.214) - this node is a cross-community bridge._
+  _High betweenness centrality (0.208) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `auth.controller.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.09878048780487805 - nodes in this community are weakly interconnected._
 - **Why does `stato()` connect `mail.service.ts` to `FamiglieSection`?**
-  _High betweenness centrality (0.209) - this node is a cross-community bridge._
+  _High betweenness centrality (0.196) - this node is a cross-community bridge._
 - **Should `CataloghiService` be split into smaller, more focused modules?**
   _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._
-- **Why does `handleSave()` connect `mail.service.ts` to `thumbUrl`, `app.js`?**
+- **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `Modal`, `CustomerDossier.tsx`, `checkout/page.tsx`, `mail.service.ts`, `SpeseSpedizioneSection`?**
   _High betweenness centrality (0.086) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.05928614640048397 - nodes in this community are weakly interconnected._
