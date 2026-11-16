@@ -1,82 +1,84 @@
-# Specifica — Articoli "composizione" (componenti)
+# Specifica — Varianti "composizione" (kit)
 
 **Destinatari:** sviluppo portale B2B Luis.
-**Oggetto:** come modellare gli articoli composti da più pezzi (composizioni/set), gestiti in Integra con un codice articolo padre e codici figlio (`padre_001`, `padre_002`, …).
+**Oggetto:** varianti vendute insieme a più pezzi, codificate in Integra con un codice padre e codici figlio.
+**Stato:** implementata (16/11/2026).
 
 ---
 
 ## 1. Il problema
 
-Esistono articoli formati da **più oggetti in composizione** (es. un set di 3 vasi). In Integra saranno gestiti così:
+Alcune varianti (codici articolo) sono **set di più pezzi** (es. `s/4 cubi fiberstone TEXAS`). In Integra ogni pezzo ha un proprio codice:
 
-- **Articolo padre** → `codice_articolo_padre`, con descrizione e prezzo.
-- **Articoli figlio** → `codice_articolo_padre_001`, `_002`, `_003`, ecc. (i singoli pezzi della composizione).
+| Codice | Descrizione |
+|---|---|
+| `MC108886` | s4 cubo fiberstone TEXAS corten h38 44X44 (padre) |
+| `MC108886-08611` | cubo fiberstone TEXAS corten h23 23x23 |
+| `MC108886-08612` | cubo fiberstone TEXAS corten h28 28x28 |
+| `MC108886-08613` | cubo fiberstone TEXAS corten h30 34x34 |
+| `MC108886-08614` | cubo fiberstone TEXAS corten h38 44X44 |
 
-Obiettivo: restare **coerenti con la struttura dati** esistente (Famiglia → Articolo → Variante) ma rappresentare la composizione come **tabella nella descrizione articolo**, non come varianti.
+Solo il **padre** è vendibile: ha prezzo e giacenza. I figli si mostrano come tabella ordinata nella descrizione.
 
----
+## 2. Regola di riconoscimento
 
-## 2. Regola d'oro
+Un codice è figlio se rispetta `<padre>-<5 cifre>` **e il padre esiste** in `integra_articoli`.
 
-- **Padre** (`codice_articolo_padre`) = l'**Articolo**: vendibile, con prezzo da listino, immagini, descrizione.
-- **Figli** (`padre_001`, `_002`, `_003`) = **componenti della composizione**, non unità ordinabili.
+Il trattino da solo non basta: i codici normali lo usano per colori e varianti
+(`AL21-19004`, `PTD100440-61` → non sono figli). Un suffisso a 5 cifre senza padre
+esistente resta un articolo normale (`OA31-04030`).
 
-## 3. Perché NON nelle varianti
+Helper: `backend/src/integrazione/componenti.ts` (con `componenti.spec.ts`).
 
-Le `Varianti` sono per definizione le unità **ordinabili** (hanno `multiplo`, `giacenza`, prezzo listino). Metterci i pezzi di un set significherebbe lasciare che il cliente ordini "il singolo vaso" della composizione, con prezzo e giacenza propri che in Integra non esistono.
+## 3. Struttura dati (migration additiva)
 
-- Varianti = **ciò che compri**.
-- Componenti = **ciò che c'è dentro**.
-
-## 4. Struttura dati (migration additiva)
-
-Tabella dedicata, coerente con il pattern `Variante` / `Immagine` / `ArticoloRaccolta`:
+Tabella `varianti_componenti`, legata al **codice variante** (non all'articolo: un
+articolo può avere sia varianti normali sia un kit).
 
 ```prisma
-model ArticoloComponente {
+model VarianteComponente {
   id          Int      @id @default(autoincrement())
-  articoloId  Int      @map("articolo_id")
-  articolo    Articolo @relation(fields: [articoloId], references: [id], onDelete: Cascade)
-  codice      String              // figlio: padre_001
+  padreCodice String   @map("padre_codice")   // varianti.codice
+  codice      String                          // MC108886-08611
   descrizione String
-  quantita    Int      @default(1)
-  dimensioni  Json?
-  ordinamento Int      @default(0)
-
-  @@index([articoloId, ordinamento])
-  @@map("articoli_componenti")
+  dimensioni  String?
+  quantita    Int      @default(1)            // manuale in admin, non arriva da Integra
+  ordinamento Int      @default(0)            // dal suffisso numerico
 }
 ```
 
-Su `Articolo` va aggiunta solo la relazione: `componenti ArticoloComponente[]`.
+La descrizione breve della composizione sta sulla **variante** padre:
+`varianti.descrizione_composizione` (max 120 caratteri, compilata in admin nel tab
+Composizione). Non arriva da Integra.
 
-## 5. Import da Integra (regola di riconoscimento)
+## 4. Import (`importaVarianti`)
 
-Nell'`importArticoli`:
+1. I figli riconosciuti **non diventano varianti**; finiscono in `varianti_componenti`.
+2. Il padre viene importato anche se non è tra i codici selezionati (senza padre il kit non ha prezzo).
+3. L'upsert aggiorna descrizione/dimensioni/ordinamento ma **mai la quantità** (è manuale).
+4. Un figlio già importato in passato come variante viene rimosso.
+5. Ordine d'import irrilevante: la regola guarda `integra_articoli`, non le varianti già presenti.
 
-1. Un codice che corrisponde al pattern `^(.+)_(\d{3})$` il cui prefisso (`codice_padre`) esiste già come articolo → è un **figlio**.
-2. Il figlio viene **saltato** come articolo/variante autonoma e aggiunto come riga in `articoli_componenti` del padre.
-3. Il padre resta un Articolo normale con le sue varianti reali (se il set esiste in più misure, quelle SÌ sono varianti).
+## 5. Rendering
 
-La logica va isolata in un helper idempotente (come le altre regole di import).
+- **Scheda B2B**: blocco "Composizione" tra Descrizione e Caratteristiche, tabella `Codice | Descrizione | Dimensioni | Q.tà`, ordinata per suffisso. Si mostra solo per le varianti con componenti.
+- **Vetrina pubblica**: stessa tabella nella card del catalogo e nel lightbox (`Composizione.tsx`).
+- **Admin** (modale articolo, tab **Composizione**): DataTable con `Composizione | Codice componente | Descrizione | Dimensioni | Q.tà`. La prima colonna è un campo testo (max 120 caratteri) con la descrizione del kit; la quantità è modificabile. Il tab compare solo se l'articolo ha componenti.
+- **Catalogo/griglia d'ordine**: invariati. Il padre è una riga come le altre; i figli non sono ordinabili.
 
-## 6. Rendering
+## 6. Ordini
 
-- **Scheda articolo** (e lightbox della vetrina): tabella `codice | descrizione | quantità | dimensioni` nella zona descrizione, letta da `articoli_componenti`.
-- **Card catalogo**: la composizione NON si mostra (al più un badge "set di N pezzi").
-- Nessun ordine sui figli: restano puramente informativi.
+Integra invia **una sola riga** (il padre) per un kit: l'import ordini non va toccato.
+Prezzi, sconti e giacenza dei figli sono ignorati.
 
-## 7. Alternativa più leggera
+## 7. Prompt AI
 
-Se la composizione è solo "testo da mostrare" e mai da filtrare, un campo `composizione: Json?` su `Articolo` basta. Ma poiché il progetto già modella i correlati come tabelle e potrebbe servire cercare/filtrare i componenti, si consiglia la **tabella**.
+Il wizard che genera la descrizione articolo (`wizardDescrizione`) aggiunge al prompt il
+blocco `promptComposizione`: per ogni kit con componenti, descrizione del kit + elenco
+pezzi con misure e quantità (es. `2× cubo medio (28x28 x 28)`). Senza componenti il blocco
+non compare e il prompt resta identico a prima.
 
-## 8. Punto aperto
+## 8. Punti aperti
 
-**Coesistenza con varianti reali:** il padre può avere anche varianti reali (es. composizione disponibile in 2 misure, ogni misura = variante ordinabile)?
-
-- Se sì, il modello regge: padre → varianti (misure) + componenti (pezzi), senza conflitti.
-- Da confermare prima dell'implementazione.
-
----
-
-*Stato: analisi, da validare con i dati reali dell'export Integra prima di implementare.*
+- I figli non hanno immagini né proprie raccolte: restano pezzi informativi.
+- Rimozione automatica dei componenti orfani: oggi li pulisce la FK `ON DELETE CASCADE` solo se sparisce la variante padre; i figli non più presenti in Integra restano finché non si ri-importa quel padre.
