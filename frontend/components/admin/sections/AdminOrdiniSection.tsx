@@ -97,6 +97,8 @@ export default function AdminOrdiniSection() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [esitoExport, setEsitoExport] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -128,6 +130,29 @@ export default function AdminOrdiniSection() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => { setPage(1); }, [dataDa, dataA, debouncedSearch]);
+
+  // Export verso Integra: è un job separato dal sync (che importa). Qui si forza
+  // l'esecuzione della coda senza aspettare il cron.
+  async function esportaOra() {
+    setExporting(true);
+    setError(null);
+    setEsitoExport(null);
+    try {
+      const r = await api.post<{ cartella: string; processati: number; esportati: number; errori: number }>(
+        "/api/admin/export-ordini/run",
+      );
+      setEsitoExport(
+        r.processati === 0
+          ? `Niente da esportare. Cartella: ${r.cartella}`
+          : `Esportati ${r.esportati}/${r.processati} in ${r.cartella}${r.errori > 0 ? ` · ${r.errori} errori (vedi log)` : ""}`,
+      );
+      fetchAll();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.code : "errors.generic");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const dateRange = {
     startDate: new Date(dataDa + "T00:00:00"),
@@ -167,6 +192,15 @@ export default function AdminOrdiniSection() {
             </svg>
             {dataDa.split("-").reverse().join("/")} → {dataA.split("-").reverse().join("/")}
           </div>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={esportaOra}
+            disabled={exporting}
+            title="Scrive subito su Integra gli ordini in coda (stessa cosa del cron)"
+          >
+            {exporting ? "Esporto…" : "Esporta ora"}
+          </button>
         </div>
       </AdminTopBar>
 
@@ -195,6 +229,7 @@ export default function AdminOrdiniSection() {
 
       <div className="admin-content">
         {error && <Notice variant="error" onClose={() => setError(null)}>{tServer(error)}</Notice>}
+      {esitoExport && <Notice onClose={() => setEsitoExport(null)}>{esitoExport}</Notice>}
 
         {dash && (
           <div className="dash-grid">
