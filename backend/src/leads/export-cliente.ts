@@ -22,8 +22,10 @@ export const MODELLO_SOGGETTI = 'templates/integra-soggetti.xlsx';
 export const RIGHE_INTESTAZIONE_MODELLO = 1;
 
 /**
- * Valori tecnici presi dalla riga di esempio di Integra (identitari del soggetto,
- * non commerciali). I campi commerciali restano vuoti: vedi commento sopra.
+ * Valori fissi, uguali per ogni soggetto: dalla riga di esempio di Integra.
+ * Degli obbligatori (rosso nel modello) qui ci sono i tre costanti — `cla_tipo`,
+ * `cla_clistacod`, `cla_clistadescr`; gli altri nove arrivano dal cliente
+ * (vedi `valoriCliente`). I campi commerciali restano vuoti.
  */
 export const VALORI_FISSI: Record<string, string | number> = {
   cla_tipo: 'C',
