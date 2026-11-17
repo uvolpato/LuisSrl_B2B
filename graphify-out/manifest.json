@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794913126.7743516,
-    "seen": 1794913199.9845645,
-    "ast_hash": "2e28b5168ea884ca8aaf936800a92dbc",
+    "mtime": 1794913279.6809347,
+    "seen": 1794913413.1173706,
+    "ast_hash": "96701c7426480d5250a3308267e73812",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
