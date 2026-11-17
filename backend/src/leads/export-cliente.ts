@@ -94,8 +94,23 @@ export function valoriCliente(a: AnagraficaIntegra): Record<string, string | num
   };
 }
 
-/** Anagrafica di un lead approvato: sede da VIES/web, email del referente. */
-export function anagraficaDaLead(lead: Lead): AnagraficaIntegra {
+/**
+ * Nome del file di export: l'import in Integra lo fa una persona, quindi il nome
+ * deve dire chi è il soggetto — `lead-12-GARDEN-DEMO-SRL.xlsx`.
+ */
+export function nomeFileLead(lead: { id: number; ragioneSociale: string }): string {
+  const nome = (lead.ragioneSociale ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // via gli accenti
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/, '');
+  return nome ? `lead-${lead.id}-${nome}.xlsx` : `lead-${lead.id}.xlsx`;
+}
+
+/** Anagrafica di un lead approvato: sede da VIES/web, email del referente. */export function anagraficaDaLead(lead: Lead): AnagraficaIntegra {
   return {
     ragioneSociale: lead.ragioneSociale,
     partitaIva: lead.partitaIva,

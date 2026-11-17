@@ -8,6 +8,7 @@ import {
   RIGHE_INTESTAZIONE_MODELLO,
   anagraficaDaCliente,
   anagraficaDaLead,
+  nomeFileLead,
   valoriCliente,
 } from './export-cliente';
 
@@ -43,7 +44,7 @@ export class ExportClienteService {
         giaEsportato: true,
         sedeMancante,
       };
-    const file = `lead-${lead.id}.xlsx`;
+    const file = nomeFileLead(lead);
     try {
       await scriviXlsxDaModello(
         this.dir,

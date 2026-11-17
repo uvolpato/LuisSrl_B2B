@@ -9,6 +9,7 @@ import {
   RIGHE_INTESTAZIONE_MODELLO,
   anagraficaDaLead,
   formattaIndirizzo,
+  nomeFileLead,
   valoriCliente,
 } from './export-cliente';
 
@@ -59,8 +60,15 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
     expect(v.cla_clipiva).toBe('09012345678');
   });
 
-  it('virgola prima del civico solo se c e un numero finale', () => {
-    expect(formattaIndirizzo('via bellafino 28/30')).toBe('VIA BELLAFINO, 28/30');
+  it('nome file con la ragione sociale, per l import manuale', () => {
+    expect(nomeFileLead({ id: 12, ragioneSociale: 'Garden Demo srl' })).toBe('lead-12-GARDEN-DEMO-SRL.xlsx');
+    expect(nomeFileLead({ id: 7, ragioneSociale: 'F.lli Rossi & C. s.n.c.' })).toBe('lead-7-F-LLI-ROSSI-C-S-N-C.xlsx');
+    expect(nomeFileLead({ id: 3, ragioneSociale: 'Société Très Longue Dénomination Pour Les Jardins du Sud' }))
+      .toHaveLength('lead-3-'.length + 40 + '.xlsx'.length);
+    expect(nomeFileLead({ id: 5, ragioneSociale: '   ' })).toBe('lead-5.xlsx');
+  });
+
+  it('virgola prima del civico solo se c e un numero finale', () => {    expect(formattaIndirizzo('via bellafino 28/30')).toBe('VIA BELLAFINO, 28/30');
     expect(formattaIndirizzo('VIA STATALE, 47')).toBe('VIA STATALE, 47');
     expect(formattaIndirizzo('LOCALITA PRATI')).toBe('LOCALITA PRATI');
     expect(formattaIndirizzo(null)).toBe('');
@@ -69,12 +77,12 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
   it('file: due righe di intestazione dall export Integra, dati da riga 3, nessun temporaneo', async () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'lead-export-'));
     try {
-      await scriviXlsxDaModello(dir, 'lead-9.xlsx', modello, RIGHE_INTESTAZIONE_MODELLO, [
+      await scriviXlsxDaModello(dir, nomeFileLead(lead), modello, RIGHE_INTESTAZIONE_MODELLO, [
         valoriCliente(anagraficaDaLead(lead)),
       ]);
-      expect(await readdir(dir)).toEqual(['lead-9.xlsx']);
+      expect(await readdir(dir)).toEqual([nomeFileLead(lead)]);
       const wb = new ExcelJS.Workbook();
-      await wb.xlsx.readFile(path.join(dir, 'lead-9.xlsx'));
+      await wb.xlsx.readFile(path.join(dir, nomeFileLead(lead)));
       const ws = wb.worksheets[0];
       expect(ws.rowCount).toBe(3);
       // riga 1 = nomi tecnici, riga 2 = etichette italiane, riga 3 = dati
