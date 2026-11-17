@@ -626,9 +626,9 @@
     "semantic_hash": ""
   },
   "backend/src/export-ordini/export-ordini.controller.ts": {
-    "mtime": 1794929022.8787053,
-    "seen": 1794929199.742225,
-    "ast_hash": "2ac99a5b989d94d7817ee13d958093f1",
+    "mtime": 1794929850.7083414,
+    "seen": 1794930069.360384,
+    "ast_hash": "15f9e33c6e6bac4f4bc2caaaff88dfcd",
     "semantic_hash": ""
   },
   "backend/src/export-ordini/export-ordini.module.ts": {
@@ -638,9 +638,9 @@
     "semantic_hash": "ce8ee570dd3d07af253a83b9cf0966d6"
   },
   "backend/src/export-ordini/export-ordini.service.ts": {
-    "mtime": 1794929018.2743385,
-    "seen": 1794929199.7422285,
-    "ast_hash": "b514a23701d57c66cbbd7976cffe2261",
+    "mtime": 1794929844.2390037,
+    "seen": 1794930069.3603868,
+    "ast_hash": "0440c5e1bf11a3625945f43828fef239",
     "semantic_hash": ""
   },
   "backend/src/health/health.controller.ts": {
@@ -710,10 +710,10 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/integrazione.module.ts": {
-    "mtime": 1785884671.580055,
-    "seen": 1793880362.9583826,
-    "ast_hash": "9c2ba08ea6efd957d916a1d195f9fa77",
-    "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
+    "mtime": 1794929810.212697,
+    "seen": 1794930069.360409,
+    "ast_hash": "68d133f209b128cd405e0ef02b55b190",
+    "semantic_hash": ""
   },
   "backend/src/integrazione/integrazione.service.ts": {
     "mtime": 1794914545.7702074,
@@ -722,10 +722,10 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
-    "mtime": 1788957597.355839,
-    "seen": 1793880362.9586966,
-    "ast_hash": "63ac425a67b89cb7ebac211f1feada98",
-    "semantic_hash": "63ac425a67b89cb7ebac211f1feada98"
+    "mtime": 1794929810.212697,
+    "seen": 1794930069.3604152,
+    "ast_hash": "d68eb558953d86cff4e46b8435a3428f",
+    "semantic_hash": ""
   },
   "backend/src/integrazione/sync.service.spec.ts": {
     "mtime": 1785884671.5840511,
@@ -740,9 +740,9 @@
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1794929364.3262162,
-    "seen": 1794929457.4990666,
-    "ast_hash": "48b0cef637267179744658737061feb8",
+    "mtime": 1794929856.6526678,
+    "seen": 1794930069.3604195,
+    "ast_hash": "65bd1cfed94f51b1ef6d9899f297da55",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
@@ -812,9 +812,9 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.ts": {
-    "mtime": 1794929361.0367455,
-    "seen": 1794929457.4990942,
-    "ast_hash": "f06617829a749e5d03a87c12b86a6698",
+    "mtime": 1794929863.3498285,
+    "seen": 1794930069.3604462,
+    "ast_hash": "b65cd7cc437b0a4d682f6721d6db04bd",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
@@ -1497,9 +1497,9 @@
     "semantic_hash": "a32d488a9f82c25833a4d29c44ce1a9b"
   },
   "frontend/components/admin/SyncPanel.tsx": {
-    "mtime": 1794929395.1677527,
-    "seen": 1794929457.4992871,
-    "ast_hash": "968d2f7d6f3b592e043534a734835d42",
+    "mtime": 1794929965.5701268,
+    "seen": 1794930069.360641,
+    "ast_hash": "879af4da37b182b96884ee0604b4b245",
     "semantic_hash": ""
   },
   "frontend/components/admin/icons.tsx": {
@@ -4104,6 +4104,12 @@
     "mtime": 1794856298.772735,
     "seen": 1794856453.2907825,
     "ast_hash": "0494bf8914892e1afa70b11c4666b702",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261117000000_sync_config_export_ordini/migration.sql": {
+    "mtime": 1794929786.3617468,
+    "seen": 1794930069.3601966,
+    "ast_hash": "0e68046d9952c5abaf8d8ce5e0c61f7a",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
