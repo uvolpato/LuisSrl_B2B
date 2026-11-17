@@ -902,9 +902,9 @@
     "semantic_hash": "c6552a0622af8322f627d3db0bed6bed"
   },
   "backend/src/mail/mail.service.ts": {
-    "mtime": 1794935168.3653834,
-    "seen": 1794935212.1141791,
-    "ast_hash": "1cd42ea1922dd88b0379718d12f9f04c",
+    "mtime": 1794935809.396342,
+    "seen": 1794935847.1050136,
+    "ast_hash": "36db67801eedc55fdd121093c91ed487",
     "semantic_hash": ""
   },
   "backend/src/main.ts": {
@@ -4122,12 +4122,6 @@
     "mtime": 1794932739.8409243,
     "seen": 1794932792.2958934,
     "ast_hash": "3ffa1ba1efcb519c95981480e2a57663",
-    "semantic_hash": ""
-  },
-  "backend/src/mail/mittente.spec.ts": {
-    "mtime": 1794935173.1204145,
-    "seen": 1794935212.1141815,
-    "ast_hash": "525f325855db31e8929daef9c353993d",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
