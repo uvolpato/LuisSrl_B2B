@@ -8,6 +8,18 @@ import { esc } from '../common/html';
 import type { ReportIndagine, StatoSegnale } from '../leads/indagine';
 import { boxClienteIntegra } from './cliente-integra';
 
+/**
+ * Mittente delle email: il nome che l'utente vede. Se SMTP_FROM è solo un indirizzo
+ * ci aggiungiamo "Luis S.r.l."; se manca del tutto usiamo l'account SMTP (Gmail
+ * riscrive comunque un From non autorizzato, e senza nome si perde il brand).
+ */
+export function mittenteEmail(smtpFrom?: string | null, smtpUser?: string | null): string {
+  const from = (smtpFrom ?? '').trim();
+  if (from) return from.includes('<') ? from : `Luis S.r.l. <${from}>`;
+  const utente = (smtpUser ?? '').trim();
+  return utente ? `Luis S.r.l. <${utente}>` : 'Luis S.r.l. <noreply@luisbg.it>';
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -27,7 +39,7 @@ export class MailService {
         pass: this.config.get<string>('SMTP_PASS'),
       },
     });
-    this.from = this.config.get<string>('SMTP_FROM') ?? 'noreply@luissrl.it';
+    this.from = mittenteEmail(this.config.get<string>('SMTP_FROM'), this.config.get<string>('SMTP_USER'));
     this.domain = this.config.get<string>('APP_DOMAIN') ?? 'http://localhost:3000';
     this.testEmail = this.config.get<string>('TEST_EMAIL') ?? null;
     this.assetsBase = ASSETS_BASE_DIR;
