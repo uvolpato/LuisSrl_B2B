@@ -14,8 +14,12 @@ import type { Lead } from '@prisma/client';
 
 /** Modello versionato (solo intestazioni, nessun dato di cliente). */
 export const MODELLO_SOGGETTI = 'templates/integra-soggetti.xlsx';
-/** Righe di intestazione del modello da preservare. */
-export const RIGHE_INTESTAZIONE_MODELLO = 2;
+/**
+ * Righe di intestazione da tenere nel file generato: **solo la prima** (nomi
+ * tecnici `cla_*`). La seconda riga del modello — le etichette italiane — serve
+ * solo a leggere l'export di Integra e viene scartata.
+ */
+export const RIGHE_INTESTAZIONE_MODELLO = 1;
 
 /**
  * Valori tecnici presi dalla riga di esempio di Integra (identitari del soggetto,
@@ -74,6 +78,53 @@ const piva = (s: string | null | undefined) => {
 export function formattaIndirizzo(s: string | null | undefined): string {
   const v = up(s);
   return v.replace(/^(.*[^\d,\s])\s+(\d+\S*)$/, '$1, $2');
+}
+
+/**
+ * Colonne in **rosso** nel modello di Integra: vanno sempre valorizzate.
+ * `cla_codstr` è il codice soggetto (lo assegna Integra per i nuovi) e
+ * `cla_cliindir2` è il secondo indirizzo, che il portale non gestisce: restano
+ * vuoti per i soggetti nuovi.
+ */
+export const CAMPI_OBBLIGATORI = [
+  'cla_tipo',
+  'cla_codstr',
+  'cla_cliallrgsoc',
+  'cla_cliindir',
+  'cla_cliindir2',
+  'cla_clicap',
+  'cla_clicitta',
+  'cla_cliprov',
+  'cla_clistacod',
+  'cla_clistadescr',
+  'cla_clicfisc',
+  'cla_clipiva',
+] as const;
+
+/** Colonne in **verde** (opzionali): restano vuote, le completa Integra. */
+export const CAMPI_OPZIONALI = [
+  'cla_caccod',
+  'cla_pagcod',
+  'cla_iban',
+  'cla_agecod',
+  'cla_agedescr',
+  'cla_porcod',
+  'cla_pordescr',
+  'cla_specod',
+  'cla_spedescr',
+] as const;
+
+/** Obbligatori non compilabili dal portale: codice nuovo soggetto e secondo indirizzo. */
+const OBBLIGATORI_NON_GESTITI = new Set<string>(['cla_codstr', 'cla_cliindir2']);
+
+/**
+ * Campi obbligatori senza valore: se ce ne sono il file non va scritto, altrimenti
+ * finirebbe nella cartella di Integra un tracciato che l'import rifiuta.
+ */
+export function campiObbligatoriMancanti(v: Record<string, string | number>): string[] {
+  return CAMPI_OBBLIGATORI.filter(
+    (c) => !OBBLIGATORI_NON_GESTITI.has(c) && String(v[c] ?? '').trim() === '',
+  );
 }
 
 /** Valori per nome colonna del modello. C.F. = P.IVA se non indicato. */

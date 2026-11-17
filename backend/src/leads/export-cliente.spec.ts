@@ -5,9 +5,11 @@ import ExcelJS from 'exceljs';
 import type { Lead } from '@prisma/client';
 import { scriviXlsxDaModello } from '../common/xlsx';
 import {
+  CAMPI_OPZIONALI,
   MODELLO_SOGGETTI,
   RIGHE_INTESTAZIONE_MODELLO,
   anagraficaDaLead,
+  campiObbligatoriMancanti,
   formattaIndirizzo,
   nomeFileLead,
   valoriCliente,
@@ -74,7 +76,7 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
     expect(formattaIndirizzo(null)).toBe('');
   });
 
-  it('file: due righe di intestazione dall export Integra, dati da riga 3, nessun temporaneo', async () => {
+  it('file: una sola riga di intestazione (nomi tecnici), dati da riga 2, senza temporanei', async () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'lead-export-'));
     try {
       await scriviXlsxDaModello(dir, nomeFileLead(lead), modello, RIGHE_INTESTAZIONE_MODELLO, [
@@ -84,14 +86,28 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.readFile(path.join(dir, nomeFileLead(lead)));
       const ws = wb.worksheets[0];
-      expect(ws.rowCount).toBe(3);
-      // riga 1 = nomi tecnici, riga 2 = etichette italiane, riga 3 = dati
+      expect(ws.rowCount).toBe(2);
+      // riga 1 = nomi tecnici, riga 2 = dati (niente etichette italiane)
       expect(ws.getRow(1).getCell(3).value).toBe('cla_cliallrgsoc');
-      expect(ws.getRow(2).getCell(3).value).toBe('Denominazione');
-      expect(ws.getRow(3).getCell(3).value).toBe('GARDEN DEMO SRL');
-      expect(ws.getRow(3).getCell(1).value).toBe('C');
+      expect(ws.getRow(2).getCell(3).value).toBe('GARDEN DEMO SRL');
+      expect(ws.getRow(2).getCell(1).value).toBe('C');
+      expect(ws.getRow(2).getCell(17).value).toBe('09012345678'); // cla_clicfisc (Q)
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it('campi obbligatori: bloccati se mancano, ignorati codice nuovo e secondo indirizzo', () => {
+    expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).toEqual([]);
+    const senzaProvincia = valoriCliente({ ...anagraficaDaLead(lead), provincia: null });
+    expect(campiObbligatoriMancanti(senzaProvincia)).toEqual(['cla_cliprov']);
+    // cla_codstr (nuovo soggetto) e cla_cliindir2 non sono pretesi dal portale
+    expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).not.toContain('cla_codstr');
+    expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).not.toContain('cla_cliindir2');
+  });
+
+  it('campi opzionali (verde) restano vuoti', () => {
+    const v = valoriCliente(anagraficaDaLead(lead));
+    for (const campo of CAMPI_OPZIONALI) expect(v[campo]).toBeUndefined();
   });
 });

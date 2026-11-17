@@ -8,6 +8,7 @@ import {
   RIGHE_INTESTAZIONE_MODELLO,
   anagraficaDaCliente,
   anagraficaDaLead,
+  campiObbligatoriMancanti,
   nomeFileLead,
   valoriCliente,
 } from './export-cliente';
@@ -45,13 +46,24 @@ export class ExportClienteService {
         sedeMancante,
       };
     const file = nomeFileLead(lead);
+    const valori = valoriCliente(anagraficaDaLead(lead));
+    const mancanti = campiObbligatoriMancanti(valori);
+    if (mancanti.length) {
+      // File non scritto: un tracciato senza i campi obbligatori verrebbe rifiutato
+      // dall'import, e intanto occupa la cartella monitorata da Integra.
+      const errore = `Campi obbligatori mancanti: ${mancanti.join(', ')}`;
+      await this.prisma.leadEvent.create({
+        data: { leadId: lead.id, tipo: 'export_errore', dettagli: { errore, campi: mancanti } },
+      });
+      return { ok: false, errore };
+    }
     try {
       await scriviXlsxDaModello(
         this.dir,
         file,
         path.join(process.cwd(), MODELLO_SOGGETTI),
         RIGHE_INTESTAZIONE_MODELLO,
-        [valoriCliente(anagraficaDaLead(lead))],
+        [valori],
       );
       await this.prisma.lead.update({
         where: { id: lead.id },
@@ -82,13 +94,18 @@ export class ExportClienteService {
   async riesportaCliente(c: Customer): Promise<EsitoExport> {
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
     const file = `cliente-${(c.codiceCliente ?? `id${c.id}`).replace(/[^A-Za-z0-9_-]/g, '_')}-${ts}.xlsx`;
+    const valori = valoriCliente(anagraficaDaCliente(c));
+    const mancanti = campiObbligatoriMancanti(valori);
+    if (mancanti.length) {
+      return { ok: false, errore: `Campi obbligatori mancanti: ${mancanti.join(', ')}` };
+    }
     try {
       await scriviXlsxDaModello(
         this.dir,
         file,
         path.join(process.cwd(), MODELLO_SOGGETTI),
         RIGHE_INTESTAZIONE_MODELLO,
-        [valoriCliente(anagraficaDaCliente(c))],
+        [valori],
       );
       if (c.leadId)
         await this.prisma.leadEvent.create({
