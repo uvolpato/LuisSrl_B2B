@@ -235,6 +235,16 @@ export class AdminLeadsService {
     return this.exportCliente.riesportaCliente(c);
   }
 
+  /**
+   * Rigenera il **file del lead** (`lead-<id>-<ragione>.xlsx`), anche se era già
+   * stato esportato: serve quando i dati vengono corretti prima dell'aggancio.
+   */
+  async rigeneraFile(id: number) {
+    const lead = await this.prisma.lead.findUnique({ where: { id } });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    return this.exportCliente.esporta(lead, { forza: true });
+  }
+
   /** Eliminazione definitiva (eventi in cascade, cliente scollegato con SetNull). */
   async elimina(id: number) {
     const esiste = await this.prisma.lead.findUnique({

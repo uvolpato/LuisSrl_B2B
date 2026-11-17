@@ -430,6 +430,22 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
     }
   }
 
+  /** Rifà il file del lead (lead-<id>-<ragione>.xlsx) anche se già esportato. */
+  async function rigeneraFileLead() {
+    setRiesportando(true);
+    try {
+      const r = await api.post<{ ok: boolean; file?: string; errore?: string }>(`/api/admin/leads/${d.id}/esporta`, {});
+      setInvio(r.ok
+        ? { variant: "success", testo: `File ${r.file} rigenerato per l'import in Integra.` }
+        : { variant: "warning", testo: `Generazione non riuscita: ${r.errore ?? "errore"}` });
+      onRefresh();
+    } catch (e) {
+      setInvio({ variant: "warning", testo: `Generazione non riuscita: ${e instanceof ApiError ? e.code : "errore"}` });
+    } finally {
+      setRiesportando(false);
+    }
+  }
+
   return (
     <>
       <div className="ra-drawer-overlay" onClick={onClose} />
@@ -523,6 +539,9 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                   {riesportando ? "Generazione…" : "Genera XLS aggiornamento Integra"}
                 </button>
               )}
+              <button type="button" className="btn btn-secondary" style={{ marginTop: 12, marginLeft: d.cliente ? 8 : 0 }} disabled={riesportando} onClick={() => void rigeneraFileLead()} title="Rifà lead-<id>-<ragione>.xlsx con i dati attuali">
+                {riesportando ? "Generazione…" : "Rigenera file lead"}
+              </button>
               {d.messaggio && <div className="msg-box"><strong style={{ fontSize: 11, color: "var(--muted)" }}>MESSAGGIO</strong><p>{d.messaggio}</p></div>}
             </div>
 

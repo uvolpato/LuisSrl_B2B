@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'node:path';
+import { promises as fs } from 'node:fs';
 import type { Customer, Lead } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { cartellaOrdiniIntegra, scriviXlsxDaModello } from '../common/xlsx';
@@ -32,19 +33,20 @@ export class ExportClienteService {
     return process.env.IMPORT_CLIENTI_DIR?.trim() || cartellaOrdiniIntegra();
   }
 
-  async esporta(lead: Lead): Promise<EsitoExport> {
+  async esporta(lead: Lead, opts: { forza?: boolean } = {}): Promise<EsitoExport> {
     const sedeMancante =
       !lead.sedeIndirizzo ||
       !lead.sedeCap ||
       !lead.sedeCitta ||
       !lead.sedeProvincia;
-    if (lead.esportatoFile)
+    if (lead.esportatoFile && !opts.forza) {
       return {
         ok: true,
         file: lead.esportatoFile,
         giaEsportato: true,
         sedeMancante,
       };
+    }
     const file = nomeFileLead(lead);
     const valori = valoriCliente(anagraficaDaLead(lead));
     const mancanti = campiObbligatoriMancanti(valori);
@@ -65,6 +67,11 @@ export class ExportClienteService {
         RIGHE_INTESTAZIONE_MODELLO,
         [valori],
       );
+      // Rigenerazione con nome diverso (ragione sociale cambiata): via il file vecchio,
+      // altrimenti nella cartella di Integra restano due tracciati dello stesso soggetto.
+      if (lead.esportatoFile && lead.esportatoFile !== file) {
+        await fs.unlink(path.join(this.dir, lead.esportatoFile)).catch(() => {});
+      }
       await this.prisma.lead.update({
         where: { id: lead.id },
         data: { esportatoIl: new Date(), esportatoFile: file },

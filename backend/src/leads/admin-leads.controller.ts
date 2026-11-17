@@ -120,6 +120,13 @@ export class AdminLeadsController {
     return this.leads.riesporta(id);
   }
 
+  /** Rigenera il file del lead (anche se già esportato): dati corretti prima dell'aggancio. */
+  @Post(':id/esporta')
+  @RequirePermission('vendite.clienti.edit')
+  rigeneraFile(@Param('id', ParseIntPipe) id: number) {
+    return this.leads.rigeneraFile(id);
+  }
+
   /** Reinvia a mano la conferma al richiedente o la segnalazione a shop@. */
   @Post(':id/reinvia')
   @RequirePermission('vendite.clienti.edit')
