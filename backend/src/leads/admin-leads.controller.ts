@@ -56,6 +56,12 @@ export class AdminLeadsController {
     return this.exportCliente.stato();
   }
 
+  /** Forza l'export delle anagrafiche in attesa (lead approvati non esportati). */
+  @Post('export/run')
+  eseguiExport() {
+    return this.exportCliente.esportaCoda();
+  }
+
   @Get()
   elenco(
     @Query('stato') stato?: string,

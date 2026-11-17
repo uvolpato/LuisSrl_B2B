@@ -52,6 +52,23 @@ export class ExportClienteService {
     };
   }
 
+  /** Forza l'export di tutte le anagrafiche in attesa (lead approvati non ancora
+   *  esportati). Idempotente: chi ha già il file viene saltato. */
+  async esportaCoda(): Promise<{ cartella: string; processati: number; esportati: number; errori: number }> {
+    const leads = await this.prisma.lead.findMany({
+      where: { stato: 'APPROVATO', esportatoIl: null, anonimizzatoIl: null },
+      orderBy: { id: 'asc' },
+    });
+    let esportati = 0;
+    let errori = 0;
+    for (const lead of leads) {
+      const esito = await this.esporta(lead);
+      if (!esito.ok) errori++;
+      else if (!esito.giaEsportato) esportati++;
+    }
+    return { cartella: this.dir, processati: leads.length, esportati, errori };
+  }
+
   async esporta(lead: Lead): Promise<EsitoExport> {
     const sedeMancante =
       !lead.sedeIndirizzo ||
