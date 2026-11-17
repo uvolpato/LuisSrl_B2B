@@ -812,21 +812,21 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.ts": {
-    "mtime": 1794931377.3963006,
-    "seen": 1794931419.5134716,
-    "ast_hash": "f214bc5ed6a13ef8e97b57ecf14c7e63",
+    "mtime": 1794931689.5691628,
+    "seen": 1794931744.4139478,
+    "ast_hash": "f26dd88e5899a78324628074e4144265",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
-    "mtime": 1794931391.5151725,
-    "seen": 1794931419.513474,
-    "ast_hash": "f36a7bcaad5d8ba02bc0b2f7f02b6316",
+    "mtime": 1794931714.8142662,
+    "seen": 1794931744.41395,
+    "ast_hash": "d0926864ff731d4218b3b626e90a52de",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.ts": {
-    "mtime": 1794931373.4535308,
-    "seen": 1794931419.5134757,
-    "ast_hash": "2a07f46b103e4d48f2d0fbb949520a2a",
+    "mtime": 1794931689.5691628,
+    "seen": 1794931744.4139516,
+    "ast_hash": "673990036d7c84a5068bf0c9dc07c9a6",
     "semantic_hash": ""
   },
   "backend/src/leads/indagine.service.ts": {
