@@ -1283,13 +1283,24 @@ export class IntegrazioneService {
     nome: string; colore?: string | null; descrizioneAI?: string | null;
     descrizione?: string | null; descrizioneDettagliata?: string | null;
     famiglia?: { nome: string; nomePortale?: string | null } | null;
-    varianti?: { descrizione: string; dimensioni?: unknown; multiplo?: number }[];
+    varianti?: {
+      descrizione: string;
+      dimensioni?: unknown;
+      multiplo?: number;
+      componenti?: { descrizione: string; dimensioni?: string | null }[];
+    }[];
   }): string {
     const fam = a.famiglia?.nomePortale || a.famiglia?.nome || '';
     const parts = [a.nome, fam, a.colore, a.descrizioneAI, a.descrizione, a.descrizioneDettagliata];
     if (a.varianti?.length) {
+      // Include i pezzi dei kit: il cliente cerca anche "cubo h23", non solo il codice del set.
       const variantiTxt = a.varianti
-        .map((v) => [v.descrizione, this.dimText(v.dimensioni), this.dimFormaText(v.dimensioni)].filter(Boolean).join(' '))
+        .map((v) => {
+          const pezzi = (v.componenti ?? []).map((c) => [c.descrizione, c.dimensioni].filter(Boolean).join(' ')).join('; ');
+          return [v.descrizione, this.dimText(v.dimensioni), this.dimFormaText(v.dimensioni), pezzi && `composto da ${pezzi}`]
+            .filter(Boolean)
+            .join(' ');
+        })
         .join('; ');
       if (variantiTxt) parts.push(`Varianti: ${variantiTxt}`);
     }
@@ -1333,7 +1344,14 @@ export class IntegrazioneService {
   async reembedArticolo(codiceLinea: string): Promise<void> {
     const a = await this.prisma.articolo.findUnique({
       where: { codiceLinea },
-      include: { famiglia: true, varianti: { where: { stato: { not: 'NASCOSTO' } }, orderBy: { codice: 'asc' } } },
+      include: {
+        famiglia: true,
+        varianti: {
+          where: { stato: { not: 'NASCOSTO' } },
+          orderBy: { codice: 'asc' },
+          include: { componenti: { orderBy: [{ ordinamento: 'asc' }, { codice: 'asc' }] } },
+        },
+      },
     });
     // Indicizziamo solo cio' che il cliente puo' vedere.
     if (!a || !a.configurato || a.stato !== 'ATTIVO' || a.famiglia.stato !== 'ATTIVO') {

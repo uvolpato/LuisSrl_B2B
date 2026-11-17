@@ -59,6 +59,9 @@ e la descrizione dell'articolo resta quella dell'articolo (migration
 3. L'upsert aggiorna descrizione/dimensioni/ordinamento ma **mai la quantità** (è manuale).
 4. Un figlio già importato in passato come variante viene rimosso.
 5. Ordine d'import irrilevante: la regola guarda `integra_articoli`, non le varianti già presenti.
+6. Dati derivati: l'articolo toccato viene re-indicizzato (`articolo_embedding`) e il testo
+   indicizzato include i pezzi del kit, così la ricerca semantica trova anche "cubo h23".
+   Il prompt AI legge la composizione al momento della generazione: non va salvato nulla.
 
 ## 5. Rendering
 
