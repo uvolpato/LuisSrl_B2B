@@ -1,6 +1,6 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { CronExpressionParser } from 'cron-parser';
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { cartellaOrdiniIntegra, scriviXlsxAtomico } from '../common/xlsx';
@@ -37,25 +37,6 @@ const VALUTA = 'EUR';
 const TIPO_RIGA = 'OC0000';
 const MAGAZZINO = '001';
 const PASSO_ORDINAMENTO = 5; // mvr_ordinamento: 5, 10, 15, ...
-
-/** Cron dell'export ordini. Un valore sbagliato in .env (es. un percorso messo al
- *  posto dell'espressione) non deve impedire l'avvio: senza API i siti sono giù. */
-let cronCalcolato: string | null = null;
-function cronExportOrdini(): string {
-  if (cronCalcolato) return cronCalcolato;
-  const predefinito = '*/10 * * * *';
-  const raw = process.env.EXPORT_ORDINI_CRON?.trim();
-  if (!raw) return (cronCalcolato = predefinito);
-  try {
-    CronExpressionParser.parse(raw);
-    return (cronCalcolato = raw);
-  } catch {
-    console.warn(
-      `[export-ordini] EXPORT_ORDINI_CRON non valido ("${raw}"): uso ${predefinito}. La cartella di destinazione va in EXPORT_ORDINI_DIR.`,
-    );
-    return (cronCalcolato = predefinito);
-  }
-}
 
 
 export interface EsitoOrdine {
@@ -94,46 +75,23 @@ export class ExportOrdiniService implements OnModuleInit {
     return cartellaOrdiniIntegra();
   }
 
-  /** All'avvio dice dove scrive: se EXPORT_ORDINI_DIR non arriva al processo (service
-   *  non riavviato, .env sbagliato) si vede subito invece di scoprirlo dal file. */
-  onModuleInit() {
+  /** All'avvio dice dove scrive e se la cartella è davvero scrivibile: un'unità
+   *  mappata (S:) non esiste per un servizio Windows, e senza prova lo scopriresti
+   *  solo dagli ordini in ERRORE_SCRITTURA. La frequenza sta in sync_config (Admin → Sync). */
+  async onModuleInit() {
     const origine = process.env.EXPORT_ORDINI_DIR?.trim() ? 'EXPORT_ORDINI_DIR' : 'default (EXPORT_ORDINI_DIR non impostata)';
-    this.log.log(`Export ordini: cartella "${this.dir}" da ${origine} · cron "${cronExportOrdini()}"`);
-  }
-
-  /** Monitoraggio per il pannello Sincronizzazione: cartella, coda, ultimo esito. */
-  async stato() {
-    const cron = cronExportOrdini();
-    let prossima: string | null = null;
+    this.log.log(`Export ordini: cartella "${this.dir}" da ${origine}`);
+    const probe = path.join(this.dir, '.probe-scrittura.tmp');
     try {
-      prossima = CronExpressionParser.parse(cron).next().toDate().toISOString();
-    } catch { /* cron non valido: nessuna prossima esecuzione */ }
-
-    const [inCoda, ultimo, errori] = await Promise.all([
-      this.prisma.ordineCliente.count({
-        where: { esportatoIl: null, numeroOrdine: { startsWith: 'B2B-' }, stato: { in: ['BOZZA', 'ERRORE_SCRITTURA'] } },
-      }),
-      this.prisma.ordineCliente.findFirst({
-        where: { esportatoIl: { not: null } },
-        orderBy: { esportatoIl: 'desc' },
-        select: { numeroOrdine: true, esportatoIl: true, esportatoFile: true },
-      }),
-      this.prisma.ordineCliente.count({ where: { stato: { startsWith: 'ERRORE_' } } }),
-    ]);
-    return {
-      cartella: this.dir,
-      cron,
-      prossimaEsecuzione: prossima,
-      inCoda,
-      ultimo: ultimo ? { numeroOrdine: ultimo.numeroOrdine, il: ultimo.esportatoIl, file: ultimo.esportatoFile } : null,
-      ordiniInErrore: errori,
-    };
-  }
-  @Cron(cronExportOrdini())
-  async jobSchedulato(): Promise<void> {
-    const r = await this.esportaCoda();
-    if (r.processati) {
-      this.log.log(`Export ordini: ${r.esportati}/${r.processati} esportati, ${r.errori} errori`);
+      await fs.mkdir(this.dir, { recursive: true });
+      await fs.writeFile(probe, 'ok');
+      await fs.unlink(probe);
+      this.log.log(`Export ordini: cartella scrivibile (${this.dir})`);
+    } catch (e) {
+      this.log.error(
+        `Export ordini: cartella NON scrivibile (${this.dir}) — ${(e as Error).message}. ` +
+          'Le unità mappate (S:) non sono visibili a un servizio Windows: usa un percorso UNC \\\\server\\share\\... con permessi per l\'account del servizio.',
+      );
     }
   }
 

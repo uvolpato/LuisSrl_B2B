@@ -9,9 +9,10 @@ import { SyncService } from './sync.service';
 import { SyncManagerService } from './sync-manager.service';
 import { EmbeddingService } from './embedding.service';
 import { AiUsageModule } from '../ai-usage/ai-usage.module';
+import { ExportOrdiniModule } from '../export-ordini/export-ordini.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), AiUsageModule],
+  imports: [ScheduleModule.forRoot(), AiUsageModule, ExportOrdiniModule],
   controllers: [IntegrazioneController, CatalogoController, CatalogoPublicController, FamiglieController],
   providers: [IntegrazioneService, SyncService, SyncManagerService, EmbeddingService],
   exports: [IntegrazioneService, EmbeddingService],

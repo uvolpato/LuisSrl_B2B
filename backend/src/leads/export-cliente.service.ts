@@ -28,47 +28,6 @@ export class ExportClienteService {
     return process.env.IMPORT_CLIENTI_DIR?.trim() || cartellaOrdiniIntegra();
   }
 
-  /** Monitoraggio per il pannello Sincronizzazione: dove scrive, cosa manca, ultimo esito. */
-  async stato() {
-    const trentaGiorni = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [inAttesa, ultimo, errori] = await Promise.all([
-      this.prisma.lead.count({
-        where: { stato: 'APPROVATO', esportatoIl: null, anonimizzatoIl: null },
-      }),
-      this.prisma.lead.findFirst({
-        where: { esportatoIl: { not: null } },
-        orderBy: { esportatoIl: 'desc' },
-        select: { id: true, ragioneSociale: true, esportatoIl: true, esportatoFile: true },
-      }),
-      this.prisma.leadEvent.count({ where: { tipo: 'export_errore', createdAt: { gte: trentaGiorni } } }),
-    ]);
-    return {
-      cartella: this.dir,
-      inAttesa,
-      ultimo: ultimo
-        ? { id: ultimo.id, nome: ultimo.ragioneSociale, il: ultimo.esportatoIl, file: ultimo.esportatoFile }
-        : null,
-      erroriUltimi30gg: errori,
-    };
-  }
-
-  /** Forza l'export di tutte le anagrafiche in attesa (lead approvati non ancora
-   *  esportati). Idempotente: chi ha già il file viene saltato. */
-  async esportaCoda(): Promise<{ cartella: string; processati: number; esportati: number; errori: number }> {
-    const leads = await this.prisma.lead.findMany({
-      where: { stato: 'APPROVATO', esportatoIl: null, anonimizzatoIl: null },
-      orderBy: { id: 'asc' },
-    });
-    let esportati = 0;
-    let errori = 0;
-    for (const lead of leads) {
-      const esito = await this.esporta(lead);
-      if (!esito.ok) errori++;
-      else if (!esito.giaEsportato) esportati++;
-    }
-    return { cartella: this.dir, processati: leads.length, esportati, errori };
-  }
-
   async esporta(lead: Lead): Promise<EsitoExport> {
     const sedeMancante =
       !lead.sedeIndirizzo ||

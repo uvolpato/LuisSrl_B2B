@@ -4,6 +4,7 @@ import { CronJob } from 'cron';
 import { PrismaService } from '../prisma/prisma.service';
 import { SyncService } from './sync.service';
 import { IntegrazioneService } from './integrazione.service';
+import { ExportOrdiniService } from '../export-ordini/export-ordini.service';
 import { CronExpressionParser } from 'cron-parser';
 
 export interface SyncConfigRow {
@@ -38,6 +39,7 @@ export class SyncManagerService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly syncService: SyncService,
     private readonly integrazioneService: IntegrazioneService,
+    private readonly exportOrdini: ExportOrdiniService,
     private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
@@ -182,6 +184,28 @@ export class SyncManagerService implements OnModuleInit {
         case 'lookup':
           result = await this.syncService.syncLookup();
           break;
+        case 'export_ordini': {
+          // Export portale -> Integra: stesso ciclo delle sync (log, esito, prossima
+          // esecuzione) così si governa dalla stessa tabella.
+          const logId = await this.startExportLog();
+          const r = await this.exportOrdini.esportaCoda();
+          const durata = Date.now() - startedAt.getTime();
+          result = {
+            entity: 'export_ordini',
+            status: r.errori > 0 ? 'failed' : 'ok',
+            rowsTotal: r.processati,
+            rowsOk: r.esportati,
+            rowsError: r.errori,
+            errorText: r.errori > 0
+              ? `${r.errori} ordini non scritti in ${r.cartella} (dettaglio nel log del backend)`
+              : undefined,
+            durationMs: durata,
+            progressPct: 100,
+            progressPhase: `Cartella ${r.cartella}`,
+          };
+          await this.completeExportLog(logId, result.status, r, result.errorText);
+          break;
+        }
         default:
           return { esito: 'errore', errore: `Tipo sconosciuto: ${tipo}` };
       }
@@ -207,8 +231,29 @@ export class SyncManagerService implements OnModuleInit {
     }
   }
 
-  private async propagaOrdiniClienti() {
-    const clienti = await this.prisma.$queryRawUnsafe<{ id: number; codice_cliente: string }[]>(
+  private async startExportLog(): Promise<number> {
+    const rows = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      `INSERT INTO sync_log (entity, status, started_at)
+       VALUES ('export_ordini', 'running', now()) RETURNING id`,
+    );
+    return Number(rows[0].id);
+  }
+
+  private async completeExportLog(
+    logId: number,
+    status: string,
+    r: { processati: number; esportati: number; errori: number; cartella: string },
+    errorText?: string,
+  ) {
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE sync_log SET status = $1, rows_total = $2, rows_ok = $3, rows_error = $4,
+              error_text = $5, progress_pct = 100, progress_phase = $6, completed_at = now()
+       WHERE id = $7`,
+      status, r.processati, r.esportati, r.errori, errorText ?? null, `Cartella ${r.cartella}`, logId,
+    );
+  }
+
+  private async propagaOrdiniClienti() {    const clienti = await this.prisma.$queryRawUnsafe<{ id: number; codice_cliente: string }[]>(
       "SELECT id, codice_cliente FROM customers WHERE codice_cliente IS NOT NULL AND codice_cliente != ''",
     );
     let totali = 0;
