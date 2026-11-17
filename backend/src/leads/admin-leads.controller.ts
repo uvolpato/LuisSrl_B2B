@@ -18,6 +18,7 @@ import { RequirePermission } from '../auth/decorators/permission.decorator';
 import { AdminLeadsService } from './admin-leads.service';
 import { LeadsService } from './leads.service';
 import { AzioniLeadService } from './azioni.service';
+import { ExportClienteService } from './export-cliente.service';
 import { AZIONI, type Azione } from './azioni';
 
 class AzioneDto {
@@ -46,7 +47,14 @@ export class AdminLeadsController {
     private readonly leads: AdminLeadsService,
     private readonly azioni: AzioniLeadService,
     private readonly invii: LeadsService,
+    private readonly exportCliente: ExportClienteService,
   ) {}
+
+  /** Monitoraggio dell'export anagrafiche verso Integra (pannello Sincronizzazione). */
+  @Get('export/status')
+  statoExport() {
+    return this.exportCliente.stato();
+  }
 
   @Get()
   elenco(

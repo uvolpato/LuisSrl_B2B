@@ -28,6 +28,30 @@ export class ExportClienteService {
     return process.env.IMPORT_CLIENTI_DIR?.trim() || cartellaOrdiniIntegra();
   }
 
+  /** Monitoraggio per il pannello Sincronizzazione: dove scrive, cosa manca, ultimo esito. */
+  async stato() {
+    const trentaGiorni = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [inAttesa, ultimo, errori] = await Promise.all([
+      this.prisma.lead.count({
+        where: { stato: 'APPROVATO', esportatoIl: null, anonimizzatoIl: null },
+      }),
+      this.prisma.lead.findFirst({
+        where: { esportatoIl: { not: null } },
+        orderBy: { esportatoIl: 'desc' },
+        select: { id: true, ragioneSociale: true, esportatoIl: true, esportatoFile: true },
+      }),
+      this.prisma.leadEvent.count({ where: { tipo: 'export_errore', createdAt: { gte: trentaGiorni } } }),
+    ]);
+    return {
+      cartella: this.dir,
+      inAttesa,
+      ultimo: ultimo
+        ? { id: ultimo.id, nome: ultimo.ragioneSociale, il: ultimo.esportatoIl, file: ultimo.esportatoFile }
+        : null,
+      erroriUltimi30gg: errori,
+    };
+  }
+
   async esporta(lead: Lead): Promise<EsitoExport> {
     const sedeMancante =
       !lead.sedeIndirizzo ||

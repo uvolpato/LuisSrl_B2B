@@ -20,6 +20,22 @@ interface SyncConfigRow {
   prossima_esecuzione: string | null;
 }
 
+interface EsportazioneOrdini {
+  cartella: string;
+  cron: string;
+  prossimaEsecuzione: string | null;
+  inCoda: number;
+  ultimo: { numeroOrdine: string; il: string | null; file: string | null } | null;
+  ordiniInErrore: number;
+}
+
+interface EsportazioneClienti {
+  cartella: string;
+  inAttesa: number;
+  ultimo: { id: number; nome: string; il: string | null; file: string | null } | null;
+  erroriUltimi30gg: number;
+}
+
 interface SyncLogRow {
   id: number;
   entity: string;
@@ -86,17 +102,23 @@ export default function SyncPanel() {
   const [logFilter, setLogFilter] = useState<string>("tutti");
   const [activeTab, setActiveTab] = useState<"sync" | "logs">("sync");
   const [detailLog, setDetailLog] = useState<SyncLogRow | null>(null);
+  const [exportOrdini, setExportOrdini] = useState<EsportazioneOrdini | null>(null);
+  const [exportClienti, setExportClienti] = useState<EsportazioneClienti | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const fetchData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
     try {
-      const [cfg, log] = await Promise.all([
+      const [cfg, log, ordini, clienti] = await Promise.all([
         api.get<SyncConfigRow[]>("/api/integrazione/sync-config"),
         api.get<SyncLogRow[]>("/api/integrazione/sync-logs?limit=50"),
+        api.get<EsportazioneOrdini>("/api/admin/export-ordini/status").catch(() => null),
+        api.get<EsportazioneClienti>("/api/admin/leads/export/status").catch(() => null),
       ]);
       setConfigs(cfg);
       setLogs(log);
+      setExportOrdini(ordini);
+      setExportClienti(clienti);
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Errore caricamento");
@@ -409,6 +431,54 @@ export default function SyncPanel() {
             total={configs.length}
             onPageChange={() => {}}
           />
+
+          {/* Export portale -> Integra: non passa da sync_config, ma va monitorato qui. */}
+          <div style={{ marginTop: 24 }}>
+            <h2 className="admin-panel-title" style={{ fontSize: 15, marginBottom: 10 }}>Esportazioni verso Integra</h2>
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
+              <div className="sync-stat" style={{ alignItems: "flex-start", gap: 6 }}>
+                <span className="sync-stat-label">Ordini → Integra</span>
+                {exportOrdini ? (
+                  <>
+                    <span className="sync-stat-value" style={{ fontSize: 20 }}>{exportOrdini.inCoda}
+                      <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}> in coda</span>
+                    </span>
+                    <span className="mono" style={{ fontSize: 12, color: "var(--muted)", wordBreak: "break-all" }}>{exportOrdini.cartella}</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Cron {exportOrdini.cron} · prossima {formatDateTime(exportOrdini.prossimaEsecuzione)}
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Ultimo: {exportOrdini.ultimo ? `${exportOrdini.ultimo.numeroOrdine} (${formatDateTime(exportOrdini.ultimo.il)})` : "mai"}
+                    </span>
+                    {exportOrdini.ordiniInErrore > 0 && (
+                      <span style={{ fontSize: 12, color: "var(--danger, #b42318)" }}>{exportOrdini.ordiniInErrore} ordini in errore</span>
+                    )}
+                  </>
+                ) : <span style={{ fontSize: 12, color: "var(--muted)" }}>non disponibile</span>}
+              </div>
+
+              <div className="sync-stat" style={{ alignItems: "flex-start", gap: 6 }}>
+                <span className="sync-stat-label">Anagrafiche clienti → Integra</span>
+                {exportClienti ? (
+                  <>
+                    <span className="sync-stat-value" style={{ fontSize: 20 }}>{exportClienti.inAttesa}
+                      <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}> in attesa</span>
+                    </span>
+                    <span className="mono" style={{ fontSize: 12, color: "var(--muted)", wordBreak: "break-all" }}>{exportClienti.cartella}</span>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Ultimo: {exportClienti.ultimo ? `${exportClienti.ultimo.nome} (${formatDateTime(exportClienti.ultimo.il)})` : "mai"}
+                    </span>
+                    {exportClienti.erroriUltimi30gg > 0 && (
+                      <span style={{ fontSize: 12, color: "var(--danger, #b42318)" }}>{exportClienti.erroriUltimi30gg} errori negli ultimi 30 giorni</span>
+                    )}
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      L&apos;export parte all&apos;approvazione della richiesta di accesso.
+                    </span>
+                  </>
+                ) : <span style={{ fontSize: 12, color: "var(--muted)" }}>non disponibile</span>}
+              </div>
+            </div>
+          </div>
         </>
       )}
 

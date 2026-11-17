@@ -100,6 +100,35 @@ export class ExportOrdiniService implements OnModuleInit {
     const origine = process.env.EXPORT_ORDINI_DIR?.trim() ? 'EXPORT_ORDINI_DIR' : 'default (EXPORT_ORDINI_DIR non impostata)';
     this.log.log(`Export ordini: cartella "${this.dir}" da ${origine} · cron "${cronExportOrdini()}"`);
   }
+
+  /** Monitoraggio per il pannello Sincronizzazione: cartella, coda, ultimo esito. */
+  async stato() {
+    const cron = cronExportOrdini();
+    let prossima: string | null = null;
+    try {
+      prossima = CronExpressionParser.parse(cron).next().toDate().toISOString();
+    } catch { /* cron non valido: nessuna prossima esecuzione */ }
+
+    const [inCoda, ultimo, errori] = await Promise.all([
+      this.prisma.ordineCliente.count({
+        where: { esportatoIl: null, numeroOrdine: { startsWith: 'B2B-' }, stato: { in: ['BOZZA', 'ERRORE_SCRITTURA'] } },
+      }),
+      this.prisma.ordineCliente.findFirst({
+        where: { esportatoIl: { not: null } },
+        orderBy: { esportatoIl: 'desc' },
+        select: { numeroOrdine: true, esportatoIl: true, esportatoFile: true },
+      }),
+      this.prisma.ordineCliente.count({ where: { stato: { startsWith: 'ERRORE_' } } }),
+    ]);
+    return {
+      cartella: this.dir,
+      cron,
+      prossimaEsecuzione: prossima,
+      inCoda,
+      ultimo: ultimo ? { numeroOrdine: ultimo.numeroOrdine, il: ultimo.esportatoIl, file: ultimo.esportatoFile } : null,
+      ordiniInErrore: errori,
+    };
+  }
   @Cron(cronExportOrdini())
   async jobSchedulato(): Promise<void> {
     const r = await this.esportaCoda();

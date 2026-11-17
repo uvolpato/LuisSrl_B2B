@@ -8,6 +8,12 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 export class ExportOrdiniController {
   constructor(private readonly service: ExportOrdiniService) {}
 
+  /** Monitoraggio per il pannello Sincronizzazione (cartella, coda, ultimo esito). */
+  @Get('status')
+  status() {
+    return this.service.stato();
+  }
+
   /** Anteprima: cosa uscirebbe adesso, senza scrivere niente. */
   @Get('anteprima')
   anteprima() {
