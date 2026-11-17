@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { CronExpressionParser } from 'cron-parser';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { cartellaOrdiniIntegra, scriviXlsxAtomico } from '../common/xlsx';
@@ -36,6 +37,23 @@ const VALUTA = 'EUR';
 const TIPO_RIGA = 'OC0000';
 const MAGAZZINO = '001';
 const PASSO_ORDINAMENTO = 5; // mvr_ordinamento: 5, 10, 15, ...
+
+/** Cron dell'export ordini. Un valore sbagliato in .env (es. un percorso messo al
+ *  posto dell'espressione) non deve impedire l'avvio: senza API i siti sono giù. */
+function cronExportOrdini(): string {
+  const predefinito = '*/10 * * * *';
+  const raw = process.env.EXPORT_ORDINI_CRON?.trim();
+  if (!raw) return predefinito;
+  try {
+    CronExpressionParser.parse(raw);
+    return raw;
+  } catch {
+    console.warn(
+      `[export-ordini] EXPORT_ORDINI_CRON non valido ("${raw}"): uso ${predefinito}. La cartella di destinazione va in EXPORT_ORDINI_DIR.`,
+    );
+    return predefinito;
+  }
+}
 
 
 export interface EsitoOrdine {
@@ -74,7 +92,7 @@ export class ExportOrdiniService {
     return cartellaOrdiniIntegra();
   }
 
-  @Cron(process.env.EXPORT_ORDINI_CRON || '*/10 * * * *')
+  @Cron(cronExportOrdini())
   async jobSchedulato(): Promise<void> {
     const r = await this.esportaCoda();
     if (r.processati) {
