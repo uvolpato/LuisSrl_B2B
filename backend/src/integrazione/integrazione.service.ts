@@ -125,9 +125,10 @@ export class IntegrazioneService {
     if (!includeImported) {
       // Già importato = variante ordinabile oppure pezzo di un kit (i figli non sono
       // varianti: senza questo restavano per sempre nell'elenco da importare).
+      // btrim: i codici vengono salvati trimmati, l'export può avere spazi.
       conds.push(
-        `NOT EXISTS (SELECT 1 FROM varianti WHERE codice = a.pro_cod)
-         AND NOT EXISTS (SELECT 1 FROM varianti_componenti WHERE codice = a.pro_cod)`,
+        `NOT EXISTS (SELECT 1 FROM varianti WHERE codice = btrim(a.pro_cod))
+         AND NOT EXISTS (SELECT 1 FROM varianti_componenti WHERE codice = btrim(a.pro_cod))`,
       );
     }
     const whereClause = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
