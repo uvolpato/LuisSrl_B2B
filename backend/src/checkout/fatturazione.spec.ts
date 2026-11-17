@@ -3,9 +3,8 @@ import { validateSync } from 'class-validator';
 import { FatturazioneDto } from './dto/fatturazione.dto';
 import { confermaRichiesta, erroreCanaleSdi } from './fatturazione';
 import {
-  COLONNE_CLIENTI,
   anagraficaDaCliente,
-  rigaCliente,
+  valoriCliente,
 } from '../leads/export-cliente';
 
 const ok = {
@@ -55,8 +54,8 @@ describe('Dati di fatturazione al primo ordine', () => {
     expect(errori({ ...ok, codiceFiscale: '123' })).toEqual(['codiceFiscale']);
   });
 
-  it('la riesportazione porta codice cliente, SDI e PEC nel tracciato', () => {
-    const r = rigaCliente(
+  it('la riesportazione porta codice cliente e P.IVA nel tracciato', () => {
+    const r = valoriCliente(
       anagraficaDaCliente({
         codiceCliente: '07420',
         ragioneSociale: 'Garden Demo srl',
@@ -73,10 +72,9 @@ describe('Dati di fatturazione al primo ordine', () => {
         codiceSdi: 'M5UXCR1',
       }),
     );
-    const v = (c: (typeof COLONNE_CLIENTI)[number]) =>
-      r[COLONNE_CLIENTI.indexOf(c)];
-    expect(v('CLA_CODSTR')).toBe('07420');
-    expect(v('CLA_CLICODDEST')).toBe('M5UXCR1');
-    expect(v('CLA_CLIPIVA')).toBe('09012345678');
+    expect(r.cla_codstr).toBe('07420');
+    expect(r.cla_clipiva).toBe('09012345678');
+    // SDI/PEC non hanno colonna in questo tracciato: restano a Integra
+    expect(Object.keys(r)).not.toContain('cla_clicoddest');
   });
 });

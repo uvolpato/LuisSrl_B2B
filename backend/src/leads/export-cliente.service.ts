@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as path from 'node:path';
 import type { Customer, Lead } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { cartellaOrdiniIntegra, scriviXlsxAtomico } from '../common/xlsx';
+import { cartellaOrdiniIntegra, scriviXlsxDaModello } from '../common/xlsx';
 import {
-  COLONNE_CLIENTI,
+  MODELLO_SOGGETTI,
+  RIGHE_INTESTAZIONE_MODELLO,
   anagraficaDaCliente,
   anagraficaDaLead,
-  rigaCliente,
+  valoriCliente,
 } from './export-cliente';
 
 export type EsitoExport =
@@ -43,10 +45,13 @@ export class ExportClienteService {
       };
     const file = `lead-${lead.id}.xlsx`;
     try {
-      await scriviXlsxAtomico(this.dir, file, [
-        [...COLONNE_CLIENTI],
-        rigaCliente(anagraficaDaLead(lead)),
-      ]);
+      await scriviXlsxDaModello(
+        this.dir,
+        file,
+        path.join(process.cwd(), MODELLO_SOGGETTI),
+        RIGHE_INTESTAZIONE_MODELLO,
+        [valoriCliente(anagraficaDaLead(lead))],
+      );
       await this.prisma.lead.update({
         where: { id: lead.id },
         data: { esportatoIl: new Date(), esportatoFile: file },
@@ -77,10 +82,13 @@ export class ExportClienteService {
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
     const file = `cliente-${(c.codiceCliente ?? `id${c.id}`).replace(/[^A-Za-z0-9_-]/g, '_')}-${ts}.xlsx`;
     try {
-      await scriviXlsxAtomico(this.dir, file, [
-        [...COLONNE_CLIENTI],
-        rigaCliente(anagraficaDaCliente(c)),
-      ]);
+      await scriviXlsxDaModello(
+        this.dir,
+        file,
+        path.join(process.cwd(), MODELLO_SOGGETTI),
+        RIGHE_INTESTAZIONE_MODELLO,
+        [valoriCliente(anagraficaDaCliente(c))],
+      );
       if (c.leadId)
         await this.prisma.leadEvent.create({
           data: {

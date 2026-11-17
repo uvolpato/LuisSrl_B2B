@@ -1,93 +1,51 @@
 import type { Lead } from '@prisma/client';
 
 /**
- * Tracciato import soggetti Integra (modello Soggetti.xls fornito da AGOMIR, ottobre 2026):
- * 43 colonne, una riga di intestazione, poi i dati. Generato in .xlsx (confermato da AGOMIR).
+ * Tracciato import soggetti Integra: il **modello è l'export reale di Integra**
+ * (`expcla.xlsx`, fornito a novembre 2026) ripulito della riga di esempio.
+ * Il file generato conserva le sue due righe di intestazione (nomi `cla_*` e
+ * etichette italiane) e accoda i dati da riga 3: i valori sono indicizzati per
+ * nome colonna, quindi posizioni e colonne nuove di Integra non rompono il mapping.
+ *
+ * I campi non gestiti dal portale (pagamento, listino, agente, porto, spedizione,
+ * categoria contabile, tipo fatturazione, minimo fatturabile, IBAN, PEC/SDI) vanno
+ * **vuoti**: li completa Integra.
  */
-export const COLONNE_CLIENTI = [
-  'CLA_TIPO',
-  'CLA_CODSTR',
-  'CLA_CLIRGSOC',
-  'CLA_CLIINDIR',
-  'CLA_CLICAP',
-  'CLA_CLICITTA',
-  'CLA_CLIPROV',
-  'CLA_CLIPIVA',
-  'CLA_CLICFISC',
-  'CLA_VALCOD',
-  'CLA_RBOL',
-  'CLA_ALLIVA',
-  'ILE_NUREG',
-  'ILE_DTAUT',
-  'ILE_NUAUT',
-  'CLA_IVASOSP',
-  'CLA_CLITEL',
-  'CLA_CLIFAX',
-  'CLA_ABICOD',
-  'CLA_CABCOD',
-  'CLA_CLIEMAIL',
-  'STA_CODISO',
-  'CLA_ESCL01',
-  'CLA_ESCL02',
-  'CLA_ESCL03',
-  'CLA_ESCL04',
-  'CLA_ESCL05',
-  'CLA_ESCL06',
-  'CLA_ESCL07',
-  'CLA_ESCL08',
-  'CLA_ESCL09',
-  'CLA_ESCL10',
-  'CLA_ESCL11',
-  'CLA_ESCL12',
-  'CLA_CACCOD',
-  'CLA_ABICODNS',
-  'CLA_CABCODNS',
-  'ILE_ID',
-  'ILE_TIPOES',
-  'CLA_ENTCOD',
-  'CLA_ETTCOD',
-  'CLA_CLIPECDEST',
-  'CLA_CLICODDEST',
-] as const;
 
-type Colonna = (typeof COLONNE_CLIENTI)[number];
+/** Modello versionato (solo intestazioni, nessun dato di cliente). */
+export const MODELLO_SOGGETTI = 'templates/integra-soggetti.xlsx';
+/** Righe di intestazione del modello da preservare. */
+export const RIGHE_INTESTAZIONE_MODELLO = 2;
 
 /**
- * Valori fissi per ogni nuovo cliente, presi dall'esempio AGOMIR.
- * DA CONFERMARE con AGOMIR (CLA_CACCOD = CC01 indicato da Luis il 2026-10-13).
+ * Valori tecnici presi dalla riga di esempio di Integra (identitari del soggetto,
+ * non commerciali). I campi commerciali restano vuoti: vedi commento sopra.
  */
-export const VALORI_FISSI: Partial<Record<Colonna, string>> = {
-  CLA_TIPO: 'C',
-  CLA_VALCOD: 'EUR',
-  CLA_RBOL: '1',
-  CLA_ALLIVA: '1',
-  ILE_NUREG: '0',
-  CLA_IVASOSP: 'I',
-  CLA_ABICOD: '00000',
-  CLA_CABCOD: '00000',
-  STA_CODISO: '--',
-  CLA_ESCL01: 'N',
-  CLA_ESCL02: 'N',
-  CLA_ESCL03: 'N',
-  CLA_ESCL04: 'N',
-  CLA_ESCL05: 'N',
-  CLA_ESCL06: 'N',
-  CLA_ESCL07: 'N',
-  CLA_ESCL08: 'N',
-  CLA_ESCL09: 'N',
-  CLA_ESCL10: 'N',
-  CLA_ESCL11: 'N',
-  CLA_ESCL12: 'N',
-  CLA_CACCOD: 'CC01',
-  CLA_ABICODNS: '00000',
-  CLA_CABCODNS: '00000',
-  ILE_ID: '0',
-  ILE_TIPOES: 'per',
-  CLA_ENTCOD: 'SOG',
-  CLA_ETTCOD: 'RAGS',
+export const VALORI_FISSI: Record<string, string | number> = {
+  cla_tipo: 'C',
+  cla_cliregcod: '--',
+  cla_cliregdescr: '--',
+  cla_clistacod: '086',
+  cla_clistadescr: 'ITALIA',
+  cla_ggfinemese: 0,
+  cla_ggesclusi: 0,
+  cla_abicod: '--',
+  cla_abidescr: '--',
+  cla_cabcod: '--',
+  cla_cabdescr: '--',
+  cla_alliva: '1',
+  cla_ivacod: '--',
+  cla_ivadescr: '--',
+  cla_postcons: 0,
+  cla_valcod: 'EUR',
+  cla_valdescr: 'EURO',
+  cla_ivasosp: 'I',
+  cla_rbol: '1',
+  cla_nomcomb: '0',
+  cla_flganticipoprovv: 'N',
 };
 
-/** Dati anagrafici da esportare: da un lead approvato oggi, da un cliente (con SDI/PEC) alla riesportazione. */
+/** Dati anagrafici da esportare: da un lead approvato, o da un cliente (riesportazione). */
 export interface AnagraficaIntegra {
   /** Vuoto per i nuovi: lo assegna Integra; l'aggancio successivo avviene per P.IVA. */
   codiceCliente?: string | null;
@@ -99,9 +57,8 @@ export interface AnagraficaIntegra {
   citta?: string | null;
   provincia?: string | null;
   telefono?: string | null;
+  fax?: string | null;
   email?: string | null;
-  pec?: string | null;
-  sdi?: string | null;
 }
 
 const up = (s: string | null | undefined) =>
@@ -119,27 +76,25 @@ export function formattaIndirizzo(s: string | null | undefined): string {
   return v.replace(/^(.*[^\d,\s])\s+(\d+\S*)$/, '$1, $2');
 }
 
-/** Riga dati del tracciato, nell'ordine di COLONNE_CLIENTI. Solo clienti italiani; C.F. = P.IVA se non indicato. */
-export function rigaCliente(a: AnagraficaIntegra): string[] {
-  const valori: Partial<Record<Colonna, string>> = {
+/** Valori per nome colonna del modello. C.F. = P.IVA se non indicato. */
+export function valoriCliente(a: AnagraficaIntegra): Record<string, string | number> {
+  return {
     ...VALORI_FISSI,
-    CLA_CODSTR: t(a.codiceCliente),
-    CLA_CLIRGSOC: up(a.ragioneSociale),
-    CLA_CLIINDIR: formattaIndirizzo(a.indirizzo),
-    CLA_CLICAP: t(a.cap),
-    CLA_CLICITTA: up(a.citta),
-    CLA_CLIPROV: up(a.provincia),
-    CLA_CLIPIVA: piva(a.partitaIva),
-    CLA_CLICFISC: up(a.codiceFiscale) || piva(a.partitaIva),
-    CLA_CLITEL: t(a.telefono),
-    CLA_CLIEMAIL: t(a.email).toLowerCase(),
-    CLA_CLIPECDEST: t(a.pec).toLowerCase(),
-    CLA_CLICODDEST: up(a.sdi),
+    cla_codstr: t(a.codiceCliente),
+    cla_cliallrgsoc: up(a.ragioneSociale),
+    cla_cliindir: formattaIndirizzo(a.indirizzo),
+    cla_clicap: t(a.cap),
+    cla_clicitta: up(a.citta),
+    cla_cliprov: up(a.provincia),
+    cla_clicfisc: up(a.codiceFiscale) || piva(a.partitaIva),
+    cla_clipiva: piva(a.partitaIva),
+    cla_clitel: t(a.telefono),
+    cla_clifax: t(a.fax),
+    cla_cliemail: t(a.email).toLowerCase(),
   };
-  return COLONNE_CLIENTI.map((c) => valori[c] ?? '');
 }
 
-/** Anagrafica di un lead approvato: sede da VIES/web, email del referente; SDI/PEC arrivano dopo. */
+/** Anagrafica di un lead approvato: sede da VIES/web, email del referente. */
 export function anagraficaDaLead(lead: Lead): AnagraficaIntegra {
   return {
     ragioneSociale: lead.ragioneSociale,
@@ -170,6 +125,9 @@ export function anagraficaDaCliente(c: {
   pec: string | null;
   codiceSdi: string | null;
 }): AnagraficaIntegra {
+  // PEC e SDI non hanno colonna in questo tracciato: restano gestiti da Integra.
+  void c.pec;
+  void c.codiceSdi;
   return {
     codiceCliente: c.codiceCliente,
     ragioneSociale: c.ragioneSociale || c.nome,
@@ -181,7 +139,5 @@ export function anagraficaDaCliente(c: {
     provincia: c.provincia,
     telefono: c.telefono,
     email: c.email,
-    pec: c.pec,
-    sdi: c.codiceSdi,
   };
 }
