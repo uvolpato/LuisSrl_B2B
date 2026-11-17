@@ -428,10 +428,10 @@
     "semantic_hash": "8db72a344969e9822f75e14a49d3483c"
   },
   "backend/src/checkout/fatturazione.spec.ts": {
-    "mtime": 1791926811.2931955,
-    "seen": 1793880362.9508445,
-    "ast_hash": "2b6e3dacd4420676064e77d67982a168",
-    "semantic_hash": "2b6e3dacd4420676064e77d67982a168"
+    "mtime": 1794931151.2693613,
+    "seen": 1794931230.258823,
+    "ast_hash": "eedaa9a13a8fe3d486e449f011118e54",
+    "semantic_hash": ""
   },
   "backend/src/checkout/fatturazione.ts": {
     "mtime": 1791926262.832678,
@@ -512,10 +512,10 @@
     "semantic_hash": "c909f99fd6e31b1c40af5bb26efc8834"
   },
   "backend/src/common/xlsx.ts": {
-    "mtime": 1791821822.9588315,
-    "seen": 1793880362.9530962,
-    "ast_hash": "388ee9a88b0200f94dcae910ddd0bb55",
-    "semantic_hash": "388ee9a88b0200f94dcae910ddd0bb55"
+    "mtime": 1794931191.4130852,
+    "seen": 1794931230.2588565,
+    "ast_hash": "ffd5fcc34dd5c7cb0347082f12f969b6",
+    "semantic_hash": ""
   },
   "backend/src/coupon/coupon.controller.ts": {
     "mtime": 1791398545.0947714,
@@ -812,22 +812,22 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.ts": {
-    "mtime": 1794929863.3498285,
-    "seen": 1794930069.3604462,
-    "ast_hash": "b65cd7cc437b0a4d682f6721d6db04bd",
+    "mtime": 1794931139.095393,
+    "seen": 1794931230.2589514,
+    "ast_hash": "3dbcb0721d56935cab4a09ddbb979214",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
-    "mtime": 1791897679.7039344,
-    "seen": 1793880362.961258,
-    "ast_hash": "153a64543709094f9e08c23e82d76f3a",
-    "semantic_hash": "153a64543709094f9e08c23e82d76f3a"
+    "mtime": 1794931159.4165795,
+    "seen": 1794931230.2589529,
+    "ast_hash": "a58e990894bc5f08d85368ce0caea14f",
+    "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.ts": {
-    "mtime": 1791926811.2617476,
-    "seen": 1793880362.9614148,
-    "ast_hash": "dbb39b22cfe4b5a1295b868f2b4d47f9",
-    "semantic_hash": "dbb39b22cfe4b5a1295b868f2b4d47f9"
+    "mtime": 1794931187.8934567,
+    "seen": 1794931230.2589545,
+    "ast_hash": "ef76d0fc20d07b5200fcb3820cd32dbf",
+    "semantic_hash": ""
   },
   "backend/src/leads/indagine.service.ts": {
     "mtime": 1793986209.5740027,
@@ -4110,6 +4110,12 @@
     "mtime": 1794929786.3617468,
     "seen": 1794930069.3601966,
     "ast_hash": "0e68046d9952c5abaf8d8ce5e0c61f7a",
+    "semantic_hash": ""
+  },
+  "backend/scripts/prepara-template-soggetti.cjs": {
+    "mtime": 1794931080.9808278,
+    "seen": 1794931230.258728,
+    "ast_hash": "c6fa2be63b8876c6ae4cba5fa287c9ba",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
