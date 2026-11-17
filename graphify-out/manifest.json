@@ -626,10 +626,10 @@
     "semantic_hash": ""
   },
   "backend/src/export-ordini/export-ordini.controller.ts": {
-    "mtime": 1788208813.0261173,
-    "seen": 1793880362.9561656,
-    "ast_hash": "15f9e33c6e6bac4f4bc2caaaff88dfcd",
-    "semantic_hash": "15f9e33c6e6bac4f4bc2caaaff88dfcd"
+    "mtime": 1794929022.8787053,
+    "seen": 1794929199.742225,
+    "ast_hash": "2ac99a5b989d94d7817ee13d958093f1",
+    "semantic_hash": ""
   },
   "backend/src/export-ordini/export-ordini.module.ts": {
     "mtime": 1788208818.0963738,
@@ -638,9 +638,9 @@
     "semantic_hash": "ce8ee570dd3d07af253a83b9cf0966d6"
   },
   "backend/src/export-ordini/export-ordini.service.ts": {
-    "mtime": 1794923844.9242294,
-    "seen": 1794923962.3405793,
-    "ast_hash": "62dea69db48aa391bfadf22c40379b77",
+    "mtime": 1794929018.2743385,
+    "seen": 1794929199.7422285,
+    "ast_hash": "b514a23701d57c66cbbd7976cffe2261",
     "semantic_hash": ""
   },
   "backend/src/health/health.controller.ts": {
@@ -740,9 +740,9 @@
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1793987099.2690308,
-    "seen": 1793987539.6888385,
-    "ast_hash": "1946124599c8ccc8c69b3f43fca39e6a",
+    "mtime": 1794929002.9705777,
+    "seen": 1794929199.7422616,
+    "ast_hash": "43d7b6372314753a4fe62b68f42e7dda",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
@@ -812,10 +812,10 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.ts": {
-    "mtime": 1791926262.896297,
-    "seen": 1793880362.9611006,
-    "ast_hash": "b65cd7cc437b0a4d682f6721d6db04bd",
-    "semantic_hash": "b65cd7cc437b0a4d682f6721d6db04bd"
+    "mtime": 1794929011.5548818,
+    "seen": 1794929199.7422879,
+    "ast_hash": "424173c4dfcd67dc6debdd76dc7fda43",
+    "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
     "mtime": 1791897679.7039344,
@@ -1497,9 +1497,9 @@
     "semantic_hash": "a32d488a9f82c25833a4d29c44ce1a9b"
   },
   "frontend/components/admin/SyncPanel.tsx": {
-    "mtime": 1794578948.1898184,
-    "seen": 1794579181.3474543,
-    "ast_hash": "6471a6c4596043457864df1a5a79931d",
+    "mtime": 1794929056.1851523,
+    "seen": 1794929199.7424786,
+    "ast_hash": "4b20d1b909546134c0795f1232bd088b",
     "semantic_hash": ""
   },
   "frontend/components/admin/icons.tsx": {
