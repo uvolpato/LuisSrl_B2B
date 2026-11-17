@@ -1,7 +1,7 @@
 # Graph Report - Luis Srl - B2B  (2026-11-17)
 
 ## Corpus Check
-- 470 files · ~467,344 words
+- 470 files · ~467,355 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `85a6a03f`
+- Built from commit: `ef596557`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
