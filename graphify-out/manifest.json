@@ -716,9 +716,9 @@
     "semantic_hash": "9c2ba08ea6efd957d916a1d195f9fa77"
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794870873.9933863,
-    "seen": 1794871012.6637657,
-    "ast_hash": "3f76327694c1d1abca30b0d7cbbb172d",
+    "mtime": 1794913126.7743516,
+    "seen": 1794913199.9845645,
+    "ast_hash": "2e28b5168ea884ca8aaf936800a92dbc",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -3093,9 +3093,9 @@
     "semantic_hash": ""
   },
   "specifica-articoli-componenti.md": {
-    "mtime": 1794858239.1997323,
-    "seen": 1794858272.7383988,
-    "ast_hash": "4674cddee47f5f7ae1b0626633106357",
+    "mtime": 1794913159.5300775,
+    "seen": 1794913199.98511,
+    "ast_hash": "a0b2067b13afe000c9cd45be80d94f01",
     "semantic_hash": ""
   },
   "specifica-chatbot-ai.md": {
