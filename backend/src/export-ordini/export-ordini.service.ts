@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CronExpressionParser } from 'cron-parser';
 import { PrismaService } from '../prisma/prisma.service';
@@ -40,18 +40,20 @@ const PASSO_ORDINAMENTO = 5; // mvr_ordinamento: 5, 10, 15, ...
 
 /** Cron dell'export ordini. Un valore sbagliato in .env (es. un percorso messo al
  *  posto dell'espressione) non deve impedire l'avvio: senza API i siti sono giù. */
+let cronCalcolato: string | null = null;
 function cronExportOrdini(): string {
+  if (cronCalcolato) return cronCalcolato;
   const predefinito = '*/10 * * * *';
   const raw = process.env.EXPORT_ORDINI_CRON?.trim();
-  if (!raw) return predefinito;
+  if (!raw) return (cronCalcolato = predefinito);
   try {
     CronExpressionParser.parse(raw);
-    return raw;
+    return (cronCalcolato = raw);
   } catch {
     console.warn(
       `[export-ordini] EXPORT_ORDINI_CRON non valido ("${raw}"): uso ${predefinito}. La cartella di destinazione va in EXPORT_ORDINI_DIR.`,
     );
-    return predefinito;
+    return (cronCalcolato = predefinito);
   }
 }
 
@@ -77,7 +79,7 @@ export interface ReportExport {
 }
 
 @Injectable()
-export class ExportOrdiniService {
+export class ExportOrdiniService implements OnModuleInit {
   private readonly log = new Logger(ExportOrdiniService.name);
   private running = false;
 
@@ -92,6 +94,12 @@ export class ExportOrdiniService {
     return cartellaOrdiniIntegra();
   }
 
+  /** All'avvio dice dove scrive: se EXPORT_ORDINI_DIR non arriva al processo (service
+   *  non riavviato, .env sbagliato) si vede subito invece di scoprirlo dal file. */
+  onModuleInit() {
+    const origine = process.env.EXPORT_ORDINI_DIR?.trim() ? 'EXPORT_ORDINI_DIR' : 'default (EXPORT_ORDINI_DIR non impostata)';
+    this.log.log(`Export ordini: cartella "${this.dir}" da ${origine} · cron "${cronExportOrdini()}"`);
+  }
   @Cron(cronExportOrdini())
   async jobSchedulato(): Promise<void> {
     const r = await this.esportaCoda();
