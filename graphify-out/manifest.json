@@ -740,9 +740,9 @@
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1794929002.9705777,
-    "seen": 1794929199.7422616,
-    "ast_hash": "43d7b6372314753a4fe62b68f42e7dda",
+    "mtime": 1794929364.3262162,
+    "seen": 1794929457.4990666,
+    "ast_hash": "48b0cef637267179744658737061feb8",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
@@ -812,9 +812,9 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.ts": {
-    "mtime": 1794929011.5548818,
-    "seen": 1794929199.7422879,
-    "ast_hash": "424173c4dfcd67dc6debdd76dc7fda43",
+    "mtime": 1794929361.0367455,
+    "seen": 1794929457.4990942,
+    "ast_hash": "f06617829a749e5d03a87c12b86a6698",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
@@ -1497,9 +1497,9 @@
     "semantic_hash": "a32d488a9f82c25833a4d29c44ce1a9b"
   },
   "frontend/components/admin/SyncPanel.tsx": {
-    "mtime": 1794929056.1851523,
-    "seen": 1794929199.7424786,
-    "ast_hash": "4b20d1b909546134c0795f1232bd088b",
+    "mtime": 1794929395.1677527,
+    "seen": 1794929457.4992871,
+    "ast_hash": "968d2f7d6f3b592e043534a734835d42",
     "semantic_hash": ""
   },
   "frontend/components/admin/icons.tsx": {
