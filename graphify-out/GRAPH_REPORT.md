@@ -1,17 +1,17 @@
-# Graph Report - Luis Srl - B2B  (2026-11-17)
+# Graph Report - Luis Srl - B2B  (2026-11-19)
 
 ## Corpus Check
-- 473 files · ~469,259 words
+- 473 files · ~469,261 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
 ## Summary
-- 3501 nodes · 7960 edges · 302 communities (117 shown, 185 thin omitted)
+- 3501 nodes · 7962 edges · 302 communities (117 shown, 185 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 420 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `30a1216d`
+- Built from commit: `819e3d33`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -361,7 +361,7 @@ Cohesion: 0.15
 Nodes (5): FatturazioneDto, confermaRichiesta(), erroreCanaleSdi(), FatturazioneService, ok
 
 ### Community 53 - "export-cliente.service.ts"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (21): scriviXlsxDaModello(), anagraficaDaCliente(), anagraficaDaLead(), AnagraficaIntegra, CAMPI_OBBLIGATORI, CAMPI_OPZIONALI, campiObbligatoriMancanti(), formattaIndirizzo() (+13 more)
 
 ### Community 54 - "area/page.tsx"
@@ -689,23 +689,23 @@ Nodes (3): ExcelJS, fs, path
 
 ## Knowledge Gaps
 - **1 isolated node(s):** `./tsconfig.json`
-  These have ≤1 connection - possible missing edges. (Counts symbols only; 1205 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges. (Counts symbols only; 1203 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **185 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `app.module.ts`, `backend/package.json`, `users.service.ts`, `AiUsageService`, `azioni.service.ts`, `mail.service.ts`, `PrismaService`, `admin.service.ts`, `events.service.ts`, `OrdiniController`, `dependencies`, `LeadsController`, `integrazione.service.ts`, `fatturazione.service.ts`, `export-cliente.service.ts`, `leads.service.ts`, `auth.controller.ts`, `EventsService`, `mail.service.ts`, `admin-leads.service.ts`, `access-log.interceptor.ts`, `spese-spedizione.service.ts`, `conservazione.service.ts`, `checkout.service.ts`, `customer-profile.service.ts`?**
-  _High betweenness centrality (0.231) - this node is a cross-community bridge._
+  _High betweenness centrality (0.243) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `CataloghiService` be split into smaller, more focused modules?**
   _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._
 - **Why does `stato()` connect `mail.service.ts` to `ref_react`?**
-  _High betweenness centrality (0.207) - this node is a cross-community bridge._
+  _High betweenness centrality (0.212) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.06748911465892599 - nodes in this community are weakly interconnected._
 - **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `AdminPanel.tsx`, `UserEditorModal.tsx`, `mail.service.ts`, `ref_react`?**
-  _High betweenness centrality (0.088) - this node is a cross-community bridge._
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Should `ref_react` be split into smaller, more focused modules?**
   _Cohesion score 0.07034431691965938 - nodes in this community are weakly interconnected._

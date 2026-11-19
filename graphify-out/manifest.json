@@ -818,15 +818,15 @@
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.spec.ts": {
-    "mtime": 1794931714.8142662,
-    "seen": 1794931744.41395,
-    "ast_hash": "d0926864ff731d4218b3b626e90a52de",
+    "mtime": 1795109974.7862523,
+    "seen": 1795110094.582265,
+    "ast_hash": "c414c61f56c45bceba0a24e9a2178349",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.ts": {
-    "mtime": 1794931760.9739857,
-    "seen": 1794932792.295899,
-    "ast_hash": "365811b0bc8d2d693bd6199cb377a27b",
+    "mtime": 1795109931.8160634,
+    "seen": 1795110094.5822673,
+    "ast_hash": "09f2c20444751351cb43d6c20666eb38",
     "semantic_hash": ""
   },
   "backend/src/leads/indagine.service.ts": {
@@ -4113,9 +4113,9 @@
     "semantic_hash": ""
   },
   "backend/scripts/prepara-template-soggetti.cjs": {
-    "mtime": 1794931080.9808278,
-    "seen": 1794931230.258728,
-    "ast_hash": "c6fa2be63b8876c6ae4cba5fa287c9ba",
+    "mtime": 1795109910.3048625,
+    "seen": 1795110094.581462,
+    "ast_hash": "9587e46a262d2c28df63bb0e68549610",
     "semantic_hash": ""
   },
   "backend/src/leads/export-cliente.service.spec.ts": {
