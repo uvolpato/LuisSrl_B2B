@@ -2,10 +2,10 @@ import type { Lead } from '@prisma/client';
 
 /**
  * Tracciato import soggetti Integra: il **modello è l'export reale di Integra**
- * (`expcla.xlsx`, fornito a novembre 2026) ripulito della riga di esempio.
- * Il file generato conserva le sue due righe di intestazione (nomi `cla_*` e
- * etichette italiane) e accoda i dati da riga 3: i valori sono indicizzati per
- * nome colonna, quindi posizioni e colonne nuove di Integra non rompono il mapping.
+ * (`expcla.xlsx`, aggiornato a novembre 2026) ripulito della riga di esempio.
+ * Il file generato conserva la sua **unica** riga di intestazione (nomi `cla_*`)
+ * e accoda i dati da riga 2: i valori sono indicizzati per nome colonna, quindi
+ * posizioni e colonne nuove di Integra non rompono il mapping.
  *
  * I campi non gestiti dal portale (pagamento, listino, agente, porto, spedizione,
  * categoria contabile, tipo fatturazione, minimo fatturabile, IBAN, PEC/SDI) vanno
@@ -23,16 +23,13 @@ export const RIGHE_INTESTAZIONE_MODELLO = 1;
 
 /**
  * Valori fissi, uguali per ogni soggetto: dalla riga di esempio di Integra.
- * Degli obbligatori (rosso nel modello) qui ci sono i tre costanti — `cla_tipo`,
- * `cla_clistacod`, `cla_clistadescr`; gli altri nove arrivano dal cliente
- * (vedi `valoriCliente`). I campi commerciali restano vuoti.
+ * Degli obbligatori (rosso nel modello) qui ci sono i due costanti — `cla_tipo` e
+ * `cla_clistacod`; gli altri sette arrivano dal cliente (vedi `valoriCliente`).
+ * I campi commerciali restano vuoti.
  */
 export const VALORI_FISSI: Record<string, string | number> = {
   cla_tipo: 'C',
-  cla_cliregcod: '--',
-  cla_cliregdescr: '--',
   cla_clistacod: '086',
-  cla_clistadescr: 'ITALIA',
   cla_ggfinemese: 0,
   cla_ggesclusi: 0,
   cla_abicod: '--',
@@ -84,40 +81,26 @@ export function formattaIndirizzo(s: string | null | undefined): string {
 
 /**
  * Colonne in **rosso** nel modello di Integra: vanno sempre valorizzate.
- * `cla_codstr` è il codice soggetto (lo assegna Integra per i nuovi) e
- * `cla_cliindir2` è il secondo indirizzo, che il portale non gestisce: restano
- * vuoti per i soggetti nuovi.
+ * `cla_codstr` è il codice soggetto (lo assegna Integra per i nuovi).
  */
 export const CAMPI_OBBLIGATORI = [
   'cla_tipo',
   'cla_codstr',
-  'cla_cliallrgsoc',
+  'cla_clirgsoc',
   'cla_cliindir',
-  'cla_cliindir2',
   'cla_clicap',
   'cla_clicitta',
   'cla_cliprov',
   'cla_clistacod',
-  'cla_clistadescr',
   'cla_clicfisc',
   'cla_clipiva',
 ] as const;
 
 /** Colonne in **verde** (opzionali): restano vuote, le completa Integra. */
-export const CAMPI_OPZIONALI = [
-  'cla_caccod',
-  'cla_pagcod',
-  'cla_iban',
-  'cla_agecod',
-  'cla_agedescr',
-  'cla_porcod',
-  'cla_pordescr',
-  'cla_specod',
-  'cla_spedescr',
-] as const;
+export const CAMPI_OPZIONALI = ['cla_iban'] as const;
 
-/** Obbligatori non compilabili dal portale: codice nuovo soggetto e secondo indirizzo. */
-const OBBLIGATORI_NON_GESTITI = new Set<string>(['cla_codstr', 'cla_cliindir2']);
+/** Obbligatorio non compilabile dal portale: il codice soggetto lo assegna Integra. */
+const OBBLIGATORI_NON_GESTITI = new Set<string>(['cla_codstr']);
 
 /**
  * Campi obbligatori senza valore: se ce ne sono il file non va scritto, altrimenti
@@ -134,7 +117,7 @@ export function valoriCliente(a: AnagraficaIntegra): Record<string, string | num
   return {
     ...VALORI_FISSI,
     cla_codstr: t(a.codiceCliente),
-    cla_cliallrgsoc: up(a.ragioneSociale),
+    cla_clirgsoc: up(a.ragioneSociale),
     cla_cliindir: formattaIndirizzo(a.indirizzo),
     cla_clicap: t(a.cap),
     cla_clicitta: up(a.citta),

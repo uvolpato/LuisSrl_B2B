@@ -5,9 +5,11 @@ import ExcelJS from 'exceljs';
 import type { Lead } from '@prisma/client';
 import { scriviXlsxDaModello } from '../common/xlsx';
 import {
+  CAMPI_OBBLIGATORI,
   CAMPI_OPZIONALI,
   MODELLO_SOGGETTI,
   RIGHE_INTESTAZIONE_MODELLO,
+  VALORI_FISSI,
   anagraficaDaLead,
   campiObbligatoriMancanti,
   formattaIndirizzo,
@@ -32,11 +34,11 @@ const lead = {
 const modello = path.join(process.cwd(), MODELLO_SOGGETTI);
 
 describe('Export anagrafica cliente verso Integra (modello export Integra)', () => {
-  it('valori: anagrafica, denominazione su cla_cliallrgsoc, campi commerciali vuoti', () => {
+  it('valori: anagrafica, denominazione su cla_clirgsoc, campi commerciali vuoti', () => {
     const v = valoriCliente(anagraficaDaLead(lead));
     expect(v.cla_tipo).toBe('C');
     expect(v.cla_codstr).toBe('');
-    expect(v.cla_cliallrgsoc).toBe('GARDEN DEMO SRL');
+    expect(v.cla_clirgsoc).toBe('GARDEN DEMO SRL');
     expect(v.cla_cliindir).toBe('VIA STATALE, 47');
     expect(v.cla_clicap).toBe('23881');
     expect(v.cla_clicitta).toBe('AIRUNO');
@@ -45,7 +47,6 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
     expect(v.cla_clipiva).toBe('09012345678');
     expect(v.cla_cliemail).toBe('info@garden-demo.example');
     expect(v.cla_clistacod).toBe('086');
-    expect(v.cla_clistadescr).toBe('ITALIA');
     // da completare in Integra: non li scriviamo
     for (const campo of ['cla_pagcod', 'cla_tlscod', 'cla_agecod', 'cla_porcod', 'cla_specod', 'cla_caccod', 'cla_tipofatt', 'cla_minfat', 'cla_iban']) {
       expect(v[campo]).toBeUndefined();
@@ -88,22 +89,33 @@ describe('Export anagrafica cliente verso Integra (modello export Integra)', () 
       const ws = wb.worksheets[0];
       expect(ws.rowCount).toBe(2);
       // riga 1 = nomi tecnici, riga 2 = dati (niente etichette italiane)
-      expect(ws.getRow(1).getCell(3).value).toBe('cla_cliallrgsoc');
+      expect(ws.getRow(1).getCell(3).value).toBe('cla_clirgsoc');
       expect(ws.getRow(2).getCell(3).value).toBe('GARDEN DEMO SRL');
       expect(ws.getRow(2).getCell(1).value).toBe('C');
-      expect(ws.getRow(2).getCell(17).value).toBe('09012345678'); // cla_clicfisc (Q)
+      expect(ws.getRow(2).getCell(10).value).toBe('09012345678'); // cla_clicfisc (J)
+      expect(ws.getRow(2).getCell(11).value).toBe('09012345678'); // cla_clipiva (K)
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
   });
 
-  it('campi obbligatori: bloccati se mancano, ignorati codice nuovo e secondo indirizzo', () => {
+  it('modello: ogni colonna scritta esiste nel tracciato di Integra', async () => {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(modello);
+    const colonne = new Set<string>();
+    wb.worksheets[0].getRow(1).eachCell({ includeEmpty: false }, (c) => {
+      colonne.add(String(c.value ?? '').trim().toLowerCase());
+    });
+    const scritte = [...Object.keys(VALORI_FISSI), ...CAMPI_OBBLIGATORI, ...CAMPI_OPZIONALI];
+    expect(scritte.filter((c) => !colonne.has(c.toLowerCase()))).toEqual([]);
+  });
+
+  it('campi obbligatori: bloccati se mancano, ignorato il codice nuovo soggetto', () => {
     expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).toEqual([]);
     const senzaProvincia = valoriCliente({ ...anagraficaDaLead(lead), provincia: null });
     expect(campiObbligatoriMancanti(senzaProvincia)).toEqual(['cla_cliprov']);
-    // cla_codstr (nuovo soggetto) e cla_cliindir2 non sono pretesi dal portale
+    // cla_codstr (nuovo soggetto) non è preteso dal portale
     expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).not.toContain('cla_codstr');
-    expect(campiObbligatoriMancanti(valoriCliente(anagraficaDaLead(lead)))).not.toContain('cla_cliindir2');
   });
 
   it('campi opzionali (verde) restano vuoti', () => {

@@ -1,8 +1,8 @@
 /**
  * Prepara il modello di export soggetti per Integra a partire da un export reale
- * (`expcla.xlsx` fornito da Integra): tiene SOLO le prime due righe di intestazione
- * (nomi tecnici `cla_*` + etichette italiane) ed elimina la riga di esempio, che
- * contiene i dati di un cliente reale (P.IVA, IBAN, email).
+ * (`expcla.xlsx` fornito da Integra): tiene SOLO la prima riga di intestazione
+ * (nomi tecnici `cla_*`) ed elimina la riga di esempio, che contiene i dati di un
+ * cliente reale (P.IVA, IBAN, email).
  *
  * Uso: node scripts/prepara-template-soggetti.cjs "C:\\percorso\\expcla.xlsx"
  * Output: templates/integra-soggetti.xlsx  (versionato)
@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 
-const RIGHE_INTESTAZIONE = 2;
+const RIGHE_INTESTAZIONE = 1;
 
 (async () => {
   const sorgente = process.argv[2];
