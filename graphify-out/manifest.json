@@ -4149,9 +4149,9 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/src/app/collezioni/[slug]/page.tsx": {
-    "mtime": 1795380837.7753022,
-    "seen": 1795381256.4096458,
-    "ast_hash": "8fface4bea395afb20cd85e54097975d",
+    "mtime": 1795381523.0493305,
+    "seen": 1795381656.6217992,
+    "ast_hash": "4eb34c6d93319e084c2220de99f3737b",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {

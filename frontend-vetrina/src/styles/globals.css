@@ -254,8 +254,13 @@ a { color: var(--accent); }
 .breadcrumb { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
 .breadcrumb a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .breadcrumb [aria-current='page'] { color: var(--fg); }
-.collezione-media { margin-top: 22px; }
-.collezione-media img { display: block; width: 100%; max-width: 520px; height: auto; border-radius: 14px; }
+/* Header collezione: stessa scala tipografica del resto della vetrina
+   (.eyebrow / .h1 / .lead), immagine con il taglio 16/10 delle card. */
+.collezione-header { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(24px, 4vw, 56px); align-items: center; padding-bottom: clamp(28px, 4vw, 48px); }
+.collezione-copy:only-child { grid-column: 1 / -1; }
+.collezione-copy .lead { margin-top: 18px; }
+.collezione-media { position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.collezione-media img { display: block; width: 100%; aspect-ratio: 16/10; object-fit: cover; }
 
 .catalog-toolbar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding-block: 26px 20px; }
 .catalog-search { flex: 1 1 280px; max-width: 380px; }
@@ -314,6 +319,7 @@ a { color: var(--accent); }
 @media (max-width: 720px) {
   .nav-links { display: none; }
   .values, .grid-3, .product-grid { grid-template-columns: 1fr; }
+  .collezione-header { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .split-media { order: -1; }
   .foot-grid { grid-template-columns: 1fr; }

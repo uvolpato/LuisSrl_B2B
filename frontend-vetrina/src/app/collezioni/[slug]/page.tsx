@@ -49,22 +49,26 @@ export default async function CollezionePage({ params }: { params: Promise<Param
 
       <section className='catalog-top'>
         <div className='container'>
-          <nav className='breadcrumb' aria-label={t('bricioleLabel')}>
-            <Link href='/'>{tnav('home')}</Link>
-            <span aria-hidden='true'>›</span>
-            <Link href='/#collezioni'>{tnav('collezioni')}</Link>
-            <span aria-hidden='true'>›</span>
-            <span aria-current='page'>{f.nome}</span>
-          </nav>
-          <p className='eyebrow'>{t('eyebrow')}</p>
-          <h1 className='h1' style={{ fontSize: 'clamp(32px,4.6vw,52px)' }}>{f.nome}</h1>
-          <p className='lead'>{f.descrizione ?? t('leadDefault', { nome: f.nome })}</p>
-          {f.immagine && (
-            <div className='collezione-media'>
-              <img src={imgUrl(f.immagine)} alt={f.nome} />
-              {f.immagineAI && <span className='ai-badge' title={tc('aiBadge')}>AI</span>}
+          <div className='collezione-header'>
+            <div className='collezione-copy'>
+              <nav className='breadcrumb' aria-label={t('bricioleLabel')}>
+                <Link href='/'>{tnav('home')}</Link>
+                <span aria-hidden='true'>›</span>
+                <Link href='/#collezioni'>{tnav('collezioni')}</Link>
+                <span aria-hidden='true'>›</span>
+                <span aria-current='page'>{f.nome}</span>
+              </nav>
+              <p className='eyebrow'>{t('eyebrow')}</p>
+              <h1 className='h1'>{f.nome}</h1>
+              <p className='lead'>{f.descrizione ?? t('leadDefault', { nome: f.nome })}</p>
             </div>
-          )}
+            {f.immagine && (
+              <div className='collezione-media'>
+                <img src={imgUrl(f.immagine)} alt={f.nome} />
+                {f.immagineAI && <span className='ai-badge' title={tc('aiBadge')}>AI</span>}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
