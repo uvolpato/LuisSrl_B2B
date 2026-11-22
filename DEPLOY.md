@@ -96,12 +96,17 @@ ADMIN_EMAIL=admin@luissrl.it
 ADMIN_PASSWORD=<PASSWORD-ADMIN-VERA>
 ADMIN_NOME=Amministratore
 
-# SMTP per invio email (reset/password provvisorie)
-SMTP_HOST=<host-smtp>
+# SMTP transazionale Brevo — credenziali da Settings > SMTP & API > SMTP
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=<utente-smtp>
-SMTP_PASS=<password-smtp>
-SMTP_FROM="Luis S.r.l. <noreply@luissrl.it>"
+SMTP_USER=<login-smtp-brevo>
+SMTP_PASS=<chiave-smtp-brevo>
+# Mittente verificato in Brevo: se non è verificato Brevo accetta la mail e la scarta
+SMTP_FROM="Luis S.r.l. <shop@luisbg.it>"
+# Stesso mittente per le notifiche ordine (il default usa noreply@luissrl.it, non verificato)
+MAIL_ORDINI_FROM="Luis S.r.l. <shop@luisbg.it>"
+# TEST_EMAIL vuoto in produzione: se valorizzato reindirizza tutte le mail
+TEST_EMAIL=
 
 # Cartella immagini caricate + descrizioni. IMPORTANTE per i backup (passo 9).
 ASSETS_BASE_DIR=../frontend/public/images
