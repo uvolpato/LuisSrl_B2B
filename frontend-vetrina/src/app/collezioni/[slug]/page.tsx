@@ -59,7 +59,7 @@ export default async function CollezionePage({ params }: { params: Promise<Param
                 <span aria-current='page'>{f.nome}</span>
               </nav>
               <p className='eyebrow'>{t('eyebrow')}</p>
-              <h1 className='h1'>{f.nome}</h1>
+              <h1 className='h1' style={{ fontSize: 'clamp(32px,4.6vw,52px)' }}>{f.nome}</h1>
               <p className='lead'>{f.descrizione ?? t('leadDefault', { nome: f.nome })}</p>
             </div>
             {f.immagine && (

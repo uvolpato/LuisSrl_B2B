@@ -254,8 +254,7 @@ a { color: var(--accent); }
 .breadcrumb { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
 .breadcrumb a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .breadcrumb [aria-current='page'] { color: var(--fg); }
-/* Header collezione: stessa scala tipografica del resto della vetrina
-   (.eyebrow / .h1 / .lead), immagine con il taglio 16/10 delle card. */
+/* Header collezione: titolo come catalogo, lead e immagine 16/10 come le card. */
 .collezione-header { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(24px, 4vw, 56px); align-items: center; padding-bottom: clamp(28px, 4vw, 48px); }
 .collezione-copy:only-child { grid-column: 1 / -1; }
 .collezione-copy .lead { margin-top: 18px; }
