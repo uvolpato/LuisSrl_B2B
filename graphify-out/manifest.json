@@ -1521,15 +1521,15 @@
     "semantic_hash": "33780c0bac192479c1f151591124f9de"
   },
   "frontend/components/admin/sections/ArticoliSection.tsx": {
-    "mtime": 1794870902.2484624,
-    "seen": 1794871012.663998,
-    "ast_hash": "8e80328068b4dd69f2e73131c6073909",
+    "mtime": 1795360222.4265814,
+    "seen": 1795360413.1628554,
+    "ast_hash": "38e5cabcf063b193745d45560115f2a2",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/ArticoloEditModal.tsx": {
-    "mtime": 1794854647.3540106,
-    "seen": 1794854749.58598,
-    "ast_hash": "b9355daaf0a523e087d9bfac8f6fc8f5",
+    "mtime": 1795360218.096989,
+    "seen": 1795360413.1628575,
+    "ast_hash": "489e6bc14c9c617e9216c84ac4229fb5",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/BoxSuggerimentiSection.tsx": {
@@ -2589,9 +2589,9 @@
     "semantic_hash": ""
   },
   "DEPLOY.md": {
-    "mtime": 1794571390.8963213,
-    "seen": 1794579181.3479483,
-    "ast_hash": "d7ccfde9be4f05d23b0a7a0f3989cc25",
+    "mtime": 1795358203.1641965,
+    "seen": 1795360413.1630075,
+    "ast_hash": "a94e76eeac426ea8c1c9dc340f93b705",
     "semantic_hash": ""
   },
   "DEVELOPER_NOTES.md": {
@@ -4122,6 +4122,12 @@
     "mtime": 1794932739.8409243,
     "seen": 1794932792.2958934,
     "ast_hash": "3ffa1ba1efcb519c95981480e2a57663",
+    "semantic_hash": ""
+  },
+  "backend/scripts/test-smtp-brevo.ts": {
+    "mtime": 1795357171.9080174,
+    "seen": 1795357232.2232468,
+    "ast_hash": "ae044f8151c132b41cfddf671a3d3e11",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
