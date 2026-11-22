@@ -1149,9 +1149,9 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/src/app/layout.tsx": {
-    "mtime": 1795380093.3011847,
-    "seen": 1795380188.7044108,
-    "ast_hash": "4ee0b53633e279fb6d8f622920f220cf",
+    "mtime": 1795381914.5966847,
+    "seen": 1795381997.4677055,
+    "ast_hash": "57919415b81348d6a6014f3bc018c0e0",
     "semantic_hash": ""
   },
   "frontend-vetrina/src/app/page.tsx": {
@@ -1287,9 +1287,9 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/src/lib/siteConfig.ts": {
-    "mtime": 1795380093.3011847,
-    "seen": 1795380188.7044518,
-    "ast_hash": "98d9ab98ec25aa0a081c2021c6f8dc49",
+    "mtime": 1795381903.19455,
+    "seen": 1795381997.467749,
+    "ast_hash": "7fde46b7102fecdd6a4704f331d08af2",
     "semantic_hash": ""
   },
   "frontend-vetrina/tailwind.config.mjs": {
@@ -4149,9 +4149,15 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/src/app/collezioni/[slug]/page.tsx": {
-    "mtime": 1795381712.2824185,
-    "seen": 1795381734.6143522,
-    "ast_hash": "0b98082ff4569fdbdcd10c2d00d00384",
+    "mtime": 1795381927.264959,
+    "seen": 1795381997.4677005,
+    "ast_hash": "7eb9a981505333438aade0646635b9e4",
+    "semantic_hash": ""
+  },
+  "frontend-vetrina/src/components/seo/JsonLd.tsx": {
+    "mtime": 1795381896.776685,
+    "seen": 1795381997.4677408,
+    "ast_hash": "9db7658f9d1f6acebcc77df9584afb03",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {

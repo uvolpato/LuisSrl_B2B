@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Reveal from '@/components/ui/Reveal';
 import HasJs from '@/components/ui/HasJs';
+import JsonLd from '@/components/seo/JsonLd';
 import { SITE } from '@/lib/siteConfig';
 import '../styles/globals.css';
 
@@ -26,6 +27,23 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Come il prototipo: le animazioni si attivano solo con JS, senza JS tutto resta visibile. */}
+        <JsonLd data={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: SITE.name,
+          url: SITE.url,
+          logo: `${SITE.url}${SITE.logo}`,
+          telephone: SITE.telephone,
+          email: SITE.email,
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: SITE.streetAddress,
+            addressLocality: SITE.addressLocality,
+            addressRegion: SITE.addressRegion,
+            addressCountry: SITE.addressCountry,
+          },
+          vatID: SITE.vatID,
+        }} />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

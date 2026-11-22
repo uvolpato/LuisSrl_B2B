@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server';
 import { getArticoli, getFamiglie, imgUrl } from '@/lib/api';
 import ZoomImage from '@/components/catalogo/ZoomImage';
 import Composizione from '@/components/catalogo/Composizione';
+import JsonLd from '@/components/seo/JsonLd';
+import { SITE } from '@/lib/siteConfig';
 
 type Params = { slug: string };
 
@@ -38,8 +40,38 @@ export default async function CollezionePage({ params }: { params: Promise<Param
 
   const pagina = await getArticoli({ famiglia: f.codice });
 
+  const url = `${SITE.url}/collezioni/${slug}`;
+
   return (
     <>
+      <JsonLd data={[
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: tnav('home'), item: `${SITE.url}/` },
+            { '@type': 'ListItem', position: 2, name: tnav('collezioni'), item: `${SITE.url}/#collezioni` },
+            { '@type': 'ListItem', position: 3, name: f.nome, item: url },
+          ],
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: f.nome,
+          numberOfItems: pagina?.articoli.length ?? 0,
+          itemListElement: (pagina?.articoli ?? []).map((a, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'Product',
+              name: a.nome,
+              sku: a.codiceLinea,
+              ...(a.descrizione ? { description: a.descrizione } : {}),
+              ...(a.img ? { image: `${SITE.url}${imgUrl(a.img, 1600)}` } : {}),
+            },
+          })),
+        },
+      ]} />
       <div className='vetrina-banner'>
         <div className='container'>
           <span>{tc('banner')}</span>
