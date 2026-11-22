@@ -63,9 +63,10 @@ export default async function CollezionePage({ params }: { params: Promise<Param
             '@type': 'ListItem',
             position: i + 1,
             item: {
-              '@type': 'Product',
+              // B2B: prezzi non pubblici → niente Product/offers (Rich Results Test
+              // li segnala come critici). Resta il valore semantico dell'ItemList.
+              '@type': 'Thing',
               name: a.nome,
-              sku: a.codiceLinea,
               ...(a.descrizione ? { description: a.descrizione } : {}),
               ...(a.img ? { image: `${SITE.url}${imgUrl(a.img, 1600)}` } : {}),
             },

@@ -1,17 +1,17 @@
 # Graph Report - Luis Srl - B2B  (2026-11-22)
 
 ## Corpus Check
-- 479 files · ~470,687 words
+- 479 files · ~470,706 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
 ## Summary
-- 3520 nodes · 8011 edges · 305 communities (126 shown, 179 thin omitted)
+- 3520 nodes · 8010 edges · 304 communities (124 shown, 180 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 420 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c2810afc`
+- Built from commit: `8efe5faf`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -122,7 +122,7 @@
 - app.e2e-spec.ts
 - Icons.tsx
 - devDependencies
-- Hero.tsx
+- Contatti
 - jest
 - 20261025000000_cataloghi_brevo/migration.sql
 - customer-profile.service.ts
@@ -161,7 +161,6 @@
 - Tooltip
 - "mfa_devices"
 - ExportClienteService
-- [slug]/page.tsx
 - riallinea-immagini.js
 - [codiceLinea]/route.ts
 - express-session
@@ -201,7 +200,7 @@
 ## Import Cycles
 - 2-file cycle: `frontend/components/admin/sections/AnalisiFotoModal.tsx -> frontend/components/admin/sections/DescrizioneAiWizard.tsx -> frontend/components/admin/sections/AnalisiFotoModal.tsx`
 
-## Communities (305 total, 179 thin omitted)
+## Communities (304 total, 180 thin omitted)
 
 ### Community 0 - "checkout/page.tsx"
 Cohesion: 0.05
@@ -224,8 +223,8 @@ Cohesion: 0.10
 Nodes (3): ProgettiController, ProgettiPublicController, ProgettiService
 
 ### Community 6 - "src/lib/api.ts"
-Cohesion: 0.16
-Nodes (16): CatalogoPage(), one(), Search, generateMetadata(), generateStaticParams(), sitemap(), Collezioni(), ArticoloPubblico (+8 more)
+Cohesion: 0.15
+Nodes (22): CatalogoPage(), one(), Search, CollezionePage(), generateMetadata(), generateStaticParams(), Params, sitemap() (+14 more)
 
 ### Community 7 - "pg"
 Cohesion: 0.07
@@ -328,8 +327,8 @@ Cohesion: 0.05
 Nodes (16): rxjs@^7.8.1, DEFAULT_PRICES, FALLBACK, AuditController, AuditModule, AuditService, AccessLogInterceptor, ACTION_MAP (+8 more)
 
 ### Community 37 - "src/app/page.tsx"
-Cohesion: 0.18
-Nodes (12): Page(), Page(), Home(), Azienda(), d(), Contatti(), DATES, PopupAperture() (+4 more)
+Cohesion: 0.17
+Nodes (13): Page(), Home(), Azienda(), d(), Hero(), HERO_IMAGES, HeroImages(), DATES (+5 more)
 
 ### Community 38 - "app.js"
 Cohesion: 0.18
@@ -420,8 +419,8 @@ Cohesion: 0.13
 Nodes (19): dependencies, date-fns@4.4.0, next@16.2.9, react@19.2.4, react-date-range@2.0.1, react-markdown@^10.1.0, socket.io-client@^4.8.3, engines (+11 more)
 
 ### Community 66 - "src/app/layout.tsx"
-Cohesion: 0.18
-Nodes (7): RootLayout(), b(), Footer(), PopupApertureLink(), HasJs(), Reveal(), SITE
+Cohesion: 0.17
+Nodes (8): RootLayout(), b(), Footer(), PopupApertureLink(), JsonLd(), HasJs(), Reveal(), SITE
 
 ### Community 67 - "ref_next_intl"
 Cohesion: 0.07
@@ -574,10 +573,6 @@ Nodes (8): IconEdit, IconEye, IconEyeOff, IconLock, IconLockOpen, IconPlus, Icon
 Cohesion: 0.15
 Nodes (13): eslint@^9.18.0, eslint, devDependencies, eslint@^9, eslint-config-next@16.2.9, @types/react-date-range@1.4.10, @types/react-dom@^19, eslint-config-next (+5 more)
 
-### Community 108 - "Hero.tsx"
-Cohesion: 0.60
-Nodes (3): Hero(), HERO_IMAGES, HeroImages()
-
 ### Community 109 - "jest"
 Cohesion: 0.22
 Nodes (9): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+1 more)
@@ -690,10 +685,6 @@ Nodes (3): "mfa_devices", mfa_devices_token_hash_key, mfa_devices_user_id_idx
 Cohesion: 0.18
 Nodes (3): cartellaOrdiniIntegra(), ExportClienteService, lead
 
-### Community 232 - "[slug]/page.tsx"
-Cohesion: 0.33
-Nodes (7): CollezionePage(), Params, Composizione(), Variante, ZoomImage(), JsonLd(), Componente
-
 ### Community 272 - "riallinea-immagini.js"
 Cohesion: 0.22
 Nodes (7): ASSETS_BASE_DIR, dotenv, EXCLUDED, fs, path, prisma, { PrismaClient }
@@ -729,22 +720,22 @@ Nodes (4): ConfigField(), ConfigToggle(), ImpostazioniSection(), SiteConfig
 ## Knowledge Gaps
 - **1 isolated node(s):** `./tsconfig.json`
   These have ≤1 connection - possible missing edges. (Counts symbols only; 1210 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **179 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **180 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `@nestjs/common` connect `@nestjs/common` to `app.module.ts`, `backend/package.json`, `users.service.ts`, `dependencies`, `azioni.service.ts`, `mail.service.ts`, `export-ordini.service.ts`, `integrazione.service.ts`, `admin.service.ts`, `AuditService`, `customers.service.ts`, `admin-ordini.module.ts`, `LeadsController`, `mail.service.ts`, `checkout.service.ts`, `export-cliente.service.ts`, `main.ts`, `leads.service.ts`, `auth.controller.ts`, `EventsService`, `admin-leads.service.ts`, `spese-spedizione.service.ts`, `conservazione.service.ts`, `AiUsageService`, `app.e2e-spec.ts`, `customer-profile.service.ts`?**
-  _High betweenness centrality (0.228) - this node is a cross-community bridge._
+  _High betweenness centrality (0.251) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
 - **Should `checkout/page.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.05357142857142857 - nodes in this community are weakly interconnected._
 - **Why does `stato()` connect `mail.service.ts` to `Notice`?**
-  _High betweenness centrality (0.192) - this node is a cross-community bridge._
+  _High betweenness centrality (0.177) - this node is a cross-community bridge._
 - **Should `CataloghiService` be split into smaller, more focused modules?**
   _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._
-- **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `Tooltip`, `ref_react`, `useConfirm`, `mail.service.ts`, `SpeseSpedizioneSection`, `ComboboxField`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+- **Why does `RequirePermission()` connect `RequirePermission` to `SpeseSpedizioneController`, `AdminOrdiniService`, `.importContatti`, `AuditService`, `CataloghiAdminService`, `CouponService`, `SpeseSpedizioneService`, `@nestjs/common`, `CustomersService`, `Post`, `mail.service.ts`, `IntegrazioneController`, `EmbeddingService`, `azioni.service.ts`, `admin.service.ts`, `UsersController`?**
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.06429070580013976 - nodes in this community are weakly interconnected._
