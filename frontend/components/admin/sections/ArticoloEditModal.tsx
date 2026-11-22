@@ -168,10 +168,52 @@ export default function ArticoloEditModal({
   }, [open]);
   const compactTabs = narrowTabs || tabsOverflow;
 
+  // Ogni apertura/caricamento parte da stato vuoto: se la GET fallisce non
+  // devono restare i dati dell'articolo precedente (rischio eliminazione sbagliata).
+  const resetForm = useCallback(() => {
+    setArticle(null);
+    setActiveTab("generale");
+    setError(null);
+    setEditNome("");
+    setEditColore("");
+    setEditColoreRgb("");
+    setEditStato("attivo");
+    setEditVarianti({});
+    setEditMultipli({});
+    setEditComponenti({});
+    setVPage(1);
+    setCPage(1);
+    setPendingImages([]);
+    setDragOver(false);
+    setImmaginiOrdine(null);
+    setVariantiOrdine(null);
+    setDragIdx(null);
+    setUploadError(null);
+    setImmaginiGalleria(null);
+    setImmaginiDisplay({});
+    setImmaginiTipo({});
+    setPendingDeleteImages([]);
+    setEditingImage(null);
+    setSelectedRaccoltaIds(new Set());
+    setRaccolteSearch("");
+    setDragRaccoltaId(null);
+    setCopyModalOpen(false);
+    setCopyStepTesti([]);
+    setCopySearchQuery("");
+    setCopyArticleList([]);
+    setCopyTargets(new Set());
+    setCopying(false);
+    setCopySuccess(null);
+    setCopyError(null);
+    initialDescRef.current = { descrizione: "", descrizioneDettagliata: "" };
+    initialStepTestiRef.current = null;
+    initialPromptAiRef.current = null;
+  }, []);
+
   const fetch = useCallback(async () => {
     if (!codiceLinea) return;
+    resetForm();
     setLoading(true);
-    setError(null);
     try {
       const a = await api.get<ArticoloDetail>(`/api/integrazione/articoli/${codiceLinea}`);
       setArticle(a);
@@ -202,7 +244,7 @@ export default function ArticoloEditModal({
     } finally {
       setLoading(false);
     }
-  }, [codiceLinea]);
+  }, [codiceLinea, resetForm]);
 
   // Aggiorna solo le immagini senza toccare loading/stato edit: evita che
   // il wizard si smonti (la GET non deve gareggiare col PUT dei testi).

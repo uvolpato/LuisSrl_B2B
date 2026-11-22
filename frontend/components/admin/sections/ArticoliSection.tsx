@@ -337,6 +337,7 @@ export default function ArticoliSection() {
           onClose={() => setImportModalOpen(false)}
         />
         <ArticoloEditModal
+          key={editCodiceLinea ?? "none"}
           open={editCodiceLinea !== null}
           codiceLinea={editCodiceLinea}
           onClose={() => setEditCodiceLinea(null)}
