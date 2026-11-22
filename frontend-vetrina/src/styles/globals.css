@@ -251,6 +251,11 @@ a { color: var(--accent); }
 
 .catalog-top { padding-block: clamp(36px, 5vw, 64px) 8px; }
 .catalog-top .lead { margin-top: 14px; }
+.breadcrumb { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
+.breadcrumb a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.breadcrumb [aria-current='page'] { color: var(--fg); }
+.collezione-media { margin-top: 22px; }
+.collezione-media img { display: block; width: 100%; max-width: 520px; height: auto; border-radius: 14px; }
 
 .catalog-toolbar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding-block: 26px 20px; }
 .catalog-search { flex: 1 1 280px; max-width: 380px; }

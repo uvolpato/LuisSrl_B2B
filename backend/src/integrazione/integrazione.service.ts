@@ -1078,6 +1078,7 @@ export class IntegrazioneService {
       .map((f) => ({
         codice: f.codice,
         nome: f.nomePortale || f.nome,
+        slug: f.slug,
         immagine: f.immagine,
         immagineAI: f.immagineAI,
         descrizione: f.descrizione,

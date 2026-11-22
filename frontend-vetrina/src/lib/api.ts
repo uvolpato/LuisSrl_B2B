@@ -4,6 +4,7 @@ const BACKEND = process.env.BACKEND_INTERNAL_URL ?? 'http://localhost:3001';
 export type FamigliaPubblica = {
   codice: string;
   nome: string;
+  slug: string;
   descrizione: string | null;
   immagine: string | null;
   immagineAI: boolean;
@@ -59,7 +60,9 @@ export async function getFamiglie(): Promise<FamigliaPubblica[] | null> {
     const codice = str(f?.codice);
     const nome = str(f?.nome);
     if (!codice || !nome) return [];
-    return [{ codice, nome, descrizione: str(f?.descrizione), immagine: asset(f?.immagine), immagineAI: f?.immagineAI === true }];
+    // Fallback se il backend non è ancora migrato: dal codice (che è stabile).
+    const slugRaw = str(f?.slug) ?? codice.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '');
+    return [{ codice, nome, slug: slugRaw || codice, descrizione: str(f?.descrizione), immagine: asset(f?.immagine), immagineAI: f?.immagineAI === true }];
   });
 }
 

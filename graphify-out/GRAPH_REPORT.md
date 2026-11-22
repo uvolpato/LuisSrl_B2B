@@ -1,40 +1,40 @@
 # Graph Report - Luis Srl - B2B  (2026-11-22)
 
 ## Corpus Check
-- 476 files · ~469,694 words
+- 478 files · ~470,463 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 41 file(s) not represented in the graph (top: (none) 12, .css 11, .cmd 6)
 
 ## Summary
-- 3508 nodes · 7972 edges · 300 communities (118 shown, 182 thin omitted)
+- 3518 nodes · 8002 edges · 298 communities (123 shown, 175 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 420 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `93a2cf42`
+- Built from commit: `10cea986`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- AuthController
+- checkout/page.tsx
 - CataloghiService
 - app.module.ts
 - ref_react
 - ProgettiService
 - IntegrazioneService
-- src/app/page.tsx
+- src/lib/api.ts
 - pg
 - backend/package.json
 - CataloghiAdminService
 - CouponService
 - RichiesteAccessoSection.tsx
 - CustomerProfileService
-- ref_react
+- ref_next
 - @nestjs/common
 - SpeseSpedizioneSection.tsx
-- AuthenticatedRequest
+- Post
 - thumbUrl
-- EventLogSection.tsx
+- CarrelloService
 - users.service.ts
 - catalogo/[codiceLinea]/page.tsx
 - Get
@@ -43,6 +43,7 @@
 - azioni.service.ts
 - environment
 - mail.service.ts
+- request-context.ts
 - AiUsageService
 - admin.service.ts
 - mail.service.ts
@@ -52,37 +53,37 @@
 - DashboardService
 - CataloghiSection.tsx
 - AuditService
-- UsersController
+- src/app/page.tsx
 - app.js
-- admin/page.tsx
+- BoxSuggerimentiSection
 - CheckoutController
-- CreateLeadDto
+- CreaMailingDto
 - SpeseSpedizioneService
-- ref_react
-- OrdiniService
+- Notice
+- admin-ordini.module.ts
 - .log
 - catalogo/[codiceLinea]/page.tsx
 - compilerOptions
 - use-websocket.ts
 - LeadsController
 - "permission_groups"
-- dependencies
-- fatturazione.service.ts
+- mail.service.ts
+- checkout.service.ts
 - export-cliente.service.ts
 - EmbeddingService
-- useConfirm
-- export-ordini.service.ts
+- CustomerTimeline.tsx
+- main.ts
 - CatalogoController
 - Modal
 - "users"
 - leads.service.ts
 - SyncService
-- CustomersService
+- area/layout.tsx
 - auth.controller.ts
 - SpeseSpedizioneController
 - frontend/package.json
 - src/app/layout.tsx
-- CouponSection.tsx
+- ref_react
 - DashboardController
 - cambia-superuser.js
 - compilerOptions
@@ -94,14 +95,14 @@
 - EventsService
 - scripts
 - CheckoutService
-- UpdateProfileDto
-- mail.service.ts
+- AdminOrdiniSection.tsx
+- boxClienteIntegra
 - .importaVarianti
 - devDependencies
-- ImpostazioniSection.tsx
+- AccessoB2B.tsx
 - customers
 - admin-leads.service.ts
-- class-validator
+- CouponEditorModal
 - 20260624143908_catalogo_models/migration.sql
 - AuditController
 - spese-spedizione.service.ts
@@ -110,27 +111,28 @@
 - conservazione.service.ts
 - seed.js
 - FamiglieSection
-- fix-coupon-scope.js
+- @prisma/client
 - 20260708000000_cache_integra/migration.sql
 - verifica-coupon-illimitato.cjs
 - https-proxy.mjs
 - privacy/page.tsx
 - FamiglieController
-- startTimeout
+- ClientiSection
 - integra_clienti_piva_digits_idx
+- app.e2e-spec.ts
 - Icons.tsx
 - devDependencies
-- CreateSuggestionBoxDto
+- Hero.tsx
 - jest
 - 20261025000000_cataloghi_brevo/migration.sql
-- leads.service.ts
+- customer-profile.service.ts
 - CustomerDossier.tsx
 - nest-cli.json
 - AggancioLeadService
 - CreateTariffaDto
 - 20260803000000_dashboard_ai/migration.sql
 - SpeseSpedizioneSection
-- Tooltip
+- ComboboxField
 - CreateFamigliaDto
 - 20260711000001_sync_state_listini/migration.sql
 - 20260714000000_progetti/migration.sql
@@ -152,15 +154,13 @@
 - 20260807000001_add_anomalia_log/migration.sql
 - postcss.config.mjs
 - tailwind.config.mjs
-- @prisma/adapter-pg
+- engines
 - backend/eslint.config.mjs
 - CustomerIntelligenceService
-- LoginDto
 - UpdateTariffaDto
 - "mfa_devices"
 - ExportClienteService
-- CreateUserDto
-- integrazione.service.ts
+- customer-intelligence.service.ts
 - [codiceLinea]/route.ts
 - express-session
 - frontend-vetrina/package.json
@@ -195,31 +195,31 @@
 ## Import Cycles
 - 2-file cycle: `frontend/components/admin/sections/AnalisiFotoModal.tsx -> frontend/components/admin/sections/DescrizioneAiWizard.tsx -> frontend/components/admin/sections/AnalisiFotoModal.tsx`
 
-## Communities (300 total, 182 thin omitted)
+## Communities (298 total, 175 thin omitted)
 
-### Community 0 - "AuthController"
-Cohesion: 0.11
-Nodes (3): AuthController, AuthService, hashToken()
+### Community 0 - "checkout/page.tsx"
+Cohesion: 0.06
+Nodes (24): CartItem, CheckoutPage(), closeNuovoForm(), conferma(), saveIndirizzo(), DatiCheckout, fmtEur(), Indirizzo (+16 more)
 
 ### Community 1 - "CataloghiService"
 Cohesion: 0.13
 Nodes (3): CataloghiPublicController, CataloghiService, confrontaSegreto()
 
 ### Community 2 - "app.module.ts"
-Cohesion: 0.08
-Nodes (16): AdminModule, AdminOrdiniModule, AuditModule, AuthModule, CarrelloModule, CheckoutModule, CouponModule, DashboardModule (+8 more)
+Cohesion: 0.09
+Nodes (13): AdminModule, AppModule, AuthModule, CarrelloModule, CouponModule, DashboardModule, ExportOrdiniModule, ImgModule (+5 more)
 
 ### Community 3 - "ref_react"
 Cohesion: 0.07
-Nodes (61): AdminTopBar(), Column, DataTable(), DataTableProps, RowAction, IconChevronLeft, IconChevronRight, IconDownload (+53 more)
+Nodes (57): Column, DataTableProps, RowAction, IconChevronLeft, IconChevronRight, IconDownload, IconEdit, IconEye (+49 more)
 
 ### Community 4 - "ProgettiService"
-Cohesion: 0.06
-Nodes (5): CarrelloController, CarrelloService, ProgettiController, ProgettiPublicController, ProgettiService
+Cohesion: 0.10
+Nodes (3): ProgettiController, ProgettiPublicController, ProgettiService
 
-### Community 6 - "src/app/page.tsx"
-Cohesion: 0.06
-Nodes (38): Page(), CatalogoPage(), one(), Search, Page(), Home(), Page(), Composizione() (+30 more)
+### Community 6 - "src/lib/api.ts"
+Cohesion: 0.15
+Nodes (22): CatalogoPage(), one(), Search, CollezionePage(), generateMetadata(), generateStaticParams(), Params, sitemap() (+14 more)
 
 ### Community 7 - "pg"
 Cohesion: 0.07
@@ -227,63 +227,51 @@ Nodes (18): pg@^8.21.0, base, { Client }, url, { Client }, PEZZI, { Client }, { 
 
 ### Community 8 - "backend/package.json"
 Cohesion: 0.05
-Nodes (57): author, description, devDependencies, eslint-config-prettier@^10.0.1, @eslint/eslintrc@^3.2.0, jest@^30.0.0, @nestjs/cli@^11.0.0, @nestjs/schematics@^11.0.0 (+49 more)
+Nodes (51): author, description, devDependencies, eslint-config-prettier@^10.0.1, @eslint/eslintrc@^3.2.0, jest@^30.0.0, @nestjs/cli@^11.0.0, @nestjs/schematics@^11.0.0 (+43 more)
 
 ### Community 9 - "CataloghiAdminService"
 Cohesion: 0.07
 Nodes (3): BrevoService, CataloghiAdminController, CataloghiAdminService
 
-### Community 10 - "CouponService"
-Cohesion: 0.06
-Nodes (8): provinciaToRegione(), CouponController, CouponService, FILTER_VALUES, REGION_ALIASES, SegCustomer, SegFilter, Suggestion
-
 ### Community 11 - "RichiesteAccessoSection.tsx"
-Cohesion: 0.08
-Nodes (22): Azione, AZIONI_PER_STATO, BADGE_SEGNALE, dataOra(), Dettaglio, EmailAccessoEditor(), ETICHETTA_AZIONE, EVENTI (+14 more)
+Cohesion: 0.07
+Nodes (25): Azione, AZIONI_PER_STATO, BADGE_SEGNALE, dataOra(), Dettaglio, EmailAccessoEditor(), ETICHETTA_AZIONE, EVENTI (+17 more)
 
-### Community 13 - "ref_react"
+### Community 13 - "ref_next"
 Cohesion: 0.04
-Nodes (58): Catalogo, CatalogoArticolo, CatalogoPage(), colorDistance(), hexToLab(), normKey(), SORT_OPTIONS, CartItem (+50 more)
+Nodes (59): AdminPage(), SECTION_TITLES, CarrelloPage(), notifyCart(), remove(), toggleSave(), CartItem, PrezzoInfo (+51 more)
 
 ### Community 14 - "@nestjs/common"
-Cohesion: 0.19
-Nodes (7): PERMISSION_KEY, AuthenticatedGuard, PermissionsGuard, Roles(), ROLES_KEY, RolesGuard, @nestjs/common
+Cohesion: 0.16
+Nodes (10): PERMISSION_KEY, AuthenticatedGuard, PermissionsGuard, Roles(), ROLES_KEY, RolesGuard, CustomersModule, SyncResult (+2 more)
 
 ### Community 15 - "SpeseSpedizioneSection.tsx"
 Cohesion: 0.17
-Nodes (23): TariffaCalcModal(), TariffaEditor(), calcFee(), currentRanges(), describeTariffa(), destName(), destTitle(), euCount() (+15 more)
+Nodes (22): TariffaCalcModal(), TariffaEditor(), calcFee(), describeTariffa(), destName(), destTitle(), euCount(), fmtEur() (+14 more)
 
 ### Community 17 - "thumbUrl"
-Cohesion: 0.08
-Nodes (19): ItemP, ProgettoPubblicoPage(), Pubblico, CustomerOfferte(), MOTIVO, Offerta, ImageDropzone(), AnalisiFotoModal() (+11 more)
-
-### Community 18 - "EventLogSection.tsx"
-Cohesion: 0.17
-Nodes (15): categoriaDi(), EventDetailModal(), EventLogItem, categoriaDi(), EVENT_TYPES, EventLogItem, EventLogSection(), fmtDt() (+7 more)
+Cohesion: 0.06
+Nodes (20): ItemP, ProgettoPubblicoPage(), Pubblico, CustomerOfferte(), MOTIVO, Offerta, ImageDropzone(), AnalisiFotoModal() (+12 more)
 
 ### Community 19 - "users.service.ts"
-Cohesion: 0.14
-Nodes (9): toUserProfile(), UserProfile, buildStatoFilter(), UserFilter, UpdateUserDto, UsersModule, AVATAR_COLORS, GRUPPO_PER_RUOLO (+1 more)
+Cohesion: 0.07
+Nodes (12): toUserProfile(), UserProfile, buildStatoFilter(), UserFilter, generateProvisionalPassword(), CreateUserDto, UpdateUserDto, UsersController (+4 more)
 
 ### Community 20 - "catalogo/[codiceLinea]/page.tsx"
-Cohesion: 0.06
-Nodes (33): Articolo, Componente, CorrelatoCard, DimEntry, Immagine, PrezzoInfo, Raccolta, RelatedSection() (+25 more)
-
-### Community 21 - "Get"
 Cohesion: 0.09
-Nodes (4): CustomersController, CatalogoPublicController, formatDimensioni(), IntegrazioneController
+Nodes (22): AnteprimaArticoloPage(), Articolo, DimEntry, Immagine, Variante, ArticoloEditModal(), handleClose(), handleSave() (+14 more)
 
 ### Community 22 - "RequirePermission"
-Cohesion: 0.10
-Nodes (3): AdminController, RequirePermission(), AdminLeadsController
+Cohesion: 0.12
+Nodes (5): AdminController, RequirePermission(), AuthenticatedRequest, CustomersController, AdminLeadsController
 
 ### Community 23 - "dependencies"
-Cohesion: 0.05
-Nodes (37): dependencies, class-validator@^0.15.1, connect-pg-simple@^10.0.0, cookie@^1.1.1, cookie-parser@^1.4.7, cron-parser@^5.6.1, dotenv@^17.4.2, exceljs@4.4.0 (+29 more)
+Cohesion: 0.07
+Nodes (27): dependencies, class-validator@^0.15.1, cron-parser@^5.6.1, dotenv@^17.4.2, exceljs@4.4.0, @nestjs/common@^11.0.1, @nestjs/config@^4.0.4, @nestjs/core@^11.0.1 (+19 more)
 
 ### Community 24 - "azioni.service.ts"
-Cohesion: 0.16
-Nodes (14): EsitoAggancio, Azione, AZIONI, EsitoToken, firma(), segretoAzioni(), AzioniLeadService, Parametri (+6 more)
+Cohesion: 0.18
+Nodes (13): EsitoAggancio, Azione, AZIONI, EsitoToken, firma(), segretoAzioni(), AzioniLeadService, Parametri (+5 more)
 
 ### Community 25 - "environment"
 Cohesion: 0.06
@@ -293,13 +281,17 @@ Nodes (35): build, depends_on, environment, ports, condition, environment, healt
 Cohesion: 0.12
 Nodes (20): estraiJson(), calcolaVerdetto(), checklistVerifica(), parseIndirizzoVies(), pivaItalianaValida(), Sede, Segnale, DatiIndagine (+12 more)
 
+### Community 27 - "request-context.ts"
+Cohesion: 0.12
+Nodes (9): rxjs@^7.8.1, AUDITED, auditExtension, WRITES, HttpErrorFilter, RequestContextInterceptor, reqCtx, RequestContext (+1 more)
+
 ### Community 28 - "AiUsageService"
-Cohesion: 0.11
-Nodes (5): AiUsageController, AiUsageModule, AiUsageService, DEFAULT_PRICES, FALLBACK
+Cohesion: 0.08
+Nodes (17): AiUsageController, AiUsageModule, AiUsageService, DEFAULT_PRICES, FALLBACK, Candidato, DEFAULT_PESI, PesiSegnali (+9 more)
 
 ### Community 29 - "admin.service.ts"
-Cohesion: 0.15
-Nodes (7): CreateGroupDto, CreateRaccoltaDto, UpdateFamigliaDto, UpdateGroupDto, UpdateRaccoltaDto, UpdateSuggestionBoxDto, @nestjs/mapped-types
+Cohesion: 0.06
+Nodes (15): class-transformer@^0.5.1, CreateGroupDto, CreateRaccoltaDto, CreateSuggestionBoxDto, UpdateFamigliaDto, UpdateGroupDto, UpdateRaccoltaDto, UpdateSuggestionBoxDto (+7 more)
 
 ### Community 30 - "mail.service.ts"
 Cohesion: 0.18
@@ -311,39 +303,51 @@ Nodes (14): public.b2b_clienti, public.b2b_giacenze, public.b2b_indirizzi_client
 
 ### Community 32 - "AdminPanel.tsx"
 Cohesion: 0.05
-Nodes (35): AdminPanel(), AdminPanelTab, AI_GROUPS, AiConfigEntry, AiConfigSection(), ALL_PERMISSIONS, ConfigField(), formatDate() (+27 more)
+Nodes (54): calcTotale(), fmtDate(), fmtPrezzo(), OrdiniPage(), SortField, staticRangesIT, AdminPanel(), AdminPanelTab (+46 more)
 
 ### Community 33 - "AdminOrdiniService"
-Cohesion: 0.10
-Nodes (4): AdminOrdiniController, AdminOrdiniService, AggiornaStatoOrdineDto, STATI_ORDINE_CONSENTITI
+Cohesion: 0.11
+Nodes (3): AdminOrdiniController, AdminOrdiniService, AggiornaStatoOrdineDto
 
 ### Community 35 - "CataloghiSection.tsx"
 Cohesion: 0.09
 Nodes (21): CataloghiSection(), apriDettaglio(), inviaABrevo(), revoca(), Catalogo, Cliente, Destinatario, DettaglioScreen() (+13 more)
 
 ### Community 36 - "AuditService"
-Cohesion: 0.05
-Nodes (14): AuditService, FatturazioneService, AccessLogInterceptor, ACTION_MAP, getLabel(), HttpErrorFilter, hashLogIdentifier(), urlSenzaSegreti() (+6 more)
+Cohesion: 0.06
+Nodes (16): AuditService, AccessLogInterceptor, ACTION_MAP, getLabel(), hashLogIdentifier(), urlSenzaSegreti(), COLONNE, EsitoOrdine (+8 more)
+
+### Community 37 - "src/app/page.tsx"
+Cohesion: 0.18
+Nodes (12): Page(), Page(), Home(), Azienda(), d(), Contatti(), DATES, PopupAperture() (+4 more)
 
 ### Community 38 - "app.js"
 Cohesion: 0.18
 Nodes (26): aggancia(), aggiornaConta(), aggiungi(), apriDrawer(), badgeHTML(), cardHTML(), chiudiDrawer(), conta() (+18 more)
 
-### Community 39 - "admin/page.tsx"
-Cohesion: 0.05
-Nodes (31): AdminPage(), SECTION_TITLES, AdminOrdiniSection(), DashboardData, fmtDate(), fmtEur(), OrderSummary, PageData (+23 more)
+### Community 39 - "BoxSuggerimentiSection"
+Cohesion: 0.18
+Nodes (6): BoxEditModal(), BoxSuggerimentiSection(), loadRefs(), openCreate(), openEdit(), ribilancia()
 
-### Community 41 - "CreateLeadDto"
+### Community 41 - "CreaMailingDto"
+Cohesion: 0.22
+Nodes (4): CreaMailingDto, ImportClientiDto, AzioneDto, ReinviaDto
+
+### Community 43 - "Notice"
+Cohesion: 0.08
+Nodes (20): LoginPage(), ImportaArticoliModal(), doImport(), startTimeout(), ArticoliSection(), MfaSection(), MustChangePasswordModal(), onSubmit() (+12 more)
+
+### Community 44 - "admin-ordini.module.ts"
+Cohesion: 0.11
+Nodes (5): AdminOrdiniModule, OrdiniController, OrdiniModule, OrdiniService, PrismaModule
+
+### Community 45 - ".log"
 Cohesion: 0.09
-Nodes (11): AttivaAccountDto, MfaCodiceDto, MfaPasswordDto, PrivacyAccettaDto, TrackingOptOutDto, CreaMailingDto, ImportClientiDto, AzioneDto (+3 more)
-
-### Community 43 - "ref_react"
-Cohesion: 0.06
-Nodes (23): metadata, LoginPage(), metadata, logout(), MustChangePasswordModal(), onSubmit(), validatePassword(), FocusTrap() (+15 more)
+Nodes (4): AdminService, CustomerProfile, toCustomerProfile(), CustomersService
 
 ### Community 46 - "catalogo/[codiceLinea]/page.tsx"
-Cohesion: 0.09
-Nodes (19): getStock(), ProductBreadcrumb(), SchedaArticoloPage(), activeEntries(), addAllToCart(), addSingleToCart(), galleryModalNav(), getAvailableValues() (+11 more)
+Cohesion: 0.07
+Nodes (26): Articolo, Componente, CorrelatoCard, DimEntry, getStock(), Immagine, PrezzoInfo, ProductBreadcrumb() (+18 more)
 
 ### Community 47 - "compilerOptions"
 Cohesion: 0.08
@@ -353,73 +357,77 @@ Nodes (23): compilerOptions, allowSyntheticDefaultImports, baseUrl, declaration,
 Cohesion: 0.31
 Nodes (8): OnlineEvent, usePresence(), connect(), Listener, listeners, useWebSocket(), useWsEvent(), WsMessage
 
+### Community 49 - "LeadsController"
+Cohesion: 0.12
+Nodes (5): EmailAccessoDto, EsitoAzione, CreateLeadDto, LeadsController, valido
+
 ### Community 50 - ""permission_groups""
 Cohesion: 0.13
 Nodes (17): "admin_permissions", admin_permissions_user_id_permission_key, "permission_groups", permission_groups_slug_key, fn_admin_permission_remove(), fn_admin_permission_upsert(), fn_permission_group_create(), fn_permission_group_delete() (+9 more)
 
-### Community 51 - "dependencies"
-Cohesion: 0.06
-Nodes (24): ASSETS_BASE_DIR, dotenv, EXCLUDED, fs, path, prisma, { PrismaClient }, CataloghiModule (+16 more)
+### Community 51 - "mail.service.ts"
+Cohesion: 0.08
+Nodes (19): conferma, interna, mail, ora, CataloghiModule, ASSETS_BASE_DIR, ASSETS_PUBLIC_URL, CATALOGHI_DIR (+11 more)
 
-### Community 52 - "fatturazione.service.ts"
-Cohesion: 0.14
-Nodes (5): FatturazioneDto, confermaRichiesta(), erroreCanaleSdi(), ok, anagraficaDaCliente()
+### Community 52 - "checkout.service.ts"
+Cohesion: 0.08
+Nodes (16): CheckoutModule, DatiCheckout, ModalitaConsegna, FatturazioneDto, confermaRichiesta(), erroreCanaleSdi(), FatturazioneService, ok (+8 more)
 
 ### Community 53 - "export-cliente.service.ts"
-Cohesion: 0.19
-Nodes (18): scriviXlsxDaModello(), anagraficaDaLead(), AnagraficaIntegra, CAMPI_OBBLIGATORI, CAMPI_OPZIONALI, campiObbligatoriMancanti(), formattaIndirizzo(), MODELLO_SOGGETTI (+10 more)
+Cohesion: 0.16
+Nodes (19): scriviXlsxDaModello(), anagraficaDaCliente(), anagraficaDaLead(), AnagraficaIntegra, CAMPI_OBBLIGATORI, CAMPI_OPZIONALI, campiObbligatoriMancanti(), formattaIndirizzo() (+11 more)
 
 ### Community 54 - "EmbeddingService"
 Cohesion: 0.09
 Nodes (4): InsightController, InsightService, EmbeddingService, purgeThumbCache()
 
-### Community 55 - "useConfirm"
-Cohesion: 0.08
-Nodes (20): Comportamento, CustomerTimeline(), DOT, Evento, fmt(), Insight, label(), PrivacyControls() (+12 more)
+### Community 55 - "CustomerTimeline.tsx"
+Cohesion: 0.22
+Nodes (7): Comportamento, CustomerTimeline(), DOT, Evento, fmt(), Insight, label()
 
-### Community 56 - "export-ordini.service.ts"
-Cohesion: 0.10
-Nodes (9): main(), scriviXlsxAtomico(), ExportOrdiniController, COLONNE, EsitoOrdine, ExportOrdiniService, ReportExport, SyncConfigRow (+1 more)
+### Community 56 - "main.ts"
+Cohesion: 0.13
+Nodes (15): connect-pg-simple@^10.0.0, cookie@^1.1.1, cookie-parser@^1.4.7, helmet@^8.2.0, socket.io@^4.8.3, FRONTEND_ORIGINS, bootstrap(), online (+7 more)
 
 ### Community 58 - "Modal"
-Cohesion: 0.06
-Nodes (40): AdminLayout(), AdminSidebar(), ICONS, NAV_ITEMS, ComboboxField(), onKeyDown(), select(), ComboboxOption (+32 more)
+Cohesion: 0.08
+Nodes (36): AdminLayout(), AdminSidebar(), logout(), ICONS, NAV_ITEMS, AdminTopBar(), categoriaDi(), EventDetailModal() (+28 more)
 
 ### Community 59 - ""users""
 Cohesion: 0.14
 Nodes (14): "audit_log", audit_log_actor_id_created_at_idx, audit_log_azione_created_at_idx, "session", session_expire_idx, "users", users_email_key, users_partita_iva_key (+6 more)
 
 ### Community 60 - "leads.service.ts"
-Cohesion: 0.19
-Nodes (7): LeadsService, pulisci(), giorniDa(), giorniPromemoria(), servePromemoria(), STATI_IN_ATTESA, crea()
+Cohesion: 0.17
+Nodes (9): ReportIndagine, LeadsService, pulisci(), giorniDa(), giorniPromemoria(), servePromemoria(), STATI_IN_ATTESA, crea() (+1 more)
 
 ### Community 61 - "SyncService"
-Cohesion: 0.11
-Nodes (3): sqlAggiornaClienti(), SyncManagerService, SyncService
+Cohesion: 0.06
+Nodes (7): main(), scriviXlsxAtomico(), ExportOrdiniController, ExportOrdiniService, sqlAggiornaClienti(), SyncManagerService, SyncService
 
-### Community 62 - "CustomersService"
-Cohesion: 0.19
-Nodes (4): CustomerProfile, toCustomerProfile(), generateProvisionalPassword(), CustomersService
+### Community 62 - "area/layout.tsx"
+Cohesion: 0.20
+Nodes (8): AreaLayout(), AreaFooter(), PrivacyNoticeModal(), StatoPrivacy, Tracker(), HeaderCenterContext, HeaderCenterContextType, HeaderCenterProvider()
 
 ### Community 63 - "auth.controller.ts"
-Cohesion: 0.09
-Nodes (17): prisma, { PrismaClient }, DEVICE_COOKIE, DEVICE_GIORNI, mascheraEmail(), AuthUser, DUMMY_HASH, hashPassword() (+9 more)
+Cohesion: 0.04
+Nodes (22): AuthService, DEVICE_COOKIE, DEVICE_GIORNI, mascheraEmail(), AttivaAccountDto, ChangePasswordDto, LoginDto, MfaCodiceDto (+14 more)
 
 ### Community 65 - "frontend/package.json"
 Cohesion: 0.13
 Nodes (19): dependencies, date-fns@4.4.0, next@16.2.9, react@19.2.4, react-date-range@2.0.1, react-markdown@^10.1.0, socket.io-client@^4.8.3, engines (+11 more)
 
 ### Community 66 - "src/app/layout.tsx"
-Cohesion: 0.16
+Cohesion: 0.18
 Nodes (7): RootLayout(), b(), Footer(), PopupApertureLink(), HasJs(), Reveal(), SITE
 
-### Community 67 - "CouponSection.tsx"
-Cohesion: 0.06
-Nodes (32): CarrelloPage(), notifyCart(), remove(), toggleSave(), CartItem, PrezzoInfo, Dettaglio, ItemP (+24 more)
+### Community 67 - "ref_react"
+Cohesion: 0.05
+Nodes (44): AttivaPage(), CostiAiSection(), eur(), PERIODS, Summary, AiSuggestion, AiSuggestionsResponse, stl (+36 more)
 
 ### Community 69 - "cambia-superuser.js"
-Cohesion: 0.25
-Nodes (8): adapter, argon2, generaPassword(), main(), prisma, { PrismaClient }, { PrismaPg }, { randomBytes }
+Cohesion: 0.12
+Nodes (14): @prisma/adapter-pg@7.8.0, adapter, prisma, { PrismaClient }, { PrismaPg }, adapter, argon2, generaPassword() (+6 more)
 
 ### Community 70 - "compilerOptions"
 Cohesion: 0.11
@@ -434,8 +442,8 @@ Cohesion: 0.11
 Nodes (11): admin.fn_user_assign_group(), users.fn_user_set_blocked(), users.fn_user_create(), admin.fn_user_assign_group(), customers.fn_customer_create(), customers.fn_customer_update(), users.fn_user_set_blocked(), users.fn_user_set_password() (+3 more)
 
 ### Community 73 - "UserEditorModal.tsx"
-Cohesion: 0.06
-Nodes (39): calcTotale(), fmtDate(), fmtPrezzo(), OrdiniPage(), SortField, staticRangesIT, SyncButton(), SyncButtonProps (+31 more)
+Cohesion: 0.09
+Nodes (23): SyncButton(), AddrCard(), BadgeFatturazione(), descrizioneOrdine(), Field(), fmtDataIt(), fmtDate(), RoField() (+15 more)
 
 ### Community 74 - "frontend/app/page.tsx"
 Cohesion: 0.22
@@ -465,44 +473,44 @@ Nodes (16): {
 }, buildDocument(), COLOR, footer(), fs, GDPR_DIR, header(), humanTitle() (+8 more)
 
 ### Community 76 - "EventsService"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (3): EventsController, EventsModule, EventsService
 
 ### Community 77 - "scripts"
 Cohesion: 0.12
 Nodes (17): scripts, build, db:migrate, db:seed, db:setup, embeddings:backfill, format, lint (+9 more)
 
-### Community 80 - "mail.service.ts"
-Cohesion: 0.11
-Nodes (16): conferma, interna, mail, ora, ReportIndagine, box(), boxClienteIntegra(), esc() (+8 more)
+### Community 79 - "AdminOrdiniSection.tsx"
+Cohesion: 0.21
+Nodes (10): AdminOrdiniSection(), DashboardData, fmtDate(), fmtEur(), OrderSummary, PageData, STATI, staticRangesIT (+2 more)
+
+### Community 80 - "boxClienteIntegra"
+Cohesion: 0.70
+Nodes (3): box(), boxClienteIntegra(), esc()
 
 ### Community 81 - ".importaVarianti"
-Cohesion: 0.19
+Cohesion: 0.21
 Nodes (6): codiceLineaSicuro(), candidatoPadre(), padreComponente(), promptComposizione(), PADRI, VarianteConComposizione
 
 ### Community 82 - "devDependencies"
 Cohesion: 0.14
 Nodes (14): @types/node@^24.0.0, @types/node, @types/node@^20, @types/react@^19, @types/react, devDependencies, postcss@^8.5.29, tailwindcss@^4.3.3 (+6 more)
 
-### Community 83 - "ImpostazioniSection.tsx"
-Cohesion: 0.47
-Nodes (4): ConfigField(), ConfigToggle(), ImpostazioniSection(), SiteConfig
+### Community 83 - "AccessoB2B.tsx"
+Cohesion: 0.33
+Nodes (6): Page(), AccessoB2B(), onSubmit(), CAMPI, EsitoRichiesta, inviaRichiestaAccesso()
 
 ### Community 84 - "customers"
 Cohesion: 0.14
 Nodes (13): customers, contatti_clienti, indirizzi_clienti, ordini_clienti, righe_ordini, "customer_event", customer_event_customer_created_idx, customer_event_tipo_created_idx (+5 more)
 
 ### Community 85 - "admin-leads.service.ts"
-Cohesion: 0.16
+Cohesion: 0.19
 Nodes (10): COPPIE_ERRORE, erroriAttivi(), FILTRI_STATO, GIORNI_ALLARME, giorniAttesa(), ORDINAMENTI, AdminLeadsService, STATI_IN_ATTESA (+2 more)
 
-### Community 86 - "class-validator"
-Cohesion: 0.09
-Nodes (7): class-transformer@^0.5.1, PermissionOverrideDto, UpdateUserPermissionsDto, ChangePasswordDto, InvitaBulkDto, class-transformer, class-validator
-
 ### Community 87 - "20260624143908_catalogo_models/migration.sql"
-Cohesion: 0.18
-Nodes (13): articolo_embedding, "articoli", articoli_codice_linea_key, "articoli_raccolte", articoli_raccolte_articolo_id_raccolta_id_key, "famiglie", "immagini", "raccolte" (+5 more)
+Cohesion: 0.14
+Nodes (17): articolo_embedding, "articoli", articoli_codice_linea_key, "articoli_raccolte", articoli_raccolte_articolo_id_raccolta_id_key, "famiglie", "immagini", "raccolte" (+9 more)
 
 ### Community 90 - "spese-spedizione.service.ts"
 Cohesion: 0.18
@@ -513,7 +521,7 @@ Cohesion: 0.22
 Nodes (9): buildComboboxOptions(), createCombobox(), filterOptions(), highlight(), open(), renderOptions(), selectOption(), getComboboxOptions() (+1 more)
 
 ### Community 92 - "verifica-costo-trasporto.cjs"
-Cohesion: 0.19
+Cohesion: 0.21
 Nodes (10): api(), argon2, assert, p, { PrismaClient }, { PrismaPg }, readCart(), SEED (+2 more)
 
 ### Community 93 - "conservazione.service.ts"
@@ -528,25 +536,33 @@ Nodes (10): argon2@^0.44.0, adapter, argon2, AVATAR_COLORS, PERMISSION_KEYS, pri
 Cohesion: 0.14
 Nodes (6): displayNome(), FamigliaEditModal(), handleSave(), FamiglieSection(), genDeleteCode(), requestDelete()
 
+### Community 96 - "@prisma/client"
+Cohesion: 0.10
+Nodes (14): p, { PrismaClient }, prisma, { PrismaClient }, ASSETS_BASE_DIR, dotenv, EXCLUDED, fs (+6 more)
+
 ### Community 97 - "20260708000000_cache_integra/migration.sql"
 Cohesion: 0.32
 Nodes (11): idx_articoli_cod, idx_articoli_descr, idx_articoli_errors, idx_articoli_extra, idx_articoli_famiglia, idx_articoli_linea, idx_sync_log_entity, integra_articoli (+3 more)
 
 ### Community 98 - "verifica-coupon-illimitato.cjs"
-Cohesion: 0.21
+Cohesion: 0.19
 Nodes (10): api(), argon2, assert, p, { PrismaClient }, { PrismaPg }, readCart(), SEED (+2 more)
 
 ### Community 99 - "https-proxy.mjs"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (7): __dirname, httpsProxy, nextDev, __dirname, options, PROXY_PORT, server
 
 ### Community 100 - "privacy/page.tsx"
 Cohesion: 0.33
 Nodes (7): CookiePage(), Tabella(), En(), It(), PrivacyPage(), Da(), Documento()
 
-### Community 103 - "startTimeout"
-Cohesion: 0.33
-Nodes (4): doImport(), startTimeout(), doImport(), startTimeout()
+### Community 103 - "ClientiSection"
+Cohesion: 0.23
+Nodes (12): ImportaClientiModal(), doImport(), startTimeout(), ClientiSection(), doSyncClienti(), forzaRiscrittura(), onBlockToggle(), onInvita() (+4 more)
+
+### Community 105 - "app.e2e-spec.ts"
+Cohesion: 0.40
+Nodes (4): @nestjs/testing@^11.0.1, supertest@^7.0.0, @nestjs/testing, supertest
 
 ### Community 106 - "Icons.tsx"
 Cohesion: 0.20
@@ -556,6 +572,10 @@ Nodes (8): IconEdit, IconEye, IconEyeOff, IconLock, IconLockOpen, IconPlus, Icon
 Cohesion: 0.15
 Nodes (13): eslint@^9.18.0, eslint, devDependencies, eslint@^9, eslint-config-next@16.2.9, @types/react-date-range@1.4.10, @types/react-dom@^19, eslint-config-next (+5 more)
 
+### Community 108 - "Hero.tsx"
+Cohesion: 0.60
+Nodes (3): Hero(), HERO_IMAGES, HeroImages()
+
 ### Community 109 - "jest"
 Cohesion: 0.22
 Nodes (9): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, rootDir, testEnvironment, testRegex, transform (+1 more)
@@ -564,20 +584,20 @@ Nodes (9): jest, collectCoverageFrom, coverageDirectory, moduleFileExtensions, r
 Cohesion: 0.33
 Nodes (9): "cataloghi", "download_events", download_events_link_id_at_idx, "download_links", download_links_mailing_id_created_at_idx, download_links_token_key, "mailing", "mailing_catalogo" (+1 more)
 
-### Community 111 - "leads.service.ts"
-Cohesion: 0.17
-Nodes (8): CustomerProfileData, CustomerProfileResult, filtraReferentiPubblici(), ReferentePubblico, CustomersModule, DatiImpresa, lead, @nestjs/schedule
+### Community 111 - "customer-profile.service.ts"
+Cohesion: 0.39
+Nodes (5): CustomerProfileData, CustomerProfileResult, filtraReferentiPubblici(), ReferentePubblico, DatiImpresa
 
 ### Community 114 - "CustomerDossier.tsx"
-Cohesion: 0.29
-Nodes (9): CustomerDossier(), euroK(), fmtData(), MESI, SALUTE, Tile(), Trend(), CustomerDossier (+1 more)
+Cohesion: 0.20
+Nodes (13): CustomerDossier(), euroK(), fmtData(), MESI, SALUTE, Tile(), Trend(), Hint() (+5 more)
 
 ### Community 116 - "nest-cli.json"
 Cohesion: 0.25
 Nodes (7): collection, compilerOptions, assets, deleteOutDir, watchAssets, $schema, sourceRoot
 
 ### Community 119 - "AggancioLeadService"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (6): AggancioLeadService, EsitoRicerca, crea(), lead, emailAccesso(), emailEffettiva()
 
 ### Community 122 - "20260803000000_dashboard_ai/migration.sql"
@@ -585,12 +605,12 @@ Cohesion: 0.43
 Nodes (6): "dashboard_boxes", dashboard_boxes_customer_box_key, dashboard_boxes_customer_idx, "promozioni", promozioni_attiva_data_fine_idx, "suggestion_boxes"
 
 ### Community 123 - "SpeseSpedizioneSection"
-Cohesion: 0.24
-Nodes (5): GuidaModal(), SpeseSpedizioneSection(), onDeleteTariffa(), refresh(), toggleStato()
+Cohesion: 0.22
+Nodes (6): GuidaModal(), SpeseSpedizioneSection(), onDeleteTariffa(), refresh(), toggleStato(), currentRanges()
 
-### Community 124 - "Tooltip"
-Cohesion: 0.31
-Nodes (6): DataTip(), Hint(), HintProps, toStr(), Tooltip(), TooltipProps
+### Community 124 - "ComboboxField"
+Cohesion: 0.67
+Nodes (3): ComboboxField(), onKeyDown(), select()
 
 ### Community 128 - "20260711000001_sync_state_listini/migration.sql"
 Cohesion: 0.53
@@ -644,9 +664,9 @@ Nodes (3): exclude, extends, ./tsconfig.json
 Cohesion: 0.29
 Nodes (7): scripts, build, dev, dev:full, dev:https, lint, start
 
-### Community 217 - "@prisma/adapter-pg"
-Cohesion: 0.25
-Nodes (6): @prisma/adapter-pg@7.8.0, adapter, prisma, { PrismaClient }, { PrismaPg }, @prisma/adapter-pg
+### Community 217 - "engines"
+Cohesion: 0.67
+Nodes (3): engines, node, npm
 
 ### Community 224 - "backend/eslint.config.mjs"
 Cohesion: 0.22
@@ -657,12 +677,12 @@ Cohesion: 0.83
 Nodes (3): "mfa_devices", mfa_devices_token_hash_key, mfa_devices_user_id_idx
 
 ### Community 229 - "ExportClienteService"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (3): cartellaOrdiniIntegra(), ExportClienteService, lead
 
-### Community 272 - "integrazione.service.ts"
-Cohesion: 0.06
-Nodes (27): AppModule, DatiCheckout, ModalitaConsegna, AUDITED, auditExtension, WRITES, ASSETS_PUBLIC_URL, Dossier (+19 more)
+### Community 272 - "customer-intelligence.service.ts"
+Cohesion: 0.33
+Nodes (5): Dossier, DossierFamiglia, DossierKpi, MotivoOfferta, Offerta
 
 ### Community 273 - "[codiceLinea]/route.ts"
 Cohesion: 0.83
@@ -691,22 +711,22 @@ Nodes (4): typescript@^5.7.3, typescript, typescript@^5, typescript@^5
 ## Knowledge Gaps
 - **1 isolated node(s):** `./tsconfig.json`
   These have ≤1 connection - possible missing edges. (Counts symbols only; 1210 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **182 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **175 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `@nestjs/common` connect `@nestjs/common` to `app.module.ts`, `backend/package.json`, `CouponService`, `integrazione.service.ts`, `users.service.ts`, `dependencies`, `azioni.service.ts`, `mail.service.ts`, `AiUsageService`, `admin.service.ts`, `AuditService`, `dependencies`, `export-cliente.service.ts`, `export-ordini.service.ts`, `auth.controller.ts`, `EventsService`, `mail.service.ts`, `admin-leads.service.ts`, `spese-spedizione.service.ts`, `conservazione.service.ts`, `leads.service.ts`?**
-  _High betweenness centrality (0.227) - this node is a cross-community bridge._
+- **Why does `@nestjs/common` connect `@nestjs/common` to `app.module.ts`, `backend/package.json`, `customer-intelligence.service.ts`, `users.service.ts`, `dependencies`, `azioni.service.ts`, `mail.service.ts`, `request-context.ts`, `AiUsageService`, `admin.service.ts`, `AuditService`, `admin-ordini.module.ts`, `LeadsController`, `mail.service.ts`, `checkout.service.ts`, `export-cliente.service.ts`, `main.ts`, `leads.service.ts`, `auth.controller.ts`, `EventsService`, `admin-leads.service.ts`, `AuditController`, `spese-spedizione.service.ts`, `conservazione.service.ts`, `app.e2e-spec.ts`, `customer-profile.service.ts`?**
+  _High betweenness centrality (0.230) - this node is a cross-community bridge._
 - **What connects `./tsconfig.json` to the rest of the system?**
   _1 weakly-connected nodes found - possible missing edges._
-- **Should `AuthController` be split into smaller, more focused modules?**
-  _Cohesion score 0.11491935483870967 - nodes in this community are weakly interconnected._
+- **Should `checkout/page.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.06342780026990553 - nodes in this community are weakly interconnected._
 - **Why does `stato()` connect `mail.service.ts` to `FamiglieSection`?**
-  _High betweenness centrality (0.204) - this node is a cross-community bridge._
+  _High betweenness centrality (0.195) - this node is a cross-community bridge._
 - **Should `CataloghiService` be split into smaller, more focused modules?**
   _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._
-- **Why does `TariffaEditor()` connect `SpeseSpedizioneSection.tsx` to `Modal`, `useConfirm`, `mail.service.ts`, `SpeseSpedizioneSection`, `Tooltip`?**
+- **Why does `handleSave()` connect `mail.service.ts` to `thumbUrl`, `app.js`?**
   _High betweenness centrality (0.082) - this node is a cross-community bridge._
 - **Should `app.module.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.07712765957446809 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08846153846153847 - nodes in this community are weakly interconnected._

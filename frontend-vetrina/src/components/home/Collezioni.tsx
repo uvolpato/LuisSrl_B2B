@@ -18,7 +18,7 @@ export default async function Collezioni() {
         ) : (
           <div className='grid-3'>
             {famiglie.map((f, i) => (
-              <Link key={f.codice} className='linea-card reveal' style={{ '--d': `${(i % 3) * 90}ms` } as React.CSSProperties} href={`/catalogo?famiglia=${encodeURIComponent(f.codice)}`}>
+              <Link key={f.codice} className='linea-card reveal' style={{ '--d': `${(i % 3) * 90}ms` } as React.CSSProperties} href={`/collezioni/${f.slug}`}>
                 <div className='linea-media'>
                   {f.immagine ? <img src={imgUrl(f.immagine)} alt={f.nome} /> : <div className='linea-placeholder' />}
                   {f.immagineAI && <span className='ai-badge' title={ta('aiBadge')}>AI</span>}

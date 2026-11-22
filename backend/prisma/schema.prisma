@@ -377,6 +377,8 @@ model Famiglia {
   /// Flag: immagine generata con AI (mostra badge "AI" sul portale)
   immagineAI  Boolean    @default(false) @map("immagine_ai")
   descrizione String?
+  /// Slug pubblico della collezione nella vetrina (SEO). Generato dal nome all'INSERT, poi stabile.
+  slug        String?    @unique
   stato       String     @default("ATTIVO")
   /// Ordine di visualizzazione delle card famiglia (impostato dall'admin, drag&drop)
   ordine      Int        @default(0)

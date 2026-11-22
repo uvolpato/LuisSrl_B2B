@@ -6,6 +6,7 @@
     "catalogDescription": "Catalogo vetrina Luis S.r.l.: collezioni di vasi in ceramica, cotto, metallo e fiberstone con elenco varianti. Prezzi e disponibilità riservati ai rivenditori registrati."
   },
   "nav": {
+    "home": "Home",
     "azienda": "Azienda",
     "collezioni": "Collezioni",
     "catalogo": "Catalogo",
@@ -59,6 +60,11 @@
     "lead": "La collezione Luis si divide in due anime: la linea esclusiva, sinonimo di qualità e versatilità, e i marchi internazionali rivenduti, icone del design contemporaneo.",
     "kind": "Collezione Luis",
     "nonDisponibili": "Collezioni momentaneamente non disponibili."
+  },
+  "collezione": {
+    "bricioleLabel": "Percorso di navigazione",
+    "eyebrow": "Collezione Luis",
+    "leadDefault": "Scopri la collezione {nome}: modelli, codici e dimensioni disponibili. Prezzi e disponibilità riservati ai rivenditori registrati."
   },
   "marchi": {
     "eyebrow": "Marchi rivenduti",

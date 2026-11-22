@@ -28,6 +28,7 @@ export class CatalogoPublicController {
     return fams.map((f) => ({
       codice: f.codice,
       nome: f.nome,
+      slug: f.slug,
       descrizione: f.descrizione,
       immagine: f.immagine,
       immagineAI: f.immagineAI,

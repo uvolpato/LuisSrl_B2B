@@ -680,9 +680,9 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/catalogo-public.controller.ts": {
-    "mtime": 1794850938.2616885,
-    "seen": 1794851820.0639777,
-    "ast_hash": "2373ce0da04eca1bb7f64b8d90001349",
+    "mtime": 1795380799.4412024,
+    "seen": 1795381256.4093666,
+    "ast_hash": "902e66d91aec2e59d5248ae686b1405c",
     "semantic_hash": ""
   },
   "backend/src/integrazione/catalogo.controller.ts": {
@@ -716,9 +716,9 @@
     "semantic_hash": ""
   },
   "backend/src/integrazione/integrazione.service.ts": {
-    "mtime": 1794914545.7702074,
-    "seen": 1794914591.4393876,
-    "ast_hash": "ac663bba0fbc9af3645616c040c24710",
+    "mtime": 1795380799.4412024,
+    "seen": 1795381256.409392,
+    "ast_hash": "cbcb6d8b6227f0a6a87702ec682601c6",
     "semantic_hash": ""
   },
   "backend/src/integrazione/sync-manager.service.ts": {
@@ -1101,9 +1101,9 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/messages/it.json": {
-    "mtime": 1794853375.0824711,
-    "seen": 1794854327.9841328,
-    "ast_hash": "43529e78840b6d157e6eeafdab3d2230",
+    "mtime": 1795380860.6241708,
+    "seen": 1795381256.409627,
+    "ast_hash": "ac0310f8940427073f81fdfabe63a92b",
     "semantic_hash": ""
   },
   "frontend-vetrina/next.config.mjs": {
@@ -1191,10 +1191,10 @@
     "semantic_hash": "e813c1e358032918076a6f736a624959"
   },
   "frontend-vetrina/src/components/home/Collezioni.tsx": {
-    "mtime": 1791813820.756402,
-    "seen": 1793880362.9706316,
-    "ast_hash": "b3f11f193efdd86e3040696a0cc92755",
-    "semantic_hash": "b3f11f193efdd86e3040696a0cc92755"
+    "mtime": 1795380851.082929,
+    "seen": 1795381256.4096868,
+    "ast_hash": "414d40b3bba86a9f82c10674e05a8455",
+    "semantic_hash": ""
   },
   "frontend-vetrina/src/components/home/Contatti.tsx": {
     "mtime": 1791813795.792147,
@@ -1275,9 +1275,9 @@
     "semantic_hash": "6161111a98787f14f578130dfbba6ad1"
   },
   "frontend-vetrina/src/lib/api.ts": {
-    "mtime": 1794851079.6836817,
-    "seen": 1794851820.0641613,
-    "ast_hash": "2d1b22636904b294e612ce128ab13c48",
+    "mtime": 1795380811.4894924,
+    "seen": 1795381256.4097316,
+    "ast_hash": "f2fc8c8443d4bbc4a72a4e25678b140e",
     "semantic_hash": ""
   },
   "frontend-vetrina/src/lib/richiedi-accesso.ts": {
@@ -4137,9 +4137,21 @@
     "semantic_hash": ""
   },
   "frontend-vetrina/src/app/sitemap.ts": {
-    "mtime": 1795380093.296188,
-    "seen": 1795380188.7044194,
-    "ast_hash": "3ed411b9aa5f4ba96d8c650097e1b6f4",
+    "mtime": 1795380843.536628,
+    "seen": 1795381256.409671,
+    "ast_hash": "ebc0cfa4ff1c611ddaedcfd1f8491c4e",
+    "semantic_hash": ""
+  },
+  "backend/prisma/migrations/20261122000000_famiglia_slug/migration.sql": {
+    "mtime": 1795380789.3876972,
+    "seen": 1795381256.4089484,
+    "ast_hash": "419c59a447ca16e824144dadd46d43d8",
+    "semantic_hash": ""
+  },
+  "frontend-vetrina/src/app/collezioni/[slug]/page.tsx": {
+    "mtime": 1795380837.7753022,
+    "seen": 1795381256.4096458,
+    "ast_hash": "8fface4bea395afb20cd85e54097975d",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {
