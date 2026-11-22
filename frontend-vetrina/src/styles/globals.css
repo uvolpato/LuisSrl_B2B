@@ -450,10 +450,6 @@ a.chip { text-decoration: none; display: inline-block; }
 
 /* ── Selettore lingua IT/EN (aggiunta rispetto al prototipo) ── */
 .nav-right { display: flex; align-items: center; gap: 12px; }
-.lang-switch { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.lang-switch button { background: none; border: 0; padding: 5px 9px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; color: var(--muted); cursor: pointer; }
-.lang-switch button:hover { color: var(--fg); }
-.lang-switch button[aria-pressed='true'] { background: var(--fg); color: var(--bg); }
 
 /* ── Form accesso collegato: honeypot ed errore ── */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

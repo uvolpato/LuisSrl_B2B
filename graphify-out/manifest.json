@@ -1089,10 +1089,10 @@
     "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
   },
   "frontend-vetrina/i18n/request.ts": {
-    "mtime": 1791800564.7569077,
-    "seen": 1793880362.968238,
-    "ast_hash": "414c3984a3dfed56d4d36f2e210c8e56",
-    "semantic_hash": "414c3984a3dfed56d4d36f2e210c8e56"
+    "mtime": 1795380270.9835708,
+    "seen": 1795380405.9703767,
+    "ast_hash": "8bdf43d05f192177dce84f6764f7de38",
+    "semantic_hash": ""
   },
   "frontend-vetrina/messages/en.json": {
     "mtime": 1794853375.0824711,
@@ -1245,10 +1245,10 @@
     "semantic_hash": "a72032243f40a078c293f303929c51df"
   },
   "frontend-vetrina/src/components/layout/Header.tsx": {
-    "mtime": 1792793023.1905196,
-    "seen": 1793880362.9720724,
-    "ast_hash": "4f1465a78c8a3b31ef915dac78d743ff",
-    "semantic_hash": "4f1465a78c8a3b31ef915dac78d743ff"
+    "mtime": 1795380270.9985797,
+    "seen": 1795380405.9704833,
+    "ast_hash": "a0da7f3c6d03e5c25f8c65140b9fb783",
+    "semantic_hash": ""
   },
   "frontend-vetrina/src/components/layout/PopupApertureLink.tsx": {
     "mtime": 1792786307.6849794,

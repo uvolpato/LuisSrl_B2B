@@ -2,28 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { SITE } from '@/lib/siteConfig';
-
-const LINGUE = ['it', 'en'] as const;
-
-// Stesso meccanismo del portale B2B: cookie `lang` letto da i18n/request.ts.
-function setLangCookie(lang: string) {
-  document.cookie = `lang=${lang}; path=/; max-age=31536000; samesite=lax`;
-}
 
 export default function Header() {
   const t = useTranslations('nav');
-  const locale = useLocale();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-
-  function switchLang(lang: string) {
-    setLangCookie(lang);
-    router.refresh();
-  }
 
   return (
     <header className='site-nav'>
@@ -41,13 +26,6 @@ export default function Header() {
             <Link className='btn btn-primary btn-arrow nav-cta' href='/#accesso'>{t('richiediAccesso')}</Link>
           </nav>
           <div className='nav-right'>
-            <div className='lang-switch' role='group' aria-label={t('lingua')}>
-              {LINGUE.map((l) => (
-                <button key={l} type='button' aria-pressed={l === locale} onClick={() => switchLang(l)}>
-                  {l.toUpperCase()}
-                </button>
-              ))}
-            </div>
             <button
               className='nav-toggle'
               type='button'
