@@ -5,11 +5,17 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Reveal from '@/components/ui/Reveal';
 import HasJs from '@/components/ui/HasJs';
+import { SITE } from '@/lib/siteConfig';
 import '../styles/globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
-  return { title: t('title'), description: t('description') };
+  return {
+    metadataBase: new URL(SITE.url),
+    title: t('title'),
+    description: t('description'),
+    alternates: { canonical: '/' },
+  };
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

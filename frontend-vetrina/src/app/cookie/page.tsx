@@ -7,7 +7,7 @@ import { Documento } from '@/components/legal/Legale';
 // Se si aggiungono analytics o contenuti di terze parti servono banner e consenso preventivo.
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Cookie Policy — Luis S.r.l.' };
+  return { title: 'Cookie Policy — Luis S.r.l.', alternates: { canonical: '/cookie' } };
 }
 
 export default async function CookiePage() {

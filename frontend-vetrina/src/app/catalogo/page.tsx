@@ -7,7 +7,7 @@ import Composizione from '@/components/catalogo/Composizione';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
-  return { title: t('catalogTitle'), description: t('catalogDescription') };
+  return { title: t('catalogTitle'), description: t('catalogDescription'), alternates: { canonical: '/catalogo' } };
 }
 
 type Search = { famiglia?: string | string[]; q?: string | string[]; page?: string | string[] };

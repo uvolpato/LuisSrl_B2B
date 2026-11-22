@@ -9,7 +9,7 @@ import { Da, Documento } from '@/components/legal/Legale';
 const VERSIONE = '2026-10';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Privacy Policy — Luis S.r.l.' };
+  return { title: 'Privacy Policy — Luis S.r.l.', alternates: { canonical: '/privacy' } };
 }
 
 export default async function PrivacyPage() {
