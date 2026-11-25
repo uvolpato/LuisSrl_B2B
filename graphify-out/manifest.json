@@ -740,15 +740,15 @@
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.controller.ts": {
-    "mtime": 1794932723.0412953,
-    "seen": 1794932792.295866,
-    "ast_hash": "a9ea7bfb3bfd8d5bfbaf9c83e714e622",
+    "mtime": 1795623669.7763915,
+    "seen": 1795624658.1955507,
+    "ast_hash": "4f8726ec8119b311504d571907fc2d87",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.service.ts": {
-    "mtime": 1794932714.748188,
-    "seen": 1794932792.2958684,
-    "ast_hash": "973e3f01f7369dc0c4f52fae918f78b4",
+    "mtime": 1795623682.9340887,
+    "seen": 1795624658.1955636,
+    "ast_hash": "f361930009c361558e0f6103f46ade24",
     "semantic_hash": ""
   },
   "backend/src/leads/admin-leads.spec.ts": {
@@ -1635,9 +1635,9 @@
     "semantic_hash": "cad9a7f4da32783874c804c329e9310c"
   },
   "frontend/components/admin/sections/RichiesteAccessoSection.tsx": {
-    "mtime": 1794932730.842321,
-    "seen": 1794932792.2961292,
-    "ast_hash": "f6fe0233d353d09fbe4d75902e7f0774",
+    "mtime": 1795623774.5642297,
+    "seen": 1795624658.2031465,
+    "ast_hash": "07eecc3f6fbb22bc24f347dd6e2da084",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/SpeseSpedizioneSection.tsx": {
@@ -4158,6 +4158,12 @@
     "mtime": 1795381896.776685,
     "seen": 1795381997.4677408,
     "ast_hash": "9db7658f9d1f6acebcc77df9584afb03",
+    "semantic_hash": ""
+  },
+  "backend/src/leads/admin-leads.service.spec.ts": {
+    "mtime": 1795623804.374321,
+    "seen": 1795624658.1955583,
+    "ast_hash": "2b4775a62898323336a57481ea022a9c",
     "semantic_hash": ""
   },
   "backend/package-lock.json": {

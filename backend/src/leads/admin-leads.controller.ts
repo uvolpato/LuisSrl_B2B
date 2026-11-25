@@ -10,7 +10,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { IsEmail, IsIn, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 import { AuthenticatedGuard } from '../auth/guards/authenticated.guard';
 import type { AuthenticatedRequest } from '../auth/guards/authenticated.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -35,6 +42,25 @@ class EmailAccessoDto {
   @IsOptional()
   @IsEmail()
   email?: string | null;
+}
+
+/** Sede legale scritta a mano: sono le colonne obbligatorie dell'anagrafica Integra. */
+class SedeDto {
+  @IsString()
+  @Length(1, 120)
+  indirizzo!: string;
+
+  @IsString()
+  @Matches(/^\d{5}$/)
+  cap!: string;
+
+  @IsString()
+  @Length(1, 80)
+  citta!: string;
+
+  @IsString()
+  @Matches(/^[A-Za-z]{2}$/)
+  provincia!: string;
 }
 
 /** Area admin "Richieste accesso": stessi permessi della gestione clienti. */
@@ -125,6 +151,13 @@ export class AdminLeadsController {
   @RequirePermission('vendite.clienti.edit')
   rigeneraFile(@Param('id', ParseIntPipe) id: number) {
     return this.leads.rigeneraFile(id);
+  }
+
+  /** Sede legale inserita a mano (VIES e web non l'hanno trovata): serve al file Integra. */
+  @Post(':id/sede')
+  @RequirePermission('vendite.clienti.edit')
+  setSede(@Param('id', ParseIntPipe) id: number, @Body() dto: SedeDto) {
+    return this.leads.setSede(id, dto);
   }
 
   /** Reinvia a mano la conferma al richiedente o la segnalazione a shop@. */

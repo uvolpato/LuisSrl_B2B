@@ -89,6 +89,7 @@ const EVENTI: Record<string, string> = {
   email_diversa: "Email diversa da quella in Integra",
   email_da_richiesta: "Email presa dalla richiesta (mancante in Integra)",
   email_scelta: "Email di accesso scelta a mano",
+  sede_manuale: "Sede legale inserita a mano",
   cliente_collegato: "Cliente importato da Integra e collegato",
   invito_inviato: "Invito al portale inviato",
   invito_errore: "Errore invio invito",
@@ -534,6 +535,17 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                   {d.esportatoFile && kv("File Integra", d.esportatoFile)}
                 </div>
               </div>
+              {!d.anonimizzato && (
+                <SedeEditor
+                  key={`${d.id}:${d.sedeIndirizzo ?? ""}:${d.sedeCap ?? ""}:${d.sedeCitta ?? ""}:${d.sedeProvincia ?? ""}`}
+                  leadId={d.id}
+                  indirizzo={d.sedeIndirizzo}
+                  cap={d.sedeCap}
+                  citta={d.sedeCitta}
+                  provincia={d.sedeProvincia}
+                  onEsito={(testo) => { setInvio({ variant: "success", testo }); onRefresh(); }}
+                />
+              )}
               {d.cliente && (
                 <button type="button" className="btn btn-secondary" style={{ marginTop: 12 }} disabled={riesportando} onClick={() => void rigeneraXls()}>
                   {riesportando ? "Generazione…" : "Genera XLS aggiornamento Integra"}
@@ -635,6 +647,66 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
         </aside>
       </FocusTrap>
     </>
+  );
+}
+
+/** Sede legale scritta a mano: VIES e ricerca web possono non trovarla, ma l'anagrafica Integra la richiede. */
+function SedeEditor({ leadId, indirizzo, cap, citta, provincia, onEsito }: {
+  leadId: number;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  onEsito: (testo: string) => void;
+}) {
+  const [v, setV] = useState({ indirizzo: indirizzo ?? "", cap: cap ?? "", citta: citta ?? "", provincia: provincia ?? "" });
+  const [salvando, setSalvando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const valida = v.indirizzo.trim().length > 0
+    && /^\d{5}$/.test(v.cap.trim())
+    && v.citta.trim().length > 0
+    && /^[A-Za-z]{2}$/.test(v.provincia.trim());
+
+  async function salva() {
+    setSalvando(true);
+    setErrore(null);
+    try {
+      await api.post(`/api/admin/leads/${leadId}/sede`, {
+        indirizzo: v.indirizzo.trim(),
+        cap: v.cap.trim(),
+        citta: v.citta.trim(),
+        provincia: v.provincia.trim(),
+      });
+      onEsito("Sede legale salvata: ora rigenera il file per Integra.");
+    } catch (e) {
+      setErrore(e instanceof ApiError ? e.code : "errore");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const campo = (k: keyof typeof v, label: string, extra: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
+      {label}
+      <input className="input" value={v[k]} onChange={(e) => setV({ ...v, [k]: e.target.value })} {...extra} />
+    </label>
+  );
+
+  return (
+    <div style={{ marginTop: 12, border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px" }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", margin: "0 0 8px" }}>Sede legale per Integra</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8 }}>
+        {campo("indirizzo", "Indirizzo e civico", { placeholder: "Via Roma 1", maxLength: 120 })}
+        {campo("cap", "CAP", { inputMode: "numeric", maxLength: 5 })}
+        {campo("citta", "Comune", { maxLength: 80 })}
+        {campo("provincia", "Prov.", { maxLength: 2 })}
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+        <button type="button" className="btn btn-primary" disabled={salvando || !valida} onClick={() => void salva()}>Salva sede</button>
+        <span style={{ fontSize: 11.5, color: "var(--muted)" }}>Obbligatoria nel file Integra: indirizzo, CAP, comune e provincia.</span>
+      </div>
+      {errore && <p style={{ color: "var(--red)", fontSize: 12, margin: "8px 0 0" }}>Salvataggio non riuscito: {errore}</p>}
+    </div>
   );
 }
 

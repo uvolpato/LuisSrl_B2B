@@ -236,6 +236,46 @@ export class AdminLeadsService {
   }
 
   /**
+   * Sede legale scritta a mano: senza indirizzo/CAP/comune/provincia l'export per Integra
+   * rifiuta di scrivere il file (colonne obbligatorie). Se il cliente è già collegato
+   * aggiorna anche i suoi dati, così la riesportazione usa la stessa sede.
+   */
+  async setSede(
+    id: number,
+    s: { indirizzo: string; cap: string; citta: string; provincia: string },
+  ) {
+    const lead = await this.prisma.lead.findUnique({
+      where: { id },
+      select: { id: true, anonimizzatoIl: true, cliente: { select: { id: true } } },
+    });
+    if (!lead) throw new NotFoundException('leads.non_trovata');
+    if (lead.anonimizzatoIl) throw new ConflictException('leads.anonimizzata');
+
+    const dati = {
+      sedeIndirizzo: s.indirizzo.trim().replace(/\s+/g, ' ').toUpperCase(),
+      sedeCap: s.cap.trim(),
+      sedeCitta: s.citta.trim().replace(/\s+/g, ' ').toUpperCase(),
+      sedeProvincia: s.provincia.trim().toUpperCase(),
+      sedeFonte: 'MANUALE',
+    };
+    await this.prisma.lead.update({ where: { id }, data: dati });
+    if (lead.cliente)
+      await this.prisma.customer.update({
+        where: { id: lead.cliente.id },
+        data: {
+          indirizzo: dati.sedeIndirizzo,
+          cap: dati.sedeCap,
+          citta: dati.sedeCitta,
+          provincia: dati.sedeProvincia,
+        },
+      });
+    await this.prisma.leadEvent.create({
+      data: { leadId: id, tipo: 'sede_manuale', dettagli: dati },
+    });
+    return dati;
+  }
+
+  /**
    * Rigenera il **file del lead** (`lead-<id>-<ragione>.xlsx`), anche se era già
    * stato esportato: serve quando i dati vengono corretti prima dell'aggancio.
    */
