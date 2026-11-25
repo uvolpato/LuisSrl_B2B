@@ -1635,9 +1635,9 @@
     "semantic_hash": "cad9a7f4da32783874c804c329e9310c"
   },
   "frontend/components/admin/sections/RichiesteAccessoSection.tsx": {
-    "mtime": 1795623774.5642297,
-    "seen": 1795624658.2031465,
-    "ast_hash": "07eecc3f6fbb22bc24f347dd6e2da084",
+    "mtime": 1795626826.922115,
+    "seen": 1795626873.8759472,
+    "ast_hash": "df1c939109bfb889760e0916b8bc66ee",
     "semantic_hash": ""
   },
   "frontend/components/admin/sections/SpeseSpedizioneSection.tsx": {

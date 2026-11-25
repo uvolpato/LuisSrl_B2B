@@ -7,6 +7,7 @@ import type { Column, RowAction } from "../DataTable";
 import { api, ApiError } from "../../../lib/api";
 import Notice from "../../common/Notice";
 import FocusTrap from "../../common/FocusTrap";
+import Modal from "../../common/Modal";
 import Tooltip from "../../common/Tooltip";
 import { useConfirm } from "../../common/ConfirmProvider";
 
@@ -353,6 +354,7 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
   const [invio, setInvio] = useState<{ variant: "success" | "warning"; testo: string } | null>(null);
   const [inviando, setInviando] = useState<"conferma" | "shop" | "indagine" | null>(null);
   const [riesportando, setRiesportando] = useState(false);
+  const [sedeAperta, setSedeAperta] = useState(false);
   const r = d.report;
   const vcls = r ? { BUONO: "ok", VERIFICARE: "amber", SCARTARE: "red" }[r.verdetto] : "amber";
   const azioni = d.anonimizzato ? [] : AZIONI_PER_STATO[d.stato];
@@ -536,15 +538,9 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
                 </div>
               </div>
               {!d.anonimizzato && (
-                <SedeEditor
-                  key={`${d.id}:${d.sedeIndirizzo ?? ""}:${d.sedeCap ?? ""}:${d.sedeCitta ?? ""}:${d.sedeProvincia ?? ""}`}
-                  leadId={d.id}
-                  indirizzo={d.sedeIndirizzo}
-                  cap={d.sedeCap}
-                  citta={d.sedeCitta}
-                  provincia={d.sedeProvincia}
-                  onEsito={(testo) => { setInvio({ variant: "success", testo }); onRefresh(); }}
-                />
+                <button type="button" className="btn btn-secondary" style={{ marginTop: 12, marginRight: 8 }} onClick={() => setSedeAperta(true)}>
+                  {d.sedeIndirizzo ? "Correggi sede legale" : "Inserisci sede legale"}
+                </button>
               )}
               {d.cliente && (
                 <button type="button" className="btn btn-secondary" style={{ marginTop: 12 }} disabled={riesportando} onClick={() => void rigeneraXls()}>
@@ -646,22 +642,48 @@ function PannelloDettaglio({ d, onClose, onAzione, onElimina, onRefresh }: { d: 
           </div>
         </aside>
       </FocusTrap>
+      {sedeAperta && (
+        <SedeModal
+          leadId={d.id}
+          indirizzo={d.sedeIndirizzo}
+          cap={d.sedeCap}
+          citta={d.sedeCitta}
+          provincia={d.sedeProvincia}
+          onClose={() => setSedeAperta(false)}
+          onSalvata={() => {
+            setSedeAperta(false);
+            setInvio({ variant: "success", testo: "Sede legale salvata: ora rigenera il file per Integra." });
+            onRefresh();
+          }}
+        />
+      )}
     </>
   );
 }
 
 /** Sede legale scritta a mano: VIES e ricerca web possono non trovarla, ma l'anagrafica Integra la richiede. */
-function SedeEditor({ leadId, indirizzo, cap, citta, provincia, onEsito }: {
+function SedeModal({ leadId, indirizzo, cap, citta, provincia, onClose, onSalvata }: {
   leadId: number;
   indirizzo: string | null;
   cap: string | null;
   citta: string | null;
   provincia: string | null;
-  onEsito: (testo: string) => void;
+  onClose: () => void;
+  onSalvata: () => void;
 }) {
   const [v, setV] = useState({ indirizzo: indirizzo ?? "", cap: cap ?? "", citta: citta ?? "", provincia: provincia ?? "" });
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  // Escape in capture: chiude solo la modale, non il drawer che sta sotto.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
   const valida = v.indirizzo.trim().length > 0
     && /^\d{5}$/.test(v.cap.trim())
     && v.citta.trim().length > 0
@@ -677,10 +699,9 @@ function SedeEditor({ leadId, indirizzo, cap, citta, provincia, onEsito }: {
         citta: v.citta.trim(),
         provincia: v.provincia.trim(),
       });
-      onEsito("Sede legale salvata: ora rigenera il file per Integra.");
+      onSalvata();
     } catch (e) {
       setErrore(e instanceof ApiError ? e.code : "errore");
-    } finally {
       setSalvando(false);
     }
   }
@@ -693,20 +714,31 @@ function SedeEditor({ leadId, indirizzo, cap, citta, provincia, onEsito }: {
   );
 
   return (
-    <div style={{ marginTop: 12, border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px" }}>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", margin: "0 0 8px" }}>Sede legale per Integra</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8 }}>
+    <Modal
+      size="md"
+      maxWidth={460}
+      title="Sede legale per Integra"
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={salvando}>Annulla</button>
+          <button type="button" className="btn btn-primary" onClick={() => void salva()} disabled={salvando || !valida}>
+            {salvando ? "Salvataggio…" : "Salva sede"}
+          </button>
+        </>
+      )}
+    >
+      <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 14px" }}>
+        Colonne obbligatorie dell&apos;anagrafica Integra. I valori compaiono in &quot;Dati richiesta&quot;.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {campo("indirizzo", "Indirizzo e civico", { placeholder: "Via Roma 1", maxLength: 120 })}
         {campo("cap", "CAP", { inputMode: "numeric", maxLength: 5 })}
         {campo("citta", "Comune", { maxLength: 80 })}
-        {campo("provincia", "Prov.", { maxLength: 2 })}
+        {campo("provincia", "Provincia", { placeholder: "SA", maxLength: 2 })}
       </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
-        <button type="button" className="btn btn-primary" disabled={salvando || !valida} onClick={() => void salva()}>Salva sede</button>
-        <span style={{ fontSize: 11.5, color: "var(--muted)" }}>Obbligatoria nel file Integra: indirizzo, CAP, comune e provincia.</span>
-      </div>
-      {errore && <p style={{ color: "var(--red)", fontSize: 12, margin: "8px 0 0" }}>Salvataggio non riuscito: {errore}</p>}
-    </div>
+      {errore && <p style={{ color: "var(--red)", fontSize: 12, margin: "12px 0 0" }}>Salvataggio non riuscito: {errore}</p>}
+    </Modal>
   );
 }
 
