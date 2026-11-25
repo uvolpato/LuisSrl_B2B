@@ -701,7 +701,15 @@ function SedeModal({ leadId, indirizzo, cap, citta, provincia, onClose, onSalvat
       });
       onSalvata();
     } catch (e) {
-      setErrore(e instanceof ApiError ? e.code : "errore");
+      const code = e instanceof ApiError ? e.code : "errore";
+      // Il drawer può essere rimasto aperto su una richiesta eliminata in un'altra scheda.
+      setErrore(
+        code === "leads.non_trovata"
+          ? "Richiesta non più esistente: chiudi e ricarica la lista."
+          : code === "leads.anonimizzata"
+            ? "Richiesta anonimizzata: la sede non si può più modificare."
+            : code,
+      );
       setSalvando(false);
     }
   }
